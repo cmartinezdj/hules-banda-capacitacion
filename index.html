@@ -499,24 +499,24 @@ window.CFG = {
 
   /* --- Catálogo de recompensas (de canasta básica a gift card $1,000) --- */
   rewards: [
-    { ic:'🥤', t:'Termo HB de acero',                 cost:150 },
-    { ic:'🧢', t:'Gorra Hules Banda',                  cost:200 },
-    { ic:'👕', t:'Playera HB',                         cost:300 },
-    { ic:'🍱', t:'Vale de despensa $200',              cost:450 },
-    { ic:'🧺', t:'Canasta básica',                     cost:650 },
-    { ic:'🎟️', t:'Gift card $500 MXN',                cost:850 },
-    { ic:'🎁', t:'Gift card $1,000 MXN',               cost:1200 }
+    { ic:'🥤', t:'Termo HB de acero',                 cost:500 },
+    { ic:'🧢', t:'Gorra Hules Banda',                  cost:800 },
+    { ic:'👕', t:'Playera HB',                         cost:1200 },
+    { ic:'🍱', t:'Vale de despensa $200',              cost:2000 },
+    { ic:'🧺', t:'Canasta básica',                     cost:3000 },
+    { ic:'🎟️', t:'Gift card $500 MXN',                cost:4500 },
+    { ic:'🎁', t:'Gift card $1,000 MXN',               cost:8000 }
   ],
 
   /* --- Sistema de puntos (sin castigos: fallar no resta, solo no suma bonos) --- */
   points: {
-    base:50,        // por aprobar un curso (con video)
-    exemptBase:40,  // por aprobar el examen de exentar (sin ver el video)
-    firstTry:30,    // bono por aprobar a la primera
-    perfect:20,     // bono por 3/3
-    onTime:15,      // bono por completar a tiempo
-    streakStep:10,  // bono = racha × este valor (solo en aprobados a la primera)
-    perLevel:200    // puntos para subir de nivel
+    base:45,        // por aprobar un curso (con video)
+    exemptBase:35,  // por aprobar el examen de exentar (sin ver el video)
+    firstTry:25,    // bono por aprobar a la primera
+    perfect:15,     // bono por 3/3
+    onTime:10,      // bono por completar a tiempo
+    streakStep:5,  // bono = racha × este valor (solo en aprobados a la primera)
+    perLevel:300    // puntos para subir de nivel
   },
   levels:['Aprendiz','Operario','Técnico','Especialista','Maestro','Leyenda HB'],
 

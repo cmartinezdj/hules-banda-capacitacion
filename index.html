@@ -296,6 +296,40 @@ button{font-family:var(--font)}
 .confetti{position:fixed;inset:0;pointer-events:none;z-index:90;overflow:hidden}
 .confetti i{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;animation:fall linear forwards}
 @keyframes fall{to{transform:translateY(108vh) rotate(720deg);opacity:.9}}
+
+/* ===== ACADEMIA · PROFESOR BANDI ===== */
+.accbar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 13px;margin-bottom:12px;font-size:12.5px;font-weight:600}
+.toggle{border:1px solid var(--line);border-radius:30px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;background:var(--card2);color:var(--mut)}
+.toggle.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none}
+.topic{display:flex;align-items:center;gap:13px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px;margin-bottom:11px;cursor:pointer;transition:transform .15s,border-color .2s}
+.topic:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 50%,transparent)}
+.topic:active{transform:scale(.99)}
+.topic .t{flex:1;min-width:0}.topic .t b{display:block;font-size:15px}.topic .t span{font-size:11.5px;color:var(--mut)}
+.acad-head{display:flex;align-items:center;gap:12px;margin:4px 0 10px}
+.lvl-card{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 12px;margin-bottom:9px;cursor:pointer;transition:.15s}
+.lvl-card:hover{border-color:color-mix(in srgb,var(--accent) 50%,transparent)}
+.lvl-card.locked{opacity:.5;cursor:default}
+.lvl-card .t{flex:1;min-width:0}.lvl-card .t b{display:block;font-size:14px}.lvl-card .t span{font-size:11px;color:var(--mut)}
+.lvl-num{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:900;background:var(--card2);color:var(--mut);border:1px solid var(--line)}
+.lvl-num.on{background:linear-gradient(135deg,var(--ok),#46c46e);color:#06210f;border:none}
+.lesson-step{display:flex;align-items:flex-start;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:9px;font-size:15px;line-height:1.5}
+.lesson-step span{flex:1}
+.qbig{display:flex;align-items:flex-start;gap:10px;font-size:16px;font-weight:700;line-height:1.4;margin-bottom:12px}
+.qbig span{flex:1}
+.qopt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--card2);border:1.5px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;font-size:15px;color:var(--txt);cursor:pointer;transition:.15s;font-family:var(--font)}
+.qopt:hover{border-color:var(--accent)}.qopt:active{transform:scale(.99)}.qopt span{flex:1}
+.speak{flex:none;width:38px;height:38px;border-radius:50%;border:none;background:color-mix(in srgb,var(--accent) 22%,transparent);color:#fff;font-size:16px;cursor:pointer}
+.speak:active{transform:scale(.9)}
+.bigbtn{display:block;width:100%;border:none;border-radius:15px;padding:17px;font-size:17px;font-weight:800;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2));margin-top:12px;font-family:var(--font)}
+.bigbtn.ghost{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
+.bigbtn:active{transform:scale(.98)}
+.fb-ok{border-color:rgba(39,194,103,.45);background:rgba(39,194,103,.10)}
+.fb-bad{border-color:rgba(255,176,32,.45);background:rgba(255,176,32,.08)}
+.access .qbig,.access .lesson-step{font-size:20px;line-height:1.55}
+.access .qopt{font-size:19px;padding:19px}
+.access .bigbtn{font-size:20px;padding:21px}
+.access .speak{width:48px;height:48px;font-size:20px}
+.access .topic .t b,.access .lvl-card .t b{font-size:18px}
 </style>
 </head>
 <body>
@@ -363,6 +397,7 @@ button{font-family:var(--font)}
     <section id="s-rewards" class="screen pad hide"></section>
     <section id="s-chat"    class="screen pad hide"></section>
     <section id="s-hr"      class="screen pad hide"></section>
+    <section id="s-clases"  class="screen pad hide"></section>
   </main>
 
   <!-- ===================== NAV INFERIOR ===================== -->
@@ -395,6 +430,8 @@ window.CFG = {
       greet:'¡Equipo de Calidad! Tú proteges nuestra marca en cada banda.' },
     { min:111, max:130, key:'comercial',  area:'Comercial',        icon:'🤝', accent:'#8a3bd1', accent2:'#b06cf0',
       greet:'¡Equipo Comercial! Tú llevas Hules Banda y Bandamatic al mundo.' },
+    { min:131, max:170, key:'maquinaria', area:'Maquinaria',       icon:'🛠️', accent:'#0e9e8e', accent2:'#3fd6c4',
+      greet:'¡Equipo de Maquinaria! Aquí aprendes a operar las máquinas con seguridad: empezando por el Tabulador 7 y 8, y el Banbury.' },
     { min:900, max:999, key:'rrhh',       area:'Recursos Humanos', icon:'📊', accent:'#5b6cf0', accent2:'#8b8ff7', admin:true,
       greet:'Panel de RRHH: aquí ves el avance, los focos rojos y el ranking de toda la planta.' }
   ],
@@ -494,6 +531,28 @@ window.CFG = {
         { q:'Un beneficio ambiental de renovar es:', o:['Más basura','Menos consumo de hule y petróleo','Más emisiones','Ninguno'], c:1 },
         { q:'Diagnosticar al cliente significa:', o:['Venderle lo más caro','Entender cómo y dónde opera para recomendar bien','Adivinar','Nada'], c:1 },
         { q:'El seguimiento postventa sirve para:', o:['Olvidar al cliente','Dar confianza y resolver garantías o quejas','Perder ventas','Nada'], c:1 } ] }
+    ],
+    maquinaria: [
+      { id:'maq1', t:'Seguridad en maquinaria', dur:'4 min', m:true, ic:'🦺',
+        d:'Antes de operar cualquier máquina: seguros activos, EPP y conocer el paro de emergencia.', q:[
+        { q:'Antes de operar una máquina debes:', o:['Revisar seguros y ponerte el EPP','Arrancarla rápido','Usar el celular','Subir a un compañero'], c:0 },
+        { q:'El paro de emergencia sirve para:', o:['Detener la máquina al instante','Adornar','Subir la velocidad','Nada'], c:0 },
+        { q:'Si una máquina hace un ruido raro:', o:['La detienes y la reportas','La ignoras','Le pegas','Subes la temperatura'], c:0 } ] },
+      { id:'maq2', t:'Uso del Tabulador 7', dur:'5 min', m:true, ic:'🎛️',
+        d:'Cómo operar el Tabulador 7 paso a paso. (El procedimiento detallado viene del manual oficial — en carga.)', q:[
+        { q:'Antes de usar el Tabulador 7:', o:['Revisas que esté limpio y con los seguros puestos','Lo enciendes sin revisar','Lo cambias de lugar','Nada'], c:0 },
+        { q:'Si tienes una duda del procedimiento:', o:['Consultas el manual o al supervisor','Lo inventas','Apagas todo','Sigues sin preguntar'], c:0 },
+        { q:'El manual oficial sirve para:', o:['Operar de forma correcta y segura','Perder tiempo','Decorar','Nada'], c:0 } ] },
+      { id:'maq3', t:'Uso del Tabulador 8', dur:'5 min', m:true, ic:'🎛️',
+        d:'Cómo operar el Tabulador 8 paso a paso. (El procedimiento detallado viene del manual oficial — en carga.)', q:[
+        { q:'Antes de operar el Tabulador 8 revisas:', o:['Seguros, limpieza y tu EPP','Tu teléfono','El clima','Nada'], c:0 },
+        { q:'Si algo se ve mal en la máquina:', o:['La detienes y avisas al supervisor','Sigues operando','La golpeas','Nada'], c:0 },
+        { q:'Operar siguiendo el manual te ayuda a:', o:['Trabajar seguro y sin errores','Ir más lento siempre','Nada','Gastar material'], c:0 } ] },
+      { id:'maq4', t:'Mezclador Banbury (intro)', dur:'5 min', m:false, ic:'🌀',
+        d:'Qué es el Banbury y reglas básicas para operarlo con seguridad.', q:[
+        { q:'El Banbury sirve para:', o:['Mezclar el hule con los aditivos (compuesto)','Inflar llantas','Pintar','Cortar'], c:0 },
+        { q:'Cerca del Banbury debes:', o:['Mantener manos y ropa lejos de las partes móviles','Acercar las manos','Recargarte','Nada'], c:0 },
+        { q:'Antes de operar el Banbury:', o:['Revisas seguros y usas tu EPP','Arrancas de inmediato','Nada','Subes a verlo'], c:0 } ] }
     ]
   },
 
@@ -596,7 +655,9 @@ window.CFG = {
     { t:'Seguridad en la zona de prensado', k:'seguridad prensa prensado manos seguros', a:'En la zona de prensado, mantén las manos fuera del área de cierre, verifica que los seguros estén activos antes de operar y detén el equipo ante cualquier ruido o comportamiento anormal, reportándolo de inmediato.' },
     { t:'Manejo seguro de químicos y compuestos', k:'quimicos seguridad hojas de datos manejo almacenamiento', a:'Los químicos y aditivos del compuesto se manejan según sus hojas de datos de seguridad: con el EPP indicado, buena ventilación, almacenamiento correcto y sin mezclar productos. Ante dudas o derrames, seguir el procedimiento y avisar al supervisor.' },
     { t:'Costos de operación y rendimiento', k:'costos operacion rendimiento kilometrico ahorro flota', a:'Para un transportista, las llantas son un costo mayor. El renovado con banda de precurado de buen rendimiento kilométrico baja ese costo al extender la vida de la carcasa. Por eso el desempeño "por milímetro" y la durabilidad son argumentos de venta clave.' },
-    { t:'Por qué el renovado conviene a los transportistas', k:'renovado conviene transportistas roi beneficio flota', a:'El renovado conviene porque entrega un desempeño comparable al de una llanta nueva para el uso adecuado, a una fracción del costo, reduce el costo por kilómetro y es más sostenible. Una flota que gestiona bien sus carcasas y renueva con calidad ahorra de forma significativa.' }
+    { t:'Por qué el renovado conviene a los transportistas', k:'renovado conviene transportistas roi beneficio flota', a:'El renovado conviene porque entrega un desempeño comparable al de una llanta nueva para el uso adecuado, a una fracción del costo, reduce el costo por kilómetro y es más sostenible. Una flota que gestiona bien sus carcasas y renueva con calidad ahorra de forma significativa.' },
+    { t:'Tabulador 7 y 8', k:'tabulador siete ocho 7 8 maquina como usar operar', a:'El Tabulador 7 y 8 son máquinas de la planta. Para usarlos: revisa que estén limpios y con los seguros puestos, ponte tu EPP y sigue el manual oficial paso a paso. Si tienes dudas, pregunta a tu supervisor. (El procedimiento detallado está en la capacitación de Maquinaria.)' },
+    { t:'Mezclador Banbury', k:'banbury banburi mezclador mezcla compuesto hule maquina', a:'El Banbury es el mezclador donde se combina el hule con los aditivos para formar el compuesto. Regla de oro: mantén manos y ropa lejos de las partes móviles, usa tu EPP y revisa los seguros antes de operar.' }
   ],
 
   /* --- "Conectar IA real" (OPCIONAL): API de Anthropic directo desde el navegador.
@@ -627,6 +688,89 @@ window.CFG = {
     supervisor_demo:   { label:'Supervisor (demo)',     icon:'🧑‍💼', inventoryData:true,  sensitive:false },
     admin_demo:        { label:'Admin (demo)',          icon:'🛠️', inventoryData:true,  sensitive:false }
   },
+
+  /* === ACADEMIA "PROFESOR BANDI" (Clases Básicas) ========================
+     Educación básica para los trabajadores, explicada MUY simple (como a una
+     persona de 5 a 12 años) pero con respeto de adulto. Cada materia tiene
+     niveles 1-10; aquí van los primeros con contenido real y el resto queda
+     listo para llenar. Audio (🔊) en todo para quien no lee bien.
+     Puntos por nivel = (tier del tema)/10 -> tiers: corto 25, medio 50,
+     normal 100, dificil 150.  Edita/añade materias y niveles libremente.
+     ====================================================================== */
+  clasesLevels:['Primeros pasos','Básico','Practicando','Entendiendo','Avanzando','Seguro','Fuerte','Preparado','Experto práctico','Logro final'],
+  clasesTiers:{ corto:25, medio:50, normal:100, dificil:150 },
+  clases: [
+    { id:'lectura', name:'Lectura', icon:'📖', tier:'normal', desc:'Leer letras, palabras y avisos.', levels:[
+      { n:1, title:'Las letras y sílabas',
+        lesson:['Las letras se juntan y forman sílabas.','Por ejemplo: ma, me, mi, mo, mu.','Y las sílabas forman palabras: ma + no = mano. 👏'],
+        quiz:[
+          { q:'¿Qué palabra forman estas sílabas: ca - sa?', o:['casa','gato','sol'], a:0, e:'ca + sa = casa. ¡Muy bien!' },
+          { q:'¿Cuántas sílabas tiene la palabra pa-to?', o:['Una','Dos','Tres'], a:1, e:'pa-to tiene dos partes: pa y to.' },
+          { q:'La letra M con la A suena…', o:['ma','su','lo'], a:0, e:'M con A suena ma, como en mamá.' } ] },
+      { n:2, title:'Leer señales del trabajo',
+        lesson:['Las señales nos cuidan en la planta.','🚫 quiere decir PROHIBIDO.','⚠️ quiere decir PELIGRO o CUIDADO.','Si ves estas señales, ten cuidado y pregunta.'],
+        quiz:[
+          { q:'¿Qué significa la señal de prohibido 🚫?', o:['No se puede','Comer','Dormir'], a:0, e:'Significa que eso no se puede hacer.' },
+          { q:'Si ves la señal de peligro ⚠️ debes…', o:['Tener cuidado','Correr','Ignorarla'], a:0, e:'Ten cuidado y pregunta a tu jefe.' },
+          { q:'Leer las señales sirve para…', o:['Cuidarte','Perder tiempo','Nada'], a:0, e:'Las señales te cuidan a ti y a tus compañeros.' } ] }
+    ] },
+    { id:'matematicas', name:'Matemáticas', icon:'🔢', tier:'normal', desc:'Contar, sumar y usar el dinero.', levels:[
+      { n:1, title:'Contar',
+        lesson:['Contar es decir cuántas cosas hay.','Uno, dos, tres, cuatro, cinco… 🖐️','Si tienes 3 llantas y llega 1 más, ahora tienes 4.'],
+        quiz:[
+          { q:'Tienes 2 llantas y llegan 2 más. ¿Cuántas hay?', o:['3','4','5'], a:1, e:'2 más 2 son 4. ¡Muy bien!' },
+          { q:'¿Qué número va después del 5?', o:['4','6','9'], a:1, e:'Después del 5 va el 6.' },
+          { q:'Cuenta las llantas: 🛞🛞🛞. ¿Cuántas son?', o:['2','3','4'], a:1, e:'Son 3 llantas.' } ] },
+      { n:2, title:'Sumar y restar',
+        lesson:['Sumar es juntar. 2 + 3 = 5.','Restar es quitar. 5 − 2 = 3.','Es como juntar o quitar cajas. 📦'],
+        quiz:[
+          { q:'¿Cuánto es 3 + 4?', o:['6','7','8'], a:1, e:'3 más 4 son 7.' },
+          { q:'Tienes 6 herramientas y prestas 2. ¿Cuántas te quedan?', o:['4','5','8'], a:0, e:'6 menos 2 son 4.' },
+          { q:'¿Cuánto es 10 − 5?', o:['5','15','2'], a:0, e:'10 menos 5 son 5.' } ] }
+    ] },
+    { id:'ingles', name:'Inglés básico', icon:'🔤', tier:'medio', desc:'Palabras y saludos en inglés.', levels:[
+      { n:1, title:'Saludos',
+        lesson:['Hello (se dice yelo) = Hola. 👋','Thank you (se dice tenkiu) = Gracias.','Good (se dice gud) = Bien.'],
+        quiz:[
+          { q:'¿Cómo se dice Hola en inglés?', o:['Hello','Cat','Red'], a:0, e:'Hello = Hola.' },
+          { q:'Thank you quiere decir…', o:['Gracias','Adiós','Comer'], a:0, e:'Thank you = Gracias.' },
+          { q:'Good significa…', o:['Bien','Malo','Frío'], a:0, e:'Good = Bien.' } ] },
+      { n:2, title:'Palabras del trabajo',
+        lesson:['Tire (se dice taier) = Llanta. 🛞','Tool (se dice tul) = Herramienta. 🔧','Safety (se dice seifti) = Seguridad. 🦺'],
+        quiz:[
+          { q:'Tire en español es…', o:['Llanta','Mesa','Agua'], a:0, e:'Tire = llanta.' },
+          { q:'¿Cómo se dice herramienta en inglés?', o:['Tool','Tire','Good'], a:0, e:'Tool = herramienta.' },
+          { q:'Safety quiere decir…', o:['Seguridad','Comida','Sueño'], a:0, e:'Safety = seguridad.' } ] }
+    ] },
+    { id:'finanzas', name:'Dinero personal', icon:'💰', tier:'normal', desc:'Ahorrar y cuidar TU dinero (no el de la empresa).', levels:[
+      { n:1, title:'Ahorrar',
+        lesson:['Ahorrar es guardar un poquito de dinero.','Si guardas 10 pesos cada día, en un mes tienes 300. 💵','Guardar poquito, muchas veces, hace mucho.'],
+        quiz:[
+          { q:'Ahorrar es…', o:['Guardar dinero','Gastar todo','Perderlo'], a:0, e:'Ahorrar es guardar un poco para después.' },
+          { q:'Si guardas 10 pesos al día, en 10 días tienes…', o:['20','100','1'], a:1, e:'10 por 10 días son 100 pesos.' },
+          { q:'¿Cuándo conviene ahorrar?', o:['Un poco siempre','Nunca','Solo en diciembre'], a:0, e:'Guardar un poco seguido es lo mejor.' } ] },
+      { n:2, title:'Lo que necesito y lo que quiero',
+        lesson:['Primero pagas lo necesario: comida, renta, transporte. 🍚🏠','Después, si sobra, lo que quieres.','Así no te quedas sin dinero.'],
+        quiz:[
+          { q:'¿Qué pago primero?', o:['Lo necesario','Lo que quiero','Nada'], a:0, e:'Primero lo necesario: comida, renta, transporte.' },
+          { q:'La comida es algo…', o:['Necesario','Un lujo','Que no importa'], a:0, e:'Comer es necesario.' },
+          { q:'Si me sobra dinero, puedo…', o:['Ahorrar o darme un gusto','Tirarlo','Nada'], a:0, e:'Si sobra, ahorra un poco y date un gusto pequeño.' } ] }
+    ] },
+    { id:'medidas', name:'Medidas', icon:'📏', tier:'medio', desc:'Medir con regla y flexómetro (muy útil en planta).', levels:[
+      { n:1, title:'Centímetros y metros',
+        lesson:['Medir es ver qué tan largo es algo.','Un metro tiene 100 centímetros.','Un centímetro tiene 10 milímetros.'],
+        quiz:[
+          { q:'¿Cuántos centímetros tiene un metro?', o:['10','100','1000'], a:1, e:'Un metro tiene 100 centímetros.' },
+          { q:'¿Cuántos milímetros tiene un centímetro?', o:['10','5','100'], a:0, e:'Un centímetro tiene 10 milímetros.' },
+          { q:'Para medir una llanta usamos…', o:['Regla o flexómetro','Una cuchara','La mano'], a:0, e:'Usamos regla o flexómetro para medir bien.' } ] },
+      { n:2, title:'Usar el flexómetro',
+        lesson:['El flexómetro mide cosas largas. 📏','Pon el cero al inicio de lo que mides.','Lee el número donde termina.'],
+        quiz:[
+          { q:'¿Dónde pones el cero del flexómetro?', o:['Al inicio','Al final','En medio'], a:0, e:'El cero va al inicio de lo que mides.' },
+          { q:'El número donde termina es…', o:['La medida','Un error','Nada'], a:0, e:'Ahí lees la medida.' },
+          { q:'Medir bien sirve para…', o:['Que la pieza quede correcta','Perder tiempo','Nada'], a:0, e:'Una buena medida da una buena pieza.' } ] }
+    ] }
+  ],
 
   /* --- Datos de ejemplo (mock) para el Tablero de RRHH --- */
   hr: {
@@ -666,12 +810,12 @@ function statusOf(id){ return S.done[id]; }
 function doneCount(){ var c=myCourses(),n=0; for(var i=0;i<c.length;i++) if(S.done[c[i].id]) n++; return n; }
 
 /* ---------- persistencia (localStorage; si no está disponible, queda en memoria) ---------- */
-function save(){ try{ localStorage.setItem('hb_'+S.emp, JSON.stringify({points:S.points,streak:S.streak,done:S.done,attempts:S.attempts,best:S.best,redeemed:S.redeemed,role:S.role})); }catch(e){} }
+function save(){ try{ localStorage.setItem('hb_'+S.emp, JSON.stringify({points:S.points,streak:S.streak,done:S.done,attempts:S.attempts,best:S.best,redeemed:S.redeemed,role:S.role,clases:S.clases,accessible:S.accessible})); }catch(e){} }
 function load(emp){ try{ var d=localStorage.getItem('hb_'+emp); return d?JSON.parse(d):null; }catch(e){ return null; } }
 
 /* ====================== LOGIN ====================== */
 function buildLoginHelp(){
-  var demos=[['007','Almacén'],['034','Inventario'],['070','Producción'],['100','Calidad'],['120','Comercial'],['901','RRHH']];
+  var demos=[['007','Almacén'],['034','Inventario'],['070','Producción'],['100','Calidad'],['120','Comercial'],['140','Maquinaria'],['901','RRHH']];
   var row=$('tryRow'); var h='<b>Probar como…</b>';
   demos.forEach(function(d){ h+='<button class="tryc" onclick="quickLogin(\''+d[0]+'\')">'+d[1]+' <i>'+d[0]+'</i></button>'; });
   row.innerHTML=h;
@@ -688,7 +832,7 @@ function login(){
   var saved=load(n)||{};
   S={ emp:n, key:r.key, area:r.area, icon:r.icon, accent:r.accent, accent2:r.accent2, admin:!!r.admin, greet:r.greet,
       points:saved.points||0, streak:saved.streak||0, done:saved.done||{}, attempts:saved.attempts||{}, best:saved.best||{},
-      redeemed:saved.redeemed||{}, role:(saved.role||(r.admin?'admin_demo':(r.key==='almacen'?'almacen':CFG.defaultRole))), chat:[] };
+      redeemed:saved.redeemed||{}, role:(saved.role||(r.admin?'admin_demo':(r.key==='almacen'?'almacen':CFG.defaultRole))), clases:(saved.clases||{}), accessible:!!saved.accessible, chat:[] };
   // aplicar color de acento del área
   document.documentElement.style.setProperty('--accent', r.accent);
   document.documentElement.style.setProperty('--accent2', r.accent2);
@@ -713,22 +857,23 @@ var ICN={
   home:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>',
   rewards:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M3 12h18M12 8v13"/><path d="M12 8s-1-5-4-5-3 5 4 5zM12 8s1-5 4-5 3 5-4 5z"/></svg>',
   chat:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
-  hr:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="13" y="7" width="3" height="10"/></svg>'
+  hr:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="13" y="7" width="3" height="10"/></svg>',
+  clases:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 3 2 6 2s6-1 6-2v-5"/></svg>'
 };
 function buildNav(){
   var items = S.admin
     ? [['hr','Tablero',ICN.hr],['chat','Bandi',ICN.chat]]
-    : [['home','Inicio',ICN.home],['rewards','Premios',ICN.rewards],['chat','Bandi',ICN.chat]];
+    : [['home','Inicio',ICN.home],['rewards','Premios',ICN.rewards],['chat','Bandi',ICN.chat],['clases','Profe Bandi',ICN.clases]];
   $('nav').innerHTML = items.map(function(it){
     return '<button id="nav-'+it[0]+'" onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['home','course','quiz','result','rewards','chat','hr'];
+var SCREENS=['home','course','quiz','result','rewards','chat','hr','clases'];
 function show(name){
   SCREENS.forEach(function(s){ var el=$('s-'+s); if(el) el.classList.toggle('hide', s!==name); });
   // nav activo (course/quiz/result cuentan como "home")
   var navKey = (name==='course'||name==='quiz'||name==='result') ? 'home' : name;
-  ['home','rewards','chat','hr'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
+  ['home','rewards','chat','hr','clases'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
   renderTop(name);
   window.scrollTo(0,0);
   var el=$('s-'+name); if(el){ el.classList.remove('fade'); void el.offsetWidth; el.classList.add('fade'); }
@@ -738,6 +883,7 @@ function go(name){
   if(name==='rewards') return renderRewards();
   if(name==='chat') return renderChat();
   if(name==='hr') return renderHR();
+  if(name==='clases') return renderClases();
 }
 function renderTop(name){
   var sub=(name==='course'||name==='quiz'||name==='result');
@@ -971,15 +1117,9 @@ function guard(text){
   return null;
 }
 function renderChat(){
-  var online = HBKEY && navigator.onLine;
   var h='';
   h+='<div class="chathead">'+bandi('b-lg')+
-     '<div class="t"><b>Bandi</b><span><i class="dotst'+(online?' on':'')+'"></i>'+(online?'IA real ('+esc(CFG.api.model)+') 🛞':'Biblioteca Bandi · sin internet')+'</span></div>'+
-     '<button class="keybtn" onclick="setKey()">🔑 '+(HBKEY?'IA real':'Conectar IA real')+'</button></div>';
-  h+='<div class="authrow">'+
-     '<span class="authpill on" onclick="switchRole()" style="cursor:pointer" title="Cambiar perfil (solo demo)">'+esc(roleLabel())+'</span>'+
-     (HBKEY?'<span class="authpill" onclick="setModel()" style="cursor:pointer" title="Cambiar modelo">⚙️ '+esc(CFG.api.model)+'</span>':'')+
-     '</div>';
+     '<div class="t"><b>Bandi</b><span><i class="dotst on"></i>Asistente · respuestas autorizadas</span></div></div>';
   h+='<div class="msgs" id="msgs"></div>';
   h+='<div class="chips" id="chips"></div>';
   h+='<div class="composer"><input id="chatIn" placeholder="Escribe tu pregunta…" autocomplete="off"><button class="send" onclick="sendChat()" aria-label="Enviar">➤</button></div>';
@@ -1031,7 +1171,34 @@ function kb(t){
   var temas=lib.filter(function(e){return e.t;}).slice(0,8).map(function(e){return e.t;});
   return 'Eso todavía no lo tengo guardado en mi biblioteca offline 🤔. Puedo ayudarte con: '+temas.join(' · ')+'.\n\nPregúntame de otra forma, o conéctate (🔑) para una respuesta más completa. Recuerda: solo temas de llantas, hule, fábrica y clases básicas.';
 }
-/* La API de Anthropic exige que el historial empiece con un mensaje 'user'
+/* ===== RESPUESTAS CERRADAS + REGISTRO DE PREGUNTAS =====
+   Bandi solo responde desde la biblioteca AUTORIZADA (CFG.kb). Cada pregunta
+   se registra: las que SÍ tienen respuesta suman a "frecuentes"; las que NO,
+   se guardan como "sin responder" para que RRHH/dirección las revise, formule
+   una respuesta y la agregue (alimentación semanal). En el demo va a
+   localStorage; en producción esto iría a una base de datos central. */
+function kbFind(t){
+  var raw=_norm(t).split(/\s+/).filter(function(w){ return w.length>=3 && !KB_STOP[w]; });
+  var q=raw.map(function(w){ return w.length>4 ? w.replace(/(es|s)$/,'') : w; });
+  var lib=CFG.kb||[], best=null, bs=0;
+  for(var i=0;i<lib.length;i++){
+    var e=lib[i], K=' '+_norm(e.k)+' ', T=' '+_norm(e.t)+' ', A=' '+_norm(e.a)+' ', s=0;
+    for(var j=0;j<q.length;j++){ var w=q[j]; if(K.indexOf(w)>-1) s+=3; else if(T.indexOf(w)>-1) s+=2; else if(A.indexOf(w)>-1) s+=1; }
+    if(s>bs){ bs=s; best=e; }
+  }
+  if(best && bs>=3) return { hit:true, topic:(best.t||'General'), answer:best.a };
+  return { hit:false, topic:null, answer:null };
+}
+function kbTopics(){ return (CFG.kb||[]).filter(function(e){return e.t;}).map(function(e){return e.t;}); }
+function qstats(){ try{ return JSON.parse(localStorage.getItem('hb_qstats')||'null')||{freq:{},unans:{}}; }catch(e){ return {freq:{},unans:{}}; } }
+function logQ(topic,text,hit){
+  try{ var s=qstats();
+    if(hit && topic){ s.freq[topic]=(s.freq[topic]||0)+1; }
+    if(!hit){ var k=(text||'').trim().toLowerCase().slice(0,90); if(!k) return; s.unans[k]={ q:(text||'').trim(), n:(s.unans[k]?s.unans[k].n:0)+1, t:Date.now() }; }
+    localStorage.setItem('hb_qstats', JSON.stringify(s));
+  }catch(e){}
+}
+/* (Compatibilidad) la API de OpenAI/Anthropic queda lista por si en el futuro
    (el primer mensaje de Bandi es un saludo 'assistant', así que lo recortamos). */
 function apiMessages(){
   var h=S.chat.map(function(m){return {role:m.role,content:m.content};});
@@ -1044,34 +1211,17 @@ function sendChat(){
   // GUARDRAIL (online y offline): bloquea info sensible / inventario sin permiso / fuera de tema
   var blk=guard(t);
   if(blk){ setTimeout(function(){ chatBusy=false; S.chat.push({role:'assistant',content:blk}); paintChat(); }, 350); return; }
-  // Sin llave o sin internet -> biblioteca offline (gratis)
-  if(!(HBKEY && navigator.onLine)){
-    setTimeout(function(){ chatBusy=false; S.chat.push({role:'assistant',content:kb(t)}); paintChat(); }, 420);
-    return;
-  }
-  var r=curRole();
-  var sys='Eres Bandi 🛞, el asistente de capacitación de Hules Banda / Bandamatic para TRABAJADORES DE PLANTA. '+
-    'Tu único mundo permitido es: llantas y neumáticos, hule/caucho, renovado/reencauche, fabricación y procesos de fábrica, materiales, maquinaria, mantenimiento, calidad, seguridad, producto, Hules Banda/Bandamatic, capacitación del trabajador y clases básicas (matemáticas, lectura, escritura, medidas, etc.). '+
-    'NO eres un ChatGPT libre: si te preguntan algo fuera de ese mundo (deportes, política, farándula, programación, temas personales ajenos), recházalo con amabilidad y reconduce a tus temas.\n\n'+
-    'PROHIBIDO revelar información sensible de la empresa: dinero, costos, márgenes, utilidades, precios internos, salarios, nómina, finanzas, ventas, clientes o proveedores privados, contratos, decisiones ejecutivas, estrategia, datos legales o reportes de dirección. Si lo piden, di con amabilidad que es confidencial y ofrece ayuda de capacitación.\n\n'+
-    'INVENTARIO: '+(r.inventoryData
-      ? 'este usuario es de almacén/autorizado; puedes hablar de inventario a nivel de proceso y con datos solo de EJEMPLO (no inventes cifras reales).'
-      : 'este usuario NO está autorizado a datos exactos de inventario (existencias, cantidades, SKU, faltantes). Explica solo conceptos básicos: qué es inventario, cómo reportar faltante, cómo etiquetar o mover material.')+'\n\n'+
-    'ESTILO: habla MUY simple, paso a paso, como a alguien que quizá no leyó mucho, pero sin tratarlo como niño ni faltarle al respeto. Frases cortas, palabras fáciles, ejemplos de fábrica/llantas/herramientas, con calidez y algún emoji. Si la pregunta es simple, responde corto.\n\n'+
-    'EMPRESA (info pública): Hules Banda fabrica banda de precurado y hule verde, está en +50 países, lema "Tecnología que rueda por el mundo"; Bandamatic comercializa el precurado. '+
-    'El usuario trabaja en el área de '+S.area+' (perfil: '+r.label+').';
-  var msgs=[{role:'system',content:sys}].concat(apiMessages());
-  fetch(CFG.api.url,{ method:'POST',
-    headers:{'Authorization':'Bearer '+HBKEY,'content-type':'application/json'},
-    body:JSON.stringify({ model:CFG.api.model, max_tokens:CFG.api.maxTokens, temperature:0.4, messages:msgs }) })
-    .then(function(res){return res.json();})
-    .then(function(d){
-      var tx=(d && d.choices && d.choices[0] && d.choices[0].message) ? d.choices[0].message.content : '';
-      if(tx){ chatBusy=false; S.chat.push({role:'assistant',content:tx}); paintChat(); return; }
-      var em=(d && d.error && d.error.message) ? d.error.message : 'respuesta vacía';
-      chatBusy=false; S.chat.push({role:'assistant',content:'⚠️ La IA devolvió un error: '+em+'\n\nMientras tanto, en modo offline:\n\n'+kb(t)}); paintChat();
-    })
-    .catch(function(){ chatBusy=false; S.chat.push({role:'assistant',content:'⚠️ No pude conectar con la IA (revisa tu internet o tu API key con 🔑). En modo offline:\n\n'+kb(t)}); paintChat(); });
+  // RESPUESTAS CERRADAS: solo desde la biblioteca autorizada. Registra frecuencia y no-respondidas.
+  setTimeout(function(){
+    chatBusy=false;
+    var res=kbFind(t);
+    if(res.hit){ logQ(res.topic,t,true); S.chat.push({role:'assistant',content:res.answer}); }
+    else {
+      logQ(null,t,false);
+      S.chat.push({role:'assistant',content:'Todavía no tengo una respuesta autorizada para eso 🤔. Ya la registré para que el equipo la revise y la agregue pronto.\n\nMientras, sí te puedo ayudar con: '+kbTopics().slice(0,6).join(' · ')+'.'});
+    }
+    paintChat();
+  }, 420);
 }
 
 /* ====================== TABLERO RRHH (solo admin) ====================== */
@@ -1097,7 +1247,105 @@ function renderHR(){
      H.top.map(function(e,i){
        return '<div class="rank"><span class="medal">'+(i+1)+'</span><span class="rn">'+esc(e[0])+'</span><span class="tg g">'+e[1]+' pts</span></div>';
      }).join('')+'</div>';
+  // ----- Preguntas a Bandi (alimentación del chat / focos) -----
+  var Q=qstats();
+  var freq=Object.keys(Q.freq).map(function(k){return [k,Q.freq[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,6);
+  var unans=Object.keys(Q.unans).map(function(k){return Q.unans[k];}).sort(function(a,b){return b.n-a.n;}).slice(0,8);
+  h+='<div class="card"><b>❓ Preguntas más frecuentes a Bandi</b><div class="note" style="margin:2px 0 8px">Lo que más preguntan los trabajadores. Si un tema sube mucho (🔴), conviene reforzar la capacitación.</div>'+
+     (freq.length? freq.map(function(x){ var hot=x[1]>=8; return '<div class="line"><span>'+esc(x[0])+'</span><span class="tg '+(hot?'':'g')+'">'+(hot?'🔴 ':'')+x[1]+'</span></div>'; }).join('') : '<div class="note">Aún sin registros.</div>')+'</div>';
+  h+='<div class="card"><b>🆕 Preguntas SIN responder (para autorizar)</b><div class="note" style="margin:2px 0 8px">Bandi no tenía respuesta autorizada. Revísalas, formula la respuesta y se agregan a Bandi. Reporte sugerido: semanal a dirección.</div>'+
+     (unans.length? unans.map(function(u){ return '<div class="line"><span>'+esc(u.q)+'</span><span class="tg">'+u.n+'×</span></div>'; }).join('') : '<div class="note">Sin pendientes. 🎉</div>')+'</div>';
   $('s-hr').innerHTML=h; show('hr');
+}
+
+/* ====================== ACADEMIA · PROFESOR BANDI ====================== */
+function speak(text,lang){
+  try{
+    if(!('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    var clean=String(text||'').replace(/[\u{1F000}-\u{1FAFF}←-⇿⌀-➿⬀-⯿️]/gu,' ');
+    var u=new SpeechSynthesisUtterance(clean);
+    u.lang=lang||'es-MX'; u.rate=0.95; u.pitch=1.05;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function escA(s){ return esc(s).replace(/"/g,'&quot;'); }
+function speakBtn(text,lang){ return '<button class="speak" data-s="'+escA(text)+'"'+(lang?(' data-l="'+lang+'"'):'')+' onclick="event.stopPropagation();speak(this.getAttribute(\'data-s\'),this.getAttribute(\'data-l\'))" aria-label="Escuchar">🔊</button>'; }
+var clState={};
+function paintClases(h){ var el=$('s-clases'); el.innerHTML=h; el.classList.toggle('access',!!(S&&S.accessible)); show('clases'); }
+function accBar(){ var on=!!(S&&S.accessible); return '<div class="accbar"><span>🔊 Modo accesible · texto y botones grandes</span><button class="toggle'+(on?' on':'')+'" onclick="toggleAcc()">'+(on?'Activado':'Activar')+'</button></div>'; }
+function toggleAcc(){ S.accessible=!S.accessible; save(); flash(S.accessible?'🔊 Modo accesible activado':'Modo accesible desactivado'); renderClases(); }
+function findTopic(id){ for(var i=0;i<CFG.clases.length;i++) if(CFG.clases[i].id===id) return CFG.clases[i]; return null; }
+function clLevelDone(id,n){ return !!(S.clases && S.clases[id+':'+n]); }
+function clTopicDone(tp){ var c=0; for(var n=1;n<=10;n++) if(clLevelDone(tp.id,n)) c++; return c; }
+function renderClases(){
+  var h=accBar();
+  h+='<div class="guide">'+bandi('b-md')+'<div class="bub"><b>¡Bienvenido a la Academia! 🎓</b> Aprende a tu ritmo. Toca 🔊 para escuchar. Cada avance cuenta. 💪</div></div>';
+  h+='<div class="sec-t">Elige qué aprender<span class="ln"></span></div>';
+  CFG.clases.forEach(function(tp){
+    var done=clTopicDone(tp);
+    h+='<div class="topic" onclick="openTopic(\''+tp.id+'\')"><div class="thumb" style="font-size:25px">'+tp.icon+'</div><div class="t"><b>'+esc(tp.name)+'</b><span>'+esc(tp.desc)+'</span><div class="prog"><i style="width:'+(done*10)+'%"></i></div></div><span class="pill '+(done>=10?'done':'pend')+'">'+done+'/10</span></div>';
+  });
+  h+='<div class="note">Pronto más materias: Español y escritura, Comprensión, Tecnología y celular, Salud, Comunicación y Seguridad para la vida.</div>';
+  paintClases(h);
+}
+function openTopic(id){
+  var tp=findTopic(id); if(!tp) return; clState.topic=tp;
+  var h='<button class="back" onclick="renderClases()">‹ Materias</button>';
+  h+='<div class="acad-head">'+bandi('b-md')+'<div><b style="font-size:18px">'+esc(tp.name)+'</b><div class="note" style="margin-top:2px;display:flex;gap:8px;align-items:center">'+esc(tp.desc)+speakBtn(tp.name+'. '+tp.desc)+'</div></div></div>';
+  h+='<div class="sec-t">Niveles<span class="ln"></span></div>';
+  for(var n=1;n<=10;n++){
+    var lv=tp.levels[n-1], done=clLevelDone(tp.id,n), name=CFG.clasesLevels[n-1];
+    if(lv){ h+='<div class="lvl-card" onclick="openLesson(\''+tp.id+'\','+n+')"><span class="lvl-num'+(done?' on':'')+'">'+(done?'✓':n)+'</span><div class="t"><b>Nivel '+n+' · '+esc(lv.title)+'</b><span>'+esc(name)+'</span></div><span class="pill '+(done?'done':'pend')+'">'+(done?'Hecho':'Empezar')+'</span></div>'; }
+    else { h+='<div class="lvl-card locked"><span class="lvl-num">'+n+'</span><div class="t"><b>Nivel '+n+' · '+esc(name)+'</b><span>Pronto 🔒</span></div></div>'; }
+  }
+  paintClases(h);
+}
+function openLesson(id,n){
+  var tp=findTopic(id), lv=tp.levels[n-1]; if(!lv) return;
+  clState.topic=tp; clState.level=lv; clState.qi=0;
+  var h='<button class="back" onclick="openTopic(\''+id+'\')">‹ Niveles</button>';
+  h+='<div class="acad-head">'+bandi('b-md')+'<div><b style="font-size:17px">Nivel '+n+' · '+esc(lv.title)+'</b><div class="note">Lee o escucha. Luego una práctica corta. 💪</div></div></div>';
+  h+='<button class="bigbtn ghost" data-s="'+escA(lv.lesson.join('. '))+'" onclick="speak(this.getAttribute(\'data-s\'))">🔊 Escuchar la lección</button>';
+  lv.lesson.forEach(function(step){ h+='<div class="lesson-step"><span>'+esc(step)+'</span>'+speakBtn(step)+'</div>'; });
+  h+='<button class="bigbtn" onclick="startCl()">Empezar práctica →</button>';
+  paintClases(h);
+}
+function startCl(){ clState.qi=0; renderClQuiz(); }
+function renderClQuiz(){
+  var tp=clState.topic, lv=clState.level, q=lv.quiz[clState.qi];
+  var lang=(tp.id==='ingles')?'en-US':null;
+  var h='<button class="back" onclick="openLesson(\''+tp.id+'\','+lv.n+')">‹ Lección</button>';
+  h+='<div class="acad-head">'+bandi('b-sm')+'<div><b>Pregunta '+(clState.qi+1)+' de '+lv.quiz.length+'</b></div></div>';
+  h+='<div class="card"><div class="qbig"><span>'+esc(q.q)+'</span>'+speakBtn(q.q)+'</div>';
+  q.o.forEach(function(opt,j){ h+='<div class="qopt" onclick="answerCl('+j+')"><span>'+esc(opt)+'</span>'+speakBtn(opt,lang)+'</div>'; });
+  h+='</div>';
+  paintClases(h);
+  if(S&&S.accessible) setTimeout(function(){ speak(q.q); }, 250);
+}
+function answerCl(j){
+  var tp=clState.topic, lv=clState.level, q=lv.quiz[clState.qi], ok=(j===q.a);
+  var fb= ok ? '¡Muy bien! Esa es la respuesta correcta. Vas avanzando. 🌟' : 'No pasa nada. La respuesta correcta es: '+q.o[q.a]+'. Te explico fácil: '+q.e;
+  var last=(clState.qi>=lv.quiz.length-1);
+  var h='<div class="acad-head">'+bandi((ok?'cheer ':'')+'b-md')+'<div><b style="font-size:18px">'+(ok?'¡Correcto! ✅':'¡Casi! 💪')+'</b></div></div>';
+  h+='<div class="card '+(ok?'fb-ok':'fb-bad')+'"><div class="qbig"><span>'+esc(fb)+'</span>'+speakBtn(fb)+'</div></div>';
+  h+='<button class="bigbtn" onclick="'+(last?'finishCl()':'nextCl()')+'">'+(last?'Terminar nivel ✓':'Siguiente →')+'</button>';
+  paintClases(h);
+  if(S&&S.accessible) speak(ok?'¡Muy bien!':('La respuesta correcta es '+q.o[q.a]));
+}
+function nextCl(){ clState.qi++; renderClQuiz(); }
+function finishCl(){
+  var tp=clState.topic, lv=clState.level, key=tp.id+':'+lv.n;
+  if(!S.clases) S.clases={};
+  var first=!S.clases[key]; S.clases[key]=true;
+  var pts=Math.round((CFG.clasesTiers[tp.tier]||100)/10);
+  if(first){ S.points+=pts; } save(); renderTop();
+  var h='<div class="result"><span class="bandi cheer b-xl"><svg class="bv"><use href="#bandi"/></svg></span><div class="emo">🎉</div><h2>¡Nivel '+lv.n+' completado!</h2>';
+  h+='<p class="ms">'+(first?('Ganaste +'+pts+' puntos. '):'Repaso hecho. ')+'¡Cada avance cuenta! Sigue así. 💪</p>';
+  h+='<div style="max-width:320px;margin:0 auto">'+'<button class="bigbtn" data-s="'+escA('¡Felicidades! Completaste el nivel '+lv.n+'. '+(first?('Ganaste '+pts+' puntos. '):'')+'Cada avance cuenta.')+'" onclick="speak(this.getAttribute(\'data-s\'))">🔊 Escuchar</button>';
+  h+='<button class="bigbtn" onclick="openTopic(\''+tp.id+'\')">Seguir aprendiendo →</button>';
+  h+='<button class="bigbtn ghost" onclick="renderClases()">Otras materias</button></div></div>';
+  paintClases(h); burst();
 }
 
 /* ====================== CONFETTI ====================== */
@@ -1122,6 +1370,7 @@ function getCss(v){ return getComputedStyle(document.documentElement).getPropert
 (function init(){
   try{ HBKEY=localStorage.getItem('hb_key')||''; }catch(e){}   // recordar la IA real entre sesiones
   try{ var mm=localStorage.getItem('hb_model'); if(mm && mm.indexOf('claude')===-1) CFG.api.model=mm; }catch(e){}   // recordar el modelo elegido
+  try{ if(!localStorage.getItem('hb_qstats')){ localStorage.setItem('hb_qstats', JSON.stringify({ freq:{ 'Seguridad: uso de EPP':9, 'Banda de precurado':7, 'Presión de inflado':5, 'Tipo de eje':4 }, unans:{ 'cada cuanto se cambia el aceite del banbury':{q:'¿Cada cuánto se cambia el aceite del Banbury?',n:6,t:Date.now()}, 'que guantes uso para quimicos':{q:'¿Qué guantes uso para químicos?',n:4,t:Date.now()}, 'como se calibra el tabulador 7':{q:'¿Cómo se calibra el Tabulador 7?',n:3,t:Date.now()} } })); } }catch(e){}
   buildLoginHelp();
   var inp=$('inEmp');
   if(inp) inp.addEventListener('keydown',function(e){ if(e.key==='Enter') login(); });

@@ -983,10 +983,10 @@ function renderQuiz(){
   var h='';
   h+='<div class="guide">'+bandi('b-md')+'<div class="bub">'+(cur.exempt?'Modo <b>exentar</b>: responde y demuestra que ya lo dominas. ':'')+'Elige una respuesta por pregunta. ¡Confío en ti!</div></div>';
   qs.forEach(function(q,i){
-    h+='<div class="card"><div class="q"><span class="qn">PREGUNTA '+(i+1)+' DE '+qs.length+'</span><b>'+esc(q.q)+'</b>';
+    h+='<div class="card"><div class="q"><span class="qn">PREGUNTA '+(i+1)+' DE '+qs.length+'</span><div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:9px"><b style="flex:1;margin:0">'+esc(q.q)+'</b>'+speakBtn(q.q)+'</div>';
     q.o.forEach(function(o,j){
       var sel=cur.answers[i]===j?' sel':'';
-      h+='<div class="opt'+sel+'" onclick="pick('+i+','+j+')"><span class="dot"></span><span>'+esc(o)+'</span></div>';
+      h+='<div class="opt'+sel+'" onclick="pick('+i+','+j+')"><span class="dot"></span><span style="flex:1">'+esc(o)+'</span>'+speakBtn(o)+'</div>';
     });
     h+='</div></div>';
   });
@@ -1046,18 +1046,18 @@ function showResult(){
     }
     h+=bandi('cheer b-xl')+'<div class="emo">'+(score===qs.length?'🏆':'🎉')+'</div>'+
        '<h2>'+(cur.exempt?'¡Exentado!':'¡Aprobado!')+'</h2>'+
-       '<p class="ms">'+(score===qs.length?'¡Puntaje perfecto! Eres un crack.':'¡Muy bien! Dominaste lo importante.')+'</p>'+
+       '<p class="ms">'+(score===qs.length?'¡Puntaje perfecto! Eres un crack.':'¡Muy bien! Dominaste lo importante.')+'</p><div style="text-align:center;margin:-2px 0 8px">'+speakBtn((cur.exempt?'¡Exentado! ':'¡Aprobado! ')+(score===qs.length?'¡Puntaje perfecto! Eres un crack.':'¡Muy bien! Dominaste lo importante.'))+'</div>'+
        ring+bonusLines+
        '<button class="btn" onclick="go(\'home\')">Seguir aprendiendo →</button>'+
        '<button class="btn sec w" style="margin-top:10px" onclick="go(\'rewards\')">Ver mis premios 🎁</button>';
   }else{
     var review='<div class="card review">'+qs.map(function(q,i){
       var your=cur.answers[i], okTxt=q.o[q.c];
-      return '<div class="qr"><b>'+esc(q.q)+'</b><div class="good">✓ <span>Respuesta correcta: '+esc(okTxt)+'</span></div></div>';
+      return '<div class="qr"><div style="display:flex;gap:8px;align-items:flex-start"><b style="flex:1">'+esc(q.q)+'</b>'+speakBtn('La pregunta dice: '+q.q+'. La respuesta correcta es: '+okTxt)+'</div><div class="good">✓ <span>Respuesta correcta: '+esc(okTxt)+'</span></div></div>';
     }).join('')+'</div>';
     h+=bandi('b-xl')+'<div class="emo">💪</div>'+
        '<h2>¡Casi! Vamos de nuevo</h2>'+
-       '<p class="ms">Acertaste '+score+' de '+qs.length+'. <b>No pasa nada</b> — sin castigos ni multas. Repasa y reinténtalo, ¡seguro lo logras!</p>'+
+       '<p class="ms">Acertaste '+score+' de '+qs.length+'. <b>No pasa nada</b> — sin castigos ni multas. Repasa y reinténtalo, ¡seguro lo logras!</p><div style="text-align:center;margin:-2px 0 8px">'+speakBtn('Acertaste '+score+' de '+qs.length+'. No pasa nada, sin castigos. Repasa y vuelve a intentarlo, seguro lo logras.')+'</div>'+
        ring+
        '<div class="sec-t" style="margin-top:6px">Para repasar<span class="ln"></span></div>'+review+
        '<button class="btn" onclick="startQuiz('+cur.exempt+')">Reintentar quiz 🔄</button>'+
@@ -1132,7 +1132,7 @@ function paintChat(){
   var m=$('msgs'); if(!m) return;
   var h=S.chat.map(function(x){
     if(x.role==='user') return '<div class="m user"><div class="bub">'+esc(x.content)+'</div></div>';
-    return '<div class="m bot">'+bandi('b-sm')+'<div class="bub">'+esc(x.content)+'</div></div>';
+    return '<div class="m bot">'+bandi('b-sm')+'<div class="bub">'+esc(x.content)+'<div style="margin-top:7px">'+speakBtn(x.content)+'</div></div></div>';
   }).join('');
   if(chatBusy) h+='<div class="m bot">'+bandi('b-sm')+'<div class="bub"><div class="typing"><i></i><i></i><i></i></div></div></div>';
   m.innerHTML=h; m.scrollTop=m.scrollHeight;
@@ -1257,14 +1257,28 @@ function renderHR(){
 }
 
 /* ====================== ACADEMIA · PROFESOR BANDI ====================== */
+var HBVOICES=[];
+function loadVoices(){ try{ if('speechSynthesis' in window){ var v=speechSynthesis.getVoices(); if(v&&v.length) HBVOICES=v; } }catch(e){} }
+function pickVoice(lang){
+  var vs=HBVOICES.length?HBVOICES:[]; if(!vs.length){ loadVoices(); vs=HBVOICES; }
+  if(!vs.length) return null;
+  var nrm=function(v){ return (v.lang||'').toLowerCase().replace('_','-'); };
+  if(lang && lang.toLowerCase().indexOf('en')===0){ return vs.filter(function(v){return /en-us/.test(nrm(v));})[0] || vs.filter(function(v){return /^en/.test(nrm(v));})[0] || null; }
+  var pref=['es-mx','es-419','es-us','es-co','es-es','es'];
+  for(var i=0;i<pref.length;i++){ var m=vs.filter(function(v){ return nrm(v).indexOf(pref[i])===0; }); if(m.length){ var nat=m.filter(function(v){return /paulina|juan|google|microsoft|natural|sabina|luciana|monica/i.test(v.name);}); return nat[0]||m[0]; } }
+  return null;
+}
+try{ if('speechSynthesis' in window){ loadVoices(); window.speechSynthesis.onvoiceschanged=loadVoices; } }catch(e){}
 function speak(text,lang){
   try{
     if(!('speechSynthesis' in window)) return;
     speechSynthesis.cancel();
     var clean=String(text||'').replace(/[\u{1F000}-\u{1FAFF}←-⇿⌀-➿⬀-⯿️]/gu,' ');
-    var u=new SpeechSynthesisUtterance(clean);
-    u.lang=lang||'es-MX'; u.rate=0.95; u.pitch=1.05;
-    speechSynthesis.speak(u);
+    if(!clean) return;
+    var u=new SpeechSynthesisUtterance(clean.replace(/\s+/g,' ').trim());
+    var v=pickVoice(lang); if(v){ u.voice=v; u.lang=v.lang; } else { u.lang=lang||'es-MX'; }
+    u.rate=0.78; u.pitch=1.0; u.volume=1;
+    setTimeout(function(){ try{ window.speechSynthesis.speak(u); }catch(e){} }, 80);
   }catch(e){}
 }
 function escA(s){ return esc(s).replace(/"/g,'&quot;'); }

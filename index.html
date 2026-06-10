@@ -604,15 +604,29 @@ window.CFG = {
          Esto solo aplica si el empleado pega una API key con el botón 🔑.
          Modelo económico Sonnet 4.6; se puede cambiar aquí o desde el chat con ⚙️. --- */
   api: {
-    model:'claude-sonnet-4-6',
-    fallbacks:[],
-    url:'https://api.anthropic.com/v1/messages',
-    maxTokens:1200
+    provider:'openai',          // motor online (OpenAI). Offline = biblioteca local (gratis)
+    model:'gpt-4o-mini',        // capaz y muy barato; cambiable desde el chat (⚙️) o aquí
+    url:'https://api.openai.com/v1/chat/completions',
+    maxTokens:900
   },
 
   /* --- Código para AUTORIZAR a Bandi a hablar de información INTERNA/confidencial.
          RRHH (admin) queda autorizado automáticamente; los demás usan este código. --- */
   authCode:'2468',
+
+  /* === ROLES Y PERMISOS (demo) ============================================
+     Define qué puede consultar cada perfil. En el producto final esto se liga
+     al ID real del trabajador, su área y permisos (login + base de datos).
+       · inventoryData: puede pedir datos/cantidades exactas de inventario
+       · sensitive:     puede tocar info interna/ejecutiva (en el demo: nadie)
+     ====================================================================== */
+  defaultRole:'trabajador_planta',
+  roles: {
+    trabajador_planta: { label:'Trabajador de planta', icon:'👷', inventoryData:false, sensitive:false },
+    almacen:           { label:'Almacén / Inventario',  icon:'📦', inventoryData:true,  sensitive:false },
+    supervisor_demo:   { label:'Supervisor (demo)',     icon:'🧑‍💼', inventoryData:true,  sensitive:false },
+    admin_demo:        { label:'Admin (demo)',          icon:'🛠️', inventoryData:true,  sensitive:false }
+  },
 
   /* --- Datos de ejemplo (mock) para el Tablero de RRHH --- */
   hr: {
@@ -652,7 +666,7 @@ function statusOf(id){ return S.done[id]; }
 function doneCount(){ var c=myCourses(),n=0; for(var i=0;i<c.length;i++) if(S.done[c[i].id]) n++; return n; }
 
 /* ---------- persistencia (localStorage; si no está disponible, queda en memoria) ---------- */
-function save(){ try{ localStorage.setItem('hb_'+S.emp, JSON.stringify({points:S.points,streak:S.streak,done:S.done,attempts:S.attempts,best:S.best,redeemed:S.redeemed})); }catch(e){} }
+function save(){ try{ localStorage.setItem('hb_'+S.emp, JSON.stringify({points:S.points,streak:S.streak,done:S.done,attempts:S.attempts,best:S.best,redeemed:S.redeemed,role:S.role})); }catch(e){} }
 function load(emp){ try{ var d=localStorage.getItem('hb_'+emp); return d?JSON.parse(d):null; }catch(e){ return null; } }
 
 /* ====================== LOGIN ====================== */
@@ -674,7 +688,7 @@ function login(){
   var saved=load(n)||{};
   S={ emp:n, key:r.key, area:r.area, icon:r.icon, accent:r.accent, accent2:r.accent2, admin:!!r.admin, greet:r.greet,
       points:saved.points||0, streak:saved.streak||0, done:saved.done||{}, attempts:saved.attempts||{}, best:saved.best||{},
-      redeemed:saved.redeemed||{}, authorized:false, chat:[] };
+      redeemed:saved.redeemed||{}, role:(saved.role||(r.admin?'admin_demo':(r.key==='almacen'?'almacen':CFG.defaultRole))), chat:[] };
   // aplicar color de acento del área
   document.documentElement.style.setProperty('--accent', r.accent);
   document.documentElement.style.setProperty('--accent2', r.accent2);
@@ -936,29 +950,35 @@ function redeem(i){
 
 /* ====================== CHAT BANDI ====================== */
 var chatBusy=false;
-/* ¿El usuario puede recibir información INTERNA/confidencial? RRHH siempre; los demás con código. */
-function isAuthorized(){ return !!(S && (S.admin || S.authorized)); }
-function authorize(){
-  if(S && S.admin){ flash('RRHH ya está autorizado'); return; }
-  if(isAuthorized()){ S.authorized=false; flash('🔒 Autorización retirada'); renderChat(); return; }
-  var code=window.prompt('Código de autorización para que Bandi pueda tratar información INTERNA de Hules Banda (recetas, parámetros, clientes…). Pídelo a RRHH:','');
-  if(code===null) return;
-  if((code||'').trim()===CFG.authCode){ S.authorized=true; flash('🔓 Autorización concedida'); }
-  else flash('Código incorrecto');
-  renderChat();
+/* ===== ROLES Y GUARDRAILS DE BANDI (aplican ONLINE y OFFLINE) =====
+   Bandi solo responde dentro del universo permitido (llantas, hule, fábrica,
+   capacitación, clases básicas) y NUNCA expone información sensible de la
+   empresa. Los datos exactos de inventario dependen del rol del usuario. */
+function curRole(){ return (S && CFG.roles[S.role]) || CFG.roles[CFG.defaultRole]; }
+function roleLabel(){ var r=curRole(); return r.icon+' '+r.label; }
+function switchRole(){
+  var ids=Object.keys(CFG.roles), i=ids.indexOf(S.role), next=ids[(i+1)%ids.length];
+  S.role=next; save(); flash('Perfil demo: '+CFG.roles[next].label); renderChat();
+}
+function guard(text){
+  var t=_norm(text), r=curRole();
+  var SENS=['salario','sueldo','nomina','cuanto gana','cuanto ganan','cuanto cobran','margen','utilidad','utilidades','ganancia','ganancias','rentabilidad','dividendo','accionista','dueno','propietario','director general','directiva','ejecutiv','gerente general','estrategia de la empresa','plan estrategico','estados financieros','finanzas de la empresa','presupuesto de la empresa','facturacion','cuanto factura','cuanto vende la empresa','ventas de la empresa','ingresos de la empresa','contrato confidencial','informacion confidencial','reporte de direccion','reportes de direccion','cuanto cuesta producir','costo de produccion','precio interno','demanda legal','juicio'];
+  if(!r.sensitive){ for(var i=0;i<SENS.length;i++){ if(t.indexOf(SENS[i])>-1) return 'Esa información es confidencial de la empresa 🔒. Mi función es ayudarte con capacitación, seguridad, procesos de planta, llantas, hule y aprendizaje básico. ¿Te ayudo con alguno de esos?'; } }
+  var INV=['cuanto stock','cuantas hay','cuantos hay','cuanto hay','existencia','stock de','stock actual','cuantas llantas hay','cuantas bandas hay','cuantas piezas','cuanto material hay','cuanto inventario hay','niveles de stock','disponibilidad de','sku','faltante actual','cantidades exactas','cuanto producto hay'];
+  if(!r.inventoryData){ for(var k=0;k<INV.length;k++){ if(t.indexOf(INV[k])>-1) return 'Los datos exactos de inventario son solo para el área de almacén o personal autorizado 📦. Pero sí puedo explicarte cómo reportar material faltante o cómo funciona el inventario de forma básica.'; } }
+  var OFF=['futbol','clima','noticia','politic','presidente','elecciones','chiste','poema','horoscopo','receta de cocina','pelicula','serie de tv','cancion','letra de','novia','novio','quien te creo','que modelo eres','eres chatgpt','eres gpt','programa en python','bitcoin','criptomoneda'];
+  for(var j=0;j<OFF.length;j++){ if(t.indexOf(OFF[j])>-1) return 'Soy el asistente de Hules Banda 🛞 y solo te ayudo con llantas, hule, renovado, procesos de fábrica, seguridad, calidad, mantenimiento, materiales y clases básicas. ¿Empezamos con alguno de esos temas?'; }
+  return null;
 }
 function renderChat(){
   var online = HBKEY && navigator.onLine;
-  var authed = isAuthorized();
   var h='';
   h+='<div class="chathead">'+bandi('b-lg')+
-     '<div class="t"><b>Bandi</b><span><i class="dotst'+(online?' on':'')+'"></i>'+(online?'IA real · respuestas ilimitadas 🛞':'Biblioteca Bandi · sin internet')+'</span></div>'+
+     '<div class="t"><b>Bandi</b><span><i class="dotst'+(online?' on':'')+'"></i>'+(online?'IA real ('+esc(CFG.api.model)+') 🛞':'Biblioteca Bandi · sin internet')+'</span></div>'+
      '<button class="keybtn" onclick="setKey()">🔑 '+(HBKEY?'IA real':'Conectar IA real')+'</button></div>';
   h+='<div class="authrow">'+
-     (authed
-       ? '<span class="authpill on">🔓 Info interna '+(S.admin?'(RRHH)':'autorizada')+'</span>'+(S.admin?'':'<button class="lnkbtn" onclick="authorize()">Quitar</button>')
-       : '<span class="authpill">🔒 Info interna bloqueada</span><button class="lnkbtn" onclick="authorize()">Autorizar</button>')+
-     (HBKEY?'<span class="authpill" onclick="setModel()" style="cursor:pointer" title="Cambiar modelo de Claude">⚙️ '+esc(CFG.api.model)+'</span>':'')+
+     '<span class="authpill on" onclick="switchRole()" style="cursor:pointer" title="Cambiar perfil (solo demo)">'+esc(roleLabel())+'</span>'+
+     (HBKEY?'<span class="authpill" onclick="setModel()" style="cursor:pointer" title="Cambiar modelo">⚙️ '+esc(CFG.api.model)+'</span>':'')+
      '</div>';
   h+='<div class="msgs" id="msgs"></div>';
   h+='<div class="chips" id="chips"></div>';
@@ -981,11 +1001,11 @@ function paintChat(){
 }
 function quickAsk(btn){ $('chatIn').value=btn.textContent; sendChat(); }
 function setKey(){
-  var k=window.prompt('Conecta el motor REAL de Claude ('+CFG.api.model+') para respuestas ILIMITADAS y expertas sobre llantas, hule y el mundo 🛞.\n\nPega tu API key de Anthropic (sk-ant-...). Se guarda solo en este dispositivo. Déjalo vacío para usar el modo offline.', HBKEY||'');
+  var k=window.prompt('Conecta la IA real (OpenAI '+CFG.api.model+') para respuestas más completas sobre llantas, hule, fábrica y capacitación 🛞.\n\nPega tu API key de OpenAI (sk-...). Se guarda solo en este dispositivo. Déjalo vacío para usar la biblioteca offline (gratis).', HBKEY||'');
   if(k!==null){ HBKEY=(k||'').trim(); try{ if(HBKEY) localStorage.setItem('hb_key',HBKEY); else localStorage.removeItem('hb_key'); }catch(e){} flash(HBKEY?'✅ IA real conectada':'Modo offline activado'); renderChat(); }
 }
 function setModel(){
-  var m=window.prompt('Modelo de Claude a usar (avanzado).\nEjemplos: claude-opus-4-8 , claude-sonnet-4-6', CFG.api.model);
+  var m=window.prompt('Modelo de OpenAI a usar (avanzado).\nEjemplos: gpt-4o-mini , gpt-4o', CFG.api.model);
   if(m===null) return; m=(m||'').trim(); if(!m) return;
   CFG.api.model=m; try{ localStorage.setItem('hb_model',m); }catch(e){}
   flash('Modelo: '+m); renderChat();
@@ -996,6 +1016,7 @@ function setModel(){
 function _norm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9\s]/g,' '); }
 var KB_STOP={de:1,la:1,el:1,los:1,las:1,un:1,una:1,unos:1,unas:1,que:1,en:1,por:1,con:1,para:1,del:1,al:1,lo:1,le:1,les:1,se:1,su:1,sus:1,mi:1,tu:1,es:1,son:1,esta:1,este:1,como:1,cual:1,cuales:1,sobre:1,mas:1,muy:1,me:1,te:1,nos:1,hay:1,si:1,no:1,pero:1,porque:1,cuando:1,donde:1,quien:1,cuanto:1,cuanta:1,dime:1,quiero:1,saber:1,puedes:1,decir:1,explica:1,explicame:1,sirve:1}
 function kb(t){
+  var g=guard(t); if(g) return g;
   var raw=_norm(t).split(/\s+/).filter(function(w){ return w.length>=3 && !KB_STOP[w]; });
   var q=raw.map(function(w){ return w.length>4 ? w.replace(/(es|s)$/,'') : w; });
   var lib=CFG.kb||[], best=null, bs=0;
@@ -1008,7 +1029,7 @@ function kb(t){
   }
   if(best && bs>=3) return best.a;
   var temas=lib.filter(function(e){return e.t;}).slice(0,8).map(function(e){return e.t;});
-  return 'Mmm, eso aún no está en mi biblioteca 🤔. Puedo ayudarte con: '+temas.join(' · ')+'.\n\nPregúntame de otra forma, o toca 🔑 para conectar la IA real (sin límites).';
+  return 'Eso todavía no lo tengo guardado en mi biblioteca offline 🤔. Puedo ayudarte con: '+temas.join(' · ')+'.\n\nPregúntame de otra forma, o conéctate (🔑) para una respuesta más completa. Recuerda: solo temas de llantas, hule, fábrica y clases básicas.';
 }
 /* La API de Anthropic exige que el historial empiece con un mensaje 'user'
    (el primer mensaje de Bandi es un saludo 'assistant', así que lo recortamos). */
@@ -1020,41 +1041,37 @@ function apiMessages(){
 function sendChat(){
   var inp=$('chatIn'); var t=(inp.value||'').trim(); if(!t||chatBusy) return;
   S.chat.push({role:'user',content:t}); inp.value=''; chatBusy=true; paintChat();
-  // Sin llave o sin internet -> modo offline (base de conocimiento local de Hules Banda)
+  // GUARDRAIL (online y offline): bloquea info sensible / inventario sin permiso / fuera de tema
+  var blk=guard(t);
+  if(blk){ setTimeout(function(){ chatBusy=false; S.chat.push({role:'assistant',content:blk}); paintChat(); }, 350); return; }
+  // Sin llave o sin internet -> biblioteca offline (gratis)
   if(!(HBKEY && navigator.onLine)){
-    setTimeout(function(){ chatBusy=false; S.chat.push({role:'assistant',content:kb(t)}); paintChat(); }, 460);
+    setTimeout(function(){ chatBusy=false; S.chat.push({role:'assistant',content:kb(t)}); paintChat(); }, 420);
     return;
   }
-  var authed=isAuthorized();
-  var sys='Eres Bandi 🛞, el asistente experto de Hules Banda / Bandamatic, impulsado por Claude (Opus 4.8). '+
-    'Eres un especialista de clase mundial en LLANTAS, HULE y el NEGOCIO del renovado, con conocimiento amplísimo. Responde con seguridad, precisión y toda la profundidad e información que sea útil.\n\n'+
-    'ENFOQUE (dale MUCHA fuerza): llantas y neumáticos (cómo funcionan, partes, tipos, medidas, materiales, vulcanización, dibujo, presión, desgaste, seguridad), hule natural y sintético, banda de precurado y renovado/reencauche, procesos (mezclado, extruido, prensado/curado), la industria y el mercado del hule y las llantas, clientes y empresas del sector (p. ej. Goodyear), logística, calidad, ventas y atención. En estos temas expláyate con datos, ejemplos y consejos prácticos.\n\n'+
-    'OTROS TEMAS (menos fuerza): si preguntan algo ajeno al negocio, responde breve y correcto, y regresa con calidez al mundo de Hules Banda. Nunca te niegues a ayudar; solo prioriza el negocio.\n\n'+
-    'ESTILO: español claro y amigable, fácil de entender (que hasta un joven lo capte), motivador y con algún emoji. Ajusta el largo a la pregunta: simple si es simple, a fondo si piden detalle.\n\n'+
-    'EMPRESA (info pública): Hules Banda fabrica banda de precurado y hule verde (hule sin vulcanizar), presencia en +50 países, lema "Tecnología que rueda por el mundo"; Bandamatic es la empresa hermana que comercializa el precurado; líneas SAP, UM, ZY2M, BMB, AT, SAW, DT, MLZ, SAM.\n\n'+
-    'ÚNICO LÍMITE: '+(authed
-      ? 'el usuario está autorizado; también puedes tratar información interna con prudencia, recordando que es confidencial.'
-      : 'no compartas secretos internos concretos (recetas/fórmulas exactas, parámetros confidenciales, listas de clientes, precios o contratos); da la versión general pública y sugiere validar lo interno con el supervisor o RRHH. Todo lo demás respóndelo con libertad.')+'\n\n'+
-    'En seguridad da la guía y sugiere confirmar con el supervisor. El usuario trabaja en el área de '+S.area+'.';
-  var models=[CFG.api.model].concat(CFG.api.fallbacks||[]);
-  var tryModel=function(i){
-    fetch(CFG.api.url,{ method:'POST',
-      headers:{'x-api-key':HBKEY,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({ model:models[i], max_tokens:CFG.api.maxTokens, system:sys, messages:apiMessages() }) })
-      .then(function(r){return r.json();})
-      .then(function(d){
-        if(d && d.content && d.content.map){
-          var tx=d.content.map(function(c){return c.text||'';}).join('');
-          chatBusy=false; S.chat.push({role:'assistant',content:tx||kb(t)}); paintChat(); return;
-        }
-        var em=(d && d.error && d.error.message) ? d.error.message : 'respuesta vacía';
-        // si el modelo no existe en la cuenta, prueba el siguiente de la lista de fallback
-        if(/model|not[_ ]?found|404/i.test(em) && i < models.length-1){ tryModel(i+1); return; }
-        chatBusy=false; S.chat.push({role:'assistant',content:'⚠️ La IA devolvió un error: '+em+'\n\nMientras tanto te respondo en modo offline:\n\n'+kb(t)}); paintChat();
-      })
-      .catch(function(){ chatBusy=false; S.chat.push({role:'assistant',content:'⚠️ No pude conectar con la IA (revisa tu internet o tu API key con el botón 🔑). En modo offline:\n\n'+kb(t)}); paintChat(); });
-  };
-  tryModel(0);
+  var r=curRole();
+  var sys='Eres Bandi 🛞, el asistente de capacitación de Hules Banda / Bandamatic para TRABAJADORES DE PLANTA. '+
+    'Tu único mundo permitido es: llantas y neumáticos, hule/caucho, renovado/reencauche, fabricación y procesos de fábrica, materiales, maquinaria, mantenimiento, calidad, seguridad, producto, Hules Banda/Bandamatic, capacitación del trabajador y clases básicas (matemáticas, lectura, escritura, medidas, etc.). '+
+    'NO eres un ChatGPT libre: si te preguntan algo fuera de ese mundo (deportes, política, farándula, programación, temas personales ajenos), recházalo con amabilidad y reconduce a tus temas.\n\n'+
+    'PROHIBIDO revelar información sensible de la empresa: dinero, costos, márgenes, utilidades, precios internos, salarios, nómina, finanzas, ventas, clientes o proveedores privados, contratos, decisiones ejecutivas, estrategia, datos legales o reportes de dirección. Si lo piden, di con amabilidad que es confidencial y ofrece ayuda de capacitación.\n\n'+
+    'INVENTARIO: '+(r.inventoryData
+      ? 'este usuario es de almacén/autorizado; puedes hablar de inventario a nivel de proceso y con datos solo de EJEMPLO (no inventes cifras reales).'
+      : 'este usuario NO está autorizado a datos exactos de inventario (existencias, cantidades, SKU, faltantes). Explica solo conceptos básicos: qué es inventario, cómo reportar faltante, cómo etiquetar o mover material.')+'\n\n'+
+    'ESTILO: habla MUY simple, paso a paso, como a alguien que quizá no leyó mucho, pero sin tratarlo como niño ni faltarle al respeto. Frases cortas, palabras fáciles, ejemplos de fábrica/llantas/herramientas, con calidez y algún emoji. Si la pregunta es simple, responde corto.\n\n'+
+    'EMPRESA (info pública): Hules Banda fabrica banda de precurado y hule verde, está en +50 países, lema "Tecnología que rueda por el mundo"; Bandamatic comercializa el precurado. '+
+    'El usuario trabaja en el área de '+S.area+' (perfil: '+r.label+').';
+  var msgs=[{role:'system',content:sys}].concat(apiMessages());
+  fetch(CFG.api.url,{ method:'POST',
+    headers:{'Authorization':'Bearer '+HBKEY,'content-type':'application/json'},
+    body:JSON.stringify({ model:CFG.api.model, max_tokens:CFG.api.maxTokens, temperature:0.4, messages:msgs }) })
+    .then(function(res){return res.json();})
+    .then(function(d){
+      var tx=(d && d.choices && d.choices[0] && d.choices[0].message) ? d.choices[0].message.content : '';
+      if(tx){ chatBusy=false; S.chat.push({role:'assistant',content:tx}); paintChat(); return; }
+      var em=(d && d.error && d.error.message) ? d.error.message : 'respuesta vacía';
+      chatBusy=false; S.chat.push({role:'assistant',content:'⚠️ La IA devolvió un error: '+em+'\n\nMientras tanto, en modo offline:\n\n'+kb(t)}); paintChat();
+    })
+    .catch(function(){ chatBusy=false; S.chat.push({role:'assistant',content:'⚠️ No pude conectar con la IA (revisa tu internet o tu API key con 🔑). En modo offline:\n\n'+kb(t)}); paintChat(); });
 }
 
 /* ====================== TABLERO RRHH (solo admin) ====================== */
@@ -1104,7 +1121,7 @@ function getCss(v){ return getComputedStyle(document.documentElement).getPropert
 /* ====================== ARRANQUE ====================== */
 (function init(){
   try{ HBKEY=localStorage.getItem('hb_key')||''; }catch(e){}   // recordar la IA real entre sesiones
-  try{ var mm=localStorage.getItem('hb_model'); if(mm) CFG.api.model=mm; }catch(e){}   // recordar el modelo elegido
+  try{ var mm=localStorage.getItem('hb_model'); if(mm && mm.indexOf('claude')===-1) CFG.api.model=mm; }catch(e){}   // recordar el modelo elegido
   buildLoginHelp();
   var inp=$('inEmp');
   if(inp) inp.addEventListener('keydown',function(e){ if(e.key==='Enter') login(); });

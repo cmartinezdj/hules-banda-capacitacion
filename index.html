@@ -248,6 +248,9 @@ button{font-family:var(--font)}
   background:linear-gradient(180deg,transparent,var(--bg) 28%)}
 .composer input{flex:1;padding:14px 16px;border-radius:30px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-size:15px;outline:none;backdrop-filter:blur(10px)}
 .composer input:focus{border-color:var(--accent)}
+.fin{width:100%;padding:13px 15px;border-radius:13px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-size:15px;outline:none;font-family:inherit;display:block}
+.fin:focus{border-color:var(--accent)}
+textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .send{width:48px;height:48px;border-radius:50%;border:none;flex:none;cursor:pointer;color:#fff;font-size:18px;
   background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 8px 20px color-mix(in srgb,var(--accent) 36%,transparent)}
 .send:active{transform:scale(.92)}
@@ -280,12 +283,12 @@ button{font-family:var(--font)}
 .rank .rn{flex:1;font-size:13.5px;font-weight:600}
 
 /* ============================== NAV INFERIOR ============================== */
-.nav{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;justify-content:center;gap:4px;max-width:480px;margin:0 auto;
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;justify-content:center;gap:2px;max-width:500px;margin:0 auto;
   padding:8px 10px calc(8px + env(safe-area-inset-bottom));
   background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(18px);border-top:1px solid var(--line)}
-.nav button{flex:1;max-width:120px;background:none;border:none;color:var(--mut);font-size:10.5px;font-weight:700;cursor:pointer;
+.nav button{flex:1;max-width:96px;background:none;border:none;color:var(--mut);font-size:9.5px;font-weight:700;cursor:pointer;
   display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;border-radius:14px;transition:.18s}
-.nav button .ni{width:24px;height:24px}
+.nav button .ni{width:21px;height:21px}
 .nav button.on{color:var(--accent2)}
 .nav button.on .ni{filter:drop-shadow(0 4px 8px color-mix(in srgb,var(--accent) 50%,transparent))}
 .nav button:active{transform:scale(.92)}
@@ -416,6 +419,8 @@ button{font-family:var(--font)}
     <section id="s-chat"    class="screen pad hide"></section>
     <section id="s-hr"      class="screen pad hide"></section>
     <section id="s-clases"  class="screen pad hide"></section>
+    <section id="s-news"    class="screen pad hide"></section>
+    <section id="s-buzon"   class="screen pad hide"></section>
   </main>
 
   <!-- ===================== NAV INFERIOR ===================== -->
@@ -598,6 +603,7 @@ window.CFG = {
     perfect:15,     // bono por 3/3
     onTime:10,      // bono por completar a tiempo
     streakStep:5,  // bono = racha × este valor (solo en aprobados a la primera)
+    report:75,      // reporte de anormalidad/mejora aceptado por RRHH (una capacitación ≈ 100)
     perLevel:300    // puntos para subir de nivel
   },
   levels:['Aprendiz','Operario','Técnico','Especialista','Maestro','Leyenda HB'],
@@ -1163,22 +1169,24 @@ var ICN={
   rewards:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M3 12h18M12 8v13"/><path d="M12 8s-1-5-4-5-3 5 4 5zM12 8s1-5 4-5 3 5-4 5z"/></svg>',
   chat:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
   hr:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="13" y="7" width="3" height="10"/></svg>',
-  clases:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 3 2 6 2s6-1 6-2v-5"/></svg>'
+  clases:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 3 2 6 2s6-1 6-2v-5"/></svg>',
+  news:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 9h3v8a2 2 0 0 1-3 1.7"/><path d="M7 9h7M7 12h7M7 15h4"/></svg>',
+  buzon:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 10h8M8 13h5"/></svg>'
 };
 function buildNav(){
   var items = S.admin
-    ? [['hr','Tablero',ICN.hr],['chat','Bandi',ICN.chat]]
-    : [['home','Inicio',ICN.home],['rewards','Premios',ICN.rewards],['chat','Bandi',ICN.chat],['clases','Profe Bandi',ICN.clases]];
+    ? [['hr','Tablero',ICN.hr],['news','Noticias',ICN.news],['buzon','Buzón',ICN.buzon],['chat','Bandi',ICN.chat]]
+    : [['home','Inicio',ICN.home],['news','Noticias',ICN.news],['rewards','Premios',ICN.rewards],['chat','Bandi',ICN.chat],['buzon','Buzón',ICN.buzon],['clases','Profe',ICN.clases]];
   $('nav').innerHTML = items.map(function(it){
     return '<button id="nav-'+it[0]+'" onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['home','course','quiz','result','rewards','chat','hr','clases'];
+var SCREENS=['home','course','quiz','result','rewards','chat','hr','clases','news','buzon'];
 function show(name){
   SCREENS.forEach(function(s){ var el=$('s-'+s); if(el) el.classList.toggle('hide', s!==name); });
   // nav activo (course/quiz/result cuentan como "home")
   var navKey = (name==='course'||name==='quiz'||name==='result') ? 'home' : name;
-  ['home','rewards','chat','hr','clases'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
+  ['home','rewards','chat','hr','clases','news','buzon'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
   renderTop(name);
   window.scrollTo(0,0);
   var el=$('s-'+name); if(el){ el.classList.remove('fade'); void el.offsetWidth; el.classList.add('fade'); }
@@ -1189,6 +1197,8 @@ function go(name){
   if(name==='chat') return renderChat();
   if(name==='hr') return renderHR();
   if(name==='clases') return renderClases();
+  if(name==='news') return renderNews();
+  if(name==='buzon') return renderBuzon();
 }
 function renderTop(name){
   var sub=(name==='course'||name==='quiz'||name==='result');
@@ -1421,6 +1431,60 @@ function guard(text){
   for(var j=0;j<OFF.length;j++){ if(t.indexOf(OFF[j])>-1) return 'Soy el asistente de Hules Banda 🛞 y solo te ayudo con llantas, hule, renovado, procesos de fábrica, seguridad, calidad, mantenimiento, materiales y clases básicas. ¿Empezamos con alguno de esos temas?'; }
   return null;
 }
+/* ===== ANTI-SABOTAJE (vigilancia de seguridad) =====
+   Detecta intención de DAÑAR la planta: sabotear procesos/equipo, contaminar el
+   agua potable o la comida, "recetas" para echar a perder material, etc.
+   Si la detecta: Bandi NO responde y se manda un FOCO ROJO inmediato a RRHH con
+   la pregunta exacta + el número de empleado + área + hora.
+   Diseñado para NO acusar a inocentes: las preguntas de PREVENCIÓN, cuidado,
+   reparación o accidentes ("cómo evito dañar…", "se dañó solo…") NO se marcan. */
+function maliceCheck(text){
+  var t=_norm(text);
+  // 1) Señales DURAS: frases que NO tienen lectura legítima en capacitación → bloquean siempre
+  var HARD=['sabotaje','sabotear','sabote','envenen','vandali',
+    'sin que se den cuenta','sin que se de cuenta','sin que nadie se de cuenta','sin que se note','sin que se noten','sin dejar rastro','sin dejar evidencia',
+    'para que falle','hacer que falle','para que se descompon','hacer que se descompon','para que se eche a perder','para que se dane','hacer que se dane','para que se arruine','para que se estrope','para arruinar','para danar',
+    'echarle aceite al agua','aceite al agua','aceite en el agua','aceite con agua',
+    'al agua potable','en el agua potable','al bebedero','a los bebederos','al garrafon','a la comida','en la comida',
+    'danar a proposito','a proposito danar'];
+  for(var i=0;i<HARD.length;i++){ if(t.indexOf(HARD[i])>-1) return true; }
+  // 2) Intención explícita con groserías (cómo/para/quiero/voy a + jod/ching/freg)
+  var SLANG=['como jod','komo jod','como le hago para jod','para jod','quiero jod','voy a jod','para que se jod','como ching','para ching','quiero ching','voy a ching','como friego la maq','como friego el','como friego la prod'];
+  for(var p=0;p<SLANG.length;p++){ if(t.indexOf(SLANG[p])>-1) return true; }
+  // 3) Contaminar AGUA POTABLE / comida con una sustancia ajena = sabotaje
+  var WATER=['agua potable','agua de tomar','agua para tomar','garrafon','bebedero','la comida','el lonche','los tacos','la cocina'];
+  var SUBST=['aceite','quimico','solvente','gasolina','diesel','thinner','cloro','acido','veneno','jabon','detergente','grasa','tierra','basura','orin','saliva','vidrio','clavo'];
+  var hasW=false,hasS=false;
+  for(var w=0;w<WATER.length;w++){ if(t.indexOf(WATER[w])>-1){ hasW=true; break; } }
+  for(var x=0;x<SUBST.length;x++){ if(t.indexOf(SUBST[x])>-1){ hasS=true; break; } }
+  if(hasW&&hasS) return true;
+  // 4) Combinación VERBO dañino + OBJETIVO, salvo prevención / accidente / "ya está roto"
+  var VERB=['dana','dano','dane','altera','arruina','descompon','estrope','malogr','contamin','adulter','echar a perder'];
+  var TGT=['agua potable','el agua','proceso','produccion','maquina','maquinaria','banbury','tabulador','caldera','aceite','hule','la mezcla','molde','autoclave','quimico','materia prima','el producto','la planta','equipo','sistema','motor','la banda','caucho','vapor'];
+  var hasV=false,hasT=false;
+  for(var v=0;v<VERB.length;v++){ if(t.indexOf(VERB[v])>-1){ hasV=true; break; } }
+  for(var g=0;g<TGT.length;g++){ if(t.indexOf(TGT[g])>-1){ hasT=true; break; } }
+  if(hasV&&hasT){
+    var SAFE=['evito','evitar','para no','no dana','no danar','sin danar','proteg','prevenir','prevenc','no contamin',
+      'se dana','se dano','se descompon','se estrope','se arruin','se malogr','se altero','se altera',
+      'esta dana','esta danad','quedo dana','ya esta dana','esta descompuesto','esta roto','esta malogr','esta estrope','esta altera',
+      'no funciona','no sirve','no jala','esta fallando','dejo de funcionar','dejo de servir',
+      'si se dana','que pasa si se','que pasa si','accidente','por accidente','sin querer',
+      'reparar','repara','arreglar','arreglo','como cuido','para cuidar','dar mantenimiento'];
+    for(var k=0;k<SAFE.length;k++){ if(t.indexOf(SAFE[k])>-1) return false; }
+    return true;
+  }
+  return false;
+}
+function logAlert(text){
+  // Foco rojo INMEDIATO a RRHH: pregunta + ID del trabajador + área + hora.
+  // (Demo: localStorage. En producción esto haría POST a un servidor central al instante.)
+  try{ var s=qstats(); s.alerts=s.alerts||[];
+    s.alerts.unshift({ q:(text||'').trim(), emp:(S&&S.emp!=null?S.emp:'?'), area:(S&&S.area)||'', t:Date.now() });
+    if(s.alerts.length>300) s.alerts.length=300;
+    localStorage.setItem('hb_qstats', JSON.stringify(s));
+  }catch(e){}
+}
 function renderChat(){
   var h='';
   h+='<div class="chathead">'+bandi('b-lg')+
@@ -1514,6 +1578,13 @@ function apiMessages(){
 function sendChat(){
   var inp=$('chatIn'); var t=(inp.value||'').trim(); if(!t||chatBusy) return;
   S.chat.push({role:'user',content:t}); inp.value=''; chatBusy=true; paintChat();
+  // ANTI-SABOTAJE (máxima prioridad): intención de dañar la planta → Bandi NO responde
+  // y manda foco rojo inmediato a RRHH (silencioso: no le avisa al trabajador que fue reportado).
+  if(maliceCheck(t)){
+    logAlert(t);
+    setTimeout(function(){ chatBusy=false; S.chat.push({role:'assistant',content:'⚠️ Ese tipo de preguntas no son bienvenidas en Bandi. Estoy para ayudarte a aprender y a cuidar la planta, a tus compañeros y tu propio trabajo. Si fue un malentendido, vuelve a preguntar de otra forma.'}); paintChat(); }, 350);
+    return;
+  }
   // GUARDRAIL (online y offline): bloquea info sensible / inventario sin permiso / fuera de tema
   var blk=guard(t);
   if(blk){ setTimeout(function(){ chatBusy=false; S.chat.push({role:'assistant',content:blk}); paintChat(); }, 350); return; }
@@ -1533,11 +1604,26 @@ function sendChat(){
 /* ====================== TABLERO RRHH (solo admin) ====================== */
 function renderHR(){
   var H=CFG.hr;
+  var ALERTS=(qstats().alerts||[]); _HRAL=ALERTS;   // focos rojos de sabotaje (anti-sabotaje del chat)
   var h='';
   h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Tablero de RRHH</h2><p>Avance, focos rojos y desempeño de la planta. <b>Datos de ejemplo.</b></p></div></div></div>';
+  // ----- ALERTAS DE SEGURIDAD (posible sabotaje) — máxima prioridad, hasta arriba -----
+  if(ALERTS.length){
+    h+='<div class="card" style="border:2px solid #e74c3c;background:rgba(192,57,43,0.12)">'+
+       '<b style="color:#ff6b5e">🚨 Alertas de seguridad — posible sabotaje ('+ALERTS.length+')</b>'+
+       '<div class="note" style="margin:3px 0 10px">Preguntas con intención de dañar procesos, equipo o el agua/comida. Bandi <b>no respondió</b> y registró al trabajador. Atiende de inmediato.</div>'+
+       ALERTS.map(function(a,i){
+         return '<div class="line" style="align-items:flex-start;border-left:3px solid #e74c3c;padding-left:9px;margin-bottom:4px">'+
+           '<span><b style="color:#fff">Empleado #'+(''+a.emp).padStart(3,'0')+'</b>'+(a.area?' · '+esc(a.area):'')+'<br>'+
+           '<span style="color:#ff9d92">«'+esc(a.q)+'»</span><br>'+
+           '<small class="mut">'+alertTime(a.t)+'</small></span>'+
+           '<button class="back" style="padding:6px 10px;flex:none" onclick="dismissAlert('+i+')">Visto</button>'+
+         '</div>';
+       }).join('')+'</div>';
+  }
   h+='<div class="kpi">'+
      '<div class="b grn"><div class="n">'+H.globalAvg+'%</div><div class="l">Avance global</div></div>'+
-     '<div class="b red"><div class="n">'+H.redFlags.length+'</div><div class="l">Focos rojos</div></div>'+
+     '<div class="b red"><div class="n">'+(H.redFlags.length+ALERTS.length)+'</div><div class="l">Focos rojos</div></div>'+
      '<div class="b"><div class="n">'+H.employees+'</div><div class="l">Empleados</div></div>'+
      '<div class="b"><div class="n">'+CFG.ranges.filter(function(r){return !r.admin;}).length+'</div><div class="l">Áreas</div></div></div>';
   h+='<div class="card"><b>Avance por área</b>'+H.byArea.map(function(a){
@@ -1570,7 +1656,15 @@ function renderHR(){
 
 /* ----- Feed de preguntas: marcar atendidas + reporte semanal para dirección ----- */
 var _HRUN=[];   // preguntas sin responder visibles en el tablero (para los botones ✓)
+var _HRAL=[];   // alertas de sabotaje visibles en el tablero (para los botones "Visto")
 function saveQstats(s){ try{ localStorage.setItem('hb_qstats', JSON.stringify(s)); }catch(e){} }
+function alertTime(t){ try{ var d=new Date(t); return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' · '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
+function dismissAlert(i){
+  var a=_HRAL[i]; if(!a) return;
+  if(!confirm('¿Marcar esta alerta como vista (archivar)?\n\nEmpleado #'+(''+a.emp).padStart(3,'0')+'\n«'+a.q+'»\n\nQuedará registrada en el reporte, pero saldrá de la lista de pendientes.')) return;
+  var s=qstats(); s.alerts=(s.alerts||[]).filter(function(x){ return !(x.t===a.t && x.emp===a.emp && x.q===a.q); });
+  saveQstats(s); flash('Alerta archivada'); renderHR();
+}
 function markAnswered(i){
   var u=_HRUN[i]; if(!u) return;
   if(!confirm('¿Marcar como atendida?\n\n«'+u.q+'»\n\nDespués agrega la respuesta autorizada a la biblioteca de Bandi (CFG.kb) para que la conteste.')) return;
@@ -1583,6 +1677,7 @@ function reportData(){
   var Q=qstats(), d=new Date();
   return {
     fecha:d.toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'}),
+    alerts:(Q.alerts||[]).slice().sort(function(a,b){return b.t-a.t;}),
     freq:Object.keys(Q.freq).map(function(k){return [k,Q.freq[k]];}).sort(function(a,b){return b[1]-a[1];}),
     unans:Object.keys(Q.unans).map(function(k){return Q.unans[k];}).sort(function(a,b){return b.n-a.n;}),
     res:Object.keys(Q.res||{}).map(function(k){return Q.res[k];}).sort(function(a,b){return b.t-a.t;})
@@ -1592,6 +1687,7 @@ function printReport(){
   var r=reportData(), el=$('printReport');
   var h='<h1>Hules Banda · Bandamatic — Reporte semanal de Bandi</h1>'+
         '<div class="mut2">'+esc(r.fecha)+' · Generado desde la app de capacitación (demo: datos de este dispositivo)</div>';
+  h+='<h2>🚨 Alertas de seguridad (posible sabotaje)</h2>'+(r.alerts.length? r.alerts.map(function(a){return '<div class="prl"><span>Empleado #'+(''+a.emp).padStart(3,'0')+(a.area?' · '+esc(a.area):'')+' — «'+esc(a.q)+'»</span><b>'+alertTime(a.t)+'</b></div>';}).join('') : '<div>Sin alertas. 👍</div>');
   h+='<h2>❓ Preguntas más frecuentes (ya autorizadas)</h2>'+(r.freq.length? r.freq.map(function(x){return '<div class="prl"><span>'+esc(x[0])+'</span><b>'+x[1]+'</b></div>';}).join('') : '<div>Sin registros.</div>');
   h+='<h2>🆕 Sin responder — para autorizar respuesta</h2>'+(r.unans.length? r.unans.map(function(u){return '<div class="prl"><span>'+esc(u.q)+'</span><b>'+u.n+'×</b></div>';}).join('') : '<div>Sin pendientes.</div>');
   h+='<h2>✅ Atendidas (pendientes de cargar a Bandi)</h2>'+(r.res.length? r.res.map(function(u){return '<div class="prl"><span>'+esc(u.q)+'</span><b>'+u.n+'×</b></div>';}).join('') : '<div>Ninguna todavía.</div>');
@@ -1602,6 +1698,7 @@ function printReport(){
 function copyReport(){
   var r=reportData();
   var t='HULES BANDA · BANDAMATIC — REPORTE SEMANAL DE BANDI\n'+r.fecha+'\n\n';
+  t+='🚨 ALERTAS DE SEGURIDAD (posible sabotaje):\n'+(r.alerts.length? r.alerts.map(function(a){return ' · Empleado #'+(''+a.emp).padStart(3,'0')+(a.area?' ('+a.area+')':'')+' — '+a.q+' ['+alertTime(a.t)+']';}).join('\n') : ' · Sin alertas')+'\n\n';
   t+='PREGUNTAS MÁS FRECUENTES (autorizadas):\n'+(r.freq.length? r.freq.map(function(x){return ' · '+x[0]+' — '+x[1];}).join('\n') : ' · Sin registros')+'\n\n';
   t+='SIN RESPONDER (para autorizar):\n'+(r.unans.length? r.unans.map(function(u){return ' · '+u.q+' — '+u.n+'×';}).join('\n') : ' · Sin pendientes')+'\n\n';
   t+='ATENDIDAS (cargar a Bandi):\n'+(r.res.length? r.res.map(function(u){return ' · '+u.q;}).join('\n') : ' · Ninguna todavía')+'\n';
@@ -1614,6 +1711,166 @@ function copyReport(){
 function legacyCopy(t){
   var ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0';
   document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(e){} ta.remove();
+}
+
+/* ====================== NOTICIAS (RRHH → todo el personal) ======================
+   RRHH publica avisos e infografías; los trabajadores los reciben en su área "Noticias".
+   Demo: localStorage 'hb_news'. En producción esto vive en el servidor y llega a todos. */
+function newsGet(){ try{ return JSON.parse(localStorage.getItem('hb_news')||'[]')||[]; }catch(e){ return []; } }
+function newsSave(a){ try{ localStorage.setItem('hb_news', JSON.stringify(a)); }catch(e){ flash('No se pudo guardar (espacio lleno)'); } }
+function newsTime(ts){ try{ var d=new Date(ts); return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}); }catch(e){ return ''; } }
+/* segmentación por rango de número de empleado (compartido por Noticias y mensajes directos) */
+function inTarget(to,emp){ if(!to||to.mode==='all') return true; if(to.mode==='range'){ var mn=+to.min,mx=+to.max; if(isNaN(mn)||isNaN(mx)) return true; if(mn>mx){ var t=mn; mn=mx; mx=t; } return emp>=mn&&emp<=mx; } return true; }
+function targetLabel(to){ if(!to||to.mode==='all') return 'Para todos'; var mn=(''+to.min).padStart(3,'0'),mx=(''+to.max).padStart(3,'0'); return to.min===to.max?('Para ID '+mn):('Para IDs '+mn+'–'+mx); }
+function rangePicker(pfx,mode){ var act='background:var(--accent);color:#fff;border-color:var(--accent)';
+  return '<div style="display:flex;gap:7px;flex-wrap:wrap"><button id="'+pfx+'ToAll" class="chip2" style="'+(mode==='all'?act:'')+'" onclick="setTo(\''+pfx+'\',\'all\')">👥 Todos</button><button id="'+pfx+'ToRange" class="chip2" style="'+(mode==='range'?act:'')+'" onclick="setTo(\''+pfx+'\',\'range\')">🔢 Por rango de IDs</button></div>'+
+    '<div id="'+pfx+'Range" style="display:'+(mode==='range'?'flex':'none')+';gap:8px;align-items:center;margin-top:8px"><span class="note">Desde</span><input id="'+pfx+'Min" class="fin" type="number" min="1" placeholder="001" style="width:88px"><span class="note">hasta</span><input id="'+pfx+'Max" class="fin" type="number" min="1" placeholder="050" style="width:88px"></div>';
+}
+function setTo(pfx,m){ if(pfx==='news') _newsTo=m; else _dmTo=m; var r=$(pfx+'Range'); if(r) r.style.display=(m==='range'?'flex':'none'); var act='background:var(--accent);color:#fff;border-color:var(--accent)'; var a=$(pfx+'ToAll'),b=$(pfx+'ToRange'); if(a) a.style.cssText=(m==='all'?act:''); if(b) b.style.cssText=(m==='range'?act:''); }
+function readTarget(pfx){ var mode=(pfx==='news'?_newsTo:_dmTo); if(mode!=='range') return {mode:'all'}; var mn=parseInt(($(pfx+'Min')||{}).value,10), mx=parseInt(($(pfx+'Max')||{}).value,10); if(isNaN(mn)||isNaN(mx)) return null; return {mode:'range',min:mn,max:mx}; }
+var _newsTo='all', _dmTo='all';
+var _newsImg=null;
+function loadNewsImg(inp){
+  var f=inp.files&&inp.files[0]; if(!f) return;
+  var rd=new FileReader();
+  rd.onload=function(e){ var img=new Image();
+    img.onload=function(){ var max=1000,w=img.width,h=img.height;
+      if(w>max||h>max){ var r=Math.min(max/w,max/h); w=Math.round(w*r); h=Math.round(h*r); }
+      var c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h);
+      _newsImg=c.toDataURL('image/jpeg',0.82);
+      var pv=$('newsImgPv'); if(pv){ pv.src=_newsImg; pv.style.display='block'; }
+      flash('Infografía lista para publicar');
+    };
+    img.src=e.target.result;
+  };
+  rd.readAsDataURL(f);
+}
+function postNews(){
+  var t=(($('newsTitle')||{}).value||'').trim(), b=(($('newsBody')||{}).value||'').trim();
+  if(!t&&!b&&!_newsImg){ flash('Escribe un título o mensaje'); return; }
+  var to=readTarget('news'); if(!to){ flash('Escribe el rango de IDs (desde–hasta)'); return; }
+  var a=newsGet();
+  a.unshift({ id:'n'+Date.now(), t:t, b:b, img:_newsImg||'', to:to, by:'RRHH', ts:Date.now() });
+  if(a.length>100) a.length=100;
+  newsSave(a); _newsImg=null; flash('📣 Publicada · '+targetLabel(to)); renderNews();
+}
+function delNews(id){ if(!confirm('¿Eliminar esta noticia?')) return; newsSave(newsGet().filter(function(n){ return n.id!==id; })); renderNews(); }
+function renderNews(){
+  var a=newsGet(), h='';
+  h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Noticias y avisos</h2><p>'+(S.admin?'Publica avisos e infografías para toda la planta.':'Avisos importantes de Recursos Humanos.')+'</p></div></div></div>';
+  if(S.admin){
+    h+='<div class="card"><b>📣 Publicar nueva noticia</b>'+
+       '<input id="newsTitle" class="fin" placeholder="Título (ej. Semana de seguridad)" autocomplete="off" style="margin:9px 0 8px">'+
+       '<textarea id="newsBody" class="fin" rows="3" placeholder="Mensaje para los trabajadores…"></textarea>'+
+       '<div class="note" style="margin:12px 0 6px">¿Para quién?</div>'+rangePicker('news',_newsTo)+
+       '<div style="margin-top:10px"><label class="btn ghost" style="margin:0;padding:11px;font-size:14px;display:inline-block;cursor:pointer;width:auto">🖼️ Adjuntar infografía<input type="file" accept="image/*" onchange="loadNewsImg(this)" style="display:none"></label></div>'+
+       '<img id="newsImgPv" alt="" style="display:none;width:100%;border-radius:10px;margin-top:9px;border:1px solid var(--line)">'+
+       '<button class="btn" style="margin-top:10px;padding:13px;font-size:15px" onclick="postNews()">Publicar</button></div>';
+  }
+  var vis = S.admin ? a : a.filter(function(n){ return inTarget(n.to, S.emp); });
+  h+='<div class="sec-t">'+(S.admin?'Publicadas':'Tablero de avisos')+'<span class="ln"></span></div>';
+  if(!vis.length){ h+='<div class="card"><div class="note">'+(S.admin?'Aún no hay noticias.':'Por ahora no hay avisos para ti.')+'</div></div>'; }
+  vis.forEach(function(n){
+    h+='<div class="card">'+
+       (S.admin?'<div style="margin-bottom:6px"><span class="tg">🎯 '+targetLabel(n.to)+'</span></div>':'')+
+       (n.t?'<b style="font-size:15.5px">'+esc(n.t)+'</b>':'')+
+       (n.b?'<p style="margin-top:5px;line-height:1.55">'+esc(n.b)+'</p>':'')+
+       (n.img?'<img src="'+n.img+'" alt="infografía" style="width:100%;border-radius:10px;margin-top:9px;border:1px solid var(--line)">':'')+
+       '<div class="line" style="margin-top:10px"><span class="note">📅 '+newsTime(n.ts)+' · '+esc(n.by||'RRHH')+'</span>'+
+       '<span style="display:flex;gap:7px;align-items:center;flex:none">'+speakBtn((n.t?n.t+'. ':'')+(n.b||''))+
+       (S.admin?'<button class="back" style="padding:6px 10px" onclick="delNews(\''+n.id+'\')">Eliminar</button>':'')+'</span></div></div>';
+  });
+  $('s-news').innerHTML=h; show('news');
+}
+
+/* ====================== BUZÓN: QUEJAS Y REPORTES (personal → RRHH) ======================
+   Quejas, reportes de anormalidad y mejora continua llegan directo a RRHH. Si RRHH
+   acepta una anormalidad/mejora válida, se guarda y el trabajador gana CFG.points.report (75).
+   Demo: localStorage 'hb_reports'. En producción: servidor + aviso inmediato a RRHH. */
+function reportsGet(){ try{ return JSON.parse(localStorage.getItem('hb_reports')||'[]')||[]; }catch(e){ return []; } }
+function reportsSave(a){ try{ localStorage.setItem('hb_reports', JSON.stringify(a)); }catch(e){} }
+/* Mensajes directos de RRHH al personal (un trabajador, un rango o todos) */
+function dmGet(){ try{ return JSON.parse(localStorage.getItem('hb_dm')||'[]')||[]; }catch(e){ return []; } }
+function dmSave(a){ try{ localStorage.setItem('hb_dm', JSON.stringify(a)); }catch(e){} }
+function sendDM(){
+  var txt=(($('dmText')||{}).value||'').trim(); if(!txt){ flash('Escribe el mensaje'); return; }
+  var to=readTarget('dm'); if(!to){ flash('Escribe el rango de IDs (desde–hasta)'); return; }
+  var a=dmGet(); a.unshift({ id:'d'+Date.now(), to:to, text:txt, ts:Date.now() }); dmSave(a);
+  flash('✉️ Mensaje enviado · '+targetLabel(to)); renderBuzon();
+}
+var RPT={ queja:{ic:'😟',l:'Queja',pts:false}, anormalidad:{ic:'⚠️',l:'Reporte de anormalidad',pts:true}, mejora:{ic:'💡',l:'Mejora continua',pts:true} };
+var _buzType='queja';
+function pickBuzType(t){ _buzType=t; renderBuzon(); }
+function buzTime(ts){ try{ var d=new Date(ts); return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' · '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
+function stTag(s){ return s==='aceptado'?'<span class="tg g">Aceptado</span>':s==='rechazado'?'<span class="tg">No procede</span>':'<span class="tg">Pendiente</span>'; }
+function submitReport(){
+  var txt=(($('buzText')||{}).value||'').trim();
+  if(!txt){ flash('Escribe tu mensaje'); return; }
+  var a=reportsGet();
+  a.unshift({ id:'r'+Date.now(), emp:S.emp, area:S.area, type:_buzType, text:txt, status:'pendiente', pts:0, ts:Date.now() });
+  reportsSave(a);
+  flash(RPT[_buzType].pts?'✅ Enviado a RRHH. Si lo aprueban, ganas '+CFG.points.report+' puntos.':'✅ Tu queja llegó directo a RRHH.');
+  renderBuzon();
+}
+function awardPointsTo(emp,pts){
+  try{ var k='hb_'+emp, d=JSON.parse(localStorage.getItem(k)||'{}')||{}; d.points=(d.points||0)+pts; localStorage.setItem(k,JSON.stringify(d));
+    if(S&&S.emp===emp){ S.points+=pts; renderTop(); }
+  }catch(e){}
+}
+function reviewReport(id,accept){
+  var a=reportsGet(), r=null; for(var i=0;i<a.length;i++){ if(a[i].id===id){ r=a[i]; break; } }
+  if(!r||r.status!=='pendiente') return;
+  if(accept){
+    r.status='aceptado';
+    if(RPT[r.type]&&RPT[r.type].pts){ r.pts=CFG.points.report; awardPointsTo(r.emp,CFG.points.report);
+      flash('✅ Aceptado · +'+CFG.points.report+' pts para el empleado #'+(''+r.emp).padStart(3,'0')); }
+    else { flash('✅ Queja marcada como atendida'); }
+  } else { r.status='rechazado'; flash('Marcado como no procedente'); }
+  reportsSave(a); renderBuzon();
+}
+function renderBuzon(){
+  var h='';
+  h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Buzón</h2><p>'+(S.admin?'Quejas, anormalidades y mejoras del personal.':'Tu voz llega directo a Recursos Humanos.')+'</p></div></div></div>';
+  if(S.admin){
+    var a=reportsGet(), pend=a.filter(function(r){return r.status==='pendiente';});
+    h+='<div class="card"><b>✉️ Mensaje directo al personal</b><div class="note" style="margin:3px 0 8px">Llega a la cuenta de los empleados que elijas; lo ven en su Buzón → Mensajes de RRHH.</div>'+
+       rangePicker('dm',_dmTo)+
+       '<textarea id="dmText" class="fin" rows="3" placeholder="Escribe el aviso para el personal…" style="margin-top:10px"></textarea>'+
+       '<button class="btn" style="margin-top:10px;padding:13px;font-size:15px" onclick="sendDM()">Enviar mensaje</button></div>';
+    var sent=dmGet(); if(sent.length){ h+='<div class="sec-t">Mensajes enviados<span class="ln"></span></div>';
+      sent.slice(0,6).forEach(function(d){ h+='<div class="card"><div class="line"><span class="tg">🎯 '+targetLabel(d.to)+'</span><span class="note">'+buzTime(d.ts)+'</span></div><p style="margin:6px 0 0;line-height:1.5;color:var(--mut)">'+esc(d.text)+'</p></div>'; }); }
+    h+='<div class="sec-t">Quejas y reportes recibidos<span class="ln"></span></div>';
+    h+='<div class="card"><b>📥 Pendientes ('+pend.length+')</b><div class="note" style="margin:3px 0 0">Si una <b>anormalidad</b> o <b>mejora</b> es válida, acéptala: se guarda y el trabajador gana <b>'+CFG.points.report+' puntos</b>. Las quejas solo se marcan como atendidas.</div></div>';
+    if(!a.length){ h+='<div class="card"><div class="note">Sin envíos todavía.</div></div>'; }
+    a.forEach(function(r){ var ty=RPT[r.type]||{ic:'•',l:r.type,pts:false};
+      h+='<div class="card"><div class="line"><b>'+ty.ic+' '+esc(ty.l)+'</b>'+stTag(r.status)+'</div>'+
+         '<p style="margin:7px 0;line-height:1.5">'+esc(r.text)+'</p>'+
+         '<div class="line"><span class="note">👤 Empleado #'+(''+r.emp).padStart(3,'0')+' · '+esc(r.area||'')+' · '+buzTime(r.ts)+'</span>'+speakBtn(ty.l+'. '+r.text)+'</div>'+
+         (r.status==='pendiente'
+           ? '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="margin:0;flex:1;padding:11px;font-size:13px" onclick="reviewReport(\''+r.id+'\',true)">✓ '+(ty.pts?'Aceptar (+'+CFG.points.report+')':'Atendida')+'</button><button class="btn ghost" style="margin:0;flex:1;padding:11px;font-size:13px" onclick="reviewReport(\''+r.id+'\',false)">✗ No procede</button></div>'
+           : (r.pts?'<div class="note" style="margin-top:7px">🏆 +'+r.pts+' puntos otorgados al empleado.</div>':''))+'</div>';
+    });
+  } else {
+    h+='<div class="card"><b>Enviar a RRHH</b><div class="note" style="margin:4px 0 9px">Elige el tipo:</div>'+
+       '<div style="display:flex;gap:7px;flex-wrap:wrap">'+
+       Object.keys(RPT).map(function(k){ var on=k===_buzType; return '<button class="chip2" style="'+(on?'background:var(--accent);color:#fff;border-color:var(--accent)':'')+'" onclick="pickBuzType(\''+k+'\')">'+RPT[k].ic+' '+esc(RPT[k].l)+'</button>'; }).join('')+'</div>'+
+       '<textarea id="buzText" class="fin" rows="4" placeholder="Cuéntale a RRHH…" style="margin-top:11px"></textarea>'+
+       (RPT[_buzType].pts?'<div class="note" style="margin-top:8px">💡 Si RRHH lo aprueba, ganas <b>'+CFG.points.report+' puntos</b> (una capacitación da ≈100).</div>':'<div class="note" style="margin-top:8px">🔒 Tu queja llega directa y privada a RRHH.</div>')+
+       '<button class="btn" style="margin-top:10px;padding:13px;font-size:15px" onclick="submitReport()">Enviar a RRHH</button></div>';
+    var dms=dmGet().filter(function(d){ return inTarget(d.to, S.emp); });
+    if(dms.length){ h+='<div class="sec-t">Mensajes de RRHH<span class="ln"></span></div>';
+      dms.forEach(function(d){ h+='<div class="card" style="border-left:3px solid var(--accent)"><div class="line"><b>✉️ Recursos Humanos</b><span class="note">'+buzTime(d.ts)+'</span></div><p style="margin:7px 0;line-height:1.5">'+esc(d.text)+'</p><div class="line"><span></span>'+speakBtn('Mensaje de Recursos Humanos. '+d.text)+'</div></div>'; });
+    }
+    var mine=reportsGet().filter(function(r){ return r.emp===S.emp; });
+    h+='<div class="sec-t">Mis envíos<span class="ln"></span></div>';
+    if(!mine.length){ h+='<div class="card"><div class="note">Aún no has enviado nada.</div></div>'; }
+    mine.forEach(function(r){ var ty=RPT[r.type]||{ic:'•',l:r.type};
+      h+='<div class="card"><div class="line"><b>'+ty.ic+' '+esc(ty.l)+'</b>'+stTag(r.status)+'</div>'+
+         '<p style="margin:6px 0;line-height:1.5;color:var(--mut)">'+esc(r.text)+'</p>'+
+         '<div class="line"><span class="note">'+buzTime(r.ts)+'</span>'+(r.pts?'<span class="tg g">🏆 +'+r.pts+' pts</span>':'')+'</div></div>';
+    });
+  }
+  $('s-buzon').innerHTML=h; show('buzon');
 }
 
 /* ====================== ACADEMIA · PROFESOR BANDI ====================== */
@@ -1761,7 +2018,18 @@ function getCss(v){ return getComputedStyle(document.documentElement).getPropert
 (function init(){
   try{ HBKEY=localStorage.getItem('hb_key')||''; }catch(e){}   // recordar la IA real entre sesiones
   try{ var mm=localStorage.getItem('hb_model'); if(mm && mm.indexOf('claude')===-1) CFG.api.model=mm; }catch(e){}   // recordar el modelo elegido (ignora ids 'claude' guardados por una versión anterior)
-  try{ if(!localStorage.getItem('hb_qstats')){ localStorage.setItem('hb_qstats', JSON.stringify({ freq:{ 'Seguridad: uso de EPP':9, 'Banda de precurado':7, 'Presión de inflado':5, 'Tipo de eje':4 }, unans:{ 'cada cuanto se cambia el aceite del banbury':{q:'¿Cada cuánto se cambia el aceite del Banbury?',n:6,t:Date.now()}, 'que guantes uso para quimicos':{q:'¿Qué guantes uso para químicos?',n:4,t:Date.now()}, 'como se calibra el tabulador 7':{q:'¿Cómo se calibra el Tabulador 7?',n:3,t:Date.now()} } })); } }catch(e){}
+  try{ if(!localStorage.getItem('hb_qstats')){ localStorage.setItem('hb_qstats', JSON.stringify({ freq:{ 'Seguridad: uso de EPP':9, 'Banda de precurado':7, 'Presión de inflado':5, 'Tipo de eje':4 }, unans:{ 'cada cuanto se cambia el aceite del banbury':{q:'¿Cada cuánto se cambia el aceite del Banbury?',n:6,t:Date.now()}, 'que guantes uso para quimicos':{q:'¿Qué guantes uso para químicos?',n:4,t:Date.now()}, 'como se calibra el tabulador 7':{q:'¿Cómo se calibra el Tabulador 7?',n:3,t:Date.now()} }, alerts:[{q:'¿cómo le hago para que se descomponga el banbury sin que se den cuenta?',emp:142,area:'Maquinaria',t:Date.now()}] })); } }catch(e){}
+  try{ if(!localStorage.getItem('hb_news')){ localStorage.setItem('hb_news', JSON.stringify([
+    { id:'n2', t:'Semana de la seguridad 🦺', b:'Esta semana reforzamos el uso de EPP. Trae siempre tus guantes y lentes. Si ves algo inseguro, repórtalo en el Buzón.', img:'', by:'RRHH', ts:Date.now()-86400000 },
+    { id:'n1', t:'¡Bienvenidos a la app! 🛞', b:'Desde hoy, todos los avisos importantes de Recursos Humanos llegan aquí, en Noticias. Revísala seguido.', img:'', by:'RRHH', ts:Date.now()-172800000 }
+  ])); } }catch(e){}
+  try{ if(!localStorage.getItem('hb_reports')){ localStorage.setItem('hb_reports', JSON.stringify([
+    { id:'r2', emp:72, area:'Producción', type:'mejora', text:'Si ponemos una mesa más cerca del molde, se ahorra tiempo al cargar el material.', status:'pendiente', pts:0, ts:Date.now()-3600000 },
+    { id:'r1', emp:55, area:'Producción', type:'anormalidad', text:'La banda de precurado hace un ruido raro al arrancar en las mañanas.', status:'pendiente', pts:0, ts:Date.now()-7200000 }
+  ])); } }catch(e){}
+  try{ if(!localStorage.getItem('hb_dm')){ localStorage.setItem('hb_dm', JSON.stringify([
+    { id:'d1', to:{mode:'all'}, text:'Recordatorio: el viernes es día de pago. Cualquier duda con tu recibo, pásala por aquí a RRHH.', ts:Date.now()-43200000 }
+  ])); } }catch(e){}
   buildLoginHelp();
   var inp=$('inEmp');
   if(inp) inp.addEventListener('keydown',function(e){ if(e.key==='Enter') login(); });

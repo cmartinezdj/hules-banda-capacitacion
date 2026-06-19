@@ -292,6 +292,13 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .nav button.on{color:var(--accent2)}
 .nav button.on .ni{filter:drop-shadow(0 4px 8px color-mix(in srgb,var(--accent) 50%,transparent))}
 .nav button:active{transform:scale(.92)}
+/* ===== Lock-down (control de uso en horario laboral) ===== */
+.lockscreen{position:fixed;inset:0;z-index:300;background:radial-gradient(120% 120% at 50% 22%,#1d1f29,#0b0c11);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:34px 26px;color:#fff}
+.lockscreen h2{font-size:23px;margin:10px 0 4px}
+.lockscreen p{color:#b9bdc9;font-size:14px;line-height:1.55;max-width:340px;margin:4px 0}
+.lockscreen .lk-emoji{font-size:52px}
+.lockscreen .lk-time{font-size:26px;font-weight:800;color:var(--accent2);margin:14px 0}
+.lockscreen .lk-demo{margin-top:24px;font-size:12px;color:#7d8290}
 
 /* ============================== FLASH / CONFETTI ============================== */
 .flash{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
@@ -426,6 +433,7 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 
   <!-- ===================== NAV INFERIOR ===================== -->
   <nav id="nav" class="nav hide"></nav>
+  <div id="lockScreen" class="lockscreen hide"></div>
 </div>
 
 <div id="flash" class="flash"></div>
@@ -1239,6 +1247,8 @@ function renderHome(){
      '<div class="stat"><div class="n">'+done+'/'+total+'</div><div class="l">Cursos</div></div></div>';
   // acceso al recibo de nómina
   h+='<div class="card" style="cursor:pointer" onclick="renderPay()"><div class="line"><span style="display:flex;align-items:center;gap:11px"><span style="font-size:22px">💵</span><b>Mi recibo de nómina</b></span><span class="note">Ver y firmar ›</span></div></div>';
+  // control de uso (lock-down) — demo
+  h+=lockCard();
   // cursos comunes
   h+='<div class="sec-t">Para todo el personal<span class="ln"></span></div>';
   CFG.common.forEach(function(c){ h+=courseRow(c); });
@@ -1644,6 +1654,7 @@ function renderHR(){
   h+='<div class="card"><b>Avance por área</b>'+H.byArea.map(function(a){
        return '<div class="barrow"><span>'+esc(a[0])+'</span><span class="v">'+a[1]+'%</span></div><div class="bar"><i style="width:'+a[1]+'%"></i></div>';
      }).join('')+'</div>';
+  h+=horasBlock();
   h+='<div class="card"><b>Focos rojos</b>'+H.redFlags.map(function(x){
        return '<div class="line"><span>'+esc(x)+'</span><span class="tg">Atender</span></div>';
      }).join('')+'</div>';
@@ -2280,6 +2291,55 @@ function recibosAdminBlock(){
   }).join('')+'</div>';
   return h;
 }
+
+/* ===== #7 HORARIOS Y HORAS TRABAJADAS (tablero RRHH) · datos de ejemplo =====
+   En la app viva se conecta al checador/reloj de la planta (huella/tarjeta). */
+var HORAS_DEMO=[
+  {emp:51, area:'Producción', turno:'7:00–17:00', hrs:46.5, exp:48, ret:0},
+  {emp:55, area:'Producción', turno:'7:00–17:00', hrs:43,   exp:48, ret:2},
+  {emp:7,  area:'Almacén',    turno:'7:00–16:00', hrs:44,   exp:45, ret:0},
+  {emp:34, area:'Inventario', turno:'7:00–16:00', hrs:40,   exp:45, ret:1},
+  {emp:100,area:'Calidad',    turno:'8:00–17:00', hrs:45,   exp:45, ret:0},
+  {emp:142,area:'Maquinaria', turno:'6:00–15:00', hrs:38,   exp:45, ret:3},
+  {emp:120,area:'Comercial',  turno:'9:00–18:00', hrs:45,   exp:45, ret:0}
+];
+function horasBlock(){
+  var h='<div class="card"><b>⏰ Horarios y horas trabajadas (esta semana)</b>'+
+    '<div class="note" style="margin:3px 0 9px">Datos de ejemplo. En la app viva se conectan al <b>checador/reloj</b> de la planta.</div>';
+  HORAS_DEMO.forEach(function(w){
+    var pct=Math.min(100,Math.round(w.hrs/w.exp*100));
+    var col = pct>=98?'var(--ok)':(pct>=85?'var(--warn)':'var(--bad)');
+    h+='<div style="margin-top:11px"><div class="line" style="margin-bottom:4px"><span><b>#'+(''+w.emp).padStart(3,'0')+'</b> · '+esc(w.area)+' <span class="note">· '+w.turno+'</span></span>'+
+       '<span class="v" style="font-variant-numeric:tabular-nums">'+w.hrs+' / '+w.exp+' h'+(w.ret?' · <span style="color:var(--warn)">'+w.ret+' retardo'+(w.ret>1?'s':'')+'</span>':'')+'</span></div>'+
+       '<div class="bar"><i style="width:'+pct+'%;background:'+col+'"></i></div></div>';
+  });
+  return h+'</div>';
+}
+
+/* ===== #9 LOCK-DOWN: 10 min de capacitación en horario laboral · demo =====
+   El app se auto-bloquea en horario laboral tras 10 min y se libera al salir del turno.
+   En el demo el bloqueo se MUESTRA con un botón (para no bloquear a quien explora);
+   en Fase 2, con la hora del servidor y los horarios reales, se aplica solo. */
+var LOCK_MIN=10;
+var SHIFTS={ almacen:'16:00', inventario:'16:00', produccion:'17:00', calidad:'17:00', comercial:'18:00', maquinaria:'15:00' };
+function shiftEnd(){ return SHIFTS[S.key]||'17:00'; }
+function lockCard(){
+  return '<div class="card" style="border-left:4px solid var(--accent2)"><div class="line"><span class="tg">🔒 Control de uso</span>'+speakBtn('En horario laboral, la app solo permite 10 minutos al día de capacitación. Al terminar tu turno se libera completa.')+'</div>'+
+    '<p class="note" style="margin:8px 0 0">En <b>horario laboral</b>, la app solo permite <b>'+LOCK_MIN+' min al día</b> de capacitación; al terminar tu turno (<b>'+shiftEnd()+'</b>) se <b>libera completa</b>. Así evitamos el celular en horas de trabajo.</p>'+
+    '<button class="btn ghost" style="margin-top:11px" onclick="lockDemo()">▶ Ver cómo se bloquea (demo)</button></div>';
+}
+function showLock(){
+  var el=$('lockScreen'); if(!el) return;
+  el.innerHTML='<div class="lk-emoji">⏸️</div>'+bandi('b-lg')+
+    '<h2>¡A darle a la chamba! 💪</h2>'+
+    '<p>Por hoy ya usaste tus <b>'+LOCK_MIN+' minutos</b> de capacitación en horario laboral.<br>La app se <b>libera completa</b> al terminar tu turno.</p>'+
+    '<div class="lk-time">Se desbloquea a las '+shiftEnd()+'</div>'+
+    '<p>Mientras tanto, concéntrate en tu trabajo. ¡Nos vemos al rato! 🛞</p>'+
+    '<div class="lk-demo">Demostración · <span onclick="hideLock()" style="text-decoration:underline;cursor:pointer">Cerrar</span></div>';
+  el.classList.remove('hide');
+}
+function hideLock(){ var el=$('lockScreen'); if(el) el.classList.add('hide'); }
+function lockDemo(){ showLock(); }
 
 /* ====================== ARRANQUE ====================== */
 (function init(){

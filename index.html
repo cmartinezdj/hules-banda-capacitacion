@@ -421,6 +421,7 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
     <section id="s-clases"  class="screen pad hide"></section>
     <section id="s-news"    class="screen pad hide"></section>
     <section id="s-buzon"   class="screen pad hide"></section>
+    <section id="s-pay"     class="screen pad hide"></section>
   </main>
 
   <!-- ===================== NAV INFERIOR ===================== -->
@@ -605,6 +606,7 @@ window.CFG = {
     streakStep:5,  // bono = racha × este valor (solo en aprobados a la primera)
     watch:80,       // ⭐ VER EL VIDEO de capacitación (1ª vez) — lo que MÁS da, empuja el uso del app
     read:8,         // marcar "Enterado" de una noticia de RRHH (1 sola vez por aviso)
+    poll:8,         // responder una encuesta de RRHH (1 sola vez por encuesta)
     report:75,      // reporte de anormalidad/mejora aceptado por RRHH (una capacitación ≈ 100)
     perLevel:300    // puntos para subir de nivel
   },
@@ -1183,11 +1185,11 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'" onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['home','course','quiz','result','rewards','chat','hr','clases','news','buzon'];
+var SCREENS=['home','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay'];
 function show(name){
   SCREENS.forEach(function(s){ var el=$('s-'+s); if(el) el.classList.toggle('hide', s!==name); });
-  // nav activo (course/quiz/result cuentan como "home")
-  var navKey = (name==='course'||name==='quiz'||name==='result') ? 'home' : name;
+  // nav activo (course/quiz/result/pay cuentan como "home")
+  var navKey = (name==='course'||name==='quiz'||name==='result'||name==='pay') ? 'home' : name;
   ['home','rewards','chat','hr','clases','news','buzon'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
   renderTop(name);
   window.scrollTo(0,0);
@@ -1203,7 +1205,7 @@ function go(name){
   if(name==='buzon') return renderBuzon();
 }
 function renderTop(name){
-  var sub=(name==='course'||name==='quiz'||name==='result');
+  var sub=(name==='course'||name==='quiz'||name==='result'||name==='pay');
   var left=$('topLeft');
   if(sub){
     left.innerHTML='<button class="back" onclick="'+(name==='quiz'?'backFromQuiz()':'go(\'home\')')+'">‹ Atrás</button>';
@@ -1228,11 +1230,15 @@ function renderHome(){
      '<div><h2>¡Hola! 👋</h2><p>'+esc(S.greet)+'</p></div></div>'+
      '<div class="lvl"><div class="lt"><span>Nivel '+lvl+' · '+levelName()+'</span><span>'+inLvl+' / '+CFG.points.perLevel+'</span></div>'+
      '<div class="lvlbar"><i style="width:'+pct+'%"></i></div></div></div>';
+  // Ruta guiada: tu siguiente paso
+  h+=rutaCard();
   // stats
   h+='<div class="stats">'+
      '<div class="stat"><div class="n">'+S.points+'</div><div class="l">Puntos</div></div>'+
      '<div class="stat"><div class="n">'+S.streak+'🔥</div><div class="l">Racha</div></div>'+
      '<div class="stat"><div class="n">'+done+'/'+total+'</div><div class="l">Cursos</div></div></div>';
+  // acceso al recibo de nómina
+  h+='<div class="card" style="cursor:pointer" onclick="renderPay()"><div class="line"><span style="display:flex;align-items:center;gap:11px"><span style="font-size:22px">💵</span><b>Mi recibo de nómina</b></span><span class="note">Ver y firmar ›</span></div></div>';
   // cursos comunes
   h+='<div class="sec-t">Para todo el personal<span class="ln"></span></div>';
   CFG.common.forEach(function(c){ h+=courseRow(c); });
@@ -1735,9 +1741,9 @@ function rangePicker(pfx,mode){ var act='background:var(--accent);color:#fff;bor
   return '<div style="display:flex;gap:7px;flex-wrap:wrap"><button id="'+pfx+'ToAll" class="chip2" style="'+(mode==='all'?act:'')+'" onclick="setTo(\''+pfx+'\',\'all\')">👥 Todos</button><button id="'+pfx+'ToRange" class="chip2" style="'+(mode==='range'?act:'')+'" onclick="setTo(\''+pfx+'\',\'range\')">🔢 Por rango de IDs</button></div>'+
     '<div id="'+pfx+'Range" style="display:'+(mode==='range'?'flex':'none')+';gap:8px;align-items:center;margin-top:8px"><span class="note">Desde</span><input id="'+pfx+'Min" class="fin" type="number" min="1" placeholder="001" style="width:88px"><span class="note">hasta</span><input id="'+pfx+'Max" class="fin" type="number" min="1" placeholder="050" style="width:88px"></div>';
 }
-function setTo(pfx,m){ if(pfx==='news') _newsTo=m; else _dmTo=m; var r=$(pfx+'Range'); if(r) r.style.display=(m==='range'?'flex':'none'); var act='background:var(--accent);color:#fff;border-color:var(--accent)'; var a=$(pfx+'ToAll'),b=$(pfx+'ToRange'); if(a) a.style.cssText=(m==='all'?act:''); if(b) b.style.cssText=(m==='range'?act:''); }
-function readTarget(pfx){ var mode=(pfx==='news'?_newsTo:_dmTo); if(mode!=='range') return {mode:'all'}; var mn=parseInt(($(pfx+'Min')||{}).value,10), mx=parseInt(($(pfx+'Max')||{}).value,10); if(isNaN(mn)||isNaN(mx)) return null; return {mode:'range',min:mn,max:mx}; }
-var _newsTo='all', _dmTo='all';
+function setTo(pfx,m){ if(pfx==='news') _newsTo=m; else if(pfx==='poll') _pollTo=m; else _dmTo=m; var r=$(pfx+'Range'); if(r) r.style.display=(m==='range'?'flex':'none'); var act='background:var(--accent);color:#fff;border-color:var(--accent)'; var a=$(pfx+'ToAll'),b=$(pfx+'ToRange'); if(a) a.style.cssText=(m==='all'?act:''); if(b) b.style.cssText=(m==='range'?act:''); }
+function readTarget(pfx){ var mode=(pfx==='news'?_newsTo:(pfx==='poll'?_pollTo:_dmTo)); if(mode!=='range') return {mode:'all'}; var mn=parseInt(($(pfx+'Min')||{}).value,10), mx=parseInt(($(pfx+'Max')||{}).value,10); if(isNaN(mn)||isNaN(mx)) return null; return {mode:'range',min:mn,max:mx}; }
+var _newsTo='all', _dmTo='all', _pollTo='all';
 var _newsImg=null;
 function loadNewsImg(inp){
   var f=inp.files&&inp.files[0]; if(!f) return;
@@ -1789,7 +1795,20 @@ function renderNews(){
        '<div style="margin-top:10px"><label class="btn ghost" style="margin:0;padding:11px;font-size:14px;display:inline-block;cursor:pointer;width:auto">🖼️ Adjuntar infografía<input type="file" accept="image/*" onchange="loadNewsImg(this)" style="display:none"></label></div>'+
        '<img id="newsImgPv" alt="" style="display:none;width:100%;border-radius:10px;margin-top:9px;border:1px solid var(--line)">'+
        '<button class="btn" style="margin-top:10px;padding:13px;font-size:15px" onclick="postNews()">Publicar</button></div>';
+    // crear evento de calendario
+    h+='<div class="card"><b>📅 Agregar evento al calendario</b>'+
+       '<input id="evTitle" class="fin" placeholder="Evento (ej. Día de pago, junta de seguridad)" autocomplete="off" style="margin:9px 0 8px">'+
+       '<input id="evDate" class="fin" type="date">'+
+       '<button class="btn" style="margin-top:10px" onclick="addEvent()">Agregar evento</button></div>';
+    // crear encuesta
+    h+='<div class="card"><b>📊 Nueva encuesta</b>'+
+       '<input id="pollQ" class="fin" placeholder="Pregunta (ej. ¿Cómo te sientes con tu EPP?)" autocomplete="off" style="margin:9px 0 8px">'+
+       '<input id="pollO1" class="fin" placeholder="Opción 1" style="margin-bottom:7px"><input id="pollO2" class="fin" placeholder="Opción 2" style="margin-bottom:7px"><input id="pollO3" class="fin" placeholder="Opción 3 (opcional)">'+
+       '<div class="note" style="margin:12px 0 6px">¿Para quién?</div>'+rangePicker('poll',_pollTo)+
+       '<button class="btn" style="margin-top:10px" onclick="addPoll()">Publicar encuesta</button></div>';
   }
+  h+=pollsBlock();
+  h+=eventsBlock();
   var vis = S.admin ? a : a.filter(function(n){ return inTarget(n.to, S.emp); });
   h+='<div class="sec-t">'+(S.admin?'Publicadas':'Tablero de avisos')+'<span class="ln"></span></div>';
   if(!vis.length){ h+='<div class="card"><div class="note">'+(S.admin?'Aún no hay noticias.':'Por ahora no hay avisos para ti.')+'</div></div>'; }
@@ -1886,6 +1905,8 @@ function renderBuzon(){
            ? '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="margin:0;flex:1;padding:11px;font-size:13px" onclick="reviewReport(\''+r.id+'\',true)">✓ '+(ty.pts?'Aceptar (+'+CFG.points.report+')':'Atendida')+'</button><button class="btn ghost" style="margin:0;flex:1;padding:11px;font-size:13px" onclick="reviewReport(\''+r.id+'\',false)">✗ No procede</button></div>'
            : (r.pts?'<div class="note" style="margin-top:7px">🏆 +'+r.pts+' puntos otorgados al empleado.</div>':''))+'</div>';
     });
+    h+=leaveAdminBlock();
+    h+=recibosAdminBlock();
   } else {
     h+='<div class="card"><b>Enviar a RRHH</b><div class="note" style="margin:4px 0 9px">Elige el tipo:</div>'+
        '<div style="display:flex;gap:7px;flex-wrap:wrap">'+
@@ -1893,6 +1914,7 @@ function renderBuzon(){
        '<textarea id="buzText" class="fin" rows="4" placeholder="Cuéntale a RRHH…" style="margin-top:11px"></textarea>'+
        (RPT[_buzType].pts?'<div class="note" style="margin-top:8px">💡 Si RRHH lo aprueba, ganas <b>'+CFG.points.report+' puntos</b> (una capacitación da ≈100).</div>':'<div class="note" style="margin-top:8px">🔒 Tu queja llega directa y privada a RRHH.</div>')+
        '<button class="btn" style="margin-top:10px;padding:13px;font-size:15px" onclick="submitReport()">Enviar a RRHH</button></div>';
+    h+=leaveWorkerBlock();
     var dms=dmGet().filter(function(d){ return inTarget(d.to, S.emp); });
     if(dms.length){ h+='<div class="sec-t">Mensajes de RRHH<span class="ln"></span></div>';
       dms.forEach(function(d){ h+='<div class="card" style="border-left:3px solid var(--accent)"><div class="line"><b>✉️ Recursos Humanos</b><span class="note">'+buzTime(d.ts)+'</span></div><p style="margin:7px 0;line-height:1.5">'+esc(d.text)+'</p><div class="line"><span></span>'+speakBtn('Mensaje de Recursos Humanos. '+d.text)+'</div></div>'; });
@@ -2050,6 +2072,215 @@ function burst(){
 }
 function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim()||'#fff'; }
 
+/* ============================================================================
+   FUNCIONES NUEVAS (demo) — Ruta guiada · Calendario · Encuestas · Vacaciones · Nómina
+   Todo por dispositivo (localStorage). En Fase 2 cada "...Get/...Save" se cambia
+   por una llamada al servidor SIN tocar estas pantallas.
+   ============================================================================ */
+function lsGet(k){ try{ return JSON.parse(localStorage.getItem(k)||'[]')||[]; }catch(e){ return []; } }
+function lsSet(k,a){ try{ localStorage.setItem(k, JSON.stringify(a)); }catch(e){ flash('No se pudo guardar (espacio lleno)'); } }
+function fmtDate(d){ try{ if(typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d)){ var p=d.split('-'); d=new Date(+p[0],+p[1]-1,+p[2]); } return new Date(d).toLocaleDateString('es-MX',{weekday:'short',day:'2-digit',month:'short'}); }catch(e){ return ''; } }
+function money(n){ try{ return '$'+(n||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}); }catch(e){ return '$'+n; } }
+
+/* ===== #8 RUTA GUIADA: "Tu siguiente paso" ===== */
+function nextCourse(){
+  var list=(CFG.common||[]).concat(CFG.areas[S.key]||[]);
+  for(var i=0;i<list.length;i++){ if(!S.done[list[i].id]) return list[i]; }
+  return null;
+}
+function rutaCard(){
+  var c=nextCourse();
+  if(!c){ return '<div class="card" style="border-left:4px solid var(--ok)"><div class="row">'+bandi('b-md')+'<div><b>🎉 ¡Vas al corriente!</b><p class="note" style="margin-top:3px">Completaste todos tus cursos. Repasa el que quieras cuando gustes.</p></div></div></div>'; }
+  return '<div class="card" style="border-left:4px solid var(--accent)">'+
+    '<div class="line"><span class="tg">🧭 Tu siguiente paso</span>'+speakBtn('Tu siguiente curso es: '+c.t)+'</div>'+
+    '<b style="font-size:16px;display:block;margin:8px 0 2px">'+esc(c.t)+'</b>'+
+    '<p class="note">Velo y gana <b>'+CFG.points.watch+' puntos</b> · ⏱ '+esc(c.dur||'')+'</p>'+
+    '<button class="btn" style="margin-top:10px" onclick="openCourse(\''+c.id+'\')">▶ Empezar ahora</button></div>';
+}
+
+/* ===== #3 CALENDARIO DE EVENTOS (RRHH → todos) · hb_events ===== */
+function evGet(){ return lsGet('hb_events'); }
+function addEvent(){
+  var t=(($('evTitle')||{}).value||'').trim(), d=(($('evDate')||{}).value||'').trim();
+  if(!t||!d){ flash('Escribe el evento y la fecha'); return; }
+  var a=evGet(); a.push({ id:'e'+Date.now(), t:t, d:d, ts:Date.now() }); lsSet('hb_events', a);
+  flash('📅 Evento agregado'); renderNews();
+}
+function delEvent(id){ lsSet('hb_events', evGet().filter(function(e){ return e.id!==id; })); renderNews(); }
+function eventsBlock(){
+  var a=evGet().slice().sort(function(x,y){ return x.d<y.d?-1:1; });
+  var today=new Date().toISOString().slice(0,10);
+  var vis = S.admin ? a : a.filter(function(e){ return e.d>=today; });
+  if(!vis.length) return '';
+  var h='<div class="sec-t">📅 Próximos eventos<span class="ln"></span></div>';
+  vis.forEach(function(e){
+    h+='<div class="card"><div class="line"><span><b>'+esc(e.t)+'</b><br><span class="note">📅 '+fmtDate(e.d)+'</span></span>'+
+       '<span style="display:flex;gap:7px;flex:none;align-items:center">'+speakBtn(e.t+'. Fecha: '+fmtDate(e.d))+
+       (S.admin?'<button class="back" style="padding:6px 10px" onclick="delEvent(\''+e.id+'\')">Quitar</button>':'')+'</span></div></div>';
+  });
+  return h;
+}
+
+/* ===== #4 ENCUESTAS (RRHH → personal) · hb_polls ===== */
+function pollGet(){ return lsGet('hb_polls'); }
+function pollSave(a){ lsSet('hb_polls', a); }
+function addPoll(){
+  var q=(($('pollQ')||{}).value||'').trim();
+  var opts=[(($('pollO1')||{}).value||''),(($('pollO2')||{}).value||''),(($('pollO3')||{}).value||'')].map(function(x){return (x||'').trim();}).filter(function(x){return x;});
+  if(!q||opts.length<2){ flash('Escribe la pregunta y al menos 2 opciones'); return; }
+  var to=readTarget('poll'); if(!to){ flash('Escribe el rango de IDs (desde–hasta)'); return; }
+  var a=pollGet(); a.unshift({ id:'p'+Date.now(), q:q, opts:opts, votes:{}, to:to, ts:Date.now() });
+  pollSave(a); flash('📊 Encuesta publicada · '+targetLabel(to)); renderNews();
+}
+function delPoll(id){ pollSave(pollGet().filter(function(p){ return p.id!==id; })); renderNews(); }
+function votePoll(id,idx){
+  var a=pollGet(), p=null; for(var i=0;i<a.length;i++){ if(a[i].id===id){ p=a[i]; break; } }
+  if(!p) return; p.votes=p.votes||{};
+  if(p.votes[S.emp]!=null){ renderNews(); return; }
+  p.votes[S.emp]=idx; pollSave(a);
+  S.points+=CFG.points.poll; save(); renderTop();
+  flash('🗳️ ¡Gracias por responder! +'+CFG.points.poll+' pts'); renderNews();
+}
+function pollsBlock(){
+  var a=pollGet();
+  var vis = S.admin ? a : a.filter(function(p){ return inTarget(p.to,S.emp); });
+  if(!vis.length) return '';
+  var h='<div class="sec-t">📊 Encuestas<span class="ln"></span></div>';
+  vis.forEach(function(p){
+    var votes=p.votes||{}, total=0; for(var z in votes) total++;
+    var counts=p.opts.map(function(_,j){ var c=0; for(var k in votes){ if(votes[k]===j) c++; } return c; });
+    var myVote=votes[S.emp];
+    h+='<div class="card"><div class="line"><b style="flex:1">'+esc(p.q)+'</b>'+speakBtn(p.q)+'</div>';
+    if(S.admin || myVote!=null){
+      p.opts.forEach(function(o,j){
+        var pct = total? Math.round(counts[j]/total*100):0;
+        h+='<div style="margin-top:9px"><div class="line" style="margin-bottom:3px"><span'+(myVote===j?' style="font-weight:800;color:var(--accent2)"':'')+'>'+esc(o)+(myVote===j?' ✓':'')+'</span><span class="note">'+pct+'% ('+counts[j]+')</span></div>'+
+           '<div class="lvlbar"><i style="width:'+pct+'%"></i></div></div>';
+      });
+      h+='<p class="note" style="margin-top:9px">'+total+' respuesta(s)'+(S.admin?' · '+targetLabel(p.to):'')+'</p>';
+      if(S.admin) h+='<button class="back" style="margin-top:8px;padding:6px 10px" onclick="delPoll(\''+p.id+'\')">Eliminar encuesta</button>';
+    } else {
+      p.opts.forEach(function(o,j){
+        h+='<div class="opt" onclick="votePoll(\''+p.id+'\','+j+')"><span class="dot"></span><span style="flex:1">'+esc(o)+'</span>'+speakBtn(o)+'</div>';
+      });
+      h+='<p class="note" style="margin-top:7px">Responde y gana +'+CFG.points.poll+' pts</p>';
+    }
+    h+='</div>';
+  });
+  return h;
+}
+
+/* ===== #5 VACACIONES Y PERMISOS (personal → RRHH) · hb_leave ===== */
+var LEAVE={ vacaciones:{ic:'🏖️',l:'Vacaciones'}, permiso_goce:{ic:'📋',l:'Permiso con goce'}, permiso_singoce:{ic:'📄',l:'Permiso sin goce'}, incapacidad:{ic:'🩺',l:'Incapacidad / médico'} };
+var _leaveType='vacaciones';
+function leaveGet(){ return lsGet('hb_leave'); }
+function leaveSave(a){ lsSet('hb_leave', a); }
+function vacBalance(emp){ return 12; }   // demo: según LFT/antigüedad; en Fase 2 viene de RRHH
+function setLeaveType(t){ _leaveType=t; renderBuzon(); }
+function submitLeave(){
+  var from=(($('lvFrom')||{}).value||''), to=(($('lvTo')||{}).value||''), reason=(($('lvReason')||{}).value||'').trim();
+  if(!from||!to){ flash('Elige las fechas (desde y hasta)'); return; }
+  var days=Math.max(1, Math.round((new Date(to)-new Date(from))/86400000)+1);
+  var a=leaveGet(); a.unshift({ id:'l'+Date.now(), emp:S.emp, area:S.area, type:_leaveType, from:from, to:to, days:days, reason:reason, status:'pendiente', ts:Date.now() });
+  leaveSave(a); flash('✅ Solicitud enviada a RRHH'); renderBuzon();
+}
+function reviewLeave(id,ok){
+  var a=leaveGet(), r=null; for(var i=0;i<a.length;i++){ if(a[i].id===id){ r=a[i]; break; } }
+  if(!r||r.status!=='pendiente') return;
+  r.status= ok?'aprobado':'rechazado'; leaveSave(a); flash(ok?'✅ Aprobado':'Rechazado'); renderBuzon();
+}
+function leaveWorkerBlock(){
+  var mine=leaveGet().filter(function(r){ return r.emp===S.emp; });
+  var h='<div class="sec-t">🏖️ Vacaciones y permisos<span class="ln"></span></div>';
+  h+='<div class="card"><div class="line"><b>Días disponibles</b><span class="ptchip">'+vacBalance(S.emp)+' días</span></div>'+
+     '<p class="note" style="margin-top:5px">Según tu antigüedad (Ley Federal del Trabajo). En la versión final, el saldo viene de RRHH.</p></div>';
+  var chips=''; for(var k in LEAVE){ chips+='<button class="chip2" style="'+(_leaveType===k?'background:var(--accent);color:#fff;border-color:var(--accent)':'')+'" onclick="setLeaveType(\''+k+'\')">'+LEAVE[k].ic+' '+LEAVE[k].l+'</button>'; }
+  h+='<div class="card"><b>Solicitar</b><div style="display:flex;gap:7px;flex-wrap:wrap;margin:10px 0">'+chips+'</div>'+
+     '<div style="display:flex;gap:8px;align-items:center"><span class="note">Desde</span><input id="lvFrom" class="fin" type="date" style="flex:1"><span class="note">hasta</span><input id="lvTo" class="fin" type="date" style="flex:1"></div>'+
+     '<textarea id="lvReason" class="fin" rows="2" placeholder="Motivo (opcional)" style="margin-top:8px"></textarea>'+
+     '<button class="btn" style="margin-top:10px" onclick="submitLeave()">Enviar solicitud</button></div>';
+  if(mine.length){ h+='<div class="card"><b>Mis solicitudes</b>'+mine.map(function(r){
+    var st=r.status==='aprobado'?'<span class="pill done">Aprobado ✓</span>':r.status==='rechazado'?'<span class="pill">Rechazado</span>':'<span class="pill pend">Pendiente</span>';
+    return '<div class="line" style="margin-top:9px"><span>'+LEAVE[r.type].ic+' '+LEAVE[r.type].l+'<br><span class="note">'+fmtDate(r.from)+' → '+fmtDate(r.to)+' · '+r.days+' día(s)</span></span>'+st+'</div>';
+  }).join('')+'</div>'; }
+  return h;
+}
+function leaveAdminBlock(){
+  var a=leaveGet();
+  var h='<div class="sec-t">🏖️ Solicitudes de vacaciones / permisos<span class="ln"></span></div>';
+  if(!a.length) return h+'<div class="card"><div class="note">Sin solicitudes.</div></div>';
+  a.slice(0,20).forEach(function(r){
+    var st=r.status==='aprobado'?'<span class="pill done">Aprobado</span>':r.status==='rechazado'?'<span class="pill">Rechazado</span>':'';
+    h+='<div class="card"><div class="line"><span><b>#'+(''+r.emp).padStart(3,'0')+'</b> · '+esc(r.area||'')+'<br><span class="note">'+LEAVE[r.type].ic+' '+LEAVE[r.type].l+' · '+fmtDate(r.from)+' → '+fmtDate(r.to)+' ('+r.days+' días)</span>'+(r.reason?'<br><span class="note">«'+esc(r.reason)+'»</span>':'')+'</span>'+st+'</div>'+
+      (r.status==='pendiente'?'<div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="margin:0;flex:1;padding:10px;font-size:13px" onclick="reviewLeave(\''+r.id+'\',true)">✓ Aprobar</button><button class="btn ghost" style="margin:0;flex:1;padding:10px;font-size:13px" onclick="reviewLeave(\''+r.id+'\',false)">✗ Rechazar</button></div>':'')+'</div>';
+  });
+  return h;
+}
+
+/* ===== #6 RECIBO DE NÓMINA + FIRMA DIGITAL · hb_recibos ===== */
+function payPeriod(){ var d=new Date(), mes=d.toLocaleDateString('es-MX',{month:'long',year:'numeric'});
+  return d.getDate()<=15 ? {label:'1 al 15 de '+mes, key:d.getFullYear()+'-'+(d.getMonth()+1)+'-A'} : {label:'16 al fin de '+mes, key:d.getFullYear()+'-'+(d.getMonth()+1)+'-B'}; }
+function payData(emp){
+  var sueldo=3500+(emp%10)*50, bono=300, perc=sueldo+bono;
+  var imss=Math.round(perc*0.025), isr=Math.round(perc*0.09), ded=imss+isr;
+  return {sueldo:sueldo,bono:bono,perc:perc,imss:imss,isr:isr,ded:ded,neto:perc-ded};
+}
+function recibosGet(){ return lsGet('hb_recibos'); }
+function signRecord(emp,key){ var a=recibosGet(); for(var i=0;i<a.length;i++){ if(a[i].emp===emp&&a[i].key===key) return a[i]; } return null; }
+function renderPay(){
+  var per=payPeriod(), p=payData(S.emp), signed=signRecord(S.emp,per.key), h='';
+  h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Mi recibo de nómina</h2><p>Revísalo y fírmalo. Le llega a RRHH sin papel.</p></div></div></div>';
+  h+='<div class="card"><div class="line"><b>Periodo</b><span class="note">'+per.label+'</span></div>'+
+     '<div class="line" style="margin-top:6px"><span>Empleado</span><span>#'+(''+S.emp).padStart(3,'0')+' · '+esc(S.area)+'</span></div></div>';
+  h+='<div class="card"><b>Percepciones</b>'+
+     '<div class="line" style="margin-top:7px"><span>Sueldo</span><span>'+money(p.sueldo)+'</span></div>'+
+     '<div class="line" style="margin-top:4px"><span>Bono de puntualidad</span><span>'+money(p.bono)+'</span></div>'+
+     '<div class="line" style="margin-top:8px;border-top:1px solid var(--line);padding-top:8px"><b>Total percepciones</b><b>'+money(p.perc)+'</b></div></div>';
+  h+='<div class="card"><b>Deducciones</b>'+
+     '<div class="line" style="margin-top:7px"><span>IMSS</span><span>− '+money(p.imss)+'</span></div>'+
+     '<div class="line" style="margin-top:4px"><span>ISR</span><span>− '+money(p.isr)+'</span></div>'+
+     '<div class="line" style="margin-top:8px;border-top:1px solid var(--line);padding-top:8px"><b>Total deducciones</b><b>− '+money(p.ded)+'</b></div></div>';
+  h+='<div class="card" style="border:1px solid var(--accent)"><div class="line"><b style="font-size:17px">Neto a pagar</b><b style="font-size:20px;color:var(--accent2)">'+money(p.neto)+'</b></div></div>';
+  if(signed){
+    h+='<div class="card" style="border:1px solid var(--ok)"><div class="row">'+bandi('b-sm')+'<div><b style="color:var(--ok)">✓ Firmado</b><p class="note">Firmaste el '+fmtDate(signed.ts)+'. RRHH ya recibió tu acuse.</p></div></div>'+
+       (signed.img?'<img src="'+signed.img+'" alt="firma" style="height:80px;margin-top:9px;background:#fff;border-radius:8px;padding:4px">':'')+'</div>';
+  } else {
+    h+='<div class="card"><b>Firma de recibido</b><p class="note" style="margin:4px 0 9px">Firma con el dedo en el recuadro y confirma. Esto le avisa a RRHH que ya recibiste tu recibo.</p>'+
+       '<canvas id="sigPad" width="600" height="200" style="width:100%;height:160px;background:#fff;border-radius:10px;border:1px solid var(--line);touch-action:none"></canvas>'+
+       '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn ghost" style="margin:0;flex:none;padding:11px 14px" onclick="sigClear()">Borrar</button>'+
+       '<button class="btn" style="margin:0;flex:1;padding:11px" onclick="signPay()">✍️ Firmar y enviar a RRHH</button></div></div>';
+  }
+  $('s-pay').innerHTML=h; show('pay');
+  if(!signed) setTimeout(sigInit,40);
+}
+var _sig={on:false,drawn:false};
+function sigInit(){
+  var c=$('sigPad'); if(!c) return; var ctx=c.getContext('2d'); _sig.drawn=false;
+  ctx.strokeStyle='#16181d'; ctx.lineWidth=2.6; ctx.lineCap='round'; ctx.lineJoin='round';
+  function pos(e){ var r=c.getBoundingClientRect(), t=(e.touches&&e.touches[0])?e.touches[0]:e; return {x:(t.clientX-r.left)*(c.width/r.width), y:(t.clientY-r.top)*(c.height/r.height)}; }
+  function down(e){ e.preventDefault(); _sig.on=true; var p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); }
+  function move(e){ if(!_sig.on) return; e.preventDefault(); var p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); _sig.drawn=true; }
+  function up(){ _sig.on=false; }
+  c.onmousedown=down; c.onmousemove=move; c.onmouseup=up; c.onmouseleave=up;
+  c.ontouchstart=down; c.ontouchmove=move; c.ontouchend=up;
+}
+function sigClear(){ var c=$('sigPad'); if(c){ c.getContext('2d').clearRect(0,0,c.width,c.height); _sig.drawn=false; } }
+function signPay(){
+  if(!_sig.drawn){ flash('Firma en el recuadro primero ✍️'); return; }
+  var c=$('sigPad'), per=payPeriod(), img=''; try{ img=c.toDataURL('image/png'); }catch(e){}
+  var a=recibosGet(); a.unshift({ emp:S.emp, area:S.area, key:per.key, period:per.label, img:img, ts:Date.now() }); lsSet('hb_recibos', a);
+  burst(); flash('✅ ¡Recibo firmado y enviado a RRHH!'); renderPay();
+}
+function recibosAdminBlock(){
+  var a=recibosGet();
+  var h='<div class="sec-t">💵 Recibos de nómina firmados<span class="ln"></span></div>';
+  if(!a.length) return h+'<div class="card"><div class="note">Aún nadie firma su recibo.</div></div>';
+  h+='<div class="card"><b>'+a.length+' firmado(s)</b>'+a.slice(0,20).map(function(r){
+    return '<div class="line" style="margin-top:9px"><span><b>#'+(''+r.emp).padStart(3,'0')+'</b> · '+esc(r.area||'')+'<br><span class="note">'+esc(r.period||'')+' · firmado '+fmtDate(r.ts)+'</span></span>'+(r.img?'<img src="'+r.img+'" alt="firma" style="height:34px;background:#fff;border-radius:6px;padding:2px">':'')+'</div>';
+  }).join('')+'</div>';
+  return h;
+}
+
 /* ====================== ARRANQUE ====================== */
 (function init(){
   try{ HBKEY=localStorage.getItem('hb_key')||''; }catch(e){}   // recordar la IA real entre sesiones
@@ -2065,6 +2296,15 @@ function getCss(v){ return getComputedStyle(document.documentElement).getPropert
   ])); } }catch(e){}
   try{ if(!localStorage.getItem('hb_dm')){ localStorage.setItem('hb_dm', JSON.stringify([
     { id:'d1', to:{mode:'all'}, text:'Recordatorio: el viernes es día de pago. Cualquier duda con tu recibo, pásala por aquí a RRHH.', ts:Date.now()-43200000 }
+  ])); } }catch(e){}
+  try{ if(!localStorage.getItem('hb_events')){ var _d=function(n){ return new Date(Date.now()+n*86400000).toISOString().slice(0,10); };
+    localStorage.setItem('hb_events', JSON.stringify([
+      { id:'e1', t:'Día de pago de nómina', d:_d(2), ts:Date.now() },
+      { id:'e2', t:'Junta de seguridad mensual', d:_d(5), ts:Date.now() },
+      { id:'e3', t:'Simulacro de evacuación', d:_d(9), ts:Date.now() }
+    ])); } }catch(e){}
+  try{ if(!localStorage.getItem('hb_polls')){ localStorage.setItem('hb_polls', JSON.stringify([
+    { id:'p1', q:'¿Qué tema quieres reforzar primero?', opts:['Seguridad / EPP','Mi máquina','Calidad'], votes:{}, to:{mode:'all'}, ts:Date.now() }
   ])); } }catch(e){}
   buildLoginHelp();
   var inp=$('inEmp');

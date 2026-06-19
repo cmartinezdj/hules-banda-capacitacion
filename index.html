@@ -603,6 +603,8 @@ window.CFG = {
     perfect:15,     // bono por 3/3
     onTime:10,      // bono por completar a tiempo
     streakStep:5,  // bono = racha × este valor (solo en aprobados a la primera)
+    watch:80,       // ⭐ VER EL VIDEO de capacitación (1ª vez) — lo que MÁS da, empuja el uso del app
+    read:8,         // marcar "Enterado" de una noticia de RRHH (1 sola vez por aviso)
     report:75,      // reporte de anormalidad/mejora aceptado por RRHH (una capacitación ≈ 100)
     perLevel:300    // puntos para subir de nivel
   },
@@ -1121,7 +1123,7 @@ function statusOf(id){ return S.done[id]; }
 function doneCount(){ var c=myCourses(),n=0; for(var i=0;i<c.length;i++) if(S.done[c[i].id]) n++; return n; }
 
 /* ---------- persistencia (localStorage; si no está disponible, queda en memoria) ---------- */
-function save(){ try{ localStorage.setItem('hb_'+S.emp, JSON.stringify({points:S.points,streak:S.streak,done:S.done,attempts:S.attempts,best:S.best,redeemed:S.redeemed,role:S.role,clases:S.clases,accessible:S.accessible,rate:S.rate})); }catch(e){} }
+function save(){ try{ localStorage.setItem('hb_'+S.emp, JSON.stringify({points:S.points,streak:S.streak,done:S.done,attempts:S.attempts,best:S.best,redeemed:S.redeemed,role:S.role,clases:S.clases,accessible:S.accessible,rate:S.rate,watched:S.watched})); }catch(e){} }
 function load(emp){ try{ var d=localStorage.getItem('hb_'+emp); return d?JSON.parse(d):null; }catch(e){ return null; } }
 
 /* ====================== LOGIN ====================== */
@@ -1142,7 +1144,7 @@ function login(){
   // construir sesión + cargar progreso guardado
   var saved=load(n)||{};
   S={ emp:n, key:r.key, area:r.area, icon:r.icon, accent:r.accent, accent2:r.accent2, admin:!!r.admin, greet:r.greet,
-      points:saved.points||0, streak:saved.streak||0, done:saved.done||{}, attempts:saved.attempts||{}, best:saved.best||{},
+      points:saved.points||0, streak:saved.streak||0, done:saved.done||{}, attempts:saved.attempts||{}, best:saved.best||{}, watched:saved.watched||{},
       redeemed:saved.redeemed||{}, role:(saved.role||(r.admin?'admin_demo':(r.key==='almacen'?'almacen':CFG.defaultRole))), clases:(saved.clases||{}), accessible:!!saved.accessible, rate:saved.rate||0.78, chat:[] };
   // aplicar color de acento del área
   document.documentElement.style.setProperty('--accent', r.accent);
@@ -1159,7 +1161,7 @@ function logout(){ location.reload(); }
 function resetProgress(){
   if(!confirm('¿Reiniciar tu progreso (puntos, cursos y canjes)? No se puede deshacer.')) return;
   try{ localStorage.removeItem('hb_'+S.emp); }catch(e){}
-  S.points=0; S.streak=0; S.done={}; S.attempts={}; S.best={}; S.redeemed={};
+  S.points=0; S.streak=0; S.done={}; S.attempts={}; S.best={}; S.redeemed={}; S.watched={};
   flash('Progreso reiniciado'); renderHome();
 }
 
@@ -1254,22 +1256,25 @@ function courseRow(c){
 function findCourse(id){ var c=myCourses(); for(var i=0;i<c.length;i++) if(c[i].id===id) return c[i]; return null; }
 function openCourse(id){
   var c=findCourse(id); if(!c) return;
-  cur={course:c, watched:false, exempt:false, answers:[]};
+  var seen=!!S.watched[id];
+  cur={course:c, watched:seen, exempt:false, answers:[]};
   var st=statusOf(id);
   var doneNote = st ? '<div class="note">Ya completaste este curso. Puedes repasarlo cuando quieras (no suma puntos extra).</div>' : '';
+  var vidNote = seen ? '<div class="note">🎬 Ya viste este video y ganaste tus <b>'+CFG.points.watch+' puntos</b>. Puedes repasarlo cuando quieras.</div>' : '';
   var h='';
   h+='<div class="guide">'+bandi('b-md')+'<div class="bub">Mira el video y luego responde <b>3 preguntas</b>. Apruebas con <b>2 de 3</b>. ¿Con prisa? Usa <b>“Examen para exentar”</b>.</div></div>';
   h+='<div class="card" style="padding:0;overflow:hidden">'+
        '<div class="player"><div class="glow"></div><span class="vtag">Capacitación</span>'+
          bandi('b-lg')+
-         '<button class="vplay" id="vplay" onclick="watch()" aria-label="Reproducir"></button>'+
-         '<div class="vstat" id="vstat">Toca para reproducir</div>'+
-         '<div class="vbarwrap"><i id="vbar"></i></div>'+
+         '<button class="vplay'+(seen?' hide':'')+'" id="vplay" onclick="watch()" aria-label="Reproducir"></button>'+
+         '<div class="vstat" id="vstat">'+(seen?'Video visto ✓':'Toca para reproducir · +'+CFG.points.watch+' pts')+'</div>'+
+         '<div class="vbarwrap"><i id="vbar"'+(seen?' style="width:100%"':'')+'></i></div>'+
        '</div>'+
        '<div style="padding:15px"><b style="font-size:17px">'+esc(c.t)+'</b>'+
          '<p style="color:var(--mut);font-size:13px;line-height:1.5;margin:7px 0 0">'+esc(c.d||'')+'</p></div>'+
      '</div>';
-  h+='<button class="btn off" id="btnQuiz" disabled onclick="startQuiz(false)">Tomar quiz</button>';
+  h+=vidNote;
+  h+='<button class="btn'+(seen?'':' off')+'" id="btnQuiz" '+(seen?'':'disabled')+' onclick="startQuiz(false)">Tomar quiz</button>';
   h+='<button class="btn sec w" style="margin-top:10px" onclick="startQuiz(true)">⚡ Examen para exentar (sin ver el video)</button>';
   h+=doneNote;
   $('s-course').innerHTML=h; show('course');
@@ -1284,7 +1289,11 @@ function watch(){
     if(w>=100){ clearInterval(cur._t); cur.watched=true;
       $('vstat').textContent='Video visto ✓';
       var b=$('btnQuiz'); b.disabled=false; b.classList.remove('off');
-      flash('¡Listo! Ya puedes tomar el quiz'); }
+      var cid=cur.course.id;
+      if(!S.watched[cid]){ S.watched[cid]=1; S.points+=CFG.points.watch; save(); renderTop();
+        burst(); flash('🎬 +'+CFG.points.watch+' pts por ver el video'); }
+      else { flash('¡Listo! Ya puedes tomar el quiz'); }
+    }
   },70);
 }
 
@@ -1755,6 +1764,20 @@ function postNews(){
   newsSave(a); _newsImg=null; flash('📣 Publicada · '+targetLabel(to)); renderNews();
 }
 function delNews(id){ if(!confirm('¿Eliminar esta noticia?')) return; newsSave(newsGet().filter(function(n){ return n.id!==id; })); renderNews(); }
+/* ===== Acuse "Enterado": el trabajador confirma que leyó (da puntos bajos 1 sola vez) y RRHH ve quién leyó.
+   Demo: el acuse se guarda en la propia noticia (hb_news[].reads). En producción va al servidor. ===== */
+function hasRead(n){ var r=n.reads||[]; for(var j=0;j<r.length;j++){ if(r[j].emp===S.emp) return true; } return false; }
+function markRead(id){
+  var a=newsGet(), n=null; for(var i=0;i<a.length;i++){ if(a[i].id===id){ n=a[i]; break; } }
+  if(!n) return;
+  n.reads=n.reads||[];
+  if(hasRead(n)){ renderNews(); return; }      // ya estaba marcada: no re-otorga puntos
+  n.reads.push({ emp:S.emp, ts:Date.now() });
+  newsSave(a);
+  S.points+=CFG.points.read; save(); renderTop();
+  flash('👍 ¡Gracias por enterarte! +'+CFG.points.read+' pts');
+  renderNews();
+}
 function renderNews(){
   var a=newsGet(), h='';
   h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Noticias y avisos</h2><p>'+(S.admin?'Publica avisos e infografías para toda la planta.':'Avisos importantes de Recursos Humanos.')+'</p></div></div></div>';
@@ -1771,14 +1794,27 @@ function renderNews(){
   h+='<div class="sec-t">'+(S.admin?'Publicadas':'Tablero de avisos')+'<span class="ln"></span></div>';
   if(!vis.length){ h+='<div class="card"><div class="note">'+(S.admin?'Aún no hay noticias.':'Por ahora no hay avisos para ti.')+'</div></div>'; }
   vis.forEach(function(n){
+    var reads=n.reads||[], foot;
+    if(S.admin){
+      var ids = reads.length ? reads.map(function(r){ return '#'+(''+r.emp).padStart(3,'0'); }).join(' · ') : '';
+      foot='<div class="line" style="margin-top:10px"><span class="note">📅 '+newsTime(n.ts)+' · '+esc(n.by||'RRHH')+'</span>'+
+        '<span style="display:flex;gap:7px;align-items:center;flex:none">'+speakBtn((n.t?n.t+'. ':'')+(n.b||''))+
+        '<button class="back" style="padding:6px 10px" onclick="delNews(\''+n.id+'\')">Eliminar</button></span></div>'+
+        '<div style="margin-top:9px;padding:9px 11px;border-radius:10px;background:var(--card2);border:1px solid var(--line)">'+
+        '<b style="font-size:12.5px">👁 Leído por '+reads.length+'</b>'+
+        '<span class="note" style="display:block;margin-top:3px">'+(ids||'Nadie ha confirmado todavía.')+'</span></div>';
+    }else{
+      foot='<div class="line" style="margin-top:10px"><span class="note">📅 '+newsTime(n.ts)+'</span>'+speakBtn((n.t?n.t+'. ':'')+(n.b||''))+'</div>'+
+        (hasRead(n)
+          ? '<div style="margin-top:10px;padding:10px 12px;border-radius:11px;background:rgba(46,204,113,.12);border:1px solid rgba(46,204,113,.4);color:#43d17a;font-weight:700;font-size:13.5px;text-align:center">✓ Marcaste que lo leíste</div>'
+          : '<button class="btn" style="margin-top:10px;padding:13px;font-size:15px" onclick="markRead(\''+n.id+'\')">👍 Ya leí esto · +'+CFG.points.read+' pts</button>');
+    }
     h+='<div class="card">'+
        (S.admin?'<div style="margin-bottom:6px"><span class="tg">🎯 '+targetLabel(n.to)+'</span></div>':'')+
        (n.t?'<b style="font-size:15.5px">'+esc(n.t)+'</b>':'')+
        (n.b?'<p style="margin-top:5px;line-height:1.55">'+esc(n.b)+'</p>':'')+
        (n.img?'<img src="'+n.img+'" alt="infografía" style="width:100%;border-radius:10px;margin-top:9px;border:1px solid var(--line)">':'')+
-       '<div class="line" style="margin-top:10px"><span class="note">📅 '+newsTime(n.ts)+' · '+esc(n.by||'RRHH')+'</span>'+
-       '<span style="display:flex;gap:7px;align-items:center;flex:none">'+speakBtn((n.t?n.t+'. ':'')+(n.b||''))+
-       (S.admin?'<button class="back" style="padding:6px 10px" onclick="delNews(\''+n.id+'\')">Eliminar</button>':'')+'</span></div></div>';
+       foot+'</div>';
   });
   $('s-news').innerHTML=h; show('news');
 }

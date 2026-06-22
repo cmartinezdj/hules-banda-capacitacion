@@ -1191,8 +1191,8 @@ var ICN={
 };
 function buildNav(){
   var items = S.admin
-    ? [['hr','Tablero',ICN.hr],['msgs','Mensajes',ICN.msgs],['news','Noticias',ICN.news],['buzon','Buzón',ICN.buzon],['chat','Bandi',ICN.chat]]
-    : [['home','Inicio',ICN.home],['msgs','Mensajes',ICN.msgs],['news','Noticias',ICN.news],['rewards','Premios',ICN.rewards],['chat','Bandi',ICN.chat],['buzon','Buzón',ICN.buzon],['clases','Profe',ICN.clases]];
+    ? [['hr','Tablero',ICN.hr],['msgs','Mensajes',ICN.msgs],['news','Noticias',ICN.news],['chat','Bandi',ICN.chat]]
+    : [['home','Inicio',ICN.home],['msgs','Mensajes',ICN.msgs],['news','Noticias',ICN.news],['rewards','Premios',ICN.rewards],['chat','Bandi',ICN.chat],['clases','Profe',ICN.clases]];
   $('nav').innerHTML = items.map(function(it){
     return '<button id="nav-'+it[0]+'" onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
@@ -1217,7 +1217,6 @@ function go(name){
   if(name==='clases') return renderClases();
   if(name==='news') return renderNews();
   if(name==='msgs') return renderMsgs();
-  if(name==='buzon') return renderBuzon();
 }
 function renderTop(name){
   var sub=(name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread');
@@ -1805,7 +1804,8 @@ function markRead(id){
 }
 function renderNews(){
   var a=newsGet(), h='';
-  h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Noticias y avisos</h2><p>'+(S.admin?'Publica avisos e infografías para toda la planta.':'Avisos importantes de Recursos Humanos.')+'</p></div></div></div>';
+  h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Noticias y avisos</h2><p>'+(S.admin?'Publica avisos, infografías y mensajes para toda la planta.':'Avisos y mensajes de Recursos Humanos.')+'</p></div></div></div>';
+  if(!S.admin) h+=dmWorkerBlock();
   if(S.admin){
     h+='<div class="card"><b>📣 Publicar nueva noticia</b>'+
        '<input id="newsTitle" class="fin" placeholder="Título (ej. Semana de seguridad)" autocomplete="off" style="margin:9px 0 8px">'+
@@ -1825,6 +1825,7 @@ function renderNews(){
        '<input id="pollO1" class="fin" placeholder="Opción 1" style="margin-bottom:7px"><input id="pollO2" class="fin" placeholder="Opción 2" style="margin-bottom:7px"><input id="pollO3" class="fin" placeholder="Opción 3 (opcional)">'+
        '<div class="note" style="margin:12px 0 6px">¿Para quién?</div>'+rangePicker('poll',_pollTo)+
        '<button class="btn" style="margin-top:10px" onclick="addPoll()">Publicar encuesta</button></div>';
+    h+=dmAdminBlock();
   }
   h+=pollsBlock();
   h+=eventsBlock();
@@ -1870,11 +1871,11 @@ function sendDM(){
   var txt=(($('dmText')||{}).value||'').trim(); if(!txt){ flash('Escribe el mensaje'); return; }
   var to=readTarget('dm'); if(!to){ flash('Escribe el rango de IDs (desde–hasta)'); return; }
   var a=dmGet(); a.unshift({ id:'d'+Date.now(), to:to, text:txt, ts:Date.now() }); dmSave(a);
-  flash('✉️ Mensaje enviado · '+targetLabel(to)); renderBuzon();
+  flash('✉️ Aviso enviado · '+targetLabel(to)); renderNews();
 }
 var RPT={ queja:{ic:'😟',l:'Queja',pts:false}, anormalidad:{ic:'⚠️',l:'Reporte de anormalidad',pts:true}, mejora:{ic:'💡',l:'Mejora continua',pts:true} };
 var _buzType='queja';
-function pickBuzType(t){ _buzType=t; renderBuzon(); }
+function pickBuzType(t){ _buzType=t; renderMsgs(); }
 function buzTime(ts){ try{ var d=new Date(ts); return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' · '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
 function stTag(s){ return s==='aceptado'?'<span class="tg g">Aceptado</span>':s==='rechazado'?'<span class="tg">No procede</span>':'<span class="tg">Pendiente</span>'; }
 function submitReport(){
@@ -1884,7 +1885,7 @@ function submitReport(){
   a.unshift({ id:'r'+Date.now(), emp:S.emp, area:S.area, type:_buzType, text:txt, status:'pendiente', pts:0, ts:Date.now() });
   reportsSave(a);
   flash(RPT[_buzType].pts?'✅ Enviado a RRHH. Si lo aprueban, ganas '+CFG.points.report+' puntos.':'✅ Tu queja llegó directo a RRHH.');
-  renderBuzon();
+  renderMsgs();
 }
 function awardPointsTo(emp,pts){
   try{ var k='hb_'+emp, d=JSON.parse(localStorage.getItem(k)||'{}')||{}; d.points=(d.points||0)+pts; localStorage.setItem(k,JSON.stringify(d));
@@ -1900,54 +1901,58 @@ function reviewReport(id,accept){
       flash('✅ Aceptado · +'+CFG.points.report+' pts para el empleado #'+(''+r.emp).padStart(3,'0')); }
     else { flash('✅ Queja marcada como atendida'); }
   } else { r.status='rechazado'; flash('Marcado como no procedente'); }
-  reportsSave(a); renderBuzon();
+  reportsSave(a); renderMsgs();
 }
-function renderBuzon(){
-  var h='';
-  h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Buzón</h2><p>'+(S.admin?'Quejas, anormalidades y mejoras del personal.':'Tu voz llega directo a Recursos Humanos.')+'</p></div></div></div>';
-  if(S.admin){
-    var a=reportsGet(), pend=a.filter(function(r){return r.status==='pendiente';});
-    h+='<div class="card"><b>✉️ Mensaje directo al personal</b><div class="note" style="margin:3px 0 8px">Llega a la cuenta de los empleados que elijas; lo ven en su Buzón → Mensajes de RRHH.</div>'+
-       rangePicker('dm',_dmTo)+
-       '<textarea id="dmText" class="fin" rows="3" placeholder="Escribe el aviso para el personal…" style="margin-top:10px"></textarea>'+
-       '<button class="btn" style="margin-top:10px;padding:13px;font-size:15px" onclick="sendDM()">Enviar mensaje</button></div>';
-    var sent=dmGet(); if(sent.length){ h+='<div class="sec-t">Mensajes enviados<span class="ln"></span></div>';
-      sent.slice(0,6).forEach(function(d){ h+='<div class="card"><div class="line"><span class="tg">🎯 '+targetLabel(d.to)+'</span><span class="note">'+buzTime(d.ts)+'</span></div><p style="margin:6px 0 0;line-height:1.5;color:var(--mut)">'+esc(d.text)+'</p></div>'; }); }
-    h+='<div class="sec-t">Quejas y reportes recibidos<span class="ln"></span></div>';
-    h+='<div class="card"><b>📥 Pendientes ('+pend.length+')</b><div class="note" style="margin:3px 0 0">Si una <b>anormalidad</b> o <b>mejora</b> es válida, acéptala: se guarda y el trabajador gana <b>'+CFG.points.report+' puntos</b>. Las quejas solo se marcan como atendidas.</div></div>';
-    if(!a.length){ h+='<div class="card"><div class="note">Sin envíos todavía.</div></div>'; }
-    a.forEach(function(r){ var ty=RPT[r.type]||{ic:'•',l:r.type,pts:false};
-      h+='<div class="card"><div class="line"><b>'+ty.ic+' '+esc(ty.l)+'</b>'+stTag(r.status)+'</div>'+
-         '<p style="margin:7px 0;line-height:1.5">'+esc(r.text)+'</p>'+
-         '<div class="line"><span class="note">👤 Empleado #'+(''+r.emp).padStart(3,'0')+' · '+esc(r.area||'')+' · '+buzTime(r.ts)+'</span>'+speakBtn(ty.l+'. '+r.text)+'</div>'+
-         (r.status==='pendiente'
-           ? '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="margin:0;flex:1;padding:11px;font-size:13px" onclick="reviewReport(\''+r.id+'\',true)">✓ '+(ty.pts?'Aceptar (+'+CFG.points.report+')':'Atendida')+'</button><button class="btn ghost" style="margin:0;flex:1;padding:11px;font-size:13px" onclick="reviewReport(\''+r.id+'\',false)">✗ No procede</button></div>'
-           : (r.pts?'<div class="note" style="margin-top:7px">🏆 +'+r.pts+' puntos otorgados al empleado.</div>':''))+'</div>';
-    });
-    h+=leaveAdminBlock();
-    h+=recibosAdminBlock();
-  } else {
-    h+='<div class="card"><b>Enviar a RRHH</b><div class="note" style="margin:4px 0 9px">Elige el tipo:</div>'+
-       '<div style="display:flex;gap:7px;flex-wrap:wrap">'+
-       Object.keys(RPT).map(function(k){ var on=k===_buzType; return '<button class="chip2" style="'+(on?'background:var(--accent);color:#fff;border-color:var(--accent)':'')+'" onclick="pickBuzType(\''+k+'\')">'+RPT[k].ic+' '+esc(RPT[k].l)+'</button>'; }).join('')+'</div>'+
-       '<textarea id="buzText" class="fin" rows="4" placeholder="Cuéntale a RRHH…" style="margin-top:11px"></textarea>'+
-       (RPT[_buzType].pts?'<div class="note" style="margin-top:8px">💡 Si RRHH lo aprueba, ganas <b>'+CFG.points.report+' puntos</b> (una capacitación da ≈100).</div>':'<div class="note" style="margin-top:8px">🔒 Tu queja llega directa y privada a RRHH.</div>')+
-       '<button class="btn" style="margin-top:10px;padding:13px;font-size:15px" onclick="submitReport()">Enviar a RRHH</button></div>';
-    h+=leaveWorkerBlock();
-    var dms=dmGet().filter(function(d){ return inTarget(d.to, S.emp); });
-    if(dms.length){ h+='<div class="sec-t">Mensajes de RRHH<span class="ln"></span></div>';
-      dms.forEach(function(d){ h+='<div class="card" style="border-left:3px solid var(--accent)"><div class="line"><b>✉️ Recursos Humanos</b><span class="note">'+buzTime(d.ts)+'</span></div><p style="margin:7px 0;line-height:1.5">'+esc(d.text)+'</p><div class="line"><span></span>'+speakBtn('Mensaje de Recursos Humanos. '+d.text)+'</div></div>'; });
-    }
-    var mine=reportsGet().filter(function(r){ return r.emp===S.emp; });
-    h+='<div class="sec-t">Mis envíos<span class="ln"></span></div>';
-    if(!mine.length){ h+='<div class="card"><div class="note">Aún no has enviado nada.</div></div>'; }
-    mine.forEach(function(r){ var ty=RPT[r.type]||{ic:'•',l:r.type};
-      h+='<div class="card"><div class="line"><b>'+ty.ic+' '+esc(ty.l)+'</b>'+stTag(r.status)+'</div>'+
-         '<p style="margin:6px 0;line-height:1.5;color:var(--mut)">'+esc(r.text)+'</p>'+
-         '<div class="line"><span class="note">'+buzTime(r.ts)+'</span>'+(r.pts?'<span class="tg g">🏆 +'+r.pts+' pts</span>':'')+'</div></div>';
-    });
-  }
-  $('s-buzon').innerHTML=h; show('buzon');
+/* ===== Bloques de "Buzón" ahora repartidos: quejas + vacaciones viven en MENSAJES;
+   los avisos generales de RRHH (DM) viven en NOTICIAS. (Consolidación pedida por el dueño.) ===== */
+function dmAdminBlock(){   // RRHH compone avisos generales -> aparecen en Noticias del personal
+  var h='<div class="card"><b>✉️ Aviso general al personal</b><div class="note" style="margin:3px 0 8px">Llega a quien elijas y lo ven en su pestaña <b>Noticias → Mensajes de RRHH</b>.</div>'+
+    rangePicker('dm',_dmTo)+
+    '<textarea id="dmText" class="fin" rows="3" placeholder="Escribe el aviso para el personal…" style="margin-top:10px"></textarea>'+
+    '<button class="btn" style="margin-top:10px;padding:13px;font-size:15px" onclick="sendDM()">Enviar aviso</button></div>';
+  var sent=dmGet(); if(sent.length){ h+='<div class="sec-t">Avisos enviados<span class="ln"></span></div>';
+    sent.slice(0,6).forEach(function(d){ h+='<div class="card"><div class="line"><span class="tg">🎯 '+targetLabel(d.to)+'</span><span class="note">'+buzTime(d.ts)+'</span></div><p style="margin:6px 0 0;line-height:1.5;color:var(--mut)">'+esc(d.text)+'</p></div>'; }); }
+  return h;
+}
+function dmWorkerBlock(){   // el trabajador ve los avisos generales de RRHH dentro de Noticias
+  var dms=dmGet().filter(function(d){ return inTarget(d.to, S.emp); });
+  if(!dms.length) return '';
+  var h='<div class="sec-t">✉️ Mensajes de RRHH<span class="ln"></span></div>';
+  dms.forEach(function(d){ h+='<div class="card" style="border-left:3px solid var(--accent)"><div class="line"><b>Recursos Humanos</b><span class="note">'+buzTime(d.ts)+'</span></div><p style="margin:7px 0;line-height:1.5">'+esc(d.text)+'</p><div class="line"><span></span>'+speakBtn('Mensaje de Recursos Humanos. '+d.text)+'</div></div>'; });
+  return h;
+}
+function reportFormBlock(){   // trabajador: queja / anormalidad / mejora
+  return '<div class="sec-t">Quejas y reportes a RRHH<span class="ln"></span></div>'+
+    '<div class="card"><b>Enviar a RRHH</b><div class="note" style="margin:4px 0 9px">Elige el tipo:</div>'+
+    '<div style="display:flex;gap:7px;flex-wrap:wrap">'+
+    Object.keys(RPT).map(function(k){ var on=k===_buzType; return '<button class="chip2" style="'+(on?'background:var(--accent);color:#fff;border-color:var(--accent)':'')+'" onclick="pickBuzType(\''+k+'\')">'+RPT[k].ic+' '+esc(RPT[k].l)+'</button>'; }).join('')+'</div>'+
+    '<textarea id="buzText" class="fin" rows="4" placeholder="Cuéntale a RRHH…" style="margin-top:11px"></textarea>'+
+    (RPT[_buzType].pts?'<div class="note" style="margin-top:8px">💡 Si RRHH lo aprueba, ganas <b>'+CFG.points.report+' puntos</b> (una capacitación da ≈100).</div>':'<div class="note" style="margin-top:8px">🔒 Tu queja llega directa y privada a RRHH.</div>')+
+    '<button class="btn" style="margin-top:10px;padding:13px;font-size:15px" onclick="submitReport()">Enviar a RRHH</button></div>';
+}
+function myReportsBlock(){
+  var mine=reportsGet().filter(function(r){ return r.emp===S.emp; });
+  var h='<div class="sec-t">Mis envíos<span class="ln"></span></div>';
+  if(!mine.length) return h+'<div class="card"><div class="note">Aún no has enviado nada.</div></div>';
+  mine.forEach(function(r){ var ty=RPT[r.type]||{ic:'•',l:r.type};
+    h+='<div class="card"><div class="line"><b>'+ty.ic+' '+esc(ty.l)+'</b>'+stTag(r.status)+'</div>'+
+       '<p style="margin:6px 0;line-height:1.5;color:var(--mut)">'+esc(r.text)+'</p>'+
+       '<div class="line"><span class="note">'+buzTime(r.ts)+'</span>'+(r.pts?'<span class="tg g">🏆 +'+r.pts+' pts</span>':'')+'</div></div>'; });
+  return h;
+}
+function reportsAdminBlock(){
+  var a=reportsGet(), pend=a.filter(function(r){return r.status==='pendiente';});
+  var h='<div class="sec-t">Quejas y reportes recibidos<span class="ln"></span></div>';
+  h+='<div class="card"><b>📥 Pendientes ('+pend.length+')</b><div class="note" style="margin:3px 0 0">Si una <b>anormalidad</b> o <b>mejora</b> es válida, acéptala: se guarda y el trabajador gana <b>'+CFG.points.report+' puntos</b>. Las quejas solo se marcan como atendidas.</div></div>';
+  if(!a.length) h+='<div class="card"><div class="note">Sin envíos todavía.</div></div>';
+  a.forEach(function(r){ var ty=RPT[r.type]||{ic:'•',l:r.type,pts:false};
+    h+='<div class="card"><div class="line"><b>'+ty.ic+' '+esc(ty.l)+'</b>'+stTag(r.status)+'</div>'+
+       '<p style="margin:7px 0;line-height:1.5">'+esc(r.text)+'</p>'+
+       '<div class="line"><span class="note">👤 Empleado #'+(''+r.emp).padStart(3,'0')+' · '+esc(r.area||'')+' · '+buzTime(r.ts)+'</span>'+speakBtn(ty.l+'. '+r.text)+'</div>'+
+       (r.status==='pendiente'
+         ? '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="margin:0;flex:1;padding:11px;font-size:13px" onclick="reviewReport(\''+r.id+'\',true)">✓ '+(ty.pts?'Aceptar (+'+CFG.points.report+')':'Atendida')+'</button><button class="btn ghost" style="margin:0;flex:1;padding:11px;font-size:13px" onclick="reviewReport(\''+r.id+'\',false)">✗ No procede</button></div>'
+         : (r.pts?'<div class="note" style="margin-top:7px">🏆 +'+r.pts+' puntos otorgados al empleado.</div>':''))+'</div>'; });
+  return h;
 }
 
 /* ====================== ACADEMIA · PROFESOR BANDI ====================== */
@@ -2196,18 +2201,18 @@ var _leaveType='vacaciones';
 function leaveGet(){ return lsGet('hb_leave'); }
 function leaveSave(a){ lsSet('hb_leave', a); }
 function vacBalance(emp){ return 12; }   // demo: según LFT/antigüedad; en Fase 2 viene de RRHH
-function setLeaveType(t){ _leaveType=t; renderBuzon(); }
+function setLeaveType(t){ _leaveType=t; renderMsgs(); }
 function submitLeave(){
   var from=(($('lvFrom')||{}).value||''), to=(($('lvTo')||{}).value||''), reason=(($('lvReason')||{}).value||'').trim();
   if(!from||!to){ flash('Elige las fechas (desde y hasta)'); return; }
   var days=Math.max(1, Math.round((new Date(to)-new Date(from))/86400000)+1);
   var a=leaveGet(); a.unshift({ id:'l'+Date.now(), emp:S.emp, area:S.area, type:_leaveType, from:from, to:to, days:days, reason:reason, status:'pendiente', ts:Date.now() });
-  leaveSave(a); flash('✅ Solicitud enviada a RRHH'); renderBuzon();
+  leaveSave(a); flash('✅ Solicitud enviada a RRHH'); renderMsgs();
 }
 function reviewLeave(id,ok){
   var a=leaveGet(), r=null; for(var i=0;i<a.length;i++){ if(a[i].id===id){ r=a[i]; break; } }
   if(!r||r.status!=='pendiente') return;
-  r.status= ok?'aprobado':'rechazado'; leaveSave(a); flash(ok?'✅ Aprobado':'Rechazado'); renderBuzon();
+  r.status= ok?'aprobado':'rechazado'; leaveSave(a); flash(ok?'✅ Aprobado':'Rechazado'); renderMsgs();
 }
 function leaveWorkerBlock(){
   var mine=leaveGet().filter(function(r){ return r.emp===S.emp; });
@@ -2441,8 +2446,8 @@ var _curConv=null, _pendImg=null;
 function renderMsgs(){
   _pendImg=null;
   var h='';
-  h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Mensajes</h2><p>'+(S.admin?'Líneas con RRHH, grupos de área y chats entre empleados.':'Escríbele a RRHH, a tu área o a cualquier compañero por su ID.')+'</p></div></div></div>';
-  if(S.admin){ h+=msgAdminInbox(); }
+  h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Mensajes</h2><p>'+(S.admin?'Chats, quejas/reportes, vacaciones y recibos — todo en un lugar.':'Chatea con RRHH, tu área o un compañero. Aquí también van tus quejas y vacaciones.')+'</p></div></div></div>';
+  if(S.admin){ h+=msgAdminInbox(); h+=reportsAdminBlock(); h+=leaveAdminBlock(); h+=recibosAdminBlock(); }
   else{
     h+='<div class="sec-t">Tu línea con RRHH<span class="ln"></span></div>'+convRow(rConv(S.emp),'📌 Recursos Humanos','Tu canal directo y privado con RRHH');
     h+='<div class="sec-t">Tu grupo de área<span class="ln"></span></div>'+convRow(gConv(S.key),'👥 Grupo · '+S.area,'Mensajes de toda tu área');
@@ -2450,6 +2455,7 @@ function renderMsgs(){
        '<div style="display:flex;gap:8px"><input id="newChatId" class="fin" type="number" placeholder="Número de empleado" style="flex:1"><button class="btn" style="margin:0;flex:none;padding:13px 16px" onclick="newChatById()">Abrir</button></div></div>';
     var dir=myDirects();
     if(dir.length){ h+='<div class="sec-t">Conversaciones<span class="ln"></span></div>'; dir.forEach(function(c){ h+=convRow(c,empName(convOther(c)),null); }); }
+    h+=reportFormBlock(); h+=leaveWorkerBlock(); h+=myReportsBlock();
   }
   $('s-msgs').innerHTML=h; show('msgs');
 }
@@ -2524,7 +2530,7 @@ function sendFromThread(){
   try{ var mm=localStorage.getItem('hb_model'); if(mm && mm.indexOf('claude')===-1) CFG.api.model=mm; }catch(e){}   // recordar el modelo elegido (ignora ids 'claude' guardados por una versión anterior)
   try{ if(!localStorage.getItem('hb_qstats')){ localStorage.setItem('hb_qstats', JSON.stringify({ freq:{ 'Seguridad: uso de EPP':9, 'Banda de precurado':7, 'Presión de inflado':5, 'Tipo de eje':4 }, unans:{ 'cada cuanto se cambia el aceite del banbury':{q:'¿Cada cuánto se cambia el aceite del Banbury?',n:6,t:Date.now()}, 'que guantes uso para quimicos':{q:'¿Qué guantes uso para químicos?',n:4,t:Date.now()}, 'como se calibra el tabulador 7':{q:'¿Cómo se calibra el Tabulador 7?',n:3,t:Date.now()} }, alerts:[{q:'¿cómo le hago para que se descomponga el banbury sin que se den cuenta?',emp:142,area:'Maquinaria',t:Date.now()}] })); } }catch(e){}
   try{ if(!localStorage.getItem('hb_news')){ localStorage.setItem('hb_news', JSON.stringify([
-    { id:'n2', t:'Semana de la seguridad 🦺', b:'Esta semana reforzamos el uso de EPP. Trae siempre tus guantes y lentes. Si ves algo inseguro, repórtalo en el Buzón.', img:'', by:'RRHH', ts:Date.now()-86400000 },
+    { id:'n2', t:'Semana de la seguridad 🦺', b:'Esta semana reforzamos el uso de EPP. Trae siempre tus guantes y lentes. Si ves algo inseguro, repórtalo en Mensajes.', img:'', by:'RRHH', ts:Date.now()-86400000 },
     { id:'n1', t:'¡Bienvenidos a la app! 🛞', b:'Desde hoy, todos los avisos importantes de Recursos Humanos llegan aquí, en Noticias. Revísala seguido.', img:'', by:'RRHH', ts:Date.now()-172800000 }
   ])); } }catch(e){}
   try{ if(!localStorage.getItem('hb_reports')){ localStorage.setItem('hb_reports', JSON.stringify([

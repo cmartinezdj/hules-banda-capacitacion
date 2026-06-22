@@ -286,9 +286,10 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .nav{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;justify-content:center;gap:2px;max-width:500px;margin:0 auto;
   padding:8px 10px calc(8px + env(safe-area-inset-bottom));
   background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(18px);border-top:1px solid var(--line)}
-.nav button{flex:1;max-width:96px;background:none;border:none;color:var(--mut);font-size:9.5px;font-weight:700;cursor:pointer;
+.nav button{flex:1;max-width:80px;position:relative;background:none;border:none;color:var(--mut);font-size:9px;font-weight:700;cursor:pointer;
   display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;border-radius:14px;transition:.18s}
-.nav button .ni{width:21px;height:21px}
+.nav button .ni{width:20px;height:20px}
+.nbadge{position:absolute;top:2px;right:8px;min-width:15px;height:15px;padding:0 4px;border-radius:9px;background:var(--accent);color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1}
 .nav button.on{color:var(--accent2)}
 .nav button.on .ni{filter:drop-shadow(0 4px 8px color-mix(in srgb,var(--accent) 50%,transparent))}
 .nav button:active{transform:scale(.92)}
@@ -429,6 +430,8 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
     <section id="s-news"    class="screen pad hide"></section>
     <section id="s-buzon"   class="screen pad hide"></section>
     <section id="s-pay"     class="screen pad hide"></section>
+    <section id="s-msgs"    class="screen pad hide"></section>
+    <section id="s-thread"  class="screen pad hide"></section>
   </main>
 
   <!-- ===================== NAV INFERIOR ===================== -->
@@ -1183,25 +1186,27 @@ var ICN={
   hr:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="13" y="7" width="3" height="10"/></svg>',
   clases:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 3 2 6 2s6-1 6-2v-5"/></svg>',
   news:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 9h3v8a2 2 0 0 1-3 1.7"/><path d="M7 9h7M7 12h7M7 15h4"/></svg>',
-  buzon:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 10h8M8 13h5"/></svg>'
+  buzon:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 10h8M8 13h5"/></svg>',
+  msgs:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-11.9 7.6L3 21l1.9-5.6A8.4 8.4 0 1 1 21 11.5z"/><path d="M8.5 10.5h7M8.5 14h4"/></svg>'
 };
 function buildNav(){
   var items = S.admin
-    ? [['hr','Tablero',ICN.hr],['news','Noticias',ICN.news],['buzon','Buzón',ICN.buzon],['chat','Bandi',ICN.chat]]
-    : [['home','Inicio',ICN.home],['news','Noticias',ICN.news],['rewards','Premios',ICN.rewards],['chat','Bandi',ICN.chat],['buzon','Buzón',ICN.buzon],['clases','Profe',ICN.clases]];
+    ? [['hr','Tablero',ICN.hr],['msgs','Mensajes',ICN.msgs],['news','Noticias',ICN.news],['buzon','Buzón',ICN.buzon],['chat','Bandi',ICN.chat]]
+    : [['home','Inicio',ICN.home],['msgs','Mensajes',ICN.msgs],['news','Noticias',ICN.news],['rewards','Premios',ICN.rewards],['chat','Bandi',ICN.chat],['buzon','Buzón',ICN.buzon],['clases','Profe',ICN.clases]];
   $('nav').innerHTML = items.map(function(it){
     return '<button id="nav-'+it[0]+'" onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['home','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay'];
+var SCREENS=['home','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','thread'];
 function show(name){
   SCREENS.forEach(function(s){ var el=$('s-'+s); if(el) el.classList.toggle('hide', s!==name); });
   // nav activo (course/quiz/result/pay cuentan como "home")
-  var navKey = (name==='course'||name==='quiz'||name==='result'||name==='pay') ? 'home' : name;
-  ['home','rewards','chat','hr','clases','news','buzon'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
+  var navKey = (name==='course'||name==='quiz'||name==='result'||name==='pay') ? 'home' : (name==='thread'?'msgs':name);
+  ['home','msgs','rewards','chat','hr','clases','news','buzon'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
   renderTop(name);
   window.scrollTo(0,0);
   var el=$('s-'+name); if(el){ el.classList.remove('fade'); void el.offsetWidth; el.classList.add('fade'); }
+  if(typeof updateMsgBadge==='function') updateMsgBadge();
 }
 function go(name){
   if(name==='home') return renderHome();
@@ -1210,13 +1215,14 @@ function go(name){
   if(name==='hr') return renderHR();
   if(name==='clases') return renderClases();
   if(name==='news') return renderNews();
+  if(name==='msgs') return renderMsgs();
   if(name==='buzon') return renderBuzon();
 }
 function renderTop(name){
-  var sub=(name==='course'||name==='quiz'||name==='result'||name==='pay');
+  var sub=(name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread');
   var left=$('topLeft');
   if(sub){
-    left.innerHTML='<button class="back" onclick="'+(name==='quiz'?'backFromQuiz()':'go(\'home\')')+'">‹ Atrás</button>';
+    left.innerHTML='<button class="back" onclick="'+(name==='quiz'?'backFromQuiz()':(name==='thread'?'renderMsgs()':'go(\'home\')'))+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
     left.classList.add('who');
@@ -2341,6 +2347,136 @@ function showLock(){
 function hideLock(){ var el=$('lockScreen'); if(el) el.classList.add('hide'); }
 function lockDemo(){ showLock(); }
 
+/* ============================================================================
+   MENSAJES (chat interno) — RRHH · grupo de área · directos por ID (estilo BBM)
+   Server-ready: hoy en localStorage 'hb_msgs'; en Fase 2 cada get/send pega al servidor.
+   RRHH puede leer cualquier conversación (encubierto). Anti-sabotaje: alerta solo a RRHH.
+   ============================================================================ */
+function msgsGet(){ return lsGet('hb_msgs'); }
+function msgsSave(a){ lsSet('hb_msgs', a); }
+function dConv(a,b){ a=+a; b=+b; return 'd:'+Math.min(a,b)+'-'+Math.max(a,b); }
+function gConv(key){ return 'g:'+key; }
+function rConv(emp){ return 'r:'+emp; }
+function convMsgs(conv){ return msgsGet().filter(function(m){ return m.conv===conv; }).sort(function(x,y){ return x.ts-y.ts; }); }
+function convLast(conv){ var a=convMsgs(conv); return a.length?a[a.length-1]:null; }
+function convOther(conv){ var p=conv.slice(2).split('-'); return (+p[0]===S.emp)?+p[1]:+p[0]; }
+function readMap(){ try{ return JSON.parse(localStorage.getItem('hb_read_'+S.emp)||'{}')||{}; }catch(e){ return {}; } }
+function readSave(m){ try{ localStorage.setItem('hb_read_'+S.emp, JSON.stringify(m)); }catch(e){} }
+function markConvRead(conv){ var r=readMap(); r[conv]=Date.now(); readSave(r); }
+function convUnread(conv){ var last=(readMap()[conv]||0), n=0; convMsgs(conv).forEach(function(m){ if(m.ts>last && m.from!==S.emp) n++; }); return n; }
+function isAdminId(id){ var r=rangeOf(+id); return !!(r&&r.admin); }
+function empName(id){ var r=rangeOf(+id); return '#'+(''+id).padStart(3,'0')+(r?' · '+r.area:''); }
+function senderLabel(from){ return isAdminId(from)?'Recursos Humanos':('#'+(''+from).padStart(3,'0')); }
+function convTitle(conv){
+  if(conv.indexOf('r:')===0) return 'Recursos Humanos';
+  if(conv.indexOf('g:')===0){ var k=conv.slice(2),nm=k; CFG.ranges.forEach(function(x){ if(x.key===k) nm=x.area; }); return 'Grupo · '+nm; }
+  if(conv.indexOf('d:')===0){ return empName(convOther(conv)); }
+  return conv;
+}
+function sendMsg(conv,text,img){
+  text=(text||'').trim(); if(!text&&!img) return;
+  var a=msgsGet(); a.push({ id:'m'+Date.now()+'-'+S.emp, conv:conv, from:S.emp, text:text, img:img||'', ts:Date.now() });
+  if(a.length>4000) a.splice(0,a.length-4000);
+  msgsSave(a);
+  // anti-sabotaje: intención de daño → alerta SOLO a RRHH; el trabajador NO se entera (el mensaje se envía normal)
+  if(text && typeof maliceCheck==='function' && maliceCheck(text)) logAlert('[Chat] '+text);
+  markConvRead(conv);
+}
+function totalUnread(){ if(!S||S.admin) return 0; var t=convUnread(rConv(S.emp))+convUnread(gConv(S.key)); myDirects().forEach(function(c){ t+=convUnread(c); }); return t; }
+function updateMsgBadge(){ var b=$('nav-msgs'); if(!b) return; var ex=b.querySelector('.nbadge'); if(ex) ex.remove(); var n=totalUnread(); if(n>0){ var s=document.createElement('span'); s.className='nbadge'; s.textContent=n>9?'9+':(''+n); b.appendChild(s); } }
+function myDirects(){
+  var seen={}, out=[];
+  msgsGet().forEach(function(m){ if(m.conv.indexOf('d:')===0){ var p=m.conv.slice(2).split('-'); if(+p[0]===S.emp||+p[1]===S.emp){ if(!seen[m.conv]){ seen[m.conv]=1; out.push(m.conv); } } } });
+  out.sort(function(a,b){ var la=convLast(a),lb=convLast(b); return (lb?lb.ts:0)-(la?la.ts:0); });
+  return out;
+}
+function convRow(conv,title,sub){
+  var last=convLast(conv), un=convUnread(conv);
+  var prev = last ? ((last.from===S.emp?'Tú: ':'')+(last.img&&!last.text?'📷 Foto':esc((last.text||'').slice(0,42)))) : (sub||'Sin mensajes todavía');
+  return '<div class="card" style="cursor:pointer" onclick="openConv(\''+conv+'\')"><div class="line"><span style="flex:1;min-width:0"><b>'+esc(title)+'</b><br><span class="note">'+prev+'</span></span>'+
+    (un?'<span class="tg" style="background:var(--accent);color:#fff;flex:none">'+un+'</span>':'<span class="note" style="flex:none">›</span>')+'</div></div>';
+}
+var _curConv=null, _pendImg=null;
+function renderMsgs(){
+  _pendImg=null;
+  var h='';
+  h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Mensajes</h2><p>'+(S.admin?'Líneas con RRHH, grupos de área y chats entre empleados.':'Escríbele a RRHH, a tu área o a cualquier compañero por su ID.')+'</p></div></div></div>';
+  if(S.admin){ h+=msgAdminInbox(); }
+  else{
+    h+='<div class="sec-t">Tu línea con RRHH<span class="ln"></span></div>'+convRow(rConv(S.emp),'📌 Recursos Humanos','Tu canal directo y privado con RRHH');
+    h+='<div class="sec-t">Tu grupo de área<span class="ln"></span></div>'+convRow(gConv(S.key),'👥 Grupo · '+S.area,'Mensajes de toda tu área');
+    h+='<div class="card"><b>💬 Escribir a un compañero</b><div class="note" style="margin:3px 0 8px">Con su número de empleado, como tu PIN. Ejemplo: 055</div>'+
+       '<div style="display:flex;gap:8px"><input id="newChatId" class="fin" type="number" placeholder="Número de empleado" style="flex:1"><button class="btn" style="margin:0;flex:none;padding:13px 16px" onclick="newChatById()">Abrir</button></div></div>';
+    var dir=myDirects();
+    if(dir.length){ h+='<div class="sec-t">Conversaciones<span class="ln"></span></div>'; dir.forEach(function(c){ h+=convRow(c,empName(convOther(c)),null); }); }
+  }
+  $('s-msgs').innerHTML=h; show('msgs');
+}
+function msgAdminInbox(){
+  var msgs=msgsGet(), rc={},gc={},dc={};
+  msgs.forEach(function(m){ if(m.conv.indexOf('r:')===0) rc[m.conv]=1; else if(m.conv.indexOf('g:')===0) gc[m.conv]=1; else if(m.conv.indexOf('d:')===0) dc[m.conv]=1; });
+  var h='<div class="card" style="border-left:4px solid var(--accent2)"><div class="note">🔍 <b>Monitoreo.</b> Puedes leer cualquier conversación. Los trabajadores no ven que RRHH tiene acceso.</div></div>';
+  h+='<div class="sec-t">Líneas con RRHH<span class="ln"></span></div>';
+  var rk=Object.keys(rc); if(!rk.length) h+='<div class="card"><div class="note">Nadie ha escrito a RRHH todavía.</div></div>';
+  rk.forEach(function(c){ h+=convRow(c,'#'+(''+c.slice(2)).padStart(3,'0')+' → RRHH',null); });
+  h+='<div class="sec-t">Grupos de área<span class="ln"></span></div>';
+  var gk=Object.keys(gc); if(!gk.length) h+='<div class="card"><div class="note">Sin mensajes de grupo.</div></div>';
+  gk.forEach(function(c){ h+=convRow(c,convTitle(c),null); });
+  h+='<div class="sec-t">Chats entre empleados (monitoreo)<span class="ln"></span></div>';
+  var dk=Object.keys(dc); if(!dk.length) h+='<div class="card"><div class="note">Sin conversaciones todavía.</div></div>';
+  dk.forEach(function(c){ var p=c.slice(2).split('-'); h+=convRow(c,'#'+(''+p[0]).padStart(3,'0')+' ↔ #'+(''+p[1]).padStart(3,'0'),null); });
+  return h;
+}
+function newChatById(){
+  var v=parseInt(($('newChatId')||{}).value,10);
+  if(isNaN(v)){ flash('Escribe un número de empleado'); return; }
+  if(v===S.emp){ flash('Ese eres tú 🙂'); return; }
+  if(!rangeOf(v)){ flash('Ese número de empleado no existe'); return; }
+  openConv(dConv(S.emp,v));
+}
+function msgImgLoad(inp){
+  var f=inp.files&&inp.files[0]; if(!f) return;
+  var rd=new FileReader();
+  rd.onload=function(e){ var img=new Image();
+    img.onload=function(){ var max=900,w=img.width,h=img.height; if(w>max||h>max){ var r=Math.min(max/w,max/h); w=Math.round(w*r); h=Math.round(h*r); }
+      var c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h);
+      _pendImg=c.toDataURL('image/jpeg',0.8); openConv(_curConv); };
+    img.src=e.target.result; };
+  rd.readAsDataURL(f);
+}
+function threadHTML(msgs,showSender){
+  if(!msgs.length) return '<div class="note" style="text-align:center;padding:22px">Aún no hay mensajes. ¡Escribe el primero!</div>';
+  return msgs.map(function(m){
+    var mine=m.from===S.emp;
+    var body=(m.img?'<img src="'+m.img+'" style="max-width:200px;border-radius:10px;display:block;'+(m.text?'margin-bottom:6px':'')+'">':'')+(m.text?esc(m.text):'');
+    var lbl=(showSender&&!mine)?'<div class="note" style="margin-bottom:2px;font-size:10px">'+esc(senderLabel(m.from))+'</div>':'';
+    return '<div class="m '+(mine?'user':'bot')+'"><div class="bub">'+lbl+body+'</div></div>';
+  }).join('');
+}
+function openConv(conv){
+  _curConv=conv; markConvRead(conv);
+  var isMonitor = S.admin && conv.indexOf('d:')===0;   // RRHH observando un chat entre empleados
+  var isGroup = conv.indexOf('g:')===0;
+  var h='';
+  h+='<div class="chathead">'+bandi('b-md')+'<div class="t"><b>'+esc(convTitle(conv))+'</b><span>'+(isMonitor?'👁 Monitoreo RRHH · solo lectura':(isGroup?'Grupo de área':'Conversación'))+'</span></div></div>';
+  h+='<div class="msgs" id="thMsgs">'+threadHTML(convMsgs(conv), isGroup||S.admin)+'</div>';
+  if(_pendImg && !isMonitor) h+='<div class="card" style="padding:8px;display:flex;gap:10px;align-items:center"><img src="'+_pendImg+'" style="max-height:70px;border-radius:8px"><span class="note" style="flex:1">Imagen lista para enviar</span><button class="back" style="padding:6px 10px" onclick="_pendImg=null;openConv(_curConv)">Quitar</button></div>';
+  if(!isMonitor){
+    h+='<div class="composer"><label class="send" style="background:var(--card2);color:var(--txt);cursor:pointer;font-size:20px">📎<input type="file" accept="image/*" onchange="msgImgLoad(this)" style="display:none"></label><input id="thIn" placeholder="Escribe un mensaje…" autocomplete="off"><button class="send" onclick="sendFromThread()" aria-label="Enviar">➤</button></div>';
+  } else {
+    h+='<div class="note" style="text-align:center;padding:12px">Estás observando esta conversación como RRHH. No puedes escribir aquí.</div>';
+  }
+  $('s-thread').innerHTML=h; show('thread');
+  var t=$('thMsgs'); if(t) t.scrollTop=t.scrollHeight;
+  var ci=$('thIn'); if(ci){ ci.onkeydown=function(ev){ if(ev.key==='Enter') sendFromThread(); }; ci.focus(); }
+}
+function sendFromThread(){
+  var inp=$('thIn'), t=inp?(inp.value||'').trim():'';
+  if(!t && !_pendImg) return;
+  sendMsg(_curConv,t,_pendImg); _pendImg=null;
+  openConv(_curConv);
+}
+
 /* ====================== ARRANQUE ====================== */
 (function init(){
   try{ HBKEY=localStorage.getItem('hb_key')||''; }catch(e){}   // recordar la IA real entre sesiones
@@ -2365,6 +2501,12 @@ function lockDemo(){ showLock(); }
     ])); } }catch(e){}
   try{ if(!localStorage.getItem('hb_polls')){ localStorage.setItem('hb_polls', JSON.stringify([
     { id:'p1', q:'¿Qué tema quieres reforzar primero?', opts:['Seguridad / EPP','Mi máquina','Calidad'], votes:{}, to:{mode:'all'}, ts:Date.now() }
+  ])); } }catch(e){}
+  try{ if(!localStorage.getItem('hb_msgs')){ localStorage.setItem('hb_msgs', JSON.stringify([
+    { id:'m1', conv:'g:produccion', from:72, text:'Equipo, ¿alguien tiene el dato de presión para el molde 3?', img:'', ts:Date.now()-7200000 },
+    { id:'m2', conv:'g:produccion', from:55, text:'Viene en el curso de hoy, ahí lo checo y te paso el número.', img:'', ts:Date.now()-7000000 },
+    { id:'m3', conv:'r:70', from:70, text:'Buenas, ¿me ayudan con una duda de mi recibo?', img:'', ts:Date.now()-3600000 },
+    { id:'m4', conv:'r:70', from:901, text:'Claro, con gusto. Cuéntanos, aquí estamos. 🙂', img:'', ts:Date.now()-3500000 }
   ])); } }catch(e){}
   buildLoginHelp();
   var inp=$('inEmp');

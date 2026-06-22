@@ -1199,6 +1199,7 @@ function buildNav(){
 }
 var SCREENS=['home','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','thread'];
 function show(name){
+  _screen=name;
   SCREENS.forEach(function(s){ var el=$('s-'+s); if(el) el.classList.toggle('hide', s!==name); });
   // nav activo (course/quiz/result/pay cuentan como "home")
   var navKey = (name==='course'||name==='quiz'||name==='result'||name==='pay') ? 'home' : (name==='thread'?'msgs':name);
@@ -1277,6 +1278,7 @@ function courseRow(c){
 /* ====================== CURSO (video + quiz / exentar) ====================== */
 function findCourse(id){ var c=myCourses(); for(var i=0;i<c.length;i++) if(c[i].id===id) return c[i]; return null; }
 function openCourse(id){
+  if(!learnAllow(function(){ openCourse(id); })) return;   // lock-down: 10 min en horario laboral
   var c=findCourse(id); if(!c) return;
   var seen=!!S.watched[id];
   cur={course:c, watched:seen, exempt:false, answers:[]};
@@ -2002,6 +2004,7 @@ function findTopic(id){ for(var i=0;i<CFG.clases.length;i++) if(CFG.clases[i].id
 function clLevelDone(id,n){ return !!(S.clases && S.clases[id+':'+n]); }
 function clTopicDone(tp){ var c=0; for(var n=1;n<=10;n++) if(clLevelDone(tp.id,n)) c++; return c; }
 function renderClases(){
+  if(!learnAllow(function(){ renderClases(); })) return;   // lock-down: 10 min en horario laboral
   var h=accBar();
   h+='<div class="guide">'+bandi('b-md')+'<div class="bub"><b>¡Bienvenido a la Academia! 🎓</b> Aprende a tu ritmo. Toca 🔊 para escuchar. Cada avance cuenta. 💪</div></div>';
   h+='<div class="sec-t">Elige qué aprender<span class="ln"></span></div>';
@@ -2322,30 +2325,68 @@ function horasBlock(){
   return h+'</div>';
 }
 
-/* ===== #9 LOCK-DOWN: 10 min de capacitación en horario laboral · demo =====
-   El app se auto-bloquea en horario laboral tras 10 min y se libera al salir del turno.
-   En el demo el bloqueo se MUESTRA con un botón (para no bloquear a quien explora);
-   en Fase 2, con la hora del servidor y los horarios reales, se aplica solo. */
-var LOCK_MIN=10;
-var SHIFTS={ almacen:'16:00', inventario:'16:00', produccion:'17:00', calidad:'17:00', comercial:'18:00', maquinaria:'15:00' };
-function shiftEnd(){ return SHIFTS[S.key]||'17:00'; }
-function lockCard(){
-  return '<div class="card" style="border-left:4px solid var(--accent2)"><div class="line"><span class="tg">🔒 Control de uso</span>'+speakBtn('En horario laboral, la app solo permite 10 minutos al día de capacitación. Al terminar tu turno se libera completa.')+'</div>'+
-    '<p class="note" style="margin:8px 0 0">En <b>horario laboral</b>, la app solo permite <b>'+LOCK_MIN+' min al día</b> de capacitación; al terminar tu turno (<b>'+shiftEnd()+'</b>) se <b>libera completa</b>. Así evitamos el celular en horas de trabajo.</p>'+
-    '<button class="btn ghost" style="margin-top:11px" onclick="lockDemo()">▶ Ver cómo se bloquea (demo)</button></div>';
+/* ===== #9 LOCK-DOWN (opción B): 10 min/día SOLO en capacitación + educación básica, en
+   horario laboral. Todo lo demás (mensajes, noticias, recibos, premios) SIEMPRE libre.
+   Al salir del turno se reanuda sin límite. Demo: datos de ejemplo + simulador de horario;
+   en Fase 2 usa la hora del servidor y los horarios reales por trabajador. */
+var LOCK_MIN=10, LOCK_SEC=600, _simWork=false, _learnTimer=null, _consentCb=null, _screen='';
+var SHIFTS={ almacen:{ini:7,fin:16}, inventario:{ini:7,fin:16}, produccion:{ini:7,fin:17}, calidad:{ini:8,fin:17}, comercial:{ini:9,fin:18}, maquinaria:{ini:6,fin:15} };
+function myShift(){ return SHIFTS[S.key]||{ini:8,fin:17}; }
+function shiftEnd(){ return (''+myShift().fin).padStart(2,'0')+':00'; }
+function inWorkHours(){ if(_simWork) return true; var s=myShift(), d=new Date(); if(d.getDay()===0) return false; var hh=d.getHours()+d.getMinutes()/60; return hh>=s.ini && hh<s.fin; }
+function learnState(){ var d; try{ d=JSON.parse(localStorage.getItem('hb_learn_'+S.emp)||'{}')||{}; }catch(e){ d={}; } var today=new Date().toISOString().slice(0,10); if(d.date!==today) d={date:today,used:0,consent:false}; return d; }
+function learnSave(d){ try{ localStorage.setItem('hb_learn_'+S.emp, JSON.stringify(d)); }catch(e){} }
+function learnLeft(){ return Math.max(0, LOCK_SEC-(learnState().used||0)); }
+/* ¿se puede entrar a capacitación/educación? si no, muestra consentimiento o bloqueo y devuelve false */
+function learnAllow(reenter){
+  if(!S || S.admin || !inWorkHours()) return true;            // admin o fuera de horario = libre
+  if(learnLeft()<=0){ showLearnLock(); return false; }         // ya gastó sus 10 min de hoy
+  if(!learnState().consent){ showConsent(reenter); return false; }
+  startLearnTimer(); return true;
 }
-function showLock(){
+function startLearnTimer(){
+  if(_learnTimer) return;
+  _learnTimer=setInterval(function(){
+    if(!S || S.admin) return;
+    if(['course','quiz','result','clases'].indexOf(_screen)<0) return;  // solo cuenta en capacitación/educación
+    if(!inWorkHours()) return;                                          // fuera de horario: libre
+    var d=learnState(); if(d.used>=LOCK_SEC) return;
+    d.used++; d.consent=true; learnSave(d);
+    if(d.used>=LOCK_SEC) showLearnLock();
+  },1000);
+}
+function showConsent(cb){
+  _consentCb=cb||null; var el=$('lockScreen'); if(!el){ if(cb) cb(); return; }
+  el.innerHTML='<div class="lk-emoji">⏱️</div>'+bandi('b-lg')+
+    '<h2>Tus 10 minutos de hoy</h2>'+
+    '<p>En horario laboral tienes <b>'+LOCK_MIN+' minutos al día</b> para <b>capacitación y educación básica</b>. Hoy te quedan <b>'+Math.ceil(learnLeft()/60)+' min</b>. El tiempo corre mientras estés aquí.</p>'+
+    '<p>Todo lo demás —mensajes, noticias, recibos, premios— está <b>siempre libre</b>.</p>'+
+    '<button class="btn" style="max-width:280px;margin-top:16px" onclick="acceptLearn()">Empezar mis '+LOCK_MIN+' min ▶</button>'+
+    '<div class="lk-demo"><span onclick="hideLock()" style="text-decoration:underline;cursor:pointer">Ahora no</span></div>';
+  el.classList.remove('hide');
+}
+function acceptLearn(){ var d=learnState(); d.consent=true; learnSave(d); hideLock(); startLearnTimer(); var f=_consentCb; _consentCb=null; if(f) f(); }
+function showLearnLock(){
   var el=$('lockScreen'); if(!el) return;
   el.innerHTML='<div class="lk-emoji">⏸️</div>'+bandi('b-lg')+
-    '<h2>¡A darle a la chamba! 💪</h2>'+
-    '<p>Por hoy ya usaste tus <b>'+LOCK_MIN+' minutos</b> de capacitación en horario laboral.<br>La app se <b>libera completa</b> al terminar tu turno.</p>'+
-    '<div class="lk-time">Se desbloquea a las '+shiftEnd()+'</div>'+
-    '<p>Mientras tanto, concéntrate en tu trabajo. ¡Nos vemos al rato! 🛞</p>'+
+    '<h2>Terminaste tus 10 min de hoy 💪</h2>'+
+    '<p>Ya usaste tus <b>'+LOCK_MIN+' minutos</b> de capacitación en horario laboral. <b>Se reanuda al terminar tu turno</b> y podrás estudiar todo lo que quieras.</p>'+
+    '<p>Mientras, el resto del app sigue libre: mensajes, noticias, recibos y premios.</p>'+
+    '<div class="lk-time">Se libera a las '+shiftEnd()+'</div>'+
+    '<button class="btn" style="max-width:280px" onclick="hideLock();go(\'home\')">Ir al inicio</button>'+
     '<div class="lk-demo">Demostración · <span onclick="hideLock()" style="text-decoration:underline;cursor:pointer">Cerrar</span></div>';
   el.classList.remove('hide');
 }
 function hideLock(){ var el=$('lockScreen'); if(el) el.classList.add('hide'); }
-function lockDemo(){ showLock(); }
+function lockCard(){
+  var on=inWorkHours();
+  return '<div class="card" style="border-left:4px solid var(--accent2)"><div class="line"><span class="tg">🔒 Capacitación: 10 min en horario laboral</span></div>'+
+    '<p class="note" style="margin:8px 0 0">En tu turno tienes <b>'+LOCK_MIN+' min al día</b> para <b>capacitación y educación básica</b>. Lo demás (mensajes, noticias, recibos, premios) <b>siempre libre</b>. Al salir de tu turno (<b>'+shiftEnd()+'</b>) se reanuda sin límite.</p>'+
+    '<div class="note" style="margin-top:7px">Ahora: '+(on?'<b style="color:var(--warn)">en horario laboral</b>':'<b style="color:var(--ok)">fuera de horario · libre</b>')+' · te quedan <b>'+Math.ceil(learnLeft()/60)+' min</b> hoy</div>'+
+    '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn ghost" style="margin:0;flex:1;padding:10px;font-size:12px" onclick="demoToggleWork()">'+(_simWork?'Quitar horario (demo)':'Simular horario (demo)')+'</button><button class="btn ghost" style="margin:0;flex:1;padding:10px;font-size:12px" onclick="demoUseUp()">Simular 10 min usados</button></div></div>';
+}
+function demoToggleWork(){ _simWork=!_simWork; flash(_simWork?'Demo: simulando horario laboral':'Demo: fuera de horario'); renderHome(); }
+function demoUseUp(){ var d=learnState(); d.used=LOCK_SEC; d.consent=true; learnSave(d); _simWork=true; flash('Demo: 10 min agotados'); showLearnLock(); }
 
 /* ============================================================================
    MENSAJES (chat interno) — RRHH · grupo de área · directos por ID (estilo BBM)

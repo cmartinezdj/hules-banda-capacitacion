@@ -343,6 +343,15 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .access .bigbtn{font-size:20px;padding:21px}
 .access .speak{width:48px;height:48px;font-size:20px}
 .access .topic .t b,.access .lvl-card .t b{font-size:18px}
+/* ===== Modo accesible GLOBAL: texto grande + negritas en TODA la app ===== */
+body.a11y .screen p, body.a11y .screen li, body.a11y .screen .note, body.a11y .screen .opt span, body.a11y .screen .bub{ font-size:15.5px !important; font-weight:600 !important; line-height:1.5 !important; }
+body.a11y .screen .note{ color:#d4d7df !important; }
+body.a11y .screen b{ font-weight:800 !important; }
+body.a11y .screen h2{ font-size:22px !important; }
+body.a11y .screen .btn, body.a11y .screen .bigbtn{ font-size:16.5px !important; }
+/* ===== Beeper (alarma de llamada) ===== */
+.bp-emoji{ font-size:56px; animation:bppulse 1s infinite; }
+@keyframes bppulse{ 0%,100%{ transform:scale(1); opacity:1 } 50%{ transform:scale(1.18); opacity:.7 } }
 .nav button span{white-space:nowrap}
 
 /* ===== Reporte semanal imprimible (RRHH) — solo se ve al imprimir ===== */
@@ -437,6 +446,7 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
   <!-- ===================== NAV INFERIOR ===================== -->
   <nav id="nav" class="nav hide"></nav>
   <div id="lockScreen" class="lockscreen hide"></div>
+  <div id="beepScreen" class="lockscreen hide"></div>
 </div>
 
 <div id="flash" class="flash"></div>
@@ -1168,6 +1178,8 @@ function login(){
   buildNav(); renderTop();
   // saludo de bienvenida en el chat
   S.chat.push({role:'assistant',content:'¡Hola! Soy Bandi 🛞 tu asistente. Pregúntame sobre seguridad, procesos, producto o tus puntos. '+(S.admin?'':'¡Vamos por esos cursos!')});
+  applyA11y();
+  if(!S.admin){ checkPage(); if(!window._pagePoll) window._pagePoll=setInterval(checkPage,3000); }
   if(S.admin) renderHR(); else renderHome();
 }
 function logout(){ location.reload(); }
@@ -1244,6 +1256,8 @@ function renderHome(){
      '<div><h2>¡Hola! 👋</h2><p>'+esc(S.greet)+'</p></div></div>'+
      '<div class="lvl"><div class="lt"><span>Nivel '+lvl+' · '+levelName()+'</span><span>'+inLvl+' / '+CFG.points.perLevel+'</span></div>'+
      '<div class="lvlbar"><i style="width:'+pct+'%"></i></div></div></div>';
+  // accesibilidad: texto grande para TODA la app
+  h+='<div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span style="display:flex;align-items:center;gap:11px"><span style="font-size:20px">🔍</span><b>Texto grande</b><span class="note">letras grandes en toda la app</span></span><button class="toggle'+(S.accessible?' on':'')+'" onclick="toggleAcc()">'+(S.accessible?'Activado':'Activar')+'</button></div>';
   // Ruta guiada: tu siguiente paso
   h+=rutaCard();
   // stats
@@ -1999,12 +2013,14 @@ function cycleRate(){
   var i=(rateIdx()+1)%RATES.length; S.rate=RATES[i][0]; save(); renderClases();
   speak('Así voy a hablar contigo. ¿Te gusta esta velocidad?');
 }
-function accBar(){
-  var on=!!(S&&S.accessible);
-  return '<div class="accbar"><span>🔊 Modo accesible · texto y botones grandes</span><button class="toggle'+(on?' on':'')+'" onclick="toggleAcc()">'+(on?'Activado':'Activar')+'</button></div>'+
-         '<div class="accbar"><span>🗣️ Velocidad de la voz</span><button class="toggle" onclick="cycleRate()">'+RATES[rateIdx()][1]+'</button></div>';
+function accBar(){   // en Profe Bandi solo queda la velocidad de voz; el "texto grande" ahora es global (botón en Inicio)
+  return '<div class="accbar"><span>🗣️ Velocidad de la voz</span><button class="toggle" onclick="cycleRate()">'+RATES[rateIdx()][1]+'</button></div>';
 }
-function toggleAcc(){ S.accessible=!S.accessible; save(); flash(S.accessible?'🔊 Modo accesible activado':'Modo accesible desactivado'); renderClases(); }
+function applyA11y(){ try{ document.body.classList.toggle('a11y', !!(S&&S.accessible)); }catch(e){} }
+function toggleAcc(){ S.accessible=!S.accessible; save(); applyA11y();
+  flash(S.accessible?'🔍 Texto grande activado':'Texto grande desactivado');
+  if(_screen==='clases') renderClases(); else if(_screen==='msgs') renderMsgs(); else if(_screen==='news') renderNews(); else if(_screen==='hr') renderHR(); else if(_screen==='rewards') renderRewards(); else renderHome();
+}
 function findTopic(id){ for(var i=0;i<CFG.clases.length;i++) if(CFG.clases[i].id===id) return CFG.clases[i]; return null; }
 function clLevelDone(id,n){ return !!(S.clases && S.clases[id+':'+n]); }
 function clTopicDone(tp){ var c=0; for(var n=1;n<=10;n++) if(clLevelDone(tp.id,n)) c++; return c; }
@@ -2447,7 +2463,7 @@ function renderMsgs(){
   _pendImg=null;
   var h='';
   h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Mensajes</h2><p>'+(S.admin?'Chats, quejas/reportes, vacaciones y recibos — todo en un lugar.':'Chatea con RRHH, tu área o un compañero. Aquí también van tus quejas y vacaciones.')+'</p></div></div></div>';
-  if(S.admin){ h+=msgAdminInbox(); h+=reportsAdminBlock(); h+=leaveAdminBlock(); h+=recibosAdminBlock(); }
+  if(S.admin){ h+=beeperAdminCard(); h+=msgAdminInbox(); h+=reportsAdminBlock(); h+=leaveAdminBlock(); h+=recibosAdminBlock(); }
   else{
     h+='<div class="sec-t">Tu línea con RRHH<span class="ln"></span></div>'+convRow(rConv(S.emp),'📌 Recursos Humanos','Tu canal directo y privado con RRHH');
     h+='<div class="sec-t">Tu grupo de área<span class="ln"></span></div>'+convRow(gConv(S.key),'👥 Grupo · '+S.area,'Mensajes de toda tu área');
@@ -2523,6 +2539,50 @@ function sendFromThread(){
   sendMsg(_curConv,t,_pendImg); _pendImg=null;
   openConv(_curConv);
 }
+
+/* ============================================================================
+   BEEPER — RRHH/supervisor llama a un trabajador por su ID; le llega una alarma
+   (sonido + vibración + pantalla completa) para que se presente donde se necesita.
+   Demo: localStorage 'hb_pages' + sondeo cada 3 s. En vivo (Fase 2): push del servidor. */
+function pagesGet(){ return lsGet('hb_pages'); }
+function pagesSave(a){ lsSet('hb_pages', a); }
+function beeperAdminCard(){
+  var recent=pagesGet().slice(0,5);
+  var list = recent.length ? '<div class="note" style="margin-top:10px">'+recent.map(function(p){ return '#'+(''+p.to).padStart(3,'0')+' &mdash; '+(p.ackTs?'<b style="color:var(--ok)">✓ confirmó</b>':'<span style="color:var(--warn)">⏳ llamando…</span>'); }).join('<br>')+'</div>' : '';
+  return '<div class="card" style="border-left:4px solid var(--accent2)"><b>📟 Beeper &mdash; llamar a un trabajador</b>'+
+    '<div class="note" style="margin:3px 0 9px">Escribe su número y le llega una <b>alarma</b> para que se presente.</div>'+
+    '<div style="display:flex;gap:8px;margin-bottom:9px"><input id="beepId" class="fin" type="number" placeholder="N° empleado" style="flex:none;width:130px"><input id="beepMsg" class="fin" placeholder="Motivo / lugar (ej. Ven a RRHH)" style="flex:1"></div>'+
+    '<button class="btn" style="margin:0;padding:12px" onclick="sendPage()">📟 Llamar</button>'+list+'</div>';
+}
+function sendPage(){
+  var id=parseInt(($('beepId')||{}).value,10), msg=(($('beepMsg')||{}).value||'').trim();
+  if(isNaN(id)){ flash('Escribe el número de empleado'); return; }
+  if(!rangeOf(id)){ flash('Ese número de empleado no existe'); return; }
+  var a=pagesGet(); a.unshift({ id:'pg'+Date.now(), to:id, by:(S&&S.emp), msg:msg||'Preséntate donde se te indica', ts:Date.now(), ackTs:0 });
+  pagesSave(a); flash('📟 Llamando al #'+(''+id).padStart(3,'0')); renderMsgs();
+}
+function myPendingPage(){ var a=pagesGet(); for(var i=0;i<a.length;i++){ if(a[i].to===S.emp && !a[i].ackTs) return a[i]; } return null; }
+function checkPage(){ if(!S||S.admin) return; var bs=$('beepScreen'); if(!bs||!bs.classList.contains('hide')) return; var p=myPendingPage(); if(p) showBeep(p); }
+function showBeep(p){
+  var el=$('beepScreen'); if(!el) return;
+  el.innerHTML='<div class="bp-emoji">📟</div>'+bandi('b-lg')+
+    '<h2>¡Te están llamando!</h2>'+
+    '<p>'+esc(p.msg)+'</p>'+
+    '<div class="lk-time">Recursos Humanos te necesita</div>'+
+    '<button class="btn" style="max-width:280px" onclick="ackPage()">✓ Voy para allá</button>';
+  el.classList.remove('hide'); beepStart();
+}
+function ackPage(){ var p=myPendingPage(); if(p){ var a=pagesGet(); for(var i=0;i<a.length;i++){ if(a[i].id===p.id){ a[i].ackTs=Date.now(); break; } } pagesSave(a); } beepStop(); var el=$('beepScreen'); if(el) el.classList.add('hide'); }
+/* sonido tipo alarma (Web Audio) + vibración */
+var _beepInt=null, _beepCtx=null;
+function beepStart(){
+  try{ _beepCtx=_beepCtx||new (window.AudioContext||window.webkitAudioContext)();
+    var ring=function(){ var o=_beepCtx.createOscillator(), g=_beepCtx.createGain(); o.type='square'; o.frequency.value=880; o.connect(g); g.connect(_beepCtx.destination); g.gain.value=0.15; o.start(); o.stop(_beepCtx.currentTime+0.35); };
+    ring(); if(_beepInt) clearInterval(_beepInt); _beepInt=setInterval(ring,850);
+  }catch(e){}
+  try{ if(navigator.vibrate) navigator.vibrate([400,180,400,180,600]); }catch(e){}
+}
+function beepStop(){ try{ if(_beepInt){ clearInterval(_beepInt); _beepInt=null; } }catch(e){} try{ if(navigator.vibrate) navigator.vibrate(0); }catch(e){} }
 
 /* ====================== ARRANQUE ====================== */
 (function init(){

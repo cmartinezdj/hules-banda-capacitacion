@@ -1669,16 +1669,46 @@ function renderDash(){
 function kpiRow(cells){ return '<div class="kpi">'+cells.map(function(c){ return '<div class="b'+(c[2]?' '+c[2]:'')+'"><div class="n">'+c[0]+'</div><div class="l">'+c[1]+'</div></div>'; }).join('')+'</div>'; }
 function areaCount(key){ for(var i=0;i<CFG.ranges.length;i++){ var r=CFG.ranges[i]; if(r.key===key && !r.admin) return r.max-r.min+1; } return 0; }
 
-/* ===== CEO / Dirección (César, Ana): vista completa de la planta, solo lectura ===== */
+/* ===== Bloque reutilizable: feed de preguntas a Bandi + reporte semanal (RRHH y CEO) ===== */
+function bandiFeedBlock(){
+  var Q=qstats();
+  var freq=Object.keys(Q.freq).map(function(k){return [k,Q.freq[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,6);
+  _HRUN=Object.keys(Q.unans).map(function(k){ var u=Q.unans[k]; return {key:k,q:u.q,n:u.n}; }).sort(function(a,b){return b.n-a.n;}).slice(0,8);
+  var resN=Object.keys(Q.res||{}).length, h='';
+  h+='<div class="card"><b>❓ Preguntas más frecuentes a Bandi</b><div class="note" style="margin:2px 0 8px">Lo que más preguntan los trabajadores. Si un tema sube mucho (🔴), conviene reforzar la capacitación.</div>'+
+     (freq.length? freq.map(function(x){ var hot=x[1]>=8; return '<div class="line"><span>'+esc(x[0])+'</span><span class="tg '+(hot?'':'g')+'">'+(hot?'🔴 ':'')+x[1]+'</span></div>'; }).join('') : '<div class="note">Aún sin registros.</div>')+'</div>';
+  h+='<div class="card"><b>🆕 Preguntas SIN responder (para autorizar)</b><div class="note" style="margin:2px 0 8px">Bandi no tenía respuesta autorizada. Revisa cada una, formula la respuesta con dirección y márcala con ✓; cuando esté autorizada se agrega a la biblioteca de Bandi (CFG.kb).</div>'+
+     (_HRUN.length? _HRUN.map(function(u,i){ return '<div class="line"><span>'+esc(u.q)+'</span><span style="display:flex;gap:6px;align-items:center;flex:none"><span class="tg">'+u.n+'×</span><button class="back" style="padding:6px 10px" onclick="markAnswered('+i+')">✓ Atendida</button></span></div>'; }).join('') : '<div class="note">Sin pendientes. 🎉</div>')+
+     (resN? '<div class="note" style="margin-top:8px">✅ Atendidas: '+resN+'. Recuerda cargar sus respuestas autorizadas en la biblioteca de Bandi (CFG.kb).</div>':'')+'</div>';
+  h+='<div style="display:flex;gap:9px;margin:2px 0 6px"><button class="btn sec w" style="margin:0;flex:1" onclick="printReport()">🖨️ Imprimir / PDF</button><button class="btn ghost w" style="margin:0;flex:1" onclick="copyReport()">📋 Copiar reporte</button></div>'+
+     '<div class="note" style="text-align:center">Reporte semanal de preguntas para dirección: imprímelo, guárdalo como PDF o pégalo en un correo/WhatsApp.</div>';
+  return h;
+}
+
+/* ===== CEO / Dirección (César, Ana): ACCESO A TODO, inclinado a Administración ===== */
+var ADMIN_DESK=925;   // contacto de Administración para el botón "Escribir a Administración" del CEO
 function renderCEO(){
   var H=CFG.hr, AL=(qstats().alerts||[]); _HRAL=AL;
   var aportes=reportsGet().filter(function(r){ return (r.type==='mejora'||r.type==='anormalidad'); }).length;
   var h='';
   h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Dirección General 👑</h2><p>La vista completa de toda la planta. <b>Datos de ejemplo.</b></p></div></div></div>';
+  // Acceso directo a Administración (mano derecha de Dirección)
+  h+='<div class="card" style="border-left:4px solid var(--accent)"><div class="line" style="align-items:center"><span style="flex:1"><b>🗂️ Administración</b><br><span class="note">Tu enlace directo para nómina, asistencia y recibos.</span></span><button class="btn" style="margin:0;flex:none;padding:11px 15px" onclick="openConv(\''+dConv(S.emp,ADMIN_DESK)+'\')">✉️ Escribir a Administración</button></div></div>';
   h+=kpiRow([[H.globalAvg+'%','Avance global','grn'],[(H.redFlags.length+AL.length),'Focos rojos','red'],[H.employees,'Empleados'],[CFG.ranges.filter(function(r){return !r.admin;}).length,'Áreas']]);
   h+='<div class="card"><b>Avance por área</b>'+H.byArea.map(function(a){ return '<div class="barrow"><span>'+esc(a[0])+'</span><span class="v">'+a[1]+'%</span></div><div class="bar"><i style="width:'+a[1]+'%"></i></div>'; }).join('')+'</div>';
   if(AL.length){ h+='<div class="card" style="border:2px solid #e74c3c;background:rgba(192,57,43,0.12)"><b style="color:#ff6b5e">🚨 Alertas de seguridad ('+AL.length+')</b><div class="note" style="margin-top:4px">Posible sabotaje detectado por Bandi. RRHH ya las atiende en su tablero.</div></div>'; }
   h+='<div class="card"><b>Resumen ejecutivo</b><div class="note" style="margin-top:4px">Capacitación, comunicación, autoservicio y control operando en toda la planta. <b>'+aportes+'</b> reportes/mejoras del personal en el periodo. La operación y los focos rojos están bajo monitoreo en tiempo real.</div></div>';
+  // ---- Administración: horarios/horas + recibos firmados (lo que más le interesa a Dirección) ----
+  h+='<div class="sec-t">🗂️ Administración<span class="ln"></span></div>';
+  h+=horasBlock();
+  h+=recibosAdminBlock();
+  // ---- RRHH: quejas/reportes + vacaciones ----
+  h+='<div class="sec-t">📊 Recursos Humanos<span class="ln"></span></div>';
+  h+=reportsAdminBlock();
+  h+=leaveAdminBlock();
+  // ---- Capacitación / Bandi ----
+  h+='<div class="sec-t">🛞 Capacitación<span class="ln"></span></div>';
+  h+=bandiFeedBlock();
   h+='<div class="card"><b>🏆 Ranking por área (puntos)</b>'+H.top.map(function(e,i){ return '<div class="rank"><span class="medal">'+(i+1)+'</span><span class="rn">'+esc(e[0])+'</span><span class="tg g">'+e[1]+' pts</span></div>'; }).join('')+'</div>';
   $('s-hr').innerHTML=h; show('hr');
 }
@@ -1746,20 +1776,11 @@ function renderHR(){
      H.top.map(function(e,i){
        return '<div class="rank"><span class="medal">'+(i+1)+'</span><span class="rn">'+esc(e[0])+'</span><span class="tg g">'+e[1]+' pts</span></div>';
      }).join('')+'</div>';
-  // ----- Preguntas a Bandi (alimentación del chat / focos) -----
-  var Q=qstats();
-  var freq=Object.keys(Q.freq).map(function(k){return [k,Q.freq[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,6);
-  _HRUN=Object.keys(Q.unans).map(function(k){ var u=Q.unans[k]; return {key:k,q:u.q,n:u.n}; }).sort(function(a,b){return b.n-a.n;}).slice(0,8);
-  var resN=Object.keys(Q.res||{}).length;
-  h+='<div class="card"><b>❓ Preguntas más frecuentes a Bandi</b><div class="note" style="margin:2px 0 8px">Lo que más preguntan los trabajadores. Si un tema sube mucho (🔴), conviene reforzar la capacitación.</div>'+
-     (freq.length? freq.map(function(x){ var hot=x[1]>=8; return '<div class="line"><span>'+esc(x[0])+'</span><span class="tg '+(hot?'':'g')+'">'+(hot?'🔴 ':'')+x[1]+'</span></div>'; }).join('') : '<div class="note">Aún sin registros.</div>')+'</div>';
-  h+='<div class="card"><b>🆕 Preguntas SIN responder (para autorizar)</b><div class="note" style="margin:2px 0 8px">Bandi no tenía respuesta autorizada. Revisa cada una, formula la respuesta con dirección y márcala con ✓; cuando esté autorizada se agrega a la biblioteca de Bandi (CFG.kb).</div>'+
-     (_HRUN.length? _HRUN.map(function(u,i){ return '<div class="line"><span>'+esc(u.q)+'</span><span style="display:flex;gap:6px;align-items:center;flex:none"><span class="tg">'+u.n+'×</span><button class="back" style="padding:6px 10px" onclick="markAnswered('+i+')">✓ Atendida</button></span></div>'; }).join('') : '<div class="note">Sin pendientes. 🎉</div>')+
-     (resN? '<div class="note" style="margin-top:8px">✅ Atendidas: '+resN+'. Recuerda cargar sus respuestas autorizadas en la biblioteca de Bandi (CFG.kb).</div>':'')+'</div>';
-  h+='<div style="display:flex;gap:9px;margin:2px 0 6px"><button class="btn sec w" style="margin:0;flex:1" onclick="printReport()">🖨️ Imprimir / PDF</button><button class="btn ghost w" style="margin:0;flex:1" onclick="copyReport()">📋 Copiar reporte</button></div>'+
-     '<div class="note" style="text-align:center">Reporte semanal de preguntas para dirección: imprímelo, guárdalo como PDF o pégalo en un correo/WhatsApp.</div>';
+  // ----- Preguntas a Bandi (alimentación del chat / focos) + reporte semanal -----
+  h+=bandiFeedBlock();
   h+=reportsAdminBlock();   // RRHH revisa quejas/anormalidad/mejora (otorga puntos)
   h+=leaveAdminBlock();     // RRHH aprueba vacaciones/permisos
+  h+=recibosAdminBlock();   // acceso total: RRHH también ve los recibos de nómina firmados
   $('s-hr').innerHTML=h; show('hr');
 }
 
@@ -2580,7 +2601,9 @@ function threadHTML(msgs,showSender){
 }
 function openConv(conv){
   _curConv=conv; markConvRead(conv);
-  var isMonitor = S.admin && conv.indexOf('d:')===0;   // RRHH observando un chat entre empleados
+  // Un chat directo solo es "monitoreo" si el admin NO participa en él; si participa (p. ej. CEO↔Administración) sí puede escribir.
+  var dParts = conv.indexOf('d:')===0 ? conv.slice(2).split('-').map(Number) : [];
+  var isMonitor = S.admin && conv.indexOf('d:')===0 && dParts.indexOf(S.emp)<0;
   var isGroup = conv.indexOf('g:')===0;
   var h='';
   h+='<div class="chathead">'+bandi('b-md')+'<div class="t"><b>'+esc(convTitle(conv))+'</b><span>'+(isMonitor?'👁 Monitoreo RRHH · solo lectura':(isGroup?'Grupo de área':'Conversación'))+'</span></div></div>';

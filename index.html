@@ -365,6 +365,8 @@ body.a11y .screen .btn, body.a11y .screen .bigbtn{ font-size:16.5px !important; 
   #printReport .mut2{color:#555;font-size:11px}
 }
 </style>
+<!-- Supabase (Fase 2: demo en vivo, cross-device). Si no carga (offline), la app sigue con localStorage. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="mesh"></div><div class="grain"></div>
@@ -1829,8 +1831,8 @@ function legacyCopy(t){
 /* ====================== NOTICIAS (RRHH → todo el personal) ======================
    RRHH publica avisos e infografías; los trabajadores los reciben en su área "Noticias".
    Demo: localStorage 'hb_news'. En producción esto vive en el servidor y llega a todos. */
-function newsGet(){ try{ return JSON.parse(localStorage.getItem('hb_news')||'[]')||[]; }catch(e){ return []; } }
-function newsSave(a){ try{ localStorage.setItem('hb_news', JSON.stringify(a)); }catch(e){ flash('No se pudo guardar (espacio lleno)'); } }
+function newsGet(){ if(DBC.news!=null) return DBC.news; try{ return JSON.parse(localStorage.getItem('hb_news')||'[]')||[]; }catch(e){ return []; } }
+function newsSave(a){ try{ localStorage.setItem('hb_news', JSON.stringify(a)); }catch(e){ flash('No se pudo guardar (espacio lleno)'); } DBC.news=a; sbSync('news', a); }
 function newsTime(ts){ try{ var d=new Date(ts); return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}); }catch(e){ return ''; } }
 /* segmentación por rango de número de empleado (compartido por Noticias y mensajes directos) */
 function inTarget(to,emp){ if(!to||to.mode==='all') return true; if(to.mode==='range'){ var mn=+to.min,mx=+to.max; if(isNaN(mn)||isNaN(mx)) return true; if(mn>mx){ var t=mn; mn=mx; mx=t; } return emp>=mn&&emp<=mx; } return true; }
@@ -1867,7 +1869,7 @@ function postNews(){
   if(a.length>100) a.length=100;
   newsSave(a); _newsImg=null; flash('Publicada · '+targetLabel(to)); renderNews();
 }
-function delNews(id){ if(!confirm('¿Eliminar esta noticia?')) return; newsSave(newsGet().filter(function(n){ return n.id!==id; })); renderNews(); }
+function delNews(id){ if(!confirm('¿Eliminar esta noticia?')) return; sbDelRec('news', id); newsSave(newsGet().filter(function(n){ return n.id!==id; })); renderNews(); }
 /* ===== Acuse "Enterado": el trabajador confirma que leyó (da puntos bajos 1 sola vez) y RRHH ve quién leyó.
    Demo: el acuse se guarda en la propia noticia (hb_news[].reads). En producción va al servidor. ===== */
 function hasRead(n){ var r=n.reads||[]; for(var j=0;j<r.length;j++){ if(r[j].emp===S.emp) return true; } return false; }
@@ -1942,8 +1944,8 @@ function renderNews(){
    Quejas, reportes de anormalidad y mejora continua llegan directo a RRHH. Si RRHH
    acepta una anormalidad/mejora válida, se guarda y el trabajador gana CFG.points.report (75).
    Demo: localStorage 'hb_reports'. En producción: servidor + aviso inmediato a RRHH. */
-function reportsGet(){ try{ return JSON.parse(localStorage.getItem('hb_reports')||'[]')||[]; }catch(e){ return []; } }
-function reportsSave(a){ try{ localStorage.setItem('hb_reports', JSON.stringify(a)); }catch(e){} }
+function reportsGet(){ if(DBC.reports!=null) return DBC.reports; try{ return JSON.parse(localStorage.getItem('hb_reports')||'[]')||[]; }catch(e){ return []; } }
+function reportsSave(a){ try{ localStorage.setItem('hb_reports', JSON.stringify(a)); }catch(e){} DBC.reports=a; sbSync('reports', a); }
 /* Mensajes directos de RRHH al personal (un trabajador, un rango o todos) */
 function dmGet(){ try{ return JSON.parse(localStorage.getItem('hb_dm')||'[]')||[]; }catch(e){ return []; } }
 function dmSave(a){ try{ localStorage.setItem('hb_dm', JSON.stringify(a)); }catch(e){} }
@@ -2484,8 +2486,8 @@ function demoUseUp(){ var d=learnState(); d.used=LOCK_SEC; d.consent=true; learn
    Server-ready: hoy en localStorage 'hb_msgs'; en Fase 2 cada get/send pega al servidor.
    RRHH puede leer cualquier conversación (encubierto). Anti-sabotaje: alerta solo a RRHH.
    ============================================================================ */
-function msgsGet(){ return lsGet('hb_msgs'); }
-function msgsSave(a){ lsSet('hb_msgs', a); }
+function msgsGet(){ return (DBC.msgs!=null)?DBC.msgs:lsGet('hb_msgs'); }
+function msgsSave(a){ lsSet('hb_msgs', a); DBC.msgs=a; sbSync('msgs', a); }
 function dConv(a,b){ a=+a; b=+b; return 'd:'+Math.min(a,b)+'-'+Math.max(a,b); }
 function gConv(key){ return 'g:'+key; }
 function rConv(emp){ return 'r:'+emp; }            // línea del trabajador con RRHH
@@ -2782,8 +2784,8 @@ function cerrarNom(){
    BEEPER — RRHH/supervisor llama a un trabajador por su ID; le llega una alarma
    (sonido + vibración + pantalla completa) para que se presente donde se necesita.
    Demo: localStorage 'hb_pages' + sondeo cada 3 s. En vivo (Fase 2): push del servidor. */
-function pagesGet(){ return lsGet('hb_pages'); }
-function pagesSave(a){ lsSet('hb_pages', a); }
+function pagesGet(){ return (DBC.pages!=null)?DBC.pages:lsGet('hb_pages'); }
+function pagesSave(a){ lsSet('hb_pages', a); DBC.pages=a; sbSync('pages', a); }
 function beeperAdminCard(){
   var recent=pagesGet().slice(0,5);
   var list = recent.length ? '<div class="note" style="margin-top:10px">'+recent.map(function(p){ return '#'+(''+p.to).padStart(3,'0')+' &mdash; '+(p.ackTs?'<b style="color:var(--ok)">✓ confirmó</b>':'<span style="color:var(--warn)">⏳ llamando…</span>'); }).join('<br>')+'</div>' : '';
@@ -2825,6 +2827,51 @@ function beepStart(){
   try{ if(navigator.vibrate) navigator.vibrate([400,180,400,180,600]); }catch(e){}
 }
 function beepStop(){ try{ if(_beepInt){ clearInterval(_beepInt); _beepInt=null; } }catch(e){} try{ if(navigator.vibrate) navigator.vibrate(0); }catch(e){} }
+
+/* ============================================================================
+   SUPABASE — Fase 2: demo EN VIVO (cross-device en tiempo real).
+   Mantiene la API síncrona de la app (msgsGet/pagesGet/newsGet/reportsGet) leyendo
+   de un caché en memoria (DBC) que se sincroniza con el servidor por Realtime.
+   Degrada con gracia: si no hay servidor (offline o CDN no cargó), usa localStorage.
+   La llave publishable es PÚBLICA por diseño; en modo demo las tablas van abiertas
+   (sin datos reales). Con IDs+PIN reales se cambia a RLS estricto por rol.
+   ============================================================================ */
+var SB_URL='https://vuyetjbeoeezuniwwquv.supabase.co';
+var SB_KEY='sb_publishable_9obls1EHbWYQoYZyhE2QWA_PiOe1-Xs';
+var SB=null, SB_ON=false, DBC={};   // DBC[tabla]: caché en memoria (undefined = aún no cargada → usar localStorage)
+try{ if(window.supabase && /^https?:/.test(SB_URL)){ SB=window.supabase.createClient(SB_URL, SB_KEY); SB_ON=true; } }catch(e){ SB_ON=false; }
+function sbReady(){ return !!(SB_ON && SB); }
+function sbLoad(tbl, cb){
+  if(!sbReady()){ if(cb) cb(); return; }
+  try{ SB.from(tbl).select('data').order('ts',{ascending:true}).then(function(r){
+    if(!r.error && r.data){ DBC[tbl]=r.data.map(function(x){ return x.data; }); try{ lsSet('hb_'+tbl, DBC[tbl]); }catch(e){} sbRerender(); }
+    if(cb) cb();
+  }); }catch(e){ if(cb) cb(); }
+}
+function sbSync(tbl, arr){   // sube/actualiza el arreglo completo (demo: tamaños chicos)
+  if(!sbReady() || !arr || !arr.length) return;
+  try{ SB.from(tbl).upsert(arr.map(function(o){ return {id:o.id, data:o, ts:(o.ts||Date.now())}; })).then(function(){}); }catch(e){}
+}
+function sbDelRec(tbl, id){ if(sbReady()){ try{ SB.from(tbl).delete().eq('id',id).then(function(){}); }catch(e){} } }
+function sbSubscribe(tbl){ if(!sbReady()) return; try{ SB.channel('rt-'+tbl).on('postgres_changes',{event:'*',schema:'public',table:tbl},function(){ sbLoad(tbl); }).subscribe(); }catch(e){} }
+function sbRerender(){ try{
+  if(_screen==='msgs') renderMsgs();
+  else if(_screen==='thread' && _curConv) openConv(_curConv);
+  else if(_screen==='hr' && typeof renderDash==='function') renderDash();
+  else if(_screen==='news') renderNews();
+  if(typeof updateMsgBadge==='function') updateMsgBadge();
+  if(S && !S.admin && typeof checkPage==='function') checkPage();
+}catch(e){} }
+function sbInit(){
+  if(!sbReady()) return;
+  ['msgs','pages','news','reports'].forEach(function(t){ sbSubscribe(t); });
+  sbLoad('msgs'); sbLoad('pages');
+  // noticias/reportes: si el servidor viene vacío, sembrar desde localStorage (para que la demo se vea poblada)
+  sbLoad('news', function(){ if(!(DBC.news&&DBC.news.length)){ var s=lsArr('hb_news'); if(s.length){ DBC.news=s; sbSync('news', s); } } });
+  sbLoad('reports', function(){ if(!(DBC.reports&&DBC.reports.length)){ var s=lsArr('hb_reports'); if(s.length){ DBC.reports=s; sbSync('reports', s); } } });
+}
+function lsArr(k){ try{ return JSON.parse(localStorage.getItem(k)||'[]')||[]; }catch(e){ return []; }
+}
 
 /* ====================== ARRANQUE ====================== */
 (function init(){
@@ -2871,6 +2918,7 @@ function beepStop(){ try{ if(_beepInt){ clearInterval(_beepInt); _beepInt=null; 
     var b=new Blob([JSON.stringify(mani)],{type:'application/manifest+json'});
     var l=document.createElement('link'); l.rel='manifest'; l.href=URL.createObjectURL(b); document.head.appendChild(l);
   }catch(e){}
+  try{ sbInit(); }catch(e){}   // Fase 2: conectar al servidor en vivo (cross-device)
 })();
 </script>
 </body>

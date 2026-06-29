@@ -483,10 +483,19 @@ window.CFG = {
       greet:'¡Equipo de Maquinaria! Aquí aprendes a operar las máquinas con seguridad: empezando por el Tabulador 7 y 8, y el Banbury.' },
     { min:900, max:919, key:'rrhh',       area:'Recursos Humanos',  icon:'📊', accent:'#5b6cf0', accent2:'#8b8ff7', admin:true, dash:'rrhh',
       greet:'Panel de RRHH: avance, focos rojos, capacitación, quejas/reportes, vacaciones y ranking de toda la planta.' },
-    { min:920, max:939, key:'admin',      area:'Administración',     icon:'🗂️', accent:'#0e7a8e', accent2:'#3fc4d6', admin:true, dash:'admin',
-      greet:'Panel de Administración: horarios, horas trabajadas y recibos de nómina firmados.' },
+    /* --- Responsables de área (un dashboard por área; misma key/color que su área) --- */
+    { min:920, max:929, key:'almacen',    area:'Almacén',           icon:'📦', accent:'#c4161c', accent2:'#ff5a4e', admin:true, dash:'resp',
+      greet:'Panel del Responsable de Almacén: el control, el avance y los reportes de tu área.' },
+    { min:930, max:939, key:'inventario', area:'Inventario',        icon:'📋', accent:'#e07a1f', accent2:'#ffb05a', admin:true, dash:'resp',
+      greet:'Panel del Responsable de Inventario: el control, el avance y los reportes de tu área.' },
     { min:950, max:959, key:'produccion', area:'Producción',         icon:'⚙️', accent:'#2a7de1', accent2:'#5aa8ff', admin:true, dash:'resp',
       greet:'Panel del Responsable de Producción: el control, el avance y los reportes de tu área.' },
+    { min:960, max:969, key:'calidad',    area:'Calidad',           icon:'✅', accent:'#1c9444', accent2:'#46c46e', admin:true, dash:'resp',
+      greet:'Panel del Responsable de Calidad: el control, el avance y los reportes de tu área.' },
+    { min:970, max:979, key:'comercial',  area:'Comercial',         icon:'🤝', accent:'#8a3bd1', accent2:'#b06cf0', admin:true, dash:'resp',
+      greet:'Panel del Responsable de Comercial: el control, el avance y los reportes de tu área.' },
+    { min:980, max:989, key:'maquinaria', area:'Maquinaria',        icon:'🛠️', accent:'#0e9e8e', accent2:'#3fd6c4', admin:true, dash:'resp',
+      greet:'Panel del Responsable de Maquinaria: el control, el avance y los reportes de tu área.' },
     { min:990, max:999, key:'ceo',        area:'Dirección General',  icon:'👑', accent:'#b8860b', accent2:'#ffd166', admin:true, dash:'ceo',
       greet:'Panel de Dirección: la vista completa de toda la planta.' }
   ],
@@ -1157,7 +1166,7 @@ function load(emp){ try{ var d=localStorage.getItem('hb_'+emp); return d?JSON.pa
 
 /* ====================== LOGIN ====================== */
 function buildLoginHelp(){
-  var demos=[['070','Operativo'],['950','Resp. Producción'],['905','RRHH'],['925','Administración'],['990','Dirección (CEO)'],['034','Inventario'],['140','Maquinaria']];
+  var demos=[['070','Operativo'],['905','RRHH'],['990','Dirección (CEO)'],['950','Resp. Producción'],['920','Resp. Almacén'],['034','Inventario'],['140','Maquinaria']];
   var row=$('tryRow'); var h='<b>Probar como…</b>';
   demos.forEach(function(d){ h+='<button class="tryc" onclick="quickLogin(\''+d[0]+'\')">'+d[1]+' <i>'+d[0]+'</i></button>'; });
   row.innerHTML=h;
@@ -1185,6 +1194,9 @@ function login(){
   // saludo de bienvenida en el chat
   S.chat.push({role:'assistant',content:'¡Hola! Soy Bandi 🛞 tu asistente. Pregúntame sobre seguridad, procesos, producto o tus puntos. '+(S.admin?'':'¡Vamos por esos cursos!')});
   applyA11y();
+  // limpiar overlays que pudieran haber quedado abiertos (p. ej. al cambiar de usuario en demo)
+  ['lockScreen','beepScreen'].forEach(function(id){ var el=$(id); if(el) el.classList.add('hide'); });
+  if(typeof beepStop==='function') beepStop();
   if(!S.admin){ checkPage(); if(!window._pagePoll) window._pagePoll=setInterval(checkPage,3000); }
   if(S.admin) renderDash(); else renderHome();
 }
@@ -1656,13 +1668,13 @@ function sendChat(){
 /* ====================== TABLERO RRHH (solo admin) ====================== */
 /* ============================================================================
    DASHBOARDS POR ROL — cada entrada (login) ve su tablero de control + Mensajes.
-   CEO (Dirección: César/Ana) · RRHH · Administración · Responsable de Área (Producción: Alejandro).
+   Dirección (CEO) y RRHH comparten el MISMO tablero (acceso total; solo cambia la etiqueta).
+   Responsable de Área: un responsable por cada área (Almacén, Inventario, Producción, Calidad, Comercial, Maquinaria).
    Los operativos ven su propio "tablero" (Inicio: puntos/avance) + Mensajes.
    ============================================================================ */
-function dashLabel(){ return S.dash==='ceo'?'Dirección':(S.dash==='admin'?'Admón':(S.dash==='resp'?'Mi Área':'RRHH')); }
+function dashLabel(){ return S.dash==='ceo'?'Dirección':(S.dash==='resp'?'Mi Área':'RRHH'); }
 function renderDash(){
   if(S.dash==='ceo') return renderCEO();
-  if(S.dash==='admin') return renderAdmin();
   if(S.dash==='resp') return renderResp();
   return renderHR();
 }
@@ -1685,44 +1697,9 @@ function bandiFeedBlock(){
   return h;
 }
 
-/* ===== CEO / Dirección (César, Ana): ACCESO A TODO, inclinado a Administración ===== */
-var ADMIN_DESK=925;   // contacto de Administración para el botón "Escribir a Administración" del CEO
-function renderCEO(){
-  var H=CFG.hr, AL=(qstats().alerts||[]); _HRAL=AL;
-  var aportes=reportsGet().filter(function(r){ return (r.type==='mejora'||r.type==='anormalidad'); }).length;
-  var h='';
-  h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Dirección General 👑</h2><p>La vista completa de toda la planta. <b>Datos de ejemplo.</b></p></div></div></div>';
-  // Acceso directo a Administración (mano derecha de Dirección)
-  h+='<div class="card" style="border-left:4px solid var(--accent)"><div class="line" style="align-items:center"><span style="flex:1"><b>🗂️ Administración</b><br><span class="note">Tu enlace directo para nómina, asistencia y recibos.</span></span><button class="btn" style="margin:0;flex:none;padding:11px 15px" onclick="openConv(\''+dConv(S.emp,ADMIN_DESK)+'\')">✉️ Escribir a Administración</button></div></div>';
-  h+=kpiRow([[H.globalAvg+'%','Avance global','grn'],[(H.redFlags.length+AL.length),'Focos rojos','red'],[H.employees,'Empleados'],[CFG.ranges.filter(function(r){return !r.admin;}).length,'Áreas']]);
-  h+='<div class="card"><b>Avance por área</b>'+H.byArea.map(function(a){ return '<div class="barrow"><span>'+esc(a[0])+'</span><span class="v">'+a[1]+'%</span></div><div class="bar"><i style="width:'+a[1]+'%"></i></div>'; }).join('')+'</div>';
-  if(AL.length){ h+='<div class="card" style="border:2px solid #e74c3c;background:rgba(192,57,43,0.12)"><b style="color:#ff6b5e">🚨 Alertas de seguridad ('+AL.length+')</b><div class="note" style="margin-top:4px">Posible sabotaje detectado por Bandi. RRHH ya las atiende en su tablero.</div></div>'; }
-  h+='<div class="card"><b>Resumen ejecutivo</b><div class="note" style="margin-top:4px">Capacitación, comunicación, autoservicio y control operando en toda la planta. <b>'+aportes+'</b> reportes/mejoras del personal en el periodo. La operación y los focos rojos están bajo monitoreo en tiempo real.</div></div>';
-  // ---- Administración: horarios/horas + recibos firmados (lo que más le interesa a Dirección) ----
-  h+='<div class="sec-t">🗂️ Administración<span class="ln"></span></div>';
-  h+=horasBlock();
-  h+=recibosAdminBlock();
-  // ---- RRHH: quejas/reportes + vacaciones ----
-  h+='<div class="sec-t">📊 Recursos Humanos<span class="ln"></span></div>';
-  h+=reportsAdminBlock();
-  h+=leaveAdminBlock();
-  // ---- Capacitación / Bandi ----
-  h+='<div class="sec-t">🛞 Capacitación<span class="ln"></span></div>';
-  h+=bandiFeedBlock();
-  h+='<div class="card"><b>🏆 Ranking por área (puntos)</b>'+H.top.map(function(e,i){ return '<div class="rank"><span class="medal">'+(i+1)+'</span><span class="rn">'+esc(e[0])+'</span><span class="tg g">'+e[1]+' pts</span></div>'; }).join('')+'</div>';
-  $('s-hr').innerHTML=h; show('hr');
-}
-/* ===== Administración: asistencia/horas + recibos de nómina firmados ===== */
-function renderAdmin(){
-  var firmados=recibosGet().length, pendVac=leaveGet().filter(function(r){return r.status==='pendiente';}).length;
-  var h='';
-  h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Administración 🗂️</h2><p>Asistencia, horas y recibos del personal. <b>Datos de ejemplo.</b></p></div></div></div>';
-  h+=kpiRow([[CFG.hr.employees,'Empleados'],[firmados,'Recibos firmados','grn'],[pendVac,'Vacaciones pend.',(pendVac?'red':'')],[CFG.ranges.filter(function(r){return !r.admin;}).length,'Áreas']]);
-  h+=horasBlock();
-  h+=recibosAdminBlock();
-  $('s-hr').innerHTML=h; show('hr');
-}
-/* ===== Responsable de Área (Alejandro · Producción): control de su área ===== */
+/* ===== CEO / Dirección (César, Ana): mismo tablero que RRHH, solo cambia la etiqueta ===== */
+function renderCEO(){ managerDash('Dirección'); }
+/* ===== Responsable de Área (un responsable por área): control de su área ===== */
 function renderResp(){
   var area=S.area, h='';
   var av=(CFG.hr.byArea.filter(function(a){return a[0]===area;})[0]||[area,0])[1];
@@ -1738,11 +1715,13 @@ function renderResp(){
   $('s-hr').innerHTML=h; show('hr');
 }
 
-function renderHR(){
+/* Tablero compartido por RRHH y Dirección (acceso total, idéntico; solo cambia la etiqueta). */
+function renderHR(){ managerDash('RRHH'); }
+function managerDash(role){
   var H=CFG.hr;
   var ALERTS=(qstats().alerts||[]); _HRAL=ALERTS;   // focos rojos de sabotaje (anti-sabotaje del chat)
   var h='';
-  h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Tablero de RRHH</h2><p>Avance, focos rojos y desempeño de la planta. <b>Datos de ejemplo.</b></p></div></div></div>';
+  h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Tablero de '+esc(role)+'</h2><p>Avance, focos rojos y desempeño de la planta. <b>Datos de ejemplo.</b></p></div></div></div>';
   // ----- ALERTAS DE SEGURIDAD (posible sabotaje) — máxima prioridad, hasta arriba -----
   if(ALERTS.length){
     h+='<div class="card" style="border:2px solid #e74c3c;background:rgba(192,57,43,0.12)">'+
@@ -1772,7 +1751,7 @@ function renderHR(){
   h+='<div class="card"><b>Temas con más fallos</b>'+H.failed.map(function(x){
        return '<div class="barrow"><span>'+esc(x[0])+'</span><span class="v">'+x[1]+'% de fallo</span></div><div class="bar"><i style="width:'+x[1]+'%"></i></div>';
      }).join('')+'<div class="note">Un tema muy fallado puede indicar que falta capacitación… o que hay un problema en el proceso.</div></div>';
-  h+='<div class="card"><b>🏆 Ranking de puntos</b><div class="note" style="margin:2px 0 8px">Visible solo para RRHH. Los empleados nunca ven el ranking.</div>'+
+  h+='<div class="card"><b>🏆 Ranking de puntos</b><div class="note" style="margin:2px 0 8px">Visible solo para '+esc(role)+'. Los empleados nunca ven el ranking.</div>'+
      H.top.map(function(e,i){
        return '<div class="rank"><span class="medal">'+(i+1)+'</span><span class="rn">'+esc(e[0])+'</span><span class="tg g">'+e[1]+' pts</span></div>';
      }).join('')+'</div>';
@@ -2320,7 +2299,10 @@ function leaveWorkerBlock(){
      '<p class="note" style="margin-top:5px">Según tu antigüedad (Ley Federal del Trabajo). En la versión final, el saldo viene de RRHH.</p></div>';
   var chips=''; for(var k in LEAVE){ chips+='<button class="chip2" style="'+(_leaveType===k?'background:var(--accent);color:#fff;border-color:var(--accent)':'')+'" onclick="setLeaveType(\''+k+'\')">'+LEAVE[k].ic+' '+LEAVE[k].l+'</button>'; }
   h+='<div class="card"><b>Solicitar</b><div style="display:flex;gap:7px;flex-wrap:wrap;margin:10px 0">'+chips+'</div>'+
-     '<div style="display:flex;gap:8px;align-items:center"><span class="note">Desde</span><input id="lvFrom" class="fin" type="date" style="flex:1"><span class="note">hasta</span><input id="lvTo" class="fin" type="date" style="flex:1"></div>'+
+     '<div style="display:flex;gap:10px">'+
+       '<div style="flex:1;min-width:0"><div class="note" style="margin-bottom:3px">Desde</div><input id="lvFrom" class="fin" type="date" style="width:100%"></div>'+
+       '<div style="flex:1;min-width:0"><div class="note" style="margin-bottom:3px">hasta</div><input id="lvTo" class="fin" type="date" style="width:100%"></div>'+
+     '</div>'+
      '<textarea id="lvReason" class="fin" rows="2" placeholder="Motivo (opcional)" style="margin-top:8px"></textarea>'+
      '<button class="btn" style="margin-top:10px" onclick="submitLeave()">Enviar solicitud</button></div>';
   if(mine.length){ h+='<div class="card"><b>Mis solicitudes</b>'+mine.map(function(r){
@@ -2501,7 +2483,24 @@ function msgsGet(){ return lsGet('hb_msgs'); }
 function msgsSave(a){ lsSet('hb_msgs', a); }
 function dConv(a,b){ a=+a; b=+b; return 'd:'+Math.min(a,b)+'-'+Math.max(a,b); }
 function gConv(key){ return 'g:'+key; }
-function rConv(emp){ return 'r:'+emp; }
+function rConv(emp){ return 'r:'+emp; }            // línea del trabajador con RRHH
+function cConv(emp){ return 'c:'+emp; }            // línea del trabajador con Dirección
+function jConv(key,emp){ return 'j:'+key+':'+emp; } // línea del trabajador con el responsable de SU área
+function areaName(key){ for(var i=0;i<CFG.ranges.length;i++){ if(CFG.ranges[i].key===key) return CFG.ranges[i].area; } return key; }
+/* Quién puede ESCRIBIR en una conversación (lo demás es monitoreo/solo lectura para management). */
+function canWriteConv(conv){
+  // Chat directo: solo los participantes. (Management que no participa = monitoreo)
+  if(conv.indexOf('d:')===0){ var p=conv.slice(2).split('-').map(Number); return p.indexOf(S.emp)>=0; }
+  // Grupo de área: los miembros del área (comparten key) + management.
+  if(conv.indexOf('g:')===0){ return S.key===conv.slice(2) || S.dash==='rrhh' || S.dash==='ceo'; }
+  // Línea con RRHH: la responde RRHH (Dirección solo monitorea).
+  if(conv.indexOf('r:')===0){ var or=+conv.slice(2); return or===S.emp || S.dash==='rrhh'; }
+  // Línea con Dirección: la responde Dirección (RRHH solo monitorea).
+  if(conv.indexOf('c:')===0){ var oc=+conv.slice(2); return oc===S.emp || S.dash==='ceo'; }
+  // Línea con el responsable: la responde el responsable de ESA área (RRHH/Dirección solo monitorean).
+  if(conv.indexOf('j:')===0){ var pp=conv.slice(2).split(':'); return (+pp[1])===S.emp || (S.dash==='resp' && S.key===pp[0]); }
+  return true;
+}
 function convMsgs(conv){ return msgsGet().filter(function(m){ return m.conv===conv; }).sort(function(x,y){ return x.ts-y.ts; }); }
 function convLast(conv){ var a=convMsgs(conv); return a.length?a[a.length-1]:null; }
 function convOther(conv){ var p=conv.slice(2).split('-'); return (+p[0]===S.emp)?+p[1]:+p[0]; }
@@ -2511,11 +2510,14 @@ function markConvRead(conv){ var r=readMap(); r[conv]=Date.now(); readSave(r); }
 function convUnread(conv){ var last=(readMap()[conv]||0), n=0; convMsgs(conv).forEach(function(m){ if(m.ts>last && m.from!==S.emp) n++; }); return n; }
 function isAdminId(id){ var r=rangeOf(+id); return !!(r&&r.admin); }
 function empName(id){ var r=rangeOf(+id); return '#'+(''+id).padStart(3,'0')+(r?' · '+r.area:''); }
-function senderLabel(from){ return isAdminId(from)?'Recursos Humanos':('#'+(''+from).padStart(3,'0')); }
+function roleLabel(id){ var r=rangeOf(+id); if(!r) return '#'+(''+id).padStart(3,'0'); if(r.dash==='ceo') return 'Dirección'; if(r.dash==='rrhh') return 'Recursos Humanos'; if(r.dash==='resp') return 'Responsable · '+r.area; return '#'+(''+id).padStart(3,'0'); }
+function senderLabel(from){ return isAdminId(from)?roleLabel(from):('#'+(''+from).padStart(3,'0')); }
 function convTitle(conv){
   if(conv.indexOf('r:')===0) return 'Recursos Humanos';
-  if(conv.indexOf('g:')===0){ var k=conv.slice(2),nm=k; CFG.ranges.forEach(function(x){ if(x.key===k) nm=x.area; }); return 'Grupo · '+nm; }
-  if(conv.indexOf('d:')===0){ return empName(convOther(conv)); }
+  if(conv.indexOf('c:')===0) return 'Dirección';
+  if(conv.indexOf('j:')===0){ var parts=conv.slice(2).split(':'); return 'Responsable · '+areaName(parts[0]); }
+  if(conv.indexOf('g:')===0) return 'Grupo · '+areaName(conv.slice(2));
+  if(conv.indexOf('d:')===0) return empName(convOther(conv));
   return conv;
 }
 function sendMsg(conv,text,img){
@@ -2527,7 +2529,7 @@ function sendMsg(conv,text,img){
   if(text && typeof maliceCheck==='function' && maliceCheck(text)) logAlert('[Chat] '+text);
   markConvRead(conv);
 }
-function totalUnread(){ if(!S||S.admin) return 0; var t=convUnread(rConv(S.emp))+convUnread(gConv(S.key)); myDirects().forEach(function(c){ t+=convUnread(c); }); return t; }
+function totalUnread(){ if(!S||S.admin) return 0; var t=convUnread(rConv(S.emp))+convUnread(cConv(S.emp))+convUnread(jConv(S.key,S.emp))+convUnread(gConv(S.key)); myDirects().forEach(function(c){ t+=convUnread(c); }); return t; }
 function updateMsgBadge(){ var b=$('nav-msgs'); if(!b) return; var ex=b.querySelector('.nbadge'); if(ex) ex.remove(); var n=totalUnread(); if(n>0){ var s=document.createElement('span'); s.className='nbadge'; s.textContent=n>9?'9+':(''+n); b.appendChild(s); } }
 function myDirects(){
   var seen={}, out=[];
@@ -2545,26 +2547,57 @@ var _curConv=null, _pendImg=null;
 function renderMsgs(){
   _pendImg=null;
   var h='';
-  h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Mensajes</h2><p>'+(S.admin?'Chats, quejas/reportes, vacaciones y recibos — todo en un lugar.':'Chatea con RRHH, tu área o un compañero. Aquí también van tus quejas y vacaciones.')+'</p></div></div></div>';
-  if(S.admin){ h+=beeperAdminCard(); h+=msgAdminInbox(); }
-  else{
-    h+='<div class="sec-t">Tu línea con RRHH<span class="ln"></span></div>'+convRow(rConv(S.emp),'📌 Recursos Humanos','Tu canal directo y privado con RRHH');
+  var sub = S.admin ? (S.dash==='resp' ? 'Tu equipo, tu grupo de área y tus líneas con Dirección y RRHH.' : 'Líneas con la planta, monitoreo, quejas/reportes, vacaciones y recibos — todo en un lugar.')
+                    : 'Escribe a RRHH, a Dirección, a tu responsable o a tu grupo. Aquí también van tus quejas y vacaciones.';
+  h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Mensajes</h2><p>'+sub+'</p></div></div></div>';
+  if(S.admin){
+    if(S.dash==='resp') h+=respMsgs();
+    else { h+=beeperAdminCard(); h+=msgAdminInbox(); }
+  } else {
+    h+='<div class="sec-t">Tus líneas directas<span class="ln"></span></div>';
+    h+=convRow(rConv(S.emp),'📊 Recursos Humanos','Tu canal privado con RRHH');
+    h+=convRow(cConv(S.emp),'👑 Dirección','Escríbele directo a Dirección');
+    h+=convRow(jConv(S.key,S.emp),'🧑‍🏭 Responsable de '+S.area,'El jefe de tu área');
     h+='<div class="sec-t">Tu grupo de área<span class="ln"></span></div>'+convRow(gConv(S.key),'👥 Grupo · '+S.area,'Mensajes de toda tu área');
     h+='<div class="card"><b>💬 Escribir a un compañero</b><div class="note" style="margin:3px 0 8px">Con su número de empleado, como tu PIN. Ejemplo: 055</div>'+
-       '<div style="display:flex;gap:8px"><input id="newChatId" class="fin" type="number" placeholder="Número de empleado" style="flex:1"><button class="btn" style="margin:0;flex:none;padding:13px 16px" onclick="newChatById()">Abrir</button></div></div>';
+       '<div style="display:flex;gap:8px"><input id="newChatId" class="fin" type="number" placeholder="Número de empleado" style="flex:1;min-width:0"><button class="btn" style="margin:0;flex:none;width:auto;padding:13px 18px" onclick="newChatById()">Abrir</button></div></div>';
     var dir=myDirects();
     if(dir.length){ h+='<div class="sec-t">Conversaciones<span class="ln"></span></div>'; dir.forEach(function(c){ h+=convRow(c,empName(convOther(c)),null); }); }
     h+=reportFormBlock(); h+=leaveWorkerBlock(); h+=myReportsBlock();
   }
   $('s-msgs').innerHTML=h; show('msgs');
 }
+/* Bandeja del responsable de área: solo SU equipo (líneas j: de su key) + su grupo + sus líneas con Dirección/RRHH + beeper de su equipo. */
+function respMsgs(){
+  var h='';
+  h+='<div class="sec-t">Tus líneas directas<span class="ln"></span></div>';
+  h+=convRow(cConv(S.emp),'👑 Dirección','Tu canal con Dirección');
+  h+=convRow(rConv(S.emp),'📊 Recursos Humanos','Tu canal con RRHH');
+  h+=beeperAdminCard();
+  h+='<div class="sec-t">Grupo de '+esc(S.area)+'<span class="ln"></span></div>'+convRow(gConv(S.key),'👥 Grupo · '+S.area,'Mensajes de toda tu área');
+  h+='<div class="sec-t">Tu equipo te escribe<span class="ln"></span></div>';
+  var pre='j:'+S.key+':', seen={};
+  msgsGet().forEach(function(m){ if(m.conv.indexOf(pre)===0) seen[m.conv]=1; });
+  var ks=Object.keys(seen);
+  if(!ks.length) h+='<div class="card"><div class="note">Nadie de tu equipo te ha escrito todavía.</div></div>';
+  ks.forEach(function(c){ var emp=c.slice(pre.length); h+=convRow(c,'#'+(''+emp).padStart(3,'0')+' · '+S.area,null); });
+  return h;
+}
 function msgAdminInbox(){
-  var msgs=msgsGet(), rc={},gc={},dc={};
-  msgs.forEach(function(m){ if(m.conv.indexOf('r:')===0) rc[m.conv]=1; else if(m.conv.indexOf('g:')===0) gc[m.conv]=1; else if(m.conv.indexOf('d:')===0) dc[m.conv]=1; });
-  var h='<div class="card" style="border-left:4px solid var(--accent2)"><div class="note">🔍 <b>Monitoreo.</b> Puedes leer cualquier conversación. Los trabajadores no ven que RRHH tiene acceso.</div></div>';
+  var msgs=msgsGet(), rc={},cc={},jc={},gc={},dc={};
+  msgs.forEach(function(m){ var c=m.conv;
+    if(c.indexOf('r:')===0) rc[c]=1; else if(c.indexOf('c:')===0) cc[c]=1; else if(c.indexOf('j:')===0) jc[c]=1;
+    else if(c.indexOf('g:')===0) gc[c]=1; else if(c.indexOf('d:')===0) dc[c]=1; });
+  var h='<div class="card" style="border-left:4px solid var(--accent2)"><div class="note">🔍 <b>Monitoreo.</b> Puedes leer cualquier conversación de la planta. Los trabajadores no ven que tienes acceso.</div></div>';
   h+='<div class="sec-t">Líneas con RRHH<span class="ln"></span></div>';
   var rk=Object.keys(rc); if(!rk.length) h+='<div class="card"><div class="note">Nadie ha escrito a RRHH todavía.</div></div>';
   rk.forEach(function(c){ h+=convRow(c,'#'+(''+c.slice(2)).padStart(3,'0')+' → RRHH',null); });
+  h+='<div class="sec-t">Líneas con Dirección<span class="ln"></span></div>';
+  var ck=Object.keys(cc); if(!ck.length) h+='<div class="card"><div class="note">Nadie ha escrito a Dirección todavía.</div></div>';
+  ck.forEach(function(c){ h+=convRow(c,'#'+(''+c.slice(2)).padStart(3,'0')+' → Dirección',null); });
+  h+='<div class="sec-t">Líneas con responsables<span class="ln"></span></div>';
+  var jk=Object.keys(jc); if(!jk.length) h+='<div class="card"><div class="note">Sin mensajes a responsables.</div></div>';
+  jk.forEach(function(c){ var parts=c.slice(2).split(':'); h+=convRow(c,'#'+(''+parts[1]).padStart(3,'0')+' → Resp. '+areaName(parts[0]),null); });
   h+='<div class="sec-t">Grupos de área<span class="ln"></span></div>';
   var gk=Object.keys(gc); if(!gk.length) h+='<div class="card"><div class="note">Sin mensajes de grupo.</div></div>';
   gk.forEach(function(c){ h+=convRow(c,convTitle(c),null); });
@@ -2578,6 +2611,7 @@ function newChatById(){
   if(isNaN(v)){ flash('Escribe un número de empleado'); return; }
   if(v===S.emp){ flash('Ese eres tú 🙂'); return; }
   if(!rangeOf(v)){ flash('Ese número de empleado no existe'); return; }
+  if(isAdminId(v)){ flash('Para RRHH, Dirección o tu responsable usa tus líneas directas de arriba.'); return; }
   openConv(dConv(S.emp,v));
 }
 function msgImgLoad(inp){
@@ -2601,18 +2635,18 @@ function threadHTML(msgs,showSender){
 }
 function openConv(conv){
   _curConv=conv; markConvRead(conv);
-  // Un chat directo solo es "monitoreo" si el admin NO participa en él; si participa (p. ej. CEO↔Administración) sí puede escribir.
-  var dParts = conv.indexOf('d:')===0 ? conv.slice(2).split('-').map(Number) : [];
-  var isMonitor = S.admin && conv.indexOf('d:')===0 && dParts.indexOf(S.emp)<0;
+  // Es "monitoreo" (solo lectura) cuando el management NO tiene permiso de escribir en esa conversación.
+  var isMonitor = S.admin && !canWriteConv(conv);
   var isGroup = conv.indexOf('g:')===0;
+  var isLine = /^(r:|c:|j:)/.test(conv);   // líneas con RRHH / Dirección / responsable → mostrar quién responde
   var h='';
-  h+='<div class="chathead">'+bandi('b-md')+'<div class="t"><b>'+esc(convTitle(conv))+'</b><span>'+(isMonitor?'👁 Monitoreo RRHH · solo lectura':(isGroup?'Grupo de área':'Conversación'))+'</span></div></div>';
-  h+='<div class="msgs" id="thMsgs">'+threadHTML(convMsgs(conv), isGroup||S.admin)+'</div>';
+  h+='<div class="chathead">'+bandi('b-md')+'<div class="t"><b>'+esc(convTitle(conv))+'</b><span>'+(isMonitor?'👁 Monitoreo · solo lectura':(isGroup?'Grupo de área':'Conversación'))+'</span></div></div>';
+  h+='<div class="msgs" id="thMsgs">'+threadHTML(convMsgs(conv), isGroup||S.admin||isLine)+'</div>';
   if(_pendImg && !isMonitor) h+='<div class="card" style="padding:8px;display:flex;gap:10px;align-items:center"><img src="'+_pendImg+'" style="max-height:70px;border-radius:8px"><span class="note" style="flex:1">Imagen lista para enviar</span><button class="back" style="padding:6px 10px" onclick="_pendImg=null;openConv(_curConv)">Quitar</button></div>';
   if(!isMonitor){
     h+='<div class="composer"><label class="send" style="background:var(--card2);color:var(--txt);cursor:pointer;font-size:20px">📎<input type="file" accept="image/*" onchange="msgImgLoad(this)" style="display:none"></label><input id="thIn" placeholder="Escribe un mensaje…" autocomplete="off"><button class="send" onclick="sendFromThread()" aria-label="Enviar">➤</button></div>';
   } else {
-    h+='<div class="note" style="text-align:center;padding:12px">Estás observando esta conversación como RRHH. No puedes escribir aquí.</div>';
+    h+='<div class="note" style="text-align:center;padding:12px">Estás observando esta conversación (monitoreo). No puedes escribir aquí.</div>';
   }
   $('s-thread').innerHTML=h; show('thread');
   var t=$('thMsgs'); if(t) t.scrollTop=t.scrollHeight;
@@ -2634,15 +2668,19 @@ function pagesSave(a){ lsSet('hb_pages', a); }
 function beeperAdminCard(){
   var recent=pagesGet().slice(0,5);
   var list = recent.length ? '<div class="note" style="margin-top:10px">'+recent.map(function(p){ return '#'+(''+p.to).padStart(3,'0')+' &mdash; '+(p.ackTs?'<b style="color:var(--ok)">✓ confirmó</b>':'<span style="color:var(--warn)">⏳ llamando…</span>'); }).join('<br>')+'</div>' : '';
+  var soloEquipo = (S.dash==='resp');
   return '<div class="card" style="border-left:4px solid var(--accent2)"><b>📟 Beeper &mdash; llamar a un trabajador</b>'+
-    '<div class="note" style="margin:3px 0 9px">Escribe su número y le llega una <b>alarma</b> para que se presente.</div>'+
+    '<div class="note" style="margin:3px 0 9px">Escribe su número y le llega una <b>alarma</b> para que se presente.'+(soloEquipo?' Solo puedes llamar a <b>tu equipo de '+esc(S.area)+'</b>.':'')+'</div>'+
     '<div style="display:flex;gap:8px;margin-bottom:9px"><input id="beepId" class="fin" type="number" placeholder="N° empleado" style="flex:none;width:130px"><input id="beepMsg" class="fin" placeholder="Motivo / lugar (ej. Ven a RRHH)" style="flex:1"></div>'+
     '<button class="btn" style="margin:0;padding:12px" onclick="sendPage()">📟 Llamar</button>'+list+'</div>';
 }
 function sendPage(){
   var id=parseInt(($('beepId')||{}).value,10), msg=(($('beepMsg')||{}).value||'').trim();
   if(isNaN(id)){ flash('Escribe el número de empleado'); return; }
-  if(!rangeOf(id)){ flash('Ese número de empleado no existe'); return; }
+  var r=rangeOf(id);
+  if(!r){ flash('Ese número de empleado no existe'); return; }
+  // El responsable solo puede llamar a trabajadores de SU propia área.
+  if(S.dash==='resp' && (r.admin || r.key!==S.key)){ flash('Solo puedes llamar a tu equipo de '+S.area+'.'); return; }
   var a=pagesGet(); a.unshift({ id:'pg'+Date.now(), to:id, by:(S&&S.emp), msg:msg||'Preséntate donde se te indica', ts:Date.now(), ackTs:0 });
   pagesSave(a); flash('📟 Llamando al #'+(''+id).padStart(3,'0')); renderMsgs();
 }
@@ -2653,7 +2691,7 @@ function showBeep(p){
   el.innerHTML='<div class="bp-emoji">📟</div>'+bandi('b-lg')+
     '<h2>¡Te están llamando!</h2>'+
     '<p>'+esc(p.msg)+'</p>'+
-    '<div class="lk-time">Recursos Humanos te necesita</div>'+
+    '<div class="lk-time">'+esc(roleLabel(p.by)||'La planta')+' te necesita</div>'+
     '<button class="btn" style="max-width:280px" onclick="ackPage()">✓ Voy para allá</button>';
   el.classList.remove('hide'); beepStart();
 }

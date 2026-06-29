@@ -441,6 +441,7 @@ body.a11y .screen .btn, body.a11y .screen .bigbtn{ font-size:16.5px !important; 
     <section id="s-pay"     class="screen pad hide"></section>
     <section id="s-msgs"    class="screen pad hide"></section>
     <section id="s-thread"  class="screen pad hide"></section>
+    <section id="s-nom"     class="screen pad hide"></section>
   </main>
 
   <!-- ===================== NAV INFERIOR ===================== -->
@@ -1228,7 +1229,7 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'" onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['home','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','thread'];
+var SCREENS=['home','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','thread','nom'];
 function show(name){
   _screen=name;
   SCREENS.forEach(function(s){ var el=$('s-'+s); if(el) el.classList.toggle('hide', s!==name); });
@@ -1250,10 +1251,11 @@ function go(name){
   if(name==='msgs') return renderMsgs();
 }
 function renderTop(name){
-  var sub=(name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread');
+  var sub=(name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom');
   var left=$('topLeft');
   if(sub){
-    left.innerHTML='<button class="back" onclick="'+(name==='quiz'?'backFromQuiz()':(name==='thread'?'renderMsgs()':'go(\'home\')'))+'">‹ Atrás</button>';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='thread' ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : 'go(\'home\')';
+    left.innerHTML='<button class="back" onclick="'+backTo+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
     left.classList.add('who');
@@ -1284,6 +1286,8 @@ function renderHome(){
      '<div class="stat"><div class="n">'+S.points+'</div><div class="l">Puntos</div></div>'+
      '<div class="stat"><div class="n">'+S.streak+'🔥</div><div class="l">Racha</div></div>'+
      '<div class="stat"><div class="n">'+done+'/'+total+'</div><div class="l">Cursos</div></div></div>';
+  // cuestionario NOM-035 (solo aparece si RRHH abrió una aplicación)
+  h+=nomWorkerCard();
   // acceso al recibo de nómina
   h+='<div class="card" style="cursor:pointer" onclick="renderPay()"><div class="line"><span style="display:flex;align-items:center;gap:11px"><span style="font-size:22px">💵</span><b>Mi recibo de nómina</b></span><span class="note">Ver y firmar ›</span></div></div>';
   // control de uso (lock-down) — demo
@@ -1758,6 +1762,7 @@ function managerDash(role){
      }).join('')+'</div>';
   // ----- Preguntas a Bandi (alimentación del chat / focos) + reporte semanal -----
   h+=bandiFeedBlock();
+  h+=nomAdminBlock();       // NOM-035 (riesgo psicosocial): estatus legal + aplicación anónima + resultados
   h+=reportsAdminBlock();   // RRHH revisa quejas/anormalidad/mejora (otorga puntos)
   h+=leaveAdminBlock();     // RRHH aprueba vacaciones/permisos
   h+=recibosAdminBlock();   // acceso total: RRHH también ve los recibos de nómina firmados
@@ -2658,6 +2663,120 @@ function sendFromThread(){
   if(!t && !_pendImg) return;
   sendMsg(_curConv,t,_pendImg); _pendImg=null;
   openConv(_curConv);
+}
+
+/* ============================================================================
+   NOM-035 — Identificación de factores de riesgo psicosocial (obligatoria en México).
+   Se aplica cada 2 años (última: nov 2025 → próxima: nov 2027). >50 trabajadores = Guía III.
+   Cuestionario ANÓNIMO: el aggregate se guarda sin identidad; el flag de "ya respondí" es
+   por persona/dispositivo solo para no contar doble. RRHH/Dirección ven resultados por
+   categoría y nivel de riesgo. Demo: localStorage 'hb_nom035'. (Cargar el instrumento
+   oficial verbatim de la STPS antes de la aplicación de 2027.)
+   ============================================================================ */
+var NOM_CATS=[
+  { k:'amb', t:'Ambiente de trabajo', qs:[
+    'Las condiciones del lugar (ruido, calor, espacio, polvo) dificultan mi trabajo.',
+    'El espacio donde trabajo es inseguro para hacer mis tareas.'] },
+  { k:'act', t:'Factores propios de la actividad', qs:[
+    'Mi trabajo me exige atender muchas cosas al mismo tiempo.',
+    'Tengo que trabajar muy rápido para terminar a tiempo.',
+    'Mi trabajo me exige mucha concentración por periodos largos.'] },
+  { k:'tmp', t:'Organización del tiempo de trabajo', qs:[
+    'Trabajo horas extra más de lo permitido.',
+    'Mi trabajo afecta mi descanso o mi tiempo con la familia.'] },
+  { k:'lid', t:'Liderazgo y relaciones en el trabajo', qs:[
+    'Mi jefe no me da instrucciones claras para hacer mi trabajo.',
+    'Hay malos tratos, gritos o conflictos con compañeros o jefes.',
+    'Cuando tengo un problema, no recibo apoyo de mi jefe.'] },
+  { k:'org', t:'Entorno organizacional', qs:[
+    'No reconocen mi esfuerzo ni mi buen desempeño.',
+    'Siento que mi trabajo es inestable o inseguro.',
+    'No me siento parte de la empresa.'] }
+];
+var NOM_OPTS=[['Siempre',4],['Casi siempre',3],['Algunas veces',2],['Casi nunca',1],['Nunca',0]];
+function nomSeed(){ return { current:null, history:[ { id:'nov2025', label:'Noviembre 2025', n:512, level:'medio', byCat:{amb:'bajo',act:'medio',tmp:'medio',lid:'bajo',org:'medio'} } ] }; }
+function nomGet(){ try{ return JSON.parse(localStorage.getItem('hb_nom035')||'null')||nomSeed(); }catch(e){ return nomSeed(); } }
+function nomSave(o){ try{ localStorage.setItem('hb_nom035', JSON.stringify(o)); }catch(e){ flash('No se pudo guardar'); } }
+function nomPctLevel(p){ return p<0.2?'nulo':p<0.4?'bajo':p<0.6?'medio':p<0.8?'alto':'muyalto'; }
+function nomLevelMeta(lvl){ return ({ nulo:['Nulo','#1c9444'], bajo:['Bajo','#1c9444'], medio:['Medio','#e0a51f'], alto:['Alto','#e67e22'], muyalto:['Muy alto','#c0392b'] })[lvl]||['—','#888']; }
+function nomTotalQ(){ var n=0; NOM_CATS.forEach(function(c){ n+=c.qs.length; }); return n; }
+function nomDoneKey(id){ return 'hb_nom035_done_'+id+'_'+(S&&S.emp); }
+/* ---- Tarjeta para el trabajador (Inicio): solo si hay aplicación abierta ---- */
+function nomWorkerCard(){
+  var st=nomGet(); if(!st.current) return '';
+  var done=false; try{ done=!!localStorage.getItem(nomDoneKey(st.current.id)); }catch(e){}
+  if(done) return '<div class="card" style="border-left:4px solid var(--ok)"><div class="row">'+bandi('b-sm')+'<div><b style="color:var(--ok)">✓ Gracias por responder</b><p class="note">Tu cuestionario NOM-035 quedó registrado de forma anónima.</p></div></div></div>';
+  return '<div class="card" style="border:1px solid var(--accent);cursor:pointer" onclick="renderNom()"><div class="row">'+bandi('b-sm')+'<div style="flex:1"><b>📋 Cuestionario NOM-035 (anónimo)</b><p class="note">La empresa quiere saber cómo te sientes en tu trabajo. Son '+nomTotalQ()+' preguntas, es <b>anónimo</b> y ayuda a mejorar la planta.</p></div></div><button class="btn" style="margin-top:10px">Responder ahora ▸</button></div>';
+}
+/* ---- Pantalla del cuestionario (con audio) ---- */
+var _nomAns={};
+function renderNom(){
+  var st=nomGet(); if(!st.current){ flash('No hay un cuestionario abierto'); return go(S.admin?'hr':'home'); }
+  var h='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Cuestionario NOM-035</h2><p>Es <b>anónimo</b>. Contesta con sinceridad: nadie sabrá que fuiste tú. Ayuda a que la planta sea un mejor lugar.</p></div></div></div>';
+  NOM_CATS.forEach(function(cat){
+    h+='<div class="sec-t">'+esc(cat.t)+'<span class="ln"></span></div>';
+    cat.qs.forEach(function(q,i){
+      var qid=cat.k+i, sel=_nomAns[qid];
+      h+='<div class="card"><div class="line" style="align-items:flex-start"><b style="flex:1;font-weight:600;line-height:1.45">'+esc(q)+'</b>'+speakBtn(q)+'</div>'+
+         '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">'+
+         NOM_OPTS.map(function(o){ var on=(sel===o[1]); return '<button class="chip2" style="'+(on?'background:var(--accent);color:#fff;border-color:var(--accent)':'')+'" onclick="selectNom(\''+qid+'\','+o[1]+')">'+o[0]+'</button>'; }).join('')+
+         '</div></div>';
+    });
+  });
+  h+='<button class="btn" style="margin-top:6px" onclick="submitNom()">Enviar mis respuestas</button>';
+  h+='<div class="note" style="text-align:center;margin-top:8px">🔒 Anónimo · '+Object.keys(_nomAns).length+'/'+nomTotalQ()+' contestadas</div>';
+  $('s-nom').innerHTML=h; show('nom');
+}
+function selectNom(qid,val){ _nomAns[qid]=val; renderNom(); var n=$('s-nom'); }
+function submitNom(){
+  var st=nomGet(); if(!st.current) return;
+  if(Object.keys(_nomAns).length<nomTotalQ()){ flash('Contesta todas las preguntas, por favor'); return; }
+  var c=st.current;
+  NOM_CATS.forEach(function(cat){ c.cats[cat.k]=c.cats[cat.k]||{s:0,m:0}; cat.qs.forEach(function(q,i){ c.cats[cat.k].s+=(_nomAns[cat.k+i]||0); c.cats[cat.k].m+=4; }); });
+  c.n=(c.n||0)+1;
+  nomSave(st);
+  try{ localStorage.setItem(nomDoneKey(c.id),'1'); }catch(e){}
+  _nomAns={};
+  flash('✅ ¡Gracias! Tu respuesta quedó registrada de forma anónima.');
+  go('home');
+}
+/* ---- Bloque para RRHH / Dirección: estatus, cadencia, resultados ---- */
+function nomAdminBlock(){
+  var st=nomGet(), h='<div class="sec-t">🧠 NOM-035 · Riesgo psicosocial<span class="ln"></span></div>';
+  h+='<div class="card"><div class="line"><b>Estatus legal</b><span class="pill done">Al corriente</span></div>'+
+     '<p class="note" style="margin-top:6px">Obligatoria por ley (STPS). Se aplica <b>cada 2 años</b>.<br>Última aplicación: <b>Noviembre 2025</b> ✓ · Próxima: <b>Noviembre 2027</b>.</p></div>';
+  if(st.current){
+    var tot=0,totm=0;
+    h+='<div class="card" style="border:1px solid var(--accent)"><div class="line"><b>📋 Aplicación abierta</b><span class="ptchip">'+(st.current.n||0)+' respuestas</span></div>'+
+       '<div class="note" style="margin:6px 0 9px">Resultados anónimos en vivo por categoría:</div>';
+    NOM_CATS.forEach(function(cat){ var cc=(st.current.cats||{})[cat.k]||{s:0,m:0}; var p=cc.m?cc.s/cc.m:0; tot+=cc.s; totm+=cc.m; var mt=nomLevelMeta(nomPctLevel(p));
+      h+='<div class="line" style="margin-top:5px"><span>'+esc(cat.t)+'</span><span class="tg" style="background:'+mt[1]+';color:#fff">'+mt[0]+'</span></div>'; });
+    var mtot=nomLevelMeta(nomPctLevel(totm?tot/totm:0));
+    h+='<div class="line" style="margin-top:9px;border-top:1px solid var(--line);padding-top:9px"><b>Nivel general</b><span class="tg" style="background:'+mtot[1]+';color:#fff">'+mtot[0]+'</span></div>'+
+       '<button class="btn ghost" style="margin-top:11px" onclick="cerrarNom()">Cerrar aplicación y guardar resultado</button></div>';
+  } else {
+    h+='<div class="card"><b>Nueva aplicación</b><p class="note" style="margin:4px 0 9px">Abre una ronda anónima; a todos los trabajadores les aparece el cuestionario en su Inicio. (La próxima toca en noviembre 2027.)</p>'+
+       '<button class="btn" style="margin:0" onclick="abrirNom()">📋 Abrir aplicación NOM-035</button></div>';
+  }
+  if(st.history && st.history.length){
+    h+='<div class="card"><b>Historial</b>'+st.history.map(function(hh){ var mt=nomLevelMeta(hh.level);
+      return '<div class="line" style="margin-top:7px"><span>'+esc(hh.label)+' · '+(hh.n||0)+' respuestas</span><span class="tg" style="background:'+mt[1]+';color:#fff">'+mt[0]+'</span></div>'; }).join('')+'</div>';
+  }
+  return h;
+}
+function abrirNom(){
+  if(!confirm('¿Abrir una nueva aplicación anónima de la NOM-035?\n\nA todos los trabajadores les aparecerá el cuestionario en su pantalla de Inicio.')) return;
+  var st=nomGet(); st.current={ id:'c'+(st.history.length+1)+'-'+nomTotalQ(), opened:true, n:0, cats:{} }; nomSave(st);
+  flash('📋 Aplicación NOM-035 abierta'); renderDash();
+}
+function cerrarNom(){
+  var st=nomGet(); if(!st.current) return;
+  if(!confirm('¿Cerrar la aplicación y guardar el resultado en el historial?')) return;
+  var c=st.current, tot=0,totm=0, byCat={};
+  NOM_CATS.forEach(function(cat){ var cc=(c.cats||{})[cat.k]||{s:0,m:0}; var p=cc.m?cc.s/cc.m:0; byCat[cat.k]=nomPctLevel(p); tot+=cc.s; totm+=cc.m; });
+  st.history.unshift({ id:c.id, label:'Aplicación reciente', n:c.n||0, level:nomPctLevel(totm?tot/totm:0), byCat:byCat });
+  st.current=null; nomSave(st);
+  flash('Resultado guardado en el historial'); renderDash();
 }
 
 /* ============================================================================

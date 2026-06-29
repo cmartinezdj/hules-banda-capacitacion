@@ -469,17 +469,18 @@ window.CFG = {
 
   /* --- Rangos de número de empleado → portal/área. Cada área con su color. --- */
   ranges: [
-    { min:1,   max:20,  key:'almacen',    area:'Almacén',          icon:'📦', accent:'#c4161c', accent2:'#ff5a4e',
+    /* --- Operativos (~600): bloques de 100, con más espacio a Producción y Maquinaria. Hay holgura para crecer. --- */
+    { min:1,   max:100, key:'almacen',    area:'Almacén',          icon:'📦', accent:'#c4161c', accent2:'#ff5a4e',
       greet:'¡Equipo de Almacén! Tú cuidas que cada hule verde llegue y salga en orden.' },
-    { min:21,  max:50,  key:'inventario', area:'Inventario',       icon:'📋', accent:'#e07a1f', accent2:'#ffb05a',
+    { min:101, max:200, key:'inventario', area:'Inventario',       icon:'📋', accent:'#e07a1f', accent2:'#ffb05a',
       greet:'¡Equipo de Inventario! Gracias a ti los números siempre cuadran.' },
-    { min:51,  max:90,  key:'produccion', area:'Producción',       icon:'⚙️', accent:'#2a7de1', accent2:'#5aa8ff',
+    { min:201, max:400, key:'produccion', area:'Producción',       icon:'⚙️', accent:'#2a7de1', accent2:'#5aa8ff',
       greet:'¡Equipo de Producción! Aquí nace la banda que rueda por +50 países.' },
-    { min:91,  max:110, key:'calidad',    area:'Calidad',          icon:'✅', accent:'#1c9444', accent2:'#46c46e',
+    { min:401, max:500, key:'calidad',    area:'Calidad',          icon:'✅', accent:'#1c9444', accent2:'#46c46e',
       greet:'¡Equipo de Calidad! Tú proteges nuestra marca en cada banda.' },
-    { min:111, max:130, key:'comercial',  area:'Comercial',        icon:'🤝', accent:'#8a3bd1', accent2:'#b06cf0',
+    { min:501, max:600, key:'comercial',  area:'Comercial',        icon:'🤝', accent:'#8a3bd1', accent2:'#b06cf0',
       greet:'¡Equipo Comercial! Tú llevas Hules Banda y Bandamatic al mundo.' },
-    { min:131, max:170, key:'maquinaria', area:'Maquinaria',       icon:'🛠️', accent:'#0e9e8e', accent2:'#3fd6c4',
+    { min:601, max:800, key:'maquinaria', area:'Maquinaria',       icon:'🛠️', accent:'#0e9e8e', accent2:'#3fd6c4',
       greet:'¡Equipo de Maquinaria! Aquí aprendes a operar las máquinas con seguridad: empezando por el Tabulador 7 y 8, y el Banbury.' },
     { min:900, max:919, key:'rrhh',       area:'Recursos Humanos',  icon:'📊', accent:'#5b6cf0', accent2:'#8b8ff7', admin:true, dash:'rrhh',
       greet:'Panel de RRHH: avance, focos rojos, capacitación, quejas/reportes, vacaciones y ranking de toda la planta.' },
@@ -1125,7 +1126,7 @@ window.CFG = {
 
   /* --- Datos de ejemplo (mock) para el Tablero de RRHH --- */
   hr: {
-    employees:142, globalAvg:61,
+    employees:600, globalAvg:61,
     byArea:[['Almacén',78],['Inventario',60],['Producción',54],['Calidad',66],['Comercial',48],['Maquinaria',58]],
     redFlags:[
       'Emp. 014 (Almacén) — Seguridad obligatoria vencida',
@@ -1166,7 +1167,7 @@ function load(emp){ try{ var d=localStorage.getItem('hb_'+emp); return d?JSON.pa
 
 /* ====================== LOGIN ====================== */
 function buildLoginHelp(){
-  var demos=[['070','Operativo'],['905','RRHH'],['990','Dirección (CEO)'],['950','Resp. Producción'],['920','Resp. Almacén'],['034','Inventario'],['140','Maquinaria']];
+  var demos=[['250','Operativo'],['905','RRHH'],['990','Dirección (CEO)'],['950','Resp. Producción'],['920','Resp. Almacén'],['150','Inventario'],['700','Maquinaria']];
   var row=$('tryRow'); var h='<b>Probar como…</b>';
   demos.forEach(function(d){ h+='<button class="tryc" onclick="quickLogin(\''+d[0]+'\')">'+d[1]+' <i>'+d[0]+'</i></button>'; });
   row.innerHTML=h;

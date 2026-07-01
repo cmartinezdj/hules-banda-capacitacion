@@ -499,6 +499,7 @@ body.a11y .screen .btn, body.a11y .screen .bigbtn{ font-size:16.5px !important; 
   <!-- ===================== PANTALLAS ===================== -->
   <main id="main" class="hide">
     <section id="s-home"    class="screen pad hide"></section>
+    <section id="s-courses" class="screen pad hide"></section>
     <section id="s-course"  class="screen pad hide"></section>
     <section id="s-quiz"    class="screen pad hide"></section>
     <section id="s-result"  class="screen pad hide"></section>
@@ -1299,12 +1300,12 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'" onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['home','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','thread','nom'];
+var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','thread','nom'];
 function show(name){
   _screen=name;
   SCREENS.forEach(function(s){ var el=$('s-'+s); if(el) el.classList.toggle('hide', s!==name); });
   // nav activo (course/quiz/result/pay cuentan como "home")
-  var navKey = (name==='course'||name==='quiz'||name==='result'||name==='pay') ? 'home' : (name==='thread'?'msgs':name);
+  var navKey = (name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay') ? 'home' : (name==='thread'?'msgs':name);
   ['home','msgs','rewards','chat','hr','clases','news','buzon'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
   renderTop(name);
   window.scrollTo(0,0);
@@ -1321,10 +1322,10 @@ function go(name){
   if(name==='msgs') return renderMsgs();
 }
 function renderTop(name){
-  var sub=(name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='thread' ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='thread' ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : 'go(\'home\')';
     left.innerHTML='<button class="back" onclick="'+backTo+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
@@ -1390,12 +1391,9 @@ function areaIcon(key){ return IC2[({almacen:'box',inventario:'box',produccion:'
 
 /* ====================== INICIO (PORTAL) ====================== */
 function renderHome(){
-  var courses=myCourses(), total=courses.length, done=doneCount();
+  var total=myCourses().length, done=doneCount();
   var lvl=level(), inLvl=S.points%CFG.points.perLevel, lpct=Math.round(inLvl/CFG.points.perLevel*100);
   var cpct= total? Math.round(done/total*100):0;
-  var common=CFG.common||[], area=(CFG.areas[S.key]||[]);
-  var cDone=common.filter(function(c){return statusOf(c.id);}).length;
-  var aDone=area.filter(function(c){return statusOf(c.id);}).length;
   var h='';
   // ---- cabecera HUD: saludo + estado + anillo de nivel ----
   h+='<div class="panel"><div class="hd" style="align-items:flex-start">'+
@@ -1406,30 +1404,36 @@ function renderHome(){
        '<div><div style="font-size:14px;font-weight:800">Nivel '+lvl+' · '+levelName()+'</div>'+
        '<div class="note" style="margin-top:4px">'+inLvl+' / '+CFG.points.perLevel+' puntos para subir de nivel</div></div>'+
      '</div></div>';
-  // ---- mi avance: columnas de dots (visual, no texto) ----
-  h+='<div class="panel"><div class="hd"><b>Mi avance</b><span class="chipst">'+cpct+'%</span></div>'+
-     '<div class="dotgrid">'+
-       dotStat(cpct, cpct+'%', 'Avance', '')+
-       dotStat(lpct, S.points, 'Puntos', '')+
-       dotStat(Math.min(100,S.streak*14), S.streak, 'Racha', '')+
-       dotStat(total?Math.round(done/total*100):0, done+'/'+total, 'Cursos', '')+
+  // ---- Texto grande: primer botón, hasta arriba (accesibilidad) ----
+  h+='<div class="panel">'+switchRow('Texto grande','Letras más grandes en toda la app',!!S.accessible,'toggleAcc()')+'</div>';
+  // ---- Mis cursos: SOLO la entrada (los cursos viven dentro) ----
+  h+='<div class="panel" style="cursor:pointer" onclick="renderCourses()"><div class="hd"><b>Mis cursos</b><span class="chipst mut">Ver todo ›</span></div>'+
+     '<div class="ringwrap">'+ring(cpct)+
+       '<div><div style="font-size:15px;font-weight:800">'+done+' de '+total+' cursos</div>'+
+       '<div class="note" style="margin-top:4px">Toca aquí para ver tus videos y cuestionarios</div></div>'+
      '</div></div>';
-  // ---- mis cursos: barras de progreso ----
-  h+='<div class="panel"><div class="hd"><b>Mis cursos</b></div>'+
-     pbarRow(IC2.cap, 'Para todo el personal', cDone, common.length)+
-     pbarRow(areaIcon(S.key), 'Cursos de '+S.area, aDone, area.length)+
-     '</div>';
   // Ruta guiada: tu siguiente paso
   h+=rutaCard();
   // cuestionario NOM-035 (solo aparece si RRHH abrió una aplicación)
   h+=nomWorkerCard();
-  // ---- accesos rápidos: recibo + texto grande ----
-  h+='<div class="panel"><div class="hd"><b>Accesos rápidos</b></div>'+
-     '<div class="pbar" style="cursor:pointer" onclick="renderPay()"><span class="ic">'+IC2.doc+'</span><span class="t">Mi recibo de nómina</span><span class="note">Ver y firmar ›</span></div>'+
-     switchRow('Texto grande','Letras grandes en toda la app',!!S.accessible,'toggleAcc()')+
-     '</div>';
+  // ---- recibo de nómina ----
+  h+='<div class="panel" style="cursor:pointer;margin-bottom:12px" onclick="renderPay()"><div class="pbar" style="margin:0;background:none;border:none;padding:0"><span class="ic">'+IC2.doc+'</span><span class="t">Mi recibo de nómina</span><span class="note">Ver y firmar ›</span></div></div>';
   // control de uso (lock-down) — demo
   h+=lockCard();
+  $('s-home').innerHTML=h; show('home');
+}
+/* ====================== MIS CURSOS (lista completa) ====================== */
+function renderCourses(){
+  var common=CFG.common||[], area=(CFG.areas[S.key]||[]);
+  var total=myCourses().length, done=doneCount();
+  var cDone=common.filter(function(c){return statusOf(c.id);}).length;
+  var aDone=area.filter(function(c){return statusOf(c.id);}).length;
+  var h='';
+  // resumen visual arriba
+  h+='<div class="panel"><div class="hd"><b>Mis cursos</b><span class="chipst">'+(total?Math.round(done/total*100):0)+'%</span></div>'+
+     pbarRow(IC2.cap, 'Para todo el personal', cDone, common.length)+
+     pbarRow(areaIcon(S.key), 'Cursos de '+S.area, aDone, area.length)+
+     '</div>';
   // ---- cursos comunes ----
   h+='<div class="sec-t">Para todo el personal<span class="ln"></span></div>';
   common.forEach(function(c){ h+=courseRow(c); });
@@ -1437,7 +1441,7 @@ function renderHome(){
   h+='<div class="sec-t">Cursos de '+esc(S.area)+'<span class="ln"></span></div>';
   area.forEach(function(c){ h+=courseRow(c); });
   h+='<div style="text-align:center;margin-top:20px"><span onclick="resetProgress()" style="color:var(--mut);font-size:12px;text-decoration:underline;cursor:pointer">Reiniciar mi progreso</span></div>';
-  $('s-home').innerHTML=h; show('home');
+  $('s-courses').innerHTML=h; show('courses');
 }
 function courseRow(c){
   var st=statusOf(c.id);

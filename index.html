@@ -350,6 +350,41 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .seg button.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 6px 16px color-mix(in srgb,var(--accent) 34%,transparent)}
 .seg button .sbadge{position:absolute;top:2px;right:6px;min-width:15px;height:15px;padding:0 4px;border-radius:9px;background:var(--bad);color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center}
 
+/* ----- topbar: botón de accesibilidad (ojo) junto a los puntos ----- */
+.topR{display:flex;align-items:center;gap:8px}
+.a11ybtn{display:flex;align-items:center;gap:5px;background:var(--card);border:1px solid var(--line);color:var(--mut);padding:8px 11px;border-radius:30px;cursor:pointer;font-size:11px;font-weight:800;transition:.15s}
+.a11ybtn svg{width:16px;height:16px}
+.a11ybtn:active{transform:scale(.94)}
+.a11ybtn.on{background:color-mix(in srgb,var(--data) 16%,transparent);border-color:color-mix(in srgb,var(--data) 40%,transparent);color:var(--data)}
+
+/* ----- buscador ----- */
+.search{display:flex;align-items:center;gap:9px;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin-bottom:12px}
+.search svg{width:18px;height:18px;color:var(--mut);flex:none}
+.search input{flex:1;min-width:0;background:none;border:none;outline:none;color:var(--txt);font-size:15px;font-family:var(--font)}
+
+/* ----- fila de directorio (persona) ----- */
+.dirrow{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin-bottom:9px;cursor:pointer;transition:.15s}
+.dirrow:active{transform:scale(.99)}.dirrow:hover{border-color:color-mix(in srgb,var(--data) 40%,transparent)}
+.dirrow .ava{width:40px;height:40px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:#fff}
+.dirrow .t{flex:1;min-width:0}.dirrow .t b{font-size:14.5px;display:block}.dirrow .t span{font-size:11.5px;color:var(--mut)}
+.dirrow .idtag{font-size:12px;font-weight:800;color:var(--mut);flex:none}
+
+/* ----- tarjetas de tipo de permiso (grid) ----- */
+.lvgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:6px}
+.lvcard{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:15px;cursor:pointer;transition:.15s;text-align:left}
+.lvcard:active{transform:scale(.98)}
+.lvcard.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.lvcard .ico{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;color:var(--data);background:color-mix(in srgb,var(--data) 13%,transparent);margin-bottom:20px}
+.lvcard .ico svg{width:23px;height:23px}
+.lvcard b{font-size:14.5px;display:block}.lvcard span{font-size:11px;color:var(--mut);display:block;margin-top:2px}
+
+/* ----- recibo visual (percepciones vs deducciones) ----- */
+.paytop{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 30%,var(--panel)),var(--panel));border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:12px}
+.paytop .neto{font-size:38px;font-weight:900;letter-spacing:-1px;line-height:1;margin-top:6px}
+.paysplit{display:flex;height:12px;border-radius:30px;overflow:hidden;margin:14px 0 6px;background:rgba(255,255,255,.08)}
+.paysplit .pp{background:linear-gradient(90deg,var(--data2),var(--data))}
+.paysplit .dd{background:linear-gradient(90deg,#e0564b,var(--accent2))}
+
 /* ============================== NAV INFERIOR ============================== */
 .nav{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;justify-content:center;gap:2px;max-width:500px;margin:0 auto;
   padding:8px 10px calc(8px + env(safe-area-inset-bottom));
@@ -511,6 +546,9 @@ body.a11y .screen .btn, body.a11y .screen .bigbtn{ font-size:16.5px !important; 
     <section id="s-buzon"   class="screen pad hide"></section>
     <section id="s-pay"     class="screen pad hide"></section>
     <section id="s-msgs"    class="screen pad hide"></section>
+    <section id="s-lineas"  class="screen pad hide"></section>
+    <section id="s-newchat" class="screen pad hide"></section>
+    <section id="s-vac"     class="screen pad hide"></section>
     <section id="s-thread"  class="screen pad hide"></section>
     <section id="s-nom"     class="screen pad hide"></section>
   </main>
@@ -1300,12 +1338,12 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'" onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','thread','nom'];
+var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','thread','nom'];
 function show(name){
   _screen=name;
   SCREENS.forEach(function(s){ var el=$('s-'+s); if(el) el.classList.toggle('hide', s!==name); });
   // nav activo (course/quiz/result/pay cuentan como "home")
-  var navKey = (name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay') ? 'home' : (name==='thread'?'msgs':name);
+  var navKey = (name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay') ? 'home' : ((name==='thread'||name==='lineas'||name==='newchat'||name==='vac')?'msgs':name);
   ['home','msgs','rewards','chat','hr','clases','news','buzon'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
   renderTop(name);
   window.scrollTo(0,0);
@@ -1322,19 +1360,21 @@ function go(name){
   if(name==='msgs') return renderMsgs();
 }
 function renderTop(name){
-  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='thread' ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderLineas()' : (name==='thread'||name==='lineas'||name==='vac') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : 'go(\'home\')';
     left.innerHTML='<button class="back" onclick="'+backTo+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
     left.classList.add('who');
     left.innerHTML='<div><b>'+esc(S.area)+'</b><span>Empleado #'+(''+S.emp).padStart(3,'0')+'</span></div>';
   }
+  var EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var a11yBtn='<button class="a11ybtn'+(S&&S.accessible?' on':'')+'" onclick="toggleAcc()" title="Texto grande (accesibilidad)" aria-label="Texto grande para accesibilidad">'+EYE+'Aa</button>';
   $('topRight').innerHTML = S.admin
-    ? '<button class="back" onclick="logout()">Salir</button>'
-    : '<span class="ptchip">'+S.points+' pts</span>';
+    ? '<span class="topR">'+a11yBtn+'<button class="back" onclick="logout()">Salir</button></span>'
+    : '<span class="topR">'+a11yBtn+'<span class="ptchip">'+S.points+' pts</span></span>';
 }
 
 /* ====================== HELPERS VISUALES (HUD) ======================
@@ -1404,8 +1444,6 @@ function renderHome(){
        '<div><div style="font-size:14px;font-weight:800">Nivel '+lvl+' · '+levelName()+'</div>'+
        '<div class="note" style="margin-top:4px">'+inLvl+' / '+CFG.points.perLevel+' puntos para subir de nivel</div></div>'+
      '</div></div>';
-  // ---- Texto grande: primer botón, hasta arriba (accesibilidad) ----
-  h+='<div class="panel">'+switchRow('Texto grande','Letras más grandes en toda la app',!!S.accessible,'toggleAcc()')+'</div>';
   // ---- Mis cursos: SOLO la entrada (los cursos viven dentro) ----
   h+='<div class="panel" style="cursor:pointer" onclick="renderCourses()"><div class="hd"><b>Mis cursos</b><span class="chipst mut">Ver todo ›</span></div>'+
      '<div class="ringwrap">'+ring(cpct)+
@@ -1416,8 +1454,14 @@ function renderHome(){
   h+=rutaCard();
   // cuestionario NOM-035 (solo aparece si RRHH abrió una aplicación)
   h+=nomWorkerCard();
-  // ---- recibo de nómina ----
-  h+='<div class="panel" style="cursor:pointer;margin-bottom:12px" onclick="renderPay()"><div class="pbar" style="margin:0;background:none;border:none;padding:0"><span class="ic">'+IC2.doc+'</span><span class="t">Mi recibo de nómina</span><span class="note">Ver y firmar ›</span></div></div>';
+  // ---- recibo de nómina (entrada grande y visual) ----
+  var _per=payPeriod(), _p=payData(S.emp), _signed=signRecord(S.emp,_per.key);
+  h+='<div class="panel" style="cursor:pointer" onclick="renderPay()">'+
+     '<div class="hd"><b>Mi recibo de nómina</b><span class="chipst'+(_signed?'':' mut')+'">'+(_signed?'Firmado ✓':'Por firmar')+'</span></div>'+
+     '<div class="ringwrap"><span style="width:48px;height:48px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--data);background:color-mix(in srgb,var(--data) 13%,transparent)">'+IC2.doc+'</span>'+
+       '<div><div style="font-size:24px;font-weight:900;letter-spacing:-.5px">'+money(_p.neto)+'</div>'+
+       '<div class="note" style="margin-top:2px">'+esc(_per.label)+' · '+(_signed?'ya lo firmaste':'toca para ver y firmar')+' ›</div></div>'+
+     '</div></div>';
   // control de uso (lock-down) — demo
   h+=lockCard();
   $('s-home').innerHTML=h; show('home');
@@ -2267,7 +2311,12 @@ function accBar(){   // en Educación básica solo queda la velocidad de voz; el
 function applyA11y(){ try{ document.body.classList.toggle('a11y', !!(S&&S.accessible)); }catch(e){} }
 function toggleAcc(){ S.accessible=!S.accessible; save(); applyA11y();
   flash(S.accessible?'Texto grande activado':'Texto grande desactivado');
-  if(_screen==='clases') renderClases(); else if(_screen==='msgs') renderMsgs(); else if(_screen==='news') renderNews(); else if(_screen==='hr') renderHR(); else if(_screen==='rewards') renderRewards(); else renderHome();
+  renderTop(_screen);   // refresca el botón del ojo
+  var s=_screen;
+  if(s==='clases') renderClases(); else if(s==='msgs') renderMsgs(); else if(s==='news') renderNews();
+  else if(s==='hr') renderDash(); else if(s==='rewards') renderRewards(); else if(s==='courses') renderCourses();
+  else if(s==='lineas') renderLineas(); else if(s==='vac') renderVacaciones(); else if(s==='pay') renderPay();
+  else if(s==='home') renderHome();
 }
 function findTopic(id){ for(var i=0;i<CFG.clases.length;i++) if(CFG.clases[i].id===id) return CFG.clases[i]; return null; }
 function clLevelDone(id,n){ return !!(S.clases && S.clases[id+':'+n]); }
@@ -2521,18 +2570,17 @@ function recibosGet(){ return lsGet('hb_recibos'); }
 function signRecord(emp,key){ var a=recibosGet(); for(var i=0;i<a.length;i++){ if(a[i].emp===emp&&a[i].key===key) return a[i]; } return null; }
 function renderPay(){
   var per=payPeriod(), p=payData(S.emp), signed=signRecord(S.emp,per.key), h='';
-  h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Mi recibo de nómina</h2><p>Revísalo y fírmalo. Le llega a RRHH sin papel.</p></div></div></div>';
-  h+='<div class="card"><div class="line"><b>Periodo</b><span class="note">'+per.label+'</span></div>'+
-     '<div class="line" style="margin-top:6px"><span>Empleado</span><span>#'+(''+S.emp).padStart(3,'0')+' · '+esc(S.area)+'</span></div></div>';
-  h+='<div class="card"><b>Percepciones</b>'+
-     '<div class="line" style="margin-top:7px"><span>Sueldo</span><span>'+money(p.sueldo)+'</span></div>'+
-     '<div class="line" style="margin-top:4px"><span>Bono de puntualidad</span><span>'+money(p.bono)+'</span></div>'+
-     '<div class="line" style="margin-top:8px;border-top:1px solid var(--line);padding-top:8px"><b>Total percepciones</b><b>'+money(p.perc)+'</b></div></div>';
-  h+='<div class="card"><b>Deducciones</b>'+
-     '<div class="line" style="margin-top:7px"><span>IMSS</span><span>− '+money(p.imss)+'</span></div>'+
-     '<div class="line" style="margin-top:4px"><span>ISR</span><span>− '+money(p.isr)+'</span></div>'+
-     '<div class="line" style="margin-top:8px;border-top:1px solid var(--line);padding-top:8px"><b>Total deducciones</b><b>− '+money(p.ded)+'</b></div></div>';
-  h+='<div class="card" style="border:1px solid var(--accent)"><div class="line"><b style="font-size:17px">Neto a pagar</b><b style="font-size:20px;color:var(--accent2)">'+money(p.neto)+'</b></div></div>';
+  var ppw=Math.round(p.perc/(p.perc+p.ded)*100), ddw=100-ppw;
+  h+='<div class="paytop"><div class="hd" style="margin-bottom:0"><div><div class="eyebrow">'+esc(per.label)+'</div><div class="note" style="margin-top:3px">Neto a pagar · #'+(''+S.emp).padStart(3,'0')+' · '+esc(S.area)+'</div></div><span class="chipst'+(signed?'':' mut')+'">'+(signed?'Firmado ✓':'Por firmar')+'</span></div>'+
+     '<div class="neto">'+money(p.neto)+'</div>'+
+     '<div class="paysplit"><div class="pp" style="width:'+ppw+'%"></div><div class="dd" style="width:'+ddw+'%"></div></div>'+
+     '<div class="line" style="border:none;padding:0"><span class="note" style="color:var(--data);font-weight:700">Percepciones '+money(p.perc)+'</span><span class="note" style="color:var(--accent2);font-weight:700">Deducciones − '+money(p.ded)+'</span></div></div>';
+  h+='<div class="panel"><div class="hd"><b>Percepciones</b><b style="color:var(--data)">'+money(p.perc)+'</b></div>'+
+     '<div class="line"><span>Sueldo</span><span>'+money(p.sueldo)+'</span></div>'+
+     '<div class="line"><span>Bono de puntualidad</span><span>'+money(p.bono)+'</span></div></div>';
+  h+='<div class="panel"><div class="hd"><b>Deducciones</b><b style="color:var(--accent2)">− '+money(p.ded)+'</b></div>'+
+     '<div class="line"><span>IMSS</span><span>− '+money(p.imss)+'</span></div>'+
+     '<div class="line"><span>ISR</span><span>− '+money(p.isr)+'</span></div></div>';
   if(signed){
     h+='<div class="card" style="border:1px solid var(--ok)"><div class="row">'+bandi('b-sm')+'<div><b style="color:var(--ok)">✓ Firmado</b><p class="note">Firmaste el '+fmtDate(signed.ts)+'. RRHH ya recibió tu acuse.</p></div></div>'+
        (signed.img?'<img src="'+signed.img+'" alt="firma" style="height:80px;margin-top:9px;background:#fff;border-radius:8px;padding:4px">':'')+'</div>';
@@ -2735,24 +2783,134 @@ function renderMsgs(){
   var h='';
   var sub = S.admin ? (S.dash==='resp' ? 'Tu equipo, tu grupo de área y tus líneas con Dirección y RRHH.' : 'Líneas con la planta, monitoreo, quejas/reportes, vacaciones y recibos — todo en un lugar.')
                     : 'Escribe a RRHH, a Dirección, a tu responsable o a tu grupo. Aquí también van tus quejas y vacaciones.';
-  h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Mensajes</h2><p>'+sub+'</p></div></div></div>';
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">'+(S.admin?'Panel':'Mensajes')+'</div><b style="font-size:20px">Mensajes</b><p class="note" style="margin:4px 0 0;max-width:240px">'+sub+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
   if(S.admin){
     if(S.dash==='resp') h+=respMsgs();
     else { h+=beeperAdminCard(); h+=msgAdminInbox(); }
   } else {
-    h+='<div class="sec-t">Tus líneas directas<span class="ln"></span></div>';
-    h+=convRow(rConv(S.emp),'Recursos Humanos','Tu canal privado con RRHH');
-    h+=convRow(cConv(S.emp),'Dirección','Escríbele directo a Dirección');
-    h+=convRow(jConv(S.key,S.emp),'Responsable de '+S.area,'El jefe de tu área');
+    // 1) Líneas directas — cuadro grande de entrada (adentro: RRHH, Dirección, responsable y compañeros)
+    var lineUn=convUnread(rConv(S.emp))+convUnread(cConv(S.emp))+convUnread(jConv(S.key,S.emp));
+    h+='<div class="panel" style="cursor:pointer" onclick="renderLineas()">'+
+       '<div class="hd"><b style="font-size:19px">Líneas directas</b><span class="chipst'+(lineUn?'':' mut')+'">'+(lineUn?lineUn+' nuevos ›':'Abrir ›')+'</span></div>'+
+       '<p class="note" style="margin:0">Escríbele directo a <b>Recursos Humanos</b>, a <b>Dirección</b>, a tu <b>responsable de área</b> o a un <b>compañero</b>.</p></div>';
+    // 2) Grupo de área
     h+='<div class="sec-t">Tu grupo de área<span class="ln"></span></div>'+convRow(gConv(S.key),'Grupo · '+S.area,'Mensajes de toda tu área');
-    h+='<div class="card"><b>Escribir a un compañero</b><div class="note" style="margin:3px 0 8px">Con su número de empleado, como tu PIN. Ejemplo: 055</div>'+
-       '<div style="display:flex;gap:8px"><input id="newChatId" class="fin" type="number" placeholder="Número de empleado" style="flex:1;min-width:0"><button class="btn" style="margin:0;flex:none;width:auto;padding:13px 18px" onclick="newChatById()">Abrir</button></div></div>';
+    // 3) Conversaciones activas (más importante que abrir una nueva)
     var dir=myDirects();
-    if(dir.length){ h+='<div class="sec-t">Conversaciones<span class="ln"></span></div>'; dir.forEach(function(c){ h+=convRow(c,empName(convOther(c)),null); }); }
-    h+=reportFormBlock(); h+=leaveWorkerBlock(); h+=myReportsBlock();
+    h+='<div class="sec-t">Conversaciones<span class="ln"></span></div>';
+    if(dir.length){ dir.forEach(function(c){ h+=convRow(c,empName(convOther(c)),null); }); }
+    else { h+='<div class="card"><div class="note">Aún no tienes conversaciones. Abre una desde <b>Líneas directas</b>.</div></div>'; }
+    // 4) Vacaciones y permisos — cuadro de entrada
+    h+='<div class="panel" style="cursor:pointer;margin-top:14px" onclick="renderVacaciones()">'+
+       '<div class="hd"><b style="font-size:19px">Vacaciones</b><span class="chipst mut">Abrir ›</span></div>'+
+       '<p class="note" style="margin:0">Consulta tus <b>días disponibles</b> y <b>solicita</b> vacaciones o permisos.</p></div>';
+    // 5) Quejas a RRHH (igual que antes)
+    h+=reportFormBlock(); h+=myReportsBlock();
   }
   $('s-msgs').innerHTML=h; show('msgs');
 }
+/* ===== LÍNEAS DIRECTAS (pantalla) — canales del trabajador ===== */
+function renderLineas(){
+  var h='';
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Mensajes</div><b style="font-size:20px">Líneas directas</b><p class="note" style="margin:4px 0 0;max-width:240px">Elige a quién escribirle. Tus mensajes son privados.</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
+  h+=convRow(rConv(S.emp),'Recursos Humanos','Tu canal privado con RRHH');
+  h+=convRow(cConv(S.emp),'Dirección','Escríbele directo a Dirección');
+  h+=convRow(jConv(S.key,S.emp),'Responsable de '+S.area,'El jefe de tu área');
+  h+='<div class="card" style="cursor:pointer" onclick="renderNewChat()"><div class="line"><span style="flex:1;min-width:0;display:flex;align-items:center;gap:11px"><span style="width:38px;height:38px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--data);background:color-mix(in srgb,var(--data) 13%,transparent)">'+IC2.people+'</span><span><b>Escribir a un compañero</b><br><span class="note">Busca por nombre o número</span></span></span><span class="note" style="flex:none">›</span></div></div>';
+  $('s-lineas').innerHTML=h; show('lineas');
+}
+
+/* ===== DIRECTORIO DEMO (para "escribir a un compañero") ===== */
+var DEMO_DIR=[
+  {id:12,name:'Juan Pérez'},{id:27,name:'María González'},{id:45,name:'Pedro Ramírez'},{id:63,name:'Lucía Torres'},{id:88,name:'José Hernández'},
+  {id:112,name:'Ana Martínez'},{id:134,name:'Luis Flores'},{id:156,name:'Carmen Díaz'},{id:178,name:'Miguel Cruz'},
+  {id:214,name:'Rosa Jiménez'},{id:236,name:'Jorge Morales'},{id:289,name:'Elena Vargas'},{id:342,name:'Raúl Mendoza'},{id:377,name:'Sofía Reyes'},
+  {id:418,name:'Diana Castro'},{id:447,name:'Fernando Ruiz'},{id:476,name:'Patricia Gómez'},
+  {id:512,name:'Andrés Silva'},{id:548,name:'Gabriela Núñez'},{id:583,name:'Héctor Romero'},
+  {id:624,name:'Ricardo Peña'},{id:662,name:'Verónica Aguilar'},{id:715,name:'Óscar Medina'},{id:768,name:'Claudia Ortiz'}
+];
+var SEARCH_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>';
+function renderNewChat(){
+  var h='';
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Líneas directas</div><b style="font-size:20px">Escribir a un compañero</b><p class="note" style="margin:4px 0 0;max-width:250px">Busca por <b>nombre</b> o por <b>número</b> y toca a la persona.</p></div></div>'+
+     '<div class="search">'+SEARCH_SVG+'<input id="dirSearch" placeholder="Nombre o número…" autocomplete="off" oninput="dirFilter()"></div>'+
+     '<div class="note">Directorio del personal, organizado por área.</div></div>';
+  h+='<div id="dirList">'+dirListHTML('')+'</div>';
+  $('s-newchat').innerHTML=h; show('newchat');
+  var si=$('dirSearch'); if(si) si.focus();
+}
+function dirFilter(){ var el=$('dirList'); if(el) el.innerHTML=dirListHTML((($('dirSearch')||{}).value||'')); }
+function dirListHTML(term){
+  var q=_norm(term||''), digits=(term||'').replace(/\D/g,''), byArea={}, order=[];
+  DEMO_DIR.forEach(function(p){
+    if(p.id===S.emp) return;
+    if(term){ var byName=q&&_norm(p.name).indexOf(q)>=0; var byId=digits&&(''+p.id).padStart(3,'0').indexOf(digits)>=0; if(!byName&&!byId) return; }
+    var r=rangeOf(p.id), area=r?r.area:'Otros';
+    if(!byArea[area]){ byArea[area]=[]; order.push(area); }
+    byArea[area].push(p);
+  });
+  if(!order.length) return '<div class="card"><div class="note">Nadie coincide con «'+esc(term)+'».</div></div>';
+  var h='';
+  order.forEach(function(area){
+    h+='<div class="sec-t">'+esc(area)+'<span class="ln"></span></div>';
+    byArea[area].forEach(function(p){
+      var r=rangeOf(p.id), col=r?r.accent:'#666';
+      var init=p.name.split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase();
+      h+='<div class="dirrow" onclick="openConv(dConv('+S.emp+','+p.id+'))"><span class="ava" style="background:'+col+'">'+init+'</span><span class="t"><b>'+esc(p.name)+'</b><span>'+esc(area)+'</span></span><span class="idtag">#'+(''+p.id).padStart(3,'0')+'</span></div>';
+    });
+  });
+  return h;
+}
+
+/* ===== VACACIONES (pantalla) — saldo con arco + solicitar por tipo ===== */
+var LV_ICON={
+  vacaciones:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M12 1v1.5M12 13.5V15M5 8H3.5M20.5 8H19M6.9 2.9l-1 -1M18.1 2.9l1 -1M4 21c2-2 5-2 8 0s6 2 8 0"/></svg>',
+  permiso_goce:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h8l4 4v16H6z"/><path d="M14 2v4h4"/><path d="M9 14l2 2 4-4"/></svg>',
+  permiso_singoce:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h8l4 4v16H6z"/><path d="M14 2v4h4"/><path d="M9 13h6M9 17h4"/></svg>',
+  incapacidad:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M12 10v6M9 13h6"/><path d="M9 6V4h6v2"/></svg>'
+};
+var LV_SUB={ vacaciones:'Descanso pagado', permiso_goce:'Con pago de sueldo', permiso_singoce:'Sin pago de sueldo', incapacidad:'Médico / IMSS' };
+var _vacPick=null;
+function renderVacaciones(){
+  var mine=leaveGet().filter(function(r){ return r.emp===S.emp; });
+  var total=vacBalance(S.emp);
+  var used=mine.filter(function(r){return r.type==='vacaciones'&&r.status==='aprobado';}).reduce(function(s,r){return s+r.days;},0);
+  var req =mine.filter(function(r){return r.type==='vacaciones'&&r.status==='pendiente';}).reduce(function(s,r){return s+r.days;},0);
+  var avail=Math.max(0,total-used-req), pct=total?Math.round((used+req)/total*100):0;
+  var h='';
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Mensajes</div><b style="font-size:20px">Vacaciones</b></div><span class="status"><span class="d"></span>En línea</span></div>'+
+     '<div class="ringwrap">'+ring(pct, pct>=85?'var(--warn)':'var(--data)')+
+       '<div style="flex:1"><div style="font-size:16px;font-weight:800">'+avail+' de '+total+' días disponibles</div>'+
+       '<div class="note" style="margin-top:6px">Usadas: <b>'+used+'</b> · Solicitadas: <b>'+req+'</b></div>'+
+       '<div class="note" style="margin-top:4px">El arco muestra lo usado + lo solicitado.</div></div>'+
+     '</div><p class="note" style="margin:12px 0 0">Tus días se calculan por tu antigüedad (Ley Federal del Trabajo). El saldo final lo confirma RRHH.</p></div>';
+  h+='<div class="sec-t">Solicitar<span class="ln"></span></div>';
+  h+='<div class="lvgrid">'+Object.keys(LEAVE).map(function(k){
+       return '<button class="lvcard'+(_vacPick===k?' on':'')+'" onclick="pickVac(\''+k+'\')"><span class="ico">'+LV_ICON[k]+'</span><b>'+LEAVE[k].l+'</b><span>'+LV_SUB[k]+'</span></button>';
+     }).join('')+'</div>';
+  if(_vacPick){
+    h+='<div class="panel"><div class="hd"><b>'+LEAVE[_vacPick].l+'</b><button class="back" style="padding:6px 10px" onclick="pickVac(null)">Cambiar</button></div>'+
+       '<div style="display:flex;gap:10px"><div style="flex:1;min-width:0"><div class="note" style="margin-bottom:3px">Desde</div><input id="lvFrom" class="fin" type="date" style="width:100%"></div>'+
+       '<div style="flex:1;min-width:0"><div class="note" style="margin-bottom:3px">Hasta</div><input id="lvTo" class="fin" type="date" style="width:100%"></div></div>'+
+       '<textarea id="lvReason" class="fin" rows="2" placeholder="Motivo (opcional)" style="margin-top:8px"></textarea>'+
+       '<button class="btn" style="margin-top:10px" onclick="submitVac()">Enviar solicitud</button></div>';
+  }
+  if(mine.length){ h+='<div class="sec-t">Mis solicitudes<span class="ln"></span></div>'; mine.forEach(function(r){
+    var st=r.status==='aprobado'?'<span class="pill done">Aprobado ✓</span>':r.status==='rechazado'?'<span class="pill">Rechazado</span>':'<span class="pill pend">Pendiente</span>';
+    h+='<div class="card"><div class="line"><span>'+LEAVE[r.type].l+'<br><span class="note">'+fmtDate(r.from)+' → '+fmtDate(r.to)+' · '+r.days+' día(s)</span></span>'+st+'</div></div>';
+  }); }
+  $('s-vac').innerHTML=h; show('vac');
+}
+function pickVac(t){ _vacPick=t; renderVacaciones(); }
+function submitVac(){
+  if(!_vacPick){ flash('Elige un tipo'); return; }
+  var from=(($('lvFrom')||{}).value||''), to=(($('lvTo')||{}).value||''), reason=(($('lvReason')||{}).value||'').trim();
+  if(!from||!to){ flash('Elige las fechas (desde y hasta)'); return; }
+  var days=Math.max(1, Math.round((new Date(to)-new Date(from))/86400000)+1);
+  var a=leaveGet(); a.unshift({ id:'l'+Date.now(), emp:S.emp, area:S.area, type:_vacPick, from:from, to:to, days:days, reason:reason, status:'pendiente', ts:Date.now() });
+  leaveSave(a); _vacPick=null; burst(); flash('Solicitud enviada a RRHH'); renderVacaciones();
+}
+
 /* Bandeja del responsable de área: solo SU equipo (líneas j: de su key) + su grupo + sus líneas con Dirección/RRHH + beeper de su equipo. */
 function respMsgs(){
   var h='';

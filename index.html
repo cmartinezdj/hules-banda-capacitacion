@@ -1450,8 +1450,6 @@ function renderHome(){
        '<div><div style="font-size:15px;font-weight:800">'+done+' de '+total+' cursos</div>'+
        '<div class="note" style="margin-top:4px">Toca aquí para ver tus videos y cuestionarios</div></div>'+
      '</div></div>';
-  // Ruta guiada: tu siguiente paso
-  h+=rutaCard();
   // cuestionario NOM-035 (solo aparece si RRHH abrió una aplicación)
   h+=nomWorkerCard();
   // ---- recibo de nómina (entrada grande y visual) ----
@@ -1478,6 +1476,8 @@ function renderCourses(){
      pbarRow(IC2.cap, 'Para todo el personal', cDone, common.length)+
      pbarRow(areaIcon(S.key), 'Cursos de '+S.area, aDone, area.length)+
      '</div>';
+  // ---- siguiente paso (ruta guiada) ----
+  h+=rutaCard();
   // ---- cursos comunes ----
   h+='<div class="sec-t">Para todo el personal<span class="ln"></span></div>';
   common.forEach(function(c){ h+=courseRow(c); });
@@ -2813,11 +2813,29 @@ function renderMsgs(){
 function renderLineas(){
   var h='';
   h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Mensajes</div><b style="font-size:20px">Líneas directas</b><p class="note" style="margin:4px 0 0;max-width:240px">Elige a quién escribirle. Tus mensajes son privados.</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
-  h+=convRow(rConv(S.emp),'Recursos Humanos','Tu canal privado con RRHH');
-  h+=convRow(cConv(S.emp),'Dirección','Escríbele directo a Dirección');
-  h+=convRow(jConv(S.key,S.emp),'Responsable de '+S.area,'El jefe de tu área');
-  h+='<div class="card" style="cursor:pointer" onclick="renderNewChat()"><div class="line"><span style="flex:1;min-width:0;display:flex;align-items:center;gap:11px"><span style="width:38px;height:38px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--data);background:color-mix(in srgb,var(--data) 13%,transparent)">'+IC2.people+'</span><span><b>Escribir a un compañero</b><br><span class="note">Busca por nombre o número</span></span></span><span class="note" style="flex:none">›</span></div></div>';
+  h+=lineChanCard(rConv(S.emp),'Recursos Humanos','Tu canal privado con RRHH',CHAN_IC.rrhh,'#39d6c0');
+  h+=lineChanCard(cConv(S.emp),'Dirección','Escríbele directo a Dirección',CHAN_IC.dir,'#ffd166');
+  h+=lineChanCard(jConv(S.key,S.emp),'Responsable de '+S.area,'El jefe de tu área',CHAN_IC.resp,(rangeOf(S.emp)||{}).accent||'#39d6c0');
+  h+=lineChanCard(null,'Escribir a un compañero','Busca por nombre o número',CHAN_IC.comp,'#8b8ff7','renderNewChat()');
   $('s-lineas').innerHTML=h; show('lineas');
+}
+/* íconos temáticos de cada canal */
+var CHAN_IC={
+  rrhh:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5 6-5s6 1.7 6 5"/><path d="M16 5.5a3 3 0 0 1 0 5.6M21 20c0-2.6-1.6-4.2-4-4.7"/></svg>',
+  dir:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M14 9h4a2 2 0 0 1 2 2v10"/><path d="M8 7h2M8 11h2M8 15h2"/><path d="M2 21h20"/></svg>',
+  resp:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18h20"/><path d="M4 18a8 8 0 0 1 16 0"/><path d="M12 6.2V4M9 6.8V5a3 3 0 0 1 6 0v1.8"/></svg>',
+  comp:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 10h8M8 13h5"/></svg>'
+};
+function lineChanCard(conv,title,sub,icon,color,onclickOverride){
+  var prev=sub, badge='<span class="note" style="flex:none">›</span>';
+  if(conv){ var last=convLast(conv), un=convUnread(conv);
+    prev = last ? ((last.from===S.emp?'Tú: ':'')+(last.img&&!last.text?'Foto':esc((last.text||'').slice(0,38)))) : sub;
+    if(un) badge='<span class="tg" style="background:var(--accent);color:#fff;flex:none">'+un+'</span>';
+  }
+  var click = onclickOverride || ("openConv('"+conv+"')");
+  return '<div class="card" style="cursor:pointer" onclick="'+click+'"><div class="line"><span style="flex:1;min-width:0;display:flex;align-items:center;gap:12px">'+
+    '<span style="width:44px;height:44px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;color:'+color+';background:color-mix(in srgb,'+color+' 15%,transparent)"><span style="width:23px;height:23px;display:block">'+icon+'</span></span>'+
+    '<span style="min-width:0"><b>'+esc(title)+'</b><br><span class="note">'+prev+'</span></span></span>'+badge+'</div></div>';
 }
 
 /* ===== DIRECTORIO DEMO (para "escribir a un compañero") ===== */

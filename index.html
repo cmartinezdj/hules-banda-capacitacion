@@ -383,7 +383,65 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .paytop .neto{font-size:38px;font-weight:900;letter-spacing:-1px;line-height:1;margin-top:6px}
 .paysplit{display:flex;height:12px;border-radius:30px;overflow:hidden;margin:14px 0 6px;background:rgba(255,255,255,.08)}
 .paysplit .pp{background:linear-gradient(90deg,var(--data2),var(--data))}
-.paysplit .dd{background:linear-gradient(90deg,#e0564b,var(--accent2))}
+.paysplit .dd{background:linear-gradient(90deg,#e0564b,#ff8a7e)}
+
+/* ----- portadas SVG (mismo linaje visual) ----- */
+.cov{position:absolute;inset:0;width:100%;height:100%;display:block}
+/* tarjeta de curso con portada */
+.ccard{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-bottom:12px;cursor:pointer;transition:transform .15s,border-color .2s}
+.ccard:active{transform:scale(.99)}.ccard:hover{border-color:color-mix(in srgb,var(--data) 40%,transparent)}
+.ccover{position:relative;height:106px;overflow:hidden}
+.ccover .ctag{position:absolute;top:9px;left:9px;font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:4px 9px;border-radius:20px;background:rgba(0,0,0,.5);color:#fff;border:1px solid rgba(255,255,255,.25);backdrop-filter:blur(4px)}
+.cbody{display:flex;align-items:center;gap:10px;padding:13px 14px}
+.cbody .ct{flex:1;min-width:0}.cbody .ct b{font-size:14.5px;display:block;line-height:1.25}.cbody .ct .note{font-size:11.5px;margin-top:3px;display:block}
+/* tarjeta-banner de sección (mensajes) con portada */
+.bnr{position:relative;border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-bottom:12px;cursor:pointer;min-height:98px;display:flex;align-items:flex-end;transition:transform .15s}
+.bnr:active{transform:scale(.99)}
+.bnr .bg{position:absolute;inset:0}
+.bnr .ov{position:relative;width:100%;padding:14px 15px;background:linear-gradient(0deg,rgba(0,0,0,.66),rgba(0,0,0,.04) 75%);display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.bnr .ov b{font-size:18px;font-weight:900;display:block;letter-spacing:-.3px;color:#fff}
+.bnr .ov span{font-size:12px;color:#e6e8ee;display:block;margin-top:2px}
+.bnr .ov .go{flex:none;font-size:12px;font-weight:800;color:#fff;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);padding:7px 12px;border-radius:30px}
+.bnr .nb{position:absolute;top:10px;right:10px;min-width:20px;height:20px;padding:0 6px;border-radius:11px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+/* premios: grid de iconos estilo "carpeta Mac" */
+.rgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px 10px;margin:8px 2px 16px}
+.ricon{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;transition:transform .15s}
+.ricon:active{transform:scale(.92)}
+.ricon .ap{width:74px;height:74px;border-radius:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 22px rgba(0,0,0,.42);position:relative;overflow:hidden}
+.ricon .ap svg{width:36px;height:36px;color:#fff;position:relative;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))}
+.ricon .ap .gl{position:absolute;top:0;left:0;right:0;height:52%;background:linear-gradient(180deg,rgba(255,255,255,.30),transparent)}
+.ricon .rl{font-size:11px;font-weight:700;text-align:center;line-height:1.2;color:var(--txt);max-width:88px}
+.ricon .rc{font-size:10px;font-weight:800;color:var(--mut)}
+.ricon.locked .ap{filter:grayscale(.55);opacity:.7}
+.ricon .lk{position:absolute;bottom:5px;right:5px;width:19px;height:19px;border-radius:50%;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center}
+.ricon .lk svg{width:11px;height:11px;filter:none}
+.modal{position:fixed;inset:0;z-index:200;background:rgba(4,5,8,.68);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:26px}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:24px;max-width:340px;width:100%;text-align:center;box-shadow:var(--shadow)}
+.modal .ap{width:96px;height:96px;border-radius:26px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;box-shadow:0 14px 30px rgba(0,0,0,.45);position:relative;overflow:hidden}
+.modal .ap svg{width:50px;height:50px;color:#fff}
+.modal .ap .gl{position:absolute;top:0;left:0;right:0;height:52%;background:linear-gradient(180deg,rgba(255,255,255,.30),transparent)}
+/* chat estilo mensajería */
+.chatscreen{display:flex;flex-direction:column;height:calc(100dvh - 128px - env(safe-area-inset-top) - env(safe-area-inset-bottom));min-height:360px}
+.chatscreen .msgs{flex:1;min-height:0;overflow-y:auto;padding:6px 0}
+.chatscreen .chips{flex:none}
+.chatscreen .composer{position:static;padding:8px 0 6px;background:none}
+/* calendario visual */
+.cal{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.cal .cah{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px}
+.cal .cah b{font-size:16px;font-weight:800;text-transform:capitalize}
+.calg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.calg .wd{font-size:9.5px;font-weight:800;color:var(--mut);text-align:center;padding:2px 0;text-transform:uppercase}
+.calg .dc{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:12.5px;font-weight:700;color:var(--txt);position:relative}
+.calg .dc.mut{color:rgba(255,255,255,.16)}
+.calg .dc.today{background:var(--accent);color:#fff}
+.calg .dc.has{background:color-mix(in srgb,var(--data) 14%,transparent)}
+.calg .dc .ev{width:5px;height:5px;border-radius:50%;background:var(--data);position:absolute;bottom:5px}
+.calg .dc.today .ev{background:#fff}
+.evrow{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.evrow:last-child{border-bottom:none}
+.evrow .dt{width:48px;flex:none;text-align:center;background:color-mix(in srgb,var(--data) 14%,transparent);border-radius:11px;padding:6px 0;color:var(--data)}
+.evrow .dt .d{font-size:18px;font-weight:900;line-height:1}.evrow .dt .m{font-size:9px;font-weight:800;text-transform:uppercase}
+.evrow .et{flex:1;min-width:0}.evrow .et b{font-size:14px}.evrow .et span{font-size:11.5px;color:var(--mut);display:block}
 
 /* ============================== NAV INFERIOR ============================== */
 .nav{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;justify-content:center;gap:2px;max-width:500px;margin:0 auto;
@@ -549,6 +607,8 @@ body.a11y .screen .btn, body.a11y .screen .bigbtn{ font-size:16.5px !important; 
     <section id="s-lineas"  class="screen pad hide"></section>
     <section id="s-newchat" class="screen pad hide"></section>
     <section id="s-vac"     class="screen pad hide"></section>
+    <section id="s-quejas"  class="screen pad hide"></section>
+    <section id="s-encuestas" class="screen pad hide"></section>
     <section id="s-thread"  class="screen pad hide"></section>
     <section id="s-nom"     class="screen pad hide"></section>
   </main>
@@ -557,6 +617,7 @@ body.a11y .screen .btn, body.a11y .screen .bigbtn{ font-size:16.5px !important; 
   <nav id="nav" class="nav hide"></nav>
   <div id="lockScreen" class="lockscreen hide"></div>
   <div id="beepScreen" class="lockscreen hide"></div>
+  <div id="rwdModal" class="modal hide"></div>
 </div>
 
 <div id="flash" class="flash"></div>
@@ -1295,6 +1356,13 @@ function login(){
   S={ emp:n, key:r.key, area:r.area, icon:r.icon, accent:r.accent, accent2:r.accent2, admin:!!r.admin, dash:(r.dash||null), greet:r.greet,
       points:saved.points||0, streak:saved.streak||0, done:saved.done||{}, attempts:saved.attempts||{}, best:saved.best||{}, watched:saved.watched||{},
       redeemed:saved.redeemed||{}, role:(saved.role||(r.admin?'admin_demo':(r.key==='almacen'?'almacen':CFG.defaultRole))), clases:(saved.clases||{}), accessible:!!saved.accessible, rate:saved.rate||0.78, chat:[] };
+  // demo: sembrar algo de avance (solo si el usuario no tiene progreso) para que se vean las barras
+  if(!S.admin && !saved.points && !Object.keys(S.done).length){
+    var _mc=myCourses();
+    if(_mc[0]){ S.done[_mc[0].id]=1; S.watched[_mc[0].id]=1; }
+    if(_mc[1]){ S.done[_mc[1].id]=1; S.watched[_mc[1].id]=1; }
+    S.points=180; S.streak=3;
+  }
   // aplicar color de acento del área
   document.documentElement.style.setProperty('--accent', r.accent);
   document.documentElement.style.setProperty('--accent2', r.accent2);
@@ -1338,12 +1406,12 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'" onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','thread','nom'];
+var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','thread','nom'];
 function show(name){
   _screen=name;
   SCREENS.forEach(function(s){ var el=$('s-'+s); if(el) el.classList.toggle('hide', s!==name); });
   // nav activo (course/quiz/result/pay cuentan como "home")
-  var navKey = (name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay') ? 'home' : ((name==='thread'||name==='lineas'||name==='newchat'||name==='vac')?'msgs':name);
+  var navKey = (name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay') ? 'home' : ((name==='thread'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas')?'msgs':(name==='encuestas'?'news':name));
   ['home','msgs','rewards','chat','hr','clases','news','buzon'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
   renderTop(name);
   window.scrollTo(0,0);
@@ -1360,10 +1428,10 @@ function go(name){
   if(name==='msgs') return renderMsgs();
 }
 function renderTop(name){
-  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderLineas()' : (name==='thread'||name==='lineas'||name==='vac') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderLineas()' : name==='encuestas' ? 'renderNews()' : (name==='thread'||name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : 'go(\'home\')';
     left.innerHTML='<button class="back" onclick="'+backTo+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
@@ -1429,6 +1497,143 @@ var IC2={
 };
 function areaIcon(key){ return IC2[({almacen:'box',inventario:'box',produccion:'gear',calidad:'check',comercial:'cart',maquinaria:'gear',rrhh:'people'})[key]||'box'] || IC2.box; }
 
+/* ====================== PORTADAS SVG (mismo linaje visual) ======================
+   Arte vectorial ligero (offline-safe) que hace las veces de "foto" de portada:
+   degradado + formas suaves + ícono grande translúcido. */
+var AP={
+  cap:'<path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 3 2 6 2s6-1 6-2v-5"/>',
+  shield:'<path d="M12 3l8 3v6c0 5-3.4 8-8 9-4.6-1-8-4-8-9V6z"/>',
+  gear:'<circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>',
+  tire:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>',
+  check:'<path d="M20 6L9 17l-5-5"/>',
+  chat:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 10h8M8 13h5"/>',
+  people:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5 6-5s6 1.7 6 5"/><path d="M16 5.5a3 3 0 0 1 0 5.6M21 20c0-2.6-1.6-4.2-4-4.7"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/>',
+  mega:'<path d="M3 11v2a1 1 0 0 0 1 1h2l4 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M14 8a4 4 0 0 1 0 8"/>',
+  cal:'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/>',
+  gift:'<rect x="3" y="8" width="18" height="13" rx="1"/><path d="M3 12h18M12 8v13M12 8s-1-4-4-4-3 4 4 4zM12 8s1-4 4-4 3 4-4 4z"/>',
+  cup:'<path d="M8 3h8l-1 5H9z"/><path d="M9 8h6v10a3 3 0 0 1-6 0z"/>',
+  shirt:'<path d="M6 4l3-1 3 2 3-2 3 1 2 4-3 2v8H7v-8L4 8z"/>',
+  cap2:'<path d="M4 12a8 4 0 0 1 16 0"/><path d="M2 12h20v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/>',
+  basket:'<path d="M5.5 9h13l-1.4 10.2a1.5 1.5 0 0 1-1.5 1.3H8.4a1.5 1.5 0 0 1-1.5-1.3z"/><path d="M8.5 9l2.2-5M15.5 9l-2.2-5M3.5 9h17"/>',
+  snack:'<rect x="6" y="3" width="12" height="18" rx="2.5"/><path d="M9 7h6M9 11h6M9 15h4"/>',
+  card:'<rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 9.5h19M6 15h4"/>'
+};
+function cover(name,c1,c2){
+  var p=AP[name]||AP.cap, gid='cg'+name+(c1+c2).replace(/[^a-z0-9]/gi,'');
+  return '<svg class="cov" viewBox="0 0 120 74" preserveAspectRatio="xMidYMid slice">'+
+    '<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="'+c1+'"/><stop offset="1" stop-color="'+c2+'"/></linearGradient></defs>'+
+    '<rect width="120" height="74" fill="url(#'+gid+')"/>'+
+    '<circle cx="102" cy="10" r="34" fill="rgba(255,255,255,.10)"/><circle cx="6" cy="72" r="26" fill="rgba(0,0,0,.12)"/>'+
+    '<svg x="80" y="20" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.95)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg></svg>';
+}
+function courseCover(c){
+  var t=(c.t||'').toLowerCase();
+  if(/segurid|epp|riesg|protec/.test(t)) return cover('shield','#e0564b','#7a1410');
+  if(/manufact|renovaci|precurad|banda|hule|mezcl/.test(t)) return cover('tire','#0e9e8e','#053b36');
+  if(/m[aá]quin|tabulador|banbury|operaci/.test(t)) return cover('gear','#e07a1f','#5a2e07');
+  if(/calid/.test(t)) return cover('check','#1c9444','#08351a');
+  if(/comerci|venta/.test(t)) return cover('card','#8a3bd1','#37146b');
+  return cover('cap','#5b6cf0','#1e2470');
+}
+function bnrCard(onclick,title,sub,cov,badge){
+  return '<div class="bnr" onclick="'+onclick+'"><div class="bg">'+cov+'</div>'+
+    (badge?'<span class="nb">'+badge+'</span>':'')+
+    '<div class="ov"><div style="min-width:0"><b>'+esc(title)+'</b><span>'+esc(sub)+'</span></div><span class="go">Abrir ›</span></div></div>';
+}
+/* Premios: metadatos (icono + color + descripción) paralelos a CFG.rewards */
+var REWARD_ART=[
+  {ic:'snack', c1:'#e07a1f',c2:'#b3560c', d:'Un snack y un refresco de la cafetería. Ideal para tu descanso.'},
+  {ic:'cup',   c1:'#0e9e8e',c2:'#0a6b60', d:'Termo Hules Banda de acero inoxidable. Conserva frío y caliente.'},
+  {ic:'cap2',  c1:'#2a7de1',c2:'#1b4f91', d:'Gorra oficial Hules Banda. Cómoda y con el logo bordado.'},
+  {ic:'shirt', c1:'#8a3bd1',c2:'#5a2490', d:'Playera Hules Banda de algodón. Úsala con orgullo.'},
+  {ic:'basket',c1:'#1c9444',c2:'#0f5c2a', d:'Vale de despensa por $200 MXN para tu súper.'},
+  {ic:'basket',c1:'#c4161c',c2:'#7d0d11', d:'Canasta básica con productos de la despensa.'},
+  {ic:'card',  c1:'#5b6cf0',c2:'#333db0', d:'Tarjeta de regalo por $500 MXN.'},
+  {ic:'card',  c1:'#b8860b',c2:'#7a5807', d:'Tarjeta de regalo por $1,000 MXN. El premio mayor.'}
+];
+function ricon(i){ return REWARD_ART[i]||REWARD_ART[0]; }
+
+/* ===== CALENDARIO VISUAL (próximos eventos) ===== */
+var MESES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+var MESL=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function demoEvents(){
+  var d=new Date(), y=d.getFullYear(), m=d.getMonth(), day=d.getDate();
+  function iso(dd){ var x=new Date(y,m,dd); return x.getFullYear()+'-'+('0'+(x.getMonth()+1)).slice(-2)+'-'+('0'+x.getDate()).slice(-2); }
+  return [
+    {t:'Día de pago', d:iso(Math.min(day+2,28))},
+    {t:'Junta de seguridad', d:iso(Math.min(day+5,27))},
+    {t:'Simulacro de evacuación', d:iso(Math.min(day+9,26))},
+    {t:'Convivio del mes', d:iso(Math.min(day+15,28))}
+  ];
+}
+function calendarBlock(){
+  var d=new Date(), y=d.getFullYear(), m=d.getMonth(), today=d.getDate();
+  var evs=demoEvents().concat(evGet());
+  var byDay={}; evs.forEach(function(e){ var p=(e.d||'').split('-'); if(+p[0]===y && (+p[1]-1)===m) byDay[+p[2]]=(byDay[+p[2]]||[]).concat(e); });
+  var first=new Date(y,m,1).getDay(), dim=new Date(y,m+1,0).getDate();
+  var h='<div class="cal"><div class="cah"><b>'+MESL[m]+' '+y+'</b></div><div class="calg">';
+  ['D','L','M','M','J','V','S'].forEach(function(w){ h+='<div class="wd">'+w+'</div>'; });
+  for(var i=0;i<first;i++) h+='<div class="dc mut"></div>';
+  for(var dd=1;dd<=dim;dd++){ var cls='dc'+(dd===today?' today':(byDay[dd]?' has':'')); h+='<div class="'+cls+'">'+dd+(byDay[dd]?'<span class="ev"></span>':'')+'</div>'; }
+  h+='</div>';
+  var up=evs.filter(function(e){ var p=(e.d||'').split('-'); var ed=new Date(+p[0],+p[1]-1,+p[2]); return ed>=new Date(y,m,today); })
+           .sort(function(a,b){ return a.d<b.d?-1:1; }).slice(0,5);
+  if(up.length){ h+='<div style="margin-top:14px">'; up.forEach(function(e){ var p=e.d.split('-'); h+='<div class="evrow"><span class="dt"><span class="d">'+(+p[2])+'</span><span class="m">'+MESES[+p[1]-1]+'</span></span><span class="et"><b>'+esc(e.t)+'</b><span>'+fmtDate(e.d)+'</span></span>'+speakBtn(e.t+'. '+fmtDate(e.d))+'</div>'; }); h+='</div>'; }
+  return h+'</div>';
+}
+
+/* ===== ENCUESTAS (bloque de entrada + pantalla con todas) ===== */
+function encuestasEntry(){
+  var n=3+1; // 3 demo + NOM-035 demo
+  try{ n += pollGet().filter(function(p){ return inTarget(p.to,S.emp); }).length; }catch(e){}
+  return bnrCard("renderEncuestas()",'Encuestas','Responde y gana puntos · '+n+' disponibles', cover('check','#5b6cf0','#26307a'),'');
+}
+var DEMO_POLLS=[
+  {q:'¿Cómo te sientes con tu equipo de protección (EPP)?', opts:['Muy cómodo','Regular','Necesito cambio'], res:[62,28,10]},
+  {q:'¿Qué premio te gustaría ver en el catálogo?', opts:['Despensa','Gift card','Días libres'], res:[45,33,22]},
+  {q:'¿Qué tan clara fue la última capacitación?', opts:['Muy clara','Más o menos','Confusa'], res:[71,21,8]}
+];
+function renderEncuestas(){
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Noticias</div><b style="font-size:20px">Encuestas</b><p class="note" style="margin:4px 0 0;max-width:240px">Tu opinión ayuda a mejorar la planta. Responder da puntos.</p></div></div></div>';
+  // NOM-035 (demo)
+  h+='<div class="card" style="border-left:4px solid var(--accent)"><div class="line"><span style="flex:1"><span class="tg">Obligatoria</span> <b style="display:block;margin-top:6px">NOM-035 · Riesgo psicosocial</b><span class="note">Cuestionario oficial STPS · anónimo</span></span></div><button class="btn" style="margin-top:10px" onclick="flash(\'Demo: pendiente de cargar las preguntas oficiales\')">Abrir (demo)</button></div>';
+  // encuestas demo (resultados de ejemplo)
+  DEMO_POLLS.forEach(function(p){
+    var tot=p.res.reduce(function(a,b){return a+b;},0);
+    h+='<div class="card"><div class="line"><b style="flex:1">'+esc(p.q)+'</b>'+speakBtn(p.q)+'</div><span class="note" style="display:block;margin:2px 0 4px">Ejemplo de resultados:</span>';
+    p.opts.forEach(function(o,j){ var pc=Math.round(p.res[j]/tot*100); h+='<div style="margin-top:8px"><div class="line" style="margin-bottom:3px"><span>'+esc(o)+'</span><span class="note">'+pc+'%</span></div><div class="bar"><i style="width:'+pc+'%"></i></div></div>'; });
+    h+='</div>';
+  });
+  // encuestas reales (si RRHH publicó)
+  h+=pollsBlock();
+  $('s-encuestas').innerHTML=h; show('encuestas');
+}
+
+/* ===== QUEJAS Y REPORTES (pantalla) ===== */
+function renderQuejas(){
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Mensajes</div><b style="font-size:20px">Quejas y reportes</b><p class="note" style="margin:4px 0 0;max-width:250px">Cuéntale a RRHH una queja, una mejora o algo fuera de lo normal. Es privado.</p></div></div></div>';
+  h+=reportFormBlock(); h+=myReportsBlock();
+  $('s-quejas').innerHTML=h; show('quejas');
+}
+
+/* ===== NOTICIA: infografía demo (no persistida) ===== */
+function newsInfographicDemo(){
+  var svg='<svg viewBox="0 0 320 200" style="width:100%;display:block;border-radius:12px;border:1px solid var(--line)" preserveAspectRatio="xMidYMid meet">'+
+    '<defs><linearGradient id="infg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0e9e8e"/><stop offset="1" stop-color="#0a3f39"/></linearGradient></defs>'+
+    '<rect width="320" height="200" fill="url(#infg)"/>'+
+    '<text x="20" y="34" fill="#fff" font-family="Inter,sans-serif" font-size="17" font-weight="800">Semana de Seguridad</text>'+
+    '<text x="20" y="54" fill="rgba(255,255,255,.8)" font-family="Inter,sans-serif" font-size="11">Del 7 al 11 de julio · Planta Hules Banda</text>'+
+    '<g font-family="Inter,sans-serif">'+
+      '<rect x="20" y="76" width="86" height="96" rx="12" fill="rgba(255,255,255,.12)"/><text x="63" y="120" fill="#fff" font-size="30" font-weight="900" text-anchor="middle">0</text><text x="63" y="150" fill="rgba(255,255,255,.85)" font-size="9" text-anchor="middle">ACCIDENTES</text>'+
+      '<rect x="117" y="76" width="86" height="96" rx="12" fill="rgba(255,255,255,.12)"/><text x="160" y="120" fill="#fff" font-size="30" font-weight="900" text-anchor="middle">100%</text><text x="160" y="150" fill="rgba(255,255,255,.85)" font-size="9" text-anchor="middle">USO DE EPP</text>'+
+      '<rect x="214" y="76" width="86" height="96" rx="12" fill="rgba(255,255,255,.12)"/><text x="257" y="120" fill="#fff" font-size="30" font-weight="900" text-anchor="middle">+50</text><text x="257" y="150" fill="rgba(255,255,255,.85)" font-size="9" text-anchor="middle">PAÍSES</text>'+
+    '</g></svg>';
+  return '<div class="card"><div style="margin-bottom:8px"><span class="tg">Ejemplo · así se ven las infografías</span></div>'+
+    '<b style="font-size:15.5px">Semana de Seguridad</b><p style="margin-top:5px;line-height:1.55">RRHH puede enviar infografías con imágenes a toda la planta. Así se ve una en tu tablero.</p>'+
+    svg+'<div class="line" style="margin-top:10px"><span class="note">Recursos Humanos · ejemplo</span>'+speakBtn('Semana de Seguridad. RRHH puede enviar infografías con imágenes a toda la planta.')+'</div></div>';
+}
+
 /* ====================== INICIO (PORTAL) ====================== */
 function renderHome(){
   var total=myCourses().length, done=doneCount();
@@ -1492,9 +1697,9 @@ function courseRow(c){
   var pill = st==='done' ? '<span class="pill done">Aprobado ✓</span>'
            : st==='exempt' ? '<span class="pill exo">Exento ✓</span>'
            : '<span class="pill pend">Pendiente</span>';
-  var meta='⏱ '+c.dur + (c.m?' · <span class="tag ob">Obligatorio</span>':'');
-  return '<div class="course" onclick="openCourse(\''+c.id+'\')"><div class="thumb">'+c.ic+'</div>'+
-    '<div class="t"><b>'+esc(c.t)+'</b><span>'+meta+'</span></div>'+pill+'</div>';
+  return '<div class="ccard" onclick="openCourse(\''+c.id+'\')">'+
+    '<div class="ccover">'+courseCover(c)+(c.m?'<span class="ctag">Obligatorio</span>':'')+'</div>'+
+    '<div class="cbody"><div class="ct"><b>'+esc(c.t)+'</b><span class="note">⏱ '+esc(c.dur||'')+'</span></div>'+pill+'</div></div>';
 }
 
 /* ====================== CURSO (video + quiz / exentar) ====================== */
@@ -1642,26 +1847,39 @@ function showResult(){
 /* ====================== RECOMPENSAS ====================== */
 function renderRewards(){
   var h='';
-  h+='<div class="guide">'+bandi('b-md')+'<div class="bub">Cada curso aprobado suma puntos. ¡Cámbialos por premios reales! </div></div>';
-  h+='<div class="card balance"><div><small>Tu saldo</small><div class="big">'+S.points+' <small>pts</small></div></div>'+bandi('b-lg')+'</div>';
+  h+='<div class="paytop"><div class="hd" style="margin-bottom:0"><div><div class="eyebrow">Premios</div><div class="note" style="margin-top:3px">Tu saldo de puntos</div></div><span class="chipst">Nivel '+level()+'</span></div>'+
+     '<div class="neto">'+S.points+' <span style="font-size:18px;font-weight:700">pts</span></div>'+
+     '<div class="note" style="margin-top:6px">Cada curso aprobado suma puntos. Cámbialos por premios reales.</div></div>';
   h+='<div class="sec-t">Catálogo<span class="ln"></span></div>';
-  CFG.rewards.forEach(function(r,i){
-    var got=S.redeemed[i]||0, can=S.points>=r.cost;
-    var pct=Math.min(100,Math.round(S.points/r.cost*100));
-    var btn = got ? '<button class="rdm got">Canjeado ✓'+(got>1?' ×'+got:'')+'</button>'
-            : can  ? '<button class="rdm on" onclick="redeem('+i+')">Canjear</button>'
-                   : '<button class="rdm off">'+r.cost+' pts</button>';
-    var bar = can?'' : '<div class="prog"><i style="width:'+pct+'%"></i></div>';
-    h+='<div class="rwd"><div class="thumb">'+r.ic+'</div><div class="t"><b>'+esc(r.t)+'</b><span>'+r.cost+' puntos</span>'+bar+'</div>'+btn+'</div>';
-  });
-  h+='<div class="note">Las recompensas son un ejemplo de la demo. En la versión final, RRHH define el catálogo y aprueba los canjes.</div>';
+  h+='<div class="rgrid">'+CFG.rewards.map(function(r,i){
+    var art=ricon(i), got=S.redeemed[i]||0, can=S.points>=r.cost;
+    var badge = got ? '<span class="lk" style="background:var(--ok)"><svg viewBox="0 0 24 24" fill="none" stroke="#062a12" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">'+AP.check+'</svg></span>'
+              : (!can ? '<span class="lk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>' : '');
+    return '<div class="ricon'+((can||got)?'':' locked')+'" onclick="openRwd('+i+')">'+
+      '<div class="ap" style="background:linear-gradient(150deg,'+art.c1+','+art.c2+')"><div class="gl"></div>'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+AP[art.ic]+'</svg>'+badge+'</div>'+
+      '<div class="rl">'+esc(r.t)+'</div><div class="rc">'+r.cost+' pts</div></div>';
+  }).join('')+'</div>';
+  h+='<div class="note">Toca un premio para ver el detalle y canjearlo. En la versión final, RRHH define el catálogo y aprueba los canjes.</div>';
   $('s-rewards').innerHTML=h; show('rewards');
 }
+function openRwd(i){
+  var r=CFG.rewards[i], art=ricon(i), got=S.redeemed[i]||0, can=S.points>=r.cost;
+  var btn = got ? '<button class="btn" style="background:var(--card2);color:var(--txt);border:1px solid var(--line)" onclick="closeRwd()">Canjeado ✓'+(got>1?' ×'+got:'')+'</button>'
+          : can ? '<button class="btn" onclick="redeem('+i+')">Canjear por '+r.cost+' pts</button>'
+                : '<button class="btn off" disabled>Te faltan '+(r.cost-S.points)+' pts</button>';
+  var m=$('rwdModal'); if(!m) return;
+  m.innerHTML='<div class="box"><div class="ap" style="background:linear-gradient(150deg,'+art.c1+','+art.c2+')"><div class="gl"></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+AP[art.ic]+'</svg></div>'+
+    '<b style="font-size:19px;display:block">'+esc(r.t)+'</b><p class="note" style="margin:8px 0 16px;line-height:1.5">'+esc(art.d)+'</p>'+btn+
+    '<button class="lnkbtn" style="margin-top:10px" onclick="closeRwd()">Cerrar</button></div>';
+  m.classList.remove('hide');
+}
+function closeRwd(){ var m=$('rwdModal'); if(m) m.classList.add('hide'); }
 function redeem(i){
   var r=CFG.rewards[i];
   if(S.points<r.cost){ flash('Aún te faltan puntos'); return; }
   S.points-=r.cost; S.redeemed[i]=(S.redeemed[i]||0)+1; save();
-  flash('¡Canjeaste: '+r.t+'!'); renderRewards(); renderTop();
+  closeRwd(); burst(); flash('¡Canjeaste: '+r.t+'!'); renderRewards(); renderTop();
 }
 
 /* ====================== CHAT BANDI ====================== */
@@ -1742,11 +1960,12 @@ function logAlert(text){
 }
 function renderChat(){
   var h='';
-  h+='<div class="chathead">'+bandi('b-lg')+
-     '<div class="t"><b>Asistente</b><span><i class="dotst on"></i>Respuestas autorizadas</span></div></div>';
+  h+='<div class="chatscreen">';
+  h+='<div class="chathead"><div class="t"><b>Asistente</b><span><i class="dotst on"></i>Respuestas autorizadas</span></div></div>';
   h+='<div class="msgs" id="msgs"></div>';
   h+='<div class="chips" id="chips"></div>';
-  h+='<div class="composer"><input id="chatIn" placeholder="Escribe tu pregunta…" autocomplete="off"><button class="send" onclick="sendChat()" aria-label="Enviar"></button></div>';
+  h+='<div class="composer"><input id="chatIn" placeholder="Escribe tu pregunta…" autocomplete="off"><button class="send" onclick="sendChat()" aria-label="Enviar"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button></div>';
+  h+='</div>';
   $('s-chat').innerHTML=h;
   var sugg=['¿Qué es la banda de precurado?','¿Llantas de camión por posición?','¿Cómo funciona una llanta?','¿Por qué renovar?','¿Quién es Bandamatic?'];
   $('chips').innerHTML=sugg.map(function(s){return '<button class="chip2" onclick="quickAsk(this)">'+esc(s)+'</button>';}).join('');
@@ -2109,8 +2328,7 @@ function markRead(id){
 }
 function renderNews(){
   var a=newsGet(), h='';
-  h+='<div class="card hero"><div class="row">'+bandi('b-lg')+'<div><h2>Noticias y avisos</h2><p>'+(S.admin?'Publica avisos, infografías y mensajes para toda la planta.':'Avisos y mensajes de Recursos Humanos.')+'</p></div></div></div>';
-  if(!S.admin) h+=dmWorkerBlock();
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">'+(S.admin?'Panel':'Noticias')+'</div><b style="font-size:20px">Noticias y avisos</b><p class="note" style="margin:4px 0 0;max-width:250px">'+(S.admin?'Publica avisos, infografías, eventos y encuestas.':'Calendario, avisos de RRHH y encuestas.')+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
   if(S.admin){
     h+='<div class="card"><b>Publicar nueva noticia</b>'+
        '<input id="newsTitle" class="fin" placeholder="Título (ej. Semana de seguridad)" autocomplete="off" style="margin:9px 0 8px">'+
@@ -2131,12 +2349,25 @@ function renderNews(){
        '<div class="note" style="margin:12px 0 6px">¿Para quién?</div>'+rangePicker('poll',_pollTo)+
        '<button class="btn" style="margin-top:10px" onclick="addPoll()">Publicar encuesta</button></div>';
     h+=dmAdminBlock();
+    h+=calendarBlock();
+    h+=pollsBlock();
+    h+='<div class="sec-t">Publicadas<span class="ln"></span></div>';
+    h+= a.length? newsCards(a) : '<div class="card"><div class="note">Aún no hay noticias.</div></div>';
+  } else {
+    // Trabajador: 1) calendario arriba, 2) avisos de RRHH (con infografía demo), 3) encuestas
+    h+=calendarBlock();
+    h+='<div class="sec-t">Avisos de Recursos Humanos<span class="ln"></span></div>';
+    h+=newsInfographicDemo();
+    var vis = a.filter(function(n){ return inTarget(n.to, S.emp); });
+    h+= vis.length? newsCards(vis) : '';
+    h+=encuestasEntry();
+    h+=dmWorkerBlock();
   }
-  h+=pollsBlock();
-  h+=eventsBlock();
-  var vis = S.admin ? a : a.filter(function(n){ return inTarget(n.to, S.emp); });
-  h+='<div class="sec-t">'+(S.admin?'Publicadas':'Tablero de avisos')+'<span class="ln"></span></div>';
-  if(!vis.length){ h+='<div class="card"><div class="note">'+(S.admin?'Aún no hay noticias.':'Por ahora no hay avisos para ti.')+'</div></div>'; }
+  $('s-news').innerHTML=h; show('news');
+}
+/* Tarjetas del feed de noticias (worker/admin) */
+function newsCards(vis){
+  var h='';
   vis.forEach(function(n){
     var reads=n.reads||[], foot;
     if(S.admin){
@@ -2160,7 +2391,7 @@ function renderNews(){
        (n.img?'<img src="'+n.img+'" alt="infografía" style="width:100%;border-radius:10px;margin-top:9px;border:1px solid var(--line)">':'')+
        foot+'</div>';
   });
-  $('s-news').innerHTML=h; show('news');
+  return h;
 }
 
 /* ====================== BUZÓN: QUEJAS Y REPORTES (personal → RRHH) ======================
@@ -2583,10 +2814,10 @@ function renderPay(){
      '<div class="line"><span>ISR</span><span>− '+money(p.isr)+'</span></div></div>';
   if(signed){
     h+='<div class="card" style="border:1px solid var(--ok)"><div class="row">'+bandi('b-sm')+'<div><b style="color:var(--ok)">✓ Firmado</b><p class="note">Firmaste el '+fmtDate(signed.ts)+'. RRHH ya recibió tu acuse.</p></div></div>'+
-       (signed.img?'<img src="'+signed.img+'" alt="firma" style="height:80px;margin-top:9px;background:#fff;border-radius:8px;padding:4px">':'')+'</div>';
+       (signed.img?'<img src="'+signed.img+'" alt="firma" style="width:100%;max-height:200px;object-fit:contain;margin-top:10px;background:#fff;border-radius:10px;padding:8px;display:block">':'')+'</div>';
   } else {
     h+='<div class="card"><b>Firma de recibido</b><p class="note" style="margin:4px 0 9px">Firma con el dedo en el recuadro y confirma. Esto le avisa a RRHH que ya recibiste tu recibo.</p>'+
-       '<canvas id="sigPad" width="600" height="200" style="width:100%;height:160px;background:#fff;border-radius:10px;border:1px solid var(--line);touch-action:none"></canvas>'+
+       '<canvas id="sigPad" width="600" height="240" style="width:100%;height:210px;background:#fff;border-radius:10px;border:1px solid var(--line);touch-action:none"></canvas>'+
        '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn ghost" style="margin:0;flex:none;padding:11px 14px" onclick="sigClear()">Borrar</button>'+
        '<button class="btn" style="margin:0;flex:1;padding:11px" onclick="signPay()">Firmar y enviar a RRHH</button></div></div>';
   }
@@ -2788,24 +3019,19 @@ function renderMsgs(){
     if(S.dash==='resp') h+=respMsgs();
     else { h+=beeperAdminCard(); h+=msgAdminInbox(); }
   } else {
-    // 1) Líneas directas — cuadro grande de entrada (adentro: RRHH, Dirección, responsable y compañeros)
+    // Banners-portada de cada función (más visual, distinto diseño)
     var lineUn=convUnread(rConv(S.emp))+convUnread(cConv(S.emp))+convUnread(jConv(S.key,S.emp));
-    h+='<div class="panel" style="cursor:pointer" onclick="renderLineas()">'+
-       '<div class="hd"><b style="font-size:19px">Líneas directas</b><span class="chipst'+(lineUn?'':' mut')+'">'+(lineUn?lineUn+' nuevos ›':'Abrir ›')+'</span></div>'+
-       '<p class="note" style="margin:0">Escríbele directo a <b>Recursos Humanos</b>, a <b>Dirección</b>, a tu <b>responsable de área</b> o a un <b>compañero</b>.</p></div>';
-    // 2) Grupo de área
-    h+='<div class="sec-t">Tu grupo de área<span class="ln"></span></div>'+convRow(gConv(S.key),'Grupo · '+S.area,'Mensajes de toda tu área');
-    // 3) Conversaciones activas (más importante que abrir una nueva)
+    var grpUn=convUnread(gConv(S.key));
+    h+=bnrCard("renderLineas()",'Líneas directas','RRHH, Dirección, responsable y compañeros', cover('chat','#0e9e8e','#053b36'), lineUn||'');
+    h+=bnrCard("openConv('"+gConv(S.key)+"')",'Grupo · '+S.area,'Mensajes de toda tu área', cover('people','#2a7de1','#123a6b'), grpUn||'');
+    // Conversaciones activas
     var dir=myDirects();
     h+='<div class="sec-t">Conversaciones<span class="ln"></span></div>';
     if(dir.length){ dir.forEach(function(c){ h+=convRow(c,empName(convOther(c)),null); }); }
     else { h+='<div class="card"><div class="note">Aún no tienes conversaciones. Abre una desde <b>Líneas directas</b>.</div></div>'; }
-    // 4) Vacaciones y permisos — cuadro de entrada
-    h+='<div class="panel" style="cursor:pointer;margin-top:14px" onclick="renderVacaciones()">'+
-       '<div class="hd"><b style="font-size:19px">Vacaciones</b><span class="chipst mut">Abrir ›</span></div>'+
-       '<p class="note" style="margin:0">Consulta tus <b>días disponibles</b> y <b>solicita</b> vacaciones o permisos.</p></div>';
-    // 5) Quejas a RRHH (igual que antes)
-    h+=reportFormBlock(); h+=myReportsBlock();
+    // Vacaciones + Quejas (banners)
+    h+=bnrCard("renderVacaciones()",'Vacaciones','Días disponibles y solicitudes', cover('sun','#e0a020','#6b4708'),'');
+    h+=bnrCard("renderQuejas()",'Quejas y reportes','Queja, mejora o algo fuera de lo normal', cover('mega','#e0564b','#7a1410'),'');
   }
   $('s-msgs').innerHTML=h; show('msgs');
 }

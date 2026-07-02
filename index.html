@@ -536,43 +536,46 @@ body.a11y .screen .seg button{ font-size:13px !important; }
 }
 
 /* ============================================================
-   MODO ESCRITORIO PARA MANAGEMENT (Dirección · RRHH · Responsables)
-   En computadora (≥1000px) el tablero se ve como página web:
-   barra lateral + contenido en 2 columnas. El personal operativo
-   conserva SIEMPRE el formato de app móvil.
+   DISEÑO ADAPTABLE UNIVERSAL
+   · Celular / pantalla chica (<1000px)  → formato APP (columna, tabs abajo)
+   · Computadora (≥1000px)               → formato PÁGINA WEB
+     (barra lateral + contenido ancho en columnas) para TODOS los roles.
    ============================================================ */
 @media (min-width:1000px){
-  body.admin #app{max-width:none}
-  body.admin .top{margin-left:224px;padding-left:28px;padding-right:28px}
-  body.admin .top .who b{font-size:16px}
+  #app{max-width:none}
+  .login{max-width:520px;margin:0 auto}
+  .top{margin-left:224px;padding-left:28px;padding-right:28px}
+  .top .who b{font-size:16px}
   /* la barra de abajo se convierte en barra lateral */
-  body.admin .nav{top:0;bottom:0;left:0;right:auto;width:224px;max-width:none;margin:0;
+  .nav{top:0;bottom:0;left:0;right:auto;width:224px;max-width:none;margin:0;
     flex-direction:column;justify-content:flex-start;gap:5px;
     padding:18px 12px 16px;border-top:none;border-right:1px solid var(--line);
     background:color-mix(in srgb,var(--bg) 94%,transparent)}
-  body.admin .nav:before{content:'Hules Banda';display:block;font-weight:900;font-size:15px;color:#fff;
+  .nav:before{content:'Hules Banda';display:block;font-weight:900;font-size:15px;color:#fff;
     padding:8px 14px 4px;letter-spacing:.2px}
-  body.admin .nav:after{content:'';position:absolute;top:44px;left:26px;width:30px;height:3px;border-radius:2px;background:#c4161c}
-  body.admin .nav button{flex:none;width:100%;max-width:none;flex-direction:row;justify-content:flex-start;
+  .nav:after{content:'';position:absolute;top:44px;left:26px;width:30px;height:3px;border-radius:2px;background:#c4161c}
+  .nav button{flex:none;width:100%;max-width:none;flex-direction:row;justify-content:flex-start;
     gap:12px;padding:12px 14px;font-size:13.5px;border-radius:12px;margin-top:2px}
-  body.admin .nav button:first-of-type{margin-top:18px}
-  body.admin .nav button .ni{width:19px;height:19px}
-  body.admin .nav button.on{background:color-mix(in srgb,var(--accent) 15%,transparent);color:#fff}
-  body.admin .nav button .nbadge{position:static;margin-left:auto}
-  /* contenido: página ancha con aire */
-  body.admin .screen{margin-left:224px}
-  body.admin .screen.pad{padding:26px 36px 70px;max-width:1280px}
-  /* tablero y bandejas en 2 columnas tipo mosaico */
-  body.admin #s-hr, body.admin #s-msgs, body.admin #s-news, body.admin #s-encuestas{column-count:2;column-gap:22px}
-  body.admin #s-hr>*, body.admin #s-msgs>*, body.admin #s-news>*, body.admin #s-encuestas>*{break-inside:avoid;-webkit-column-break-inside:avoid}
-  body.admin #s-hr>.panel:first-child, body.admin #s-msgs>.panel:first-child,
-  body.admin #s-news>.panel:first-child, body.admin #s-encuestas>.panel:first-child{column-span:all}
-  body.admin #s-hr>.seg{column-span:all}
-  body.admin .sec-t{column-span:all}
-  /* lectura y chat: una columna cómoda */
-  body.admin #s-chat, body.admin #s-thread, body.admin #s-nom, body.admin #s-nom35, body.admin #s-perm{max-width:840px}
-  body.admin .chatscreen{height:calc(100dvh - 150px)}
-  body.admin .panel, body.admin .card{padding:18px}
+  .nav button:first-of-type{margin-top:18px}
+  .nav button .ni{width:19px;height:19px}
+  .nav button.on{background:color-mix(in srgb,var(--accent) 15%,transparent);color:#fff}
+  .nav button .nbadge{position:static;margin-left:auto}
+  /* contenido: página ancha */
+  .screen{margin-left:224px}
+  .screen.pad{padding:26px 36px 70px;max-width:1280px}
+  /* pantallas de mosaico: 2 columnas */
+  #s-hr,#s-msgs,#s-news,#s-encuestas,#s-home,#s-courses,#s-clases,#s-quejas{column-count:2;column-gap:22px}
+  #s-hr>*,#s-msgs>*,#s-news>*,#s-encuestas>*,#s-home>*,#s-courses>*,#s-clases>*,#s-quejas>*{break-inside:avoid;-webkit-column-break-inside:avoid}
+  #s-hr>.panel:first-child,#s-msgs>.panel:first-child,#s-news>.panel:first-child,#s-encuestas>.panel:first-child,
+  #s-home>.panel:first-child,#s-courses>.panel:first-child,#s-clases>.panel:first-child,#s-quejas>.panel:first-child{column-span:all}
+  #s-hr>.seg{column-span:all}
+  .sec-t{column-span:all}
+  /* pantallas de lectura / flujo: una columna cómoda */
+  #s-chat,#s-thread,#s-nom,#s-nom35,#s-perm,#s-course,#s-quiz,#s-result,#s-pay,#s-vac,#s-lineas,#s-newchat{max-width:880px}
+  .chatscreen{height:calc(100dvh - 150px)}
+  .panel,.card{padding:18px}
+  /* premios: estante ancho */
+  .rgrid{grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:20px 12px}
 }
 </style>
 <!-- Supabase (Fase 2: demo en vivo, cross-device). Si no carga (offline), la app sigue con localStorage. -->

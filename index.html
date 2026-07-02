@@ -312,6 +312,15 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .dcol.warn .col i.on{background:var(--warn);box-shadow:none}
 .dcol.bad  .col i.on{background:var(--bad);box-shadow:none}
 .dcol{min-width:0;text-align:center}
+/* kit de gráficos interactivos (tableros) */
+.gaugeWrap{display:flex;gap:10px;align-items:stretch}
+.statile{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 6px;text-align:center;display:flex;flex-direction:column;justify-content:center}
+.statile .n{font-size:22px;font-weight:900;line-height:1}
+.statile .l{font-size:9px;color:var(--mut);font-weight:800;letter-spacing:.4px;margin-top:5px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cbar{cursor:pointer}
+.cbar:hover rect{filter:brightness(1.3)}
+.dseg{cursor:pointer;transition:stroke-width .18s}
+.dseg:hover{stroke-width:19}
 .dcol .v{font-size:19px;font-weight:900;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dcol .k{font-size:9.5px;color:var(--mut);font-weight:700;margin-top:4px;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
@@ -1818,6 +1827,56 @@ function ring(pct,color){
     '<circle cx="38" cy="38" r="30" fill="none" stroke="'+color+'" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'"/>'+
     '</svg><b>'+Math.round(pct)+'%</b></div>';
 }
+/* ===== KIT DE GRÁFICOS DEL TABLERO (SVG puro, interactivo: hover + toque) ===== */
+function semiGauge(pct,color){                 // arco de progresión (medio círculo)
+  pct=Math.max(0,Math.min(100,Math.round(+pct||0))); color=color||'var(--data)';
+  var C=Math.PI*46, off=C*(1-pct/100);
+  return '<svg viewBox="0 0 120 68" style="width:100%;display:block">'+
+    '<path d="M14 60 A46 46 0 0 1 106 60" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="11" stroke-linecap="round"/>'+
+    '<path d="M14 60 A46 46 0 0 1 106 60" fill="none" stroke="'+color+'" stroke-width="11" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'"/>'+
+    '<text x="60" y="57" text-anchor="middle" font-size="21" font-weight="900" fill="#fff">'+pct+'%</text></svg>';
+}
+function colChart(items){                      // columnas verticales [etiqueta, valor%, color]
+  var W=320,H=150,pad=8,n=items.length||1,slot=(W-2*pad)/n,bw=Math.min(34,slot*.62);
+  var s='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;display:block">';
+  items.forEach(function(it,i){
+    var v=Math.max(0,Math.min(100,Math.round(it[1]||0))), full=H-46, bh=Math.max(4,v/100*full);
+    var x=pad+i*slot+(slot-bw)/2, y=H-26-bh, c=it[2]||'var(--data)';
+    s+='<g class="cbar" onclick="flash(\''+esc(it[0])+': '+v+'% de avance\')"><title>'+esc(it[0])+' · '+v+'%</title>'+
+       '<rect x="'+x.toFixed(1)+'" y="'+(H-26-full)+'" width="'+bw.toFixed(1)+'" height="'+full+'" rx="7" fill="rgba(255,255,255,.05)"/>'+
+       '<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="7" fill="'+c+'"/>'+
+       '<text x="'+(x+bw/2).toFixed(1)+'" y="'+(y-6).toFixed(1)+'" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">'+v+'</text>'+
+       '<text x="'+(x+bw/2).toFixed(1)+'" y="'+(H-9)+'" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,.55)">'+esc((it[0]||'').slice(0,6))+'</text></g>';
+  });
+  return s+'</svg>';
+}
+function donutChart(items,unidad){             // dona segmentada [etiqueta, n, color] + leyenda
+  var total=0; items.forEach(function(x){ total+=x[1]; }); if(!total) total=1;
+  var r=40, C=2*Math.PI*r, acc=0, segs='';
+  items.forEach(function(it){
+    var frac=it[1]/total, d=Math.max(0,frac*C-2.5), off=C*0.25-acc*C; acc+=frac;
+    segs+='<circle class="dseg" cx="52" cy="52" r="'+r+'" fill="none" stroke="'+it[2]+'" stroke-width="15" stroke-dasharray="'+d.toFixed(2)+' '+(C-d).toFixed(2)+'" stroke-dashoffset="'+off.toFixed(2)+'" onclick="flash(\''+esc(it[0])+': '+it[1]+' '+(unidad||'')+'\')"><title>'+esc(it[0])+' · '+it[1]+'</title></circle>';
+  });
+  var legend=items.map(function(it){
+    var pc=Math.round(it[1]/total*100);
+    return '<div class="line" style="padding:5px 0"><span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="width:10px;height:10px;border-radius:3px;background:'+it[2]+';flex:none"></span><span style="font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(it[0])+'</span></span><span style="font-size:12px;font-weight:800;flex:none">'+it[1]+' · '+pc+'%</span></div>';
+  }).join('');
+  return '<div style="display:flex;gap:14px;align-items:center"><svg viewBox="0 0 104 104" style="width:118px;flex:none">'+segs+
+    '<text x="52" y="50" text-anchor="middle" font-size="17" font-weight="900" fill="#fff">'+total+'</text>'+
+    '<text x="52" y="64" text-anchor="middle" font-size="8.5" font-weight="700" fill="rgba(255,255,255,.55)">'+esc((unidad||'').toUpperCase())+'</text></svg>'+
+    '<div style="flex:1;min-width:0">'+legend+'</div></div>';
+}
+function heatBars(items,sufijo){               // barras de calor [etiqueta, %] (verde→ámbar→rojo)
+  return items.map(function(x){
+    var v=Math.round(x[1]||0);
+    var col = v>=40?'linear-gradient(90deg,#ff8a5c,var(--bad))' : v>=25?'linear-gradient(90deg,var(--warn),#ff8a5c)' : 'linear-gradient(90deg,var(--data2),var(--data))';
+    var chip= v>=40?'background:rgba(255,107,107,.16);color:#ff8a80' : v>=25?'background:rgba(255,191,71,.16);color:#ffce6e' : 'background:rgba(57,214,192,.14);color:var(--data)';
+    return '<div style="margin-top:11px;cursor:pointer" onclick="flash(\''+esc(x[0])+': '+v+'%'+(sufijo||'')+'\')">'+
+      '<div class="line" style="border:none;padding:0 0 5px"><span style="font-size:12.5px;font-weight:600">'+esc(x[0])+'</span><span class="tg" style="flex:none;'+chip+'">'+v+'%</span></div>'+
+      '<div style="height:13px;border-radius:30px;background:rgba(255,255,255,.07);overflow:hidden"><i style="display:block;height:100%;width:'+v+'%;border-radius:30px;background:'+col+'"></i></div></div>';
+  }).join('');
+}
+function areaAccent(name){ for(var i=0;i<CFG.ranges.length;i++){ var r=CFG.ranges[i]; if(r.area===name && !r.admin) return r.accent2||r.accent; } return 'var(--data)'; }
 function pbarRow(icon,label,done,total){
   var pct=total?Math.round(done/total*100):0;
   return '<div class="pbar"><span class="ic">'+(icon||'')+'</span><span class="t">'+esc(label)+' <small>· '+done+'/'+total+'</small></span><span class="tr"><i style="width:'+pct+'%"></i></span></div>';
@@ -2675,11 +2734,11 @@ function renderResp(){
   h+='<div class="panel"><div class="hd" style="align-items:flex-start">'+
      '<div><div class="eyebrow">Mi área</div><b style="font-size:20px">'+esc(area)+'</b></div>'+
      '<span class="status"><span class="d"></span>En línea</span></div>'+
-     '<div class="dotgrid">'+
-       dotStat(av, av+'%', 'Avance', '')+
-       dotStat(Math.min(100,myAlerts.length*20), myAlerts.length, 'Focos', myAlerts.length?'bad':'')+
-       dotStat(Math.min(100,myReports.length*10), myReports.length, 'Reportes', '')+
-       dotStat(100, areaCount(S.key), 'Equipo', '')+
+     '<div class="gaugeWrap">'+
+       '<div class="statile" style="flex:1.25;padding:10px 8px 8px">'+semiGauge(av,(rangeOf(S.emp)||{}).accent2||'var(--data)')+'<div class="l" style="margin-top:2px">Avance del área</div></div>'+
+       '<div class="statile"><div class="n"'+(myAlerts.length?' style="color:var(--bad)"':'')+'>'+myAlerts.length+'</div><div class="l">Focos</div></div>'+
+       '<div class="statile"><div class="n">'+myReports.length+'</div><div class="l">Reportes</div></div>'+
+       '<div class="statile"><div class="n">'+areaCount(S.key)+'</div><div class="l">Equipo</div></div>'+
      '</div></div>';
   h+='<div class="sec-t">Reportes de tu área<span class="ln"></span></div>';
   if(!myReports.length){ h+='<div class="card"><div class="note">Sin reportes de tu área todavía.</div></div>'; }
@@ -2704,11 +2763,11 @@ function managerDash(role){
   h+='<div class="panel"><div class="hd" style="align-items:flex-start">'+
      '<div><div class="eyebrow">Tablero</div><b style="font-size:20px">'+esc(role)+'</b></div>'+
      '<span class="status"><span class="d"></span>En línea</span></div>'+
-     '<div class="dotgrid">'+
-       dotStat(H.globalAvg, H.globalAvg+'%', 'Avance', '')+
-       dotStat(Math.min(100,foco*14), foco, 'Focos', foco?'bad':'')+
-       dotStat(100, H.employees, 'Equipo', '')+
-       dotStat(100, nAreas, 'Áreas', '')+
+     '<div class="gaugeWrap">'+
+       '<div class="statile" style="flex:1.25;padding:10px 8px 8px">'+semiGauge(H.globalAvg)+'<div class="l" style="margin-top:2px">Avance global</div></div>'+
+       '<div class="statile"><div class="n"'+(foco?' style="color:var(--bad)"':'')+'>'+foco+'</div><div class="l">Focos</div></div>'+
+       '<div class="statile"><div class="n">'+H.employees+'</div><div class="l">Equipo</div></div>'+
+       '<div class="statile"><div class="n">'+nAreas+'</div><div class="l">Áreas</div></div>'+
      '</div></div>';
   // ----- ALERTAS DE SEGURIDAD (posible sabotaje) — máxima prioridad, SIEMPRE visibles -----
   if(ALERTS.length){
@@ -2733,12 +2792,13 @@ function managerDash(role){
 
   if(T==='res'){
     h+=centinelaBlock();
-    h+='<div class="panel"><div class="hd"><b>Estado de la planta</b><span class="chipst">'+H.globalAvg+'%</span></div>'+
-       spark(H.byArea.map(function(a){return a[1];}))+
-       '<div class="note" style="margin-top:6px">Avance promedio de las áreas (datos de ejemplo).</div></div>';
-    h+='<div class="panel"><div class="hd"><b>Avance por área</b></div>'+H.byArea.map(function(a){
-         return '<div class="barrow"><span>'+esc(a[0])+'</span><span class="v">'+a[1]+'%</span></div><div class="bar"><i style="width:'+a[1]+'%"></i></div>';
-       }).join('')+'</div>';
+    h+='<div class="panel"><div class="hd"><b>Avance por área</b><span class="chipst">'+H.globalAvg+'% global</span></div>'+
+       colChart(H.byArea.map(function(a){ return [a[0], a[1], areaAccent(a[0])]; }))+
+       '<div class="note" style="margin-top:6px">Toca una columna para ver el detalle. Datos de ejemplo.</div></div>';
+    h+='<div class="panel"><div class="hd"><b>Equipo por área</b><span class="chipst mut">plantilla</span></div>'+
+       donutChart((function(){ var rs=CFG.ranges.filter(function(r){ return !r.admin; }); var cap=0; rs.forEach(function(r){ cap+=r.max-r.min+1; });
+         return rs.map(function(r){ return [r.area, Math.round((r.max-r.min+1)/cap*H.employees), r.accent2||r.accent]; }); })(),'personas')+
+       '<div class="note" style="margin-top:8px">Toca una rebanada para ver cuántas personas tiene cada área.</div></div>';
     h+=horasBlock();
     h+='<div class="panel"><div class="hd"><b>Focos rojos</b></div>'+H.redFlags.map(function(x){
          return '<div class="line"><span>'+esc(x)+'</span><span class="tg">Atender</span></div>';
@@ -2747,12 +2807,12 @@ function managerDash(role){
   else if(T==='area'){
     h+='<div class="agrid">'+H.byArea.map(function(a){
          var k=(CFG.ranges.filter(function(r){return r.area===a[0]&&!r.admin;})[0]||{}).key||'';
-         return '<div class="acard"><span class="ico">'+areaIcon(k)+'</span><span class="an">'+esc(a[0])+'</span><span class="as">'+a[1]+'% avance</span>'+
-           '<div class="tr" style="width:100%;height:7px;border-radius:30px;background:rgba(255,255,255,.09);overflow:hidden;margin-top:9px"><i style="display:block;height:100%;border-radius:30px;background:linear-gradient(90deg,var(--data2),var(--data));width:'+a[1]+'%"></i></div></div>';
+         return '<div class="acard"><span class="ico">'+areaIcon(k)+'</span><span class="an">'+esc(a[0])+'</span><span class="as">avance del área</span>'+
+           '<div style="margin-top:8px">'+semiGauge(a[1], areaAccent(a[0]))+'</div></div>';
        }).join('')+'</div>';
-    h+='<div class="panel" style="margin-top:12px"><div class="hd"><b>Temas con más fallos</b></div>'+H.failed.map(function(x){
-         return '<div class="barrow"><span>'+esc(x[0])+'</span><span class="v">'+x[1]+'% de fallo</span></div><div class="bar"><i style="width:'+x[1]+'%;background:linear-gradient(90deg,var(--warn),var(--accent2))"></i></div>';
-       }).join('')+'<div class="note">Un tema muy fallado puede indicar que falta capacitación… o que hay un problema en el proceso.</div></div>';
+    h+='<div class="panel" style="margin-top:12px"><div class="hd"><b>Temas con más fallos</b><span class="chipst mut">tocar para detalle</span></div>'+
+       heatBars(H.failed,' de fallos')+
+       '<div class="note" style="margin-top:10px">Un tema muy fallado puede indicar que falta capacitación… o que hay un problema en el proceso.</div></div>';
   }
   else if(T==='ppl'){
     h+='<div class="panel"><div class="hd"><b>Ranking de puntos</b></div><div class="note" style="margin:-6px 0 8px">Visible solo para '+esc(role)+'. Los empleados nunca ven el ranking.</div>'+

@@ -1653,8 +1653,8 @@ function statusOf(id){ return S.done[id]; }
 function doneCount(){ var c=myCourses(),n=0; for(var i=0;i<c.length;i++) if(S.done[c[i].id]) n++; return n; }
 
 /* ---------- persistencia (localStorage; si no está disponible, queda en memoria) ---------- */
-function save(){ try{ localStorage.setItem('hb_'+S.emp, JSON.stringify({points:S.points,streak:S.streak,done:S.done,attempts:S.attempts,best:S.best,redeemed:S.redeemed,role:S.role,clases:S.clases,accessible:S.accessible,rate:S.rate,watched:S.watched})); }catch(e){} }
-function load(emp){ try{ var d=localStorage.getItem('hb_'+emp); return d?JSON.parse(d):null; }catch(e){ return null; } }
+function save(){ try{ kvSet('hb_'+S.emp, {points:S.points,streak:S.streak,done:S.done,attempts:S.attempts,best:S.best,redeemed:S.redeemed,role:S.role,clases:S.clases,accessible:S.accessible,rate:S.rate,watched:S.watched}); }catch(e){} }
+function load(emp){ try{ var d=kvGet('hb_'+emp); return d||null; }catch(e){ return null; } }
 
 /* ====================== LOGIN ====================== */
 function buildLoginHelp(){
@@ -1667,8 +1667,8 @@ function buildLoginHelp(){
 }
 function quickLogin(id){ $('inEmp').value=id; login(); }
 /* ===== Perfil por empleado (foto · datos · PIN) — por dispositivo (demo); Fase 2: servidor ===== */
-function profGet(emp){ try{ return JSON.parse(localStorage.getItem('hb_profile_'+emp)||'{}')||{}; }catch(e){ return {}; } }
-function profSave(emp,p){ try{ localStorage.setItem('hb_profile_'+emp, JSON.stringify(p)); }catch(e){ flash('No se pudo guardar (espacio lleno)'); } }
+function profGet(emp){ try{ return kvGet('hb_profile_'+emp)||{}; }catch(e){ return {}; } }
+function profSave(emp,p){ kvSet('hb_profile_'+emp, p); }
 function profInitials(){ var p=profGet(S.emp); var nm=(p.nombre||'').trim();
   if(nm){ return nm.split(/\s+/).map(function(w){return (w[0]||'');}).slice(0,2).join('').toUpperCase(); }
   return (''+S.emp).padStart(3,'0'); }
@@ -2053,8 +2053,8 @@ function nomCalifica(ans,filtros){
 }
 var N35_LVL={ nulo:['Nulo','#39d6c0'], bajo:['Bajo','#7bd97c'], medio:['Medio','#ffbf47'], alto:['Alto','#ff8a5c'], muyalto:['Muy alto','#ff6b6b'] };
 var _n35Ans={}, _n35Fil={cli:null,jefe:null};
-function n35Get(){ try{ return JSON.parse(localStorage.getItem('hb_nom35')||'{}')||{}; }catch(e){ return {}; } }
-function n35Save(d){ try{ localStorage.setItem('hb_nom35', JSON.stringify(d)); }catch(e){} }
+function n35Get(){ try{ return kvGet('hb_nom35')||{}; }catch(e){ return {}; } }
+function n35Save(d){ kvSet('hb_nom35', d); }
 function n35Visible(){ return nomItems().filter(function(r){ return !r.it.filtro || _n35Fil[r.it.filtro]; }); }
 function setN35Fil(k,v){ _n35Fil[k]=v; renderNom35(); }
 function selectN35(n,val){ _n35Ans[n]=val; renderNom35(); }
@@ -2117,8 +2117,8 @@ function submitN35(){
    ENCUESTA DE PERMANENCIA — el pulso trimestral anti-rotación (hb_perm).
    ============================================================================ */
 var _pmAns={}, _pmTxt={};
-function permGet(){ try{ return JSON.parse(localStorage.getItem('hb_perm')||'{}')||{}; }catch(e){ return {}; } }
-function permSave(d){ try{ localStorage.setItem('hb_perm', JSON.stringify(d)); }catch(e){} }
+function permGet(){ try{ return kvGet('hb_perm')||{}; }catch(e){ return {}; } }
+function permSave(d){ kvSet('hb_perm', d); }
 function selectPm(n,val){ _pmAns[n]=val; renderPerm(); }
 function renderPerm(){
   var P=CFG.permanencia;
@@ -2571,7 +2571,7 @@ function logAlert(text){
   try{ var s=qstats(); s.alerts=s.alerts||[];
     s.alerts.unshift({ q:(text||'').trim(), emp:(S&&S.emp!=null?S.emp:'?'), area:(S&&S.area)||'', t:Date.now() });
     if(s.alerts.length>300) s.alerts.length=300;
-    localStorage.setItem('hb_qstats', JSON.stringify(s));
+    saveQstats(s);   // al servidor: RRHH lo ve al instante en cualquier dispositivo
   }catch(e){}
 }
 function renderChat(){
@@ -2650,12 +2650,12 @@ function kbFind(t){
   return { hit:false, topic:null, answer:null };
 }
 function kbTopics(){ return (CFG.kb||[]).filter(function(e){return e.t;}).map(function(e){return e.t;}); }
-function qstats(){ try{ return JSON.parse(localStorage.getItem('hb_qstats')||'null')||{freq:{},unans:{}}; }catch(e){ return {freq:{},unans:{}}; } }
+function qstats(){ try{ return kvGet('hb_qstats')||{freq:{},unans:{}}; }catch(e){ return {freq:{},unans:{}}; } }
 function logQ(topic,text,hit){
   try{ var s=qstats();
     if(hit && topic){ s.freq[topic]=(s.freq[topic]||0)+1; }
     if(!hit){ var k=(text||'').trim().toLowerCase().slice(0,90); if(!k) return; s.unans[k]={ q:(text||'').trim(), n:(s.unans[k]?s.unans[k].n:0)+1, t:Date.now() }; }
-    localStorage.setItem('hb_qstats', JSON.stringify(s));
+    saveQstats(s);
   }catch(e){}
 }
 /* (Compatibilidad · modo online DORMIDO) arma el historial para la API por si se reactiva
@@ -2917,7 +2917,7 @@ function centinelaBlock(){
 /* ----- Feed de preguntas: marcar atendidas + reporte semanal para dirección ----- */
 var _HRUN=[];   // preguntas sin responder visibles en el tablero (para los botones ✓)
 var _HRAL=[];   // alertas de sabotaje visibles en el tablero (para los botones "Visto")
-function saveQstats(s){ try{ localStorage.setItem('hb_qstats', JSON.stringify(s)); }catch(e){} }
+function saveQstats(s){ kvSet('hb_qstats', s); }
 function alertTime(t){ try{ var d=new Date(t); return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' · '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
 function dismissAlert(i){
   var a=_HRAL[i]; if(!a) return;
@@ -3426,8 +3426,8 @@ function getCss(v){ return getComputedStyle(document.documentElement).getPropert
    Todo por dispositivo (localStorage). En Fase 2 cada "...Get/...Save" se cambia
    por una llamada al servidor SIN tocar estas pantallas.
    ============================================================================ */
-function lsGet(k){ try{ return JSON.parse(localStorage.getItem(k)||'[]')||[]; }catch(e){ return []; } }
-function lsSet(k,a){ try{ localStorage.setItem(k, JSON.stringify(a)); }catch(e){ flash('No se pudo guardar (espacio lleno)'); } }
+function lsGet(k){ var v=kvGet(k); return (v===undefined||v===null)?[]:v; }
+function lsSet(k,a){ kvSet(k,a); }
 function fmtDate(d){ try{ if(typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d)){ var p=d.split('-'); d=new Date(+p[0],+p[1]-1,+p[2]); } return new Date(d).toLocaleDateString('es-MX',{weekday:'short',day:'2-digit',month:'short'}); }catch(e){ return ''; } }
 function money(n){ try{ return '$'+(n||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}); }catch(e){ return '$'+n; } }
 
@@ -3769,8 +3769,8 @@ function shiftEnd(){ return (''+myShift().fin).padStart(2,'0')+':00'; }
 function mxNow(){ try{ return new Date(new Date().toLocaleString('en-US',{timeZone:'America/Mexico_City'})); }catch(e){ return new Date(); } }
 function mxToday(){ var d=mxNow(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
 function inWorkHours(){ if(_simWork) return true; var s=myShift(), d=mxNow(); if(d.getDay()===0) return false; var hh=d.getHours()+d.getMinutes()/60; return hh>=s.ini && hh<s.fin; }
-function learnState(){ var d; try{ d=JSON.parse(localStorage.getItem('hb_learn_'+S.emp)||'{}')||{}; }catch(e){ d={}; } var today=mxToday(); if(d.date!==today) d={date:today,used:0,consent:false}; return d; }
-function learnSave(d){ try{ localStorage.setItem('hb_learn_'+S.emp, JSON.stringify(d)); }catch(e){} }
+function learnState(){ var d; try{ d=kvGet('hb_learn_'+S.emp)||{}; }catch(e){ d={}; } var today=mxToday(); if(d.date!==today) d={date:today,used:0,consent:false}; return d; }
+function learnSave(d){ kvSet('hb_learn_'+S.emp, d); }
 function learnLeft(){ return Math.max(0, LOCK_SEC-(learnState().used||0)); }
 /* ¿se puede entrar a capacitación/educación? si no, muestra consentimiento o bloqueo y devuelve false */
 function learnAllow(reenter){
@@ -3920,8 +3920,8 @@ function canWriteConv(conv){
 function convMsgs(conv){ return msgsGet().filter(function(m){ return m.conv===conv; }).sort(function(x,y){ return x.ts-y.ts; }); }
 function convLast(conv){ var a=convMsgs(conv); return a.length?a[a.length-1]:null; }
 function convOther(conv){ var p=conv.slice(2).split('-'); return (+p[0]===S.emp)?+p[1]:+p[0]; }
-function readMap(){ try{ return JSON.parse(localStorage.getItem('hb_read_'+S.emp)||'{}')||{}; }catch(e){ return {}; } }
-function readSave(m){ try{ localStorage.setItem('hb_read_'+S.emp, JSON.stringify(m)); }catch(e){} }
+function readMap(){ try{ return kvGet('hb_read_'+S.emp)||{}; }catch(e){ return {}; } }
+function readSave(m){ kvSet('hb_read_'+S.emp, m); }
 function markConvRead(conv){ var r=readMap(); r[conv]=Date.now(); readSave(r); }
 function convUnread(conv){ var last=(readMap()[conv]||0), n=0; convMsgs(conv).forEach(function(m){ if(m.ts>last && m.from!==S.emp) n++; }); return n; }
 function isAdminId(id){ var r=rangeOf(+id); return !!(r&&r.admin); }
@@ -4254,8 +4254,8 @@ var NOM_CATS=[
 ];
 var NOM_OPTS=[['Siempre',4],['Casi siempre',3],['Algunas veces',2],['Casi nunca',1],['Nunca',0]];
 function nomSeed(){ return { current:null, history:[ { id:'nov2025', label:'Noviembre 2025', n:512, level:'medio', byCat:{amb:'bajo',act:'medio',tmp:'medio',lid:'bajo',org:'medio'} } ] }; }
-function nomGet(){ try{ return JSON.parse(localStorage.getItem('hb_nom035')||'null')||nomSeed(); }catch(e){ return nomSeed(); } }
-function nomSave(o){ try{ localStorage.setItem('hb_nom035', JSON.stringify(o)); }catch(e){ flash('No se pudo guardar'); } }
+function nomGet(){ try{ return kvGet('hb_nom035')||nomSeed(); }catch(e){ return nomSeed(); } }
+function nomSave(o){ kvSet('hb_nom035', o); }
 function nomPctLevel(p){ return p<0.2?'nulo':p<0.4?'bajo':p<0.6?'medio':p<0.8?'alto':'muyalto'; }
 function nomLevelMeta(lvl){ return ({ nulo:['Nulo','#1c9444'], bajo:['Bajo','#1c9444'], medio:['Medio','#e0a51f'], alto:['Alto','#e67e22'], muyalto:['Muy alto','#c0392b'] })[lvl]||['—','#888']; }
 function nomTotalQ(){ var n=0; NOM_CATS.forEach(function(c){ n+=c.qs.length; }); return n; }
@@ -4423,6 +4423,10 @@ function sbRerender(){ try{
   else if(_screen==='thread' && _curConv) openConv(_curConv);
   else if(_screen==='hr' && typeof renderDash==='function') renderDash();
   else if(_screen==='news') renderNews();
+  else if(_screen==='home' && S && !S.admin) renderHome();
+  else if(_screen==='rewards') renderRewards();
+  else if(_screen==='courses') renderCourses();
+  else if(_screen==='encuestas') renderEncuestas();
   if(typeof updateMsgBadge==='function') updateMsgBadge();
   if(S && !S.admin && typeof checkPage==='function') checkPage();
 }catch(e){} }
@@ -4433,8 +4437,66 @@ function sbInit(){
   // noticias/reportes: si el servidor viene vacío, sembrar desde localStorage (para que la demo se vea poblada)
   sbLoad('news', function(){ if(!(DBC.news&&DBC.news.length)){ var s=lsArr('hb_news'); if(s.length){ DBC.news=s; sbSync('news', s); } } });
   sbLoad('reports', function(){ if(!(DBC.reports&&DBC.reports.length)){ var s=lsArr('hb_reports'); if(s.length){ DBC.reports=s; sbSync('reports', s); } } });
+  kvInit();
 }
 function lsArr(k){ try{ return JSON.parse(localStorage.getItem(k)||'[]')||[]; }catch(e){ return []; }
+}
+/* ============================================================================
+   KV — TODO lo demás vive en el servidor (tabla 'kv': una fila por clave).
+   Puntos/avance, perfiles+PIN, recibos, vacaciones, eventos, encuestas,
+   preguntas del Asistente (alertas), NOM-035, Permanencia, lectura y minutos
+   de estudio. Espejo en localStorage → si no hay internet, la app sigue.
+   ============================================================================ */
+var KV_SKIP={hb_msgs:1,hb_news:1,hb_reports:1,hb_pages:1,hb_key:1,hb_model:1}; // tabla propia o solo-local
+var _kvSent={};
+function kvGet(k){
+  if(DBC.kv && Object.prototype.hasOwnProperty.call(DBC.kv,k)) return DBC.kv[k];
+  try{ var v=localStorage.getItem(k); return v?JSON.parse(v):undefined; }catch(e){ return undefined; }
+}
+function kvSet(k,v){
+  try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ flash('No se pudo guardar (espacio lleno)'); }
+  if(!DBC.kv) DBC.kv={};
+  DBC.kv[k]=v;
+  if(!KV_SKIP[k] && sbReady()){
+    var ts=Date.now(); _kvSent[k]=ts;
+    try{ SB.from('kv').upsert({k:k, data:v, ts:ts}).then(function(){}); }catch(e){}
+  }
+}
+function kvSeed(){   // primera corrida: sube al servidor lo local que el servidor no tenga
+  try{
+    var subir=[];
+    for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i);
+      if(!k || k.indexOf('hb_')!==0 || KV_SKIP[k]) continue;
+      if(DBC.kv && Object.prototype.hasOwnProperty.call(DBC.kv,k)) continue;
+      try{ var v=JSON.parse(localStorage.getItem(k)); if(v!==null && v!==undefined){ subir.push({k:k,data:v,ts:Date.now()}); DBC.kv[k]=v; } }catch(e){}
+    }
+    if(subir.length && sbReady()) SB.from('kv').upsert(subir).then(function(){});
+  }catch(e){}
+}
+function kvApplySession(k,data){   // si cambian mis puntos/avance desde otro dispositivo, refrescar la sesión
+  if(!S || k!=='hb_'+S.emp || !data) return;
+  S.points=data.points||0; S.streak=data.streak||0; S.done=data.done||{}; S.attempts=data.attempts||{};
+  S.best=data.best||{}; S.redeemed=data.redeemed||{}; S.watched=data.watched||{}; S.clases=data.clases||{};
+}
+function kvInit(){
+  if(!sbReady()) return;
+  if(!DBC.kv) DBC.kv={};
+  try{ SB.from('kv').select('k,data').then(function(r){
+    if(!r.error && r.data){
+      r.data.forEach(function(row){ DBC.kv[row.k]=row.data; try{ localStorage.setItem(row.k, JSON.stringify(row.data)); }catch(e){}
+        if(S) kvApplySession(row.k,row.data); });
+      kvSeed(); sbRerender(); try{ if(S) renderTop(_screen); }catch(e){}
+    }
+  }); }catch(e){}
+  try{ SB.channel('rt-kv').on('postgres_changes',{event:'*',schema:'public',table:'kv'},function(p){
+    var row=(p&&(p.new&&p.new.k?p.new:p.old))||null; if(!row||!row.k) return;
+    if(!DBC.kv) DBC.kv={};
+    if(p.eventType==='DELETE'){ delete DBC.kv[row.k]; try{ localStorage.removeItem(row.k); }catch(e){} }
+    else{ DBC.kv[row.k]=row.data; try{ localStorage.setItem(row.k, JSON.stringify(row.data)); }catch(e){} }
+    if(row.ts && _kvSent[row.k]===row.ts) return;   // eco de mi propio guardado: caché ya al día, no re-pintar
+    kvApplySession(row.k,row.data);
+    sbRerender(); try{ if(S) renderTop(_screen); }catch(e){}
+  }).subscribe(); }catch(e){}
 }
 
 /* ====================== ARRANQUE ====================== */

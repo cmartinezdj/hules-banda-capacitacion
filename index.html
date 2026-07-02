@@ -534,6 +534,46 @@ body.a11y .screen .seg button{ font-size:13px !important; }
   #printReport .prl{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px dashed #ccc}
   #printReport .mut2{color:#555;font-size:11px}
 }
+
+/* ============================================================
+   MODO ESCRITORIO PARA MANAGEMENT (Dirección · RRHH · Responsables)
+   En computadora (≥1000px) el tablero se ve como página web:
+   barra lateral + contenido en 2 columnas. El personal operativo
+   conserva SIEMPRE el formato de app móvil.
+   ============================================================ */
+@media (min-width:1000px){
+  body.admin #app{max-width:none}
+  body.admin .top{margin-left:224px;padding-left:28px;padding-right:28px}
+  body.admin .top .who b{font-size:16px}
+  /* la barra de abajo se convierte en barra lateral */
+  body.admin .nav{top:0;bottom:0;left:0;right:auto;width:224px;max-width:none;margin:0;
+    flex-direction:column;justify-content:flex-start;gap:5px;
+    padding:18px 12px 16px;border-top:none;border-right:1px solid var(--line);
+    background:color-mix(in srgb,var(--bg) 94%,transparent)}
+  body.admin .nav:before{content:'Hules Banda';display:block;font-weight:900;font-size:15px;color:#fff;
+    padding:8px 14px 4px;letter-spacing:.2px}
+  body.admin .nav:after{content:'';position:absolute;top:44px;left:26px;width:30px;height:3px;border-radius:2px;background:#c4161c}
+  body.admin .nav button{flex:none;width:100%;max-width:none;flex-direction:row;justify-content:flex-start;
+    gap:12px;padding:12px 14px;font-size:13.5px;border-radius:12px;margin-top:2px}
+  body.admin .nav button:first-of-type{margin-top:18px}
+  body.admin .nav button .ni{width:19px;height:19px}
+  body.admin .nav button.on{background:color-mix(in srgb,var(--accent) 15%,transparent);color:#fff}
+  body.admin .nav button .nbadge{position:static;margin-left:auto}
+  /* contenido: página ancha con aire */
+  body.admin .screen{margin-left:224px}
+  body.admin .screen.pad{padding:26px 36px 70px;max-width:1280px}
+  /* tablero y bandejas en 2 columnas tipo mosaico */
+  body.admin #s-hr, body.admin #s-msgs, body.admin #s-news, body.admin #s-encuestas{column-count:2;column-gap:22px}
+  body.admin #s-hr>*, body.admin #s-msgs>*, body.admin #s-news>*, body.admin #s-encuestas>*{break-inside:avoid;-webkit-column-break-inside:avoid}
+  body.admin #s-hr>.panel:first-child, body.admin #s-msgs>.panel:first-child,
+  body.admin #s-news>.panel:first-child, body.admin #s-encuestas>.panel:first-child{column-span:all}
+  body.admin #s-hr>.seg{column-span:all}
+  body.admin .sec-t{column-span:all}
+  /* lectura y chat: una columna cómoda */
+  body.admin #s-chat, body.admin #s-thread, body.admin #s-nom, body.admin #s-nom35, body.admin #s-perm{max-width:840px}
+  body.admin .chatscreen{height:calc(100dvh - 150px)}
+  body.admin .panel, body.admin .card{padding:18px}
+}
 </style>
 <!-- Supabase (Fase 2: demo en vivo, cross-device). Si no carga (offline), la app sigue con localStorage. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1636,6 +1676,7 @@ function login(){
   // saludo de bienvenida en el chat
   S.chat.push({role:'assistant',content:'Hola. Soy el asistente de planta. Pregúntame sobre seguridad, procesos, producto, la empresa o tu capacitación.'});
   applyA11y();
+  document.body.classList.toggle('admin', !!S.admin);   // management en computadora = modo página web
   // limpiar overlays que pudieran haber quedado abiertos (p. ej. al cambiar de usuario en demo)
   ['lockScreen','beepScreen'].forEach(function(id){ var el=$(id); if(el) el.classList.add('hide'); });
   if(typeof beepStop==='function') beepStop();

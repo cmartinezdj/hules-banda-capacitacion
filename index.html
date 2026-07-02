@@ -10,7 +10,8 @@
 <meta name="apple-mobile-web-app-title" content="Hules Banda">
 <meta name="application-name" content="Hules Banda">
 <meta name="theme-color" content="#0c0d12">
-<meta name="description" content="App de capacitación de Hules Banda / Bandamatic. Funciona 100% offline.">
+<meta name="description" content="Sistema Integral de Hules Banda.">
+<meta name="robots" content="noindex,nofollow,noarchive">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <title>Hules Banda · Capacitación</title>
@@ -32,6 +33,8 @@
   --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{-webkit-user-select:none;user-select:none}
+input,textarea{-webkit-user-select:text;user-select:text}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;font-family:var(--font);color:var(--txt);background:var(--bg);overflow-x:hidden}
 button{font-family:var(--font)}
@@ -571,7 +574,7 @@ body.a11y .screen .seg button{ font-size:13px !important; }
   #s-hr>.seg{column-span:all}
   .sec-t{column-span:all}
   /* pantallas de lectura / flujo: una columna cómoda */
-  #s-chat,#s-thread,#s-nom,#s-nom35,#s-perm,#s-course,#s-quiz,#s-result,#s-pay,#s-vac,#s-lineas,#s-newchat{max-width:880px}
+  #s-chat,#s-thread,#s-nom,#s-nom35,#s-perm,#s-perfil,#s-course,#s-quiz,#s-result,#s-pay,#s-vac,#s-lineas,#s-newchat{max-width:880px}
   .chatscreen{height:calc(100dvh - 150px)}
   .panel,.card{padding:18px}
   /* premios: estante ancho */
@@ -629,6 +632,7 @@ body.a11y .screen .seg button{ font-size:13px !important; }
     <h1>Sistema Integral</h1>
     <p class="sub">Hules Banda · capacitación y operación</p>
     <div class="field"><input id="inEmp" inputmode="numeric" autocomplete="off" placeholder="Número de colaborador" maxlength="3"></div>
+    <div class="field" id="pinField" style="display:none"><input id="inPin" inputmode="numeric" type="password" autocomplete="off" placeholder="PIN de 4 dígitos" maxlength="4"></div>
     <button class="btn" onclick="login()">Entrar</button>
     <div class="try" id="tryRow"><b>Probar como…</b></div>
     <div class="hint" id="loginHint"></div>
@@ -664,6 +668,7 @@ body.a11y .screen .seg button{ font-size:13px !important; }
     <section id="s-encuestas" class="screen pad hide"></section>
     <section id="s-nom35"   class="screen pad hide"></section>
     <section id="s-perm"    class="screen pad hide"></section>
+    <section id="s-perfil"  class="screen pad hide"></section>
     <section id="s-thread"  class="screen pad hide"></section>
     <section id="s-nom"     class="screen pad hide"></section>
   </main>
@@ -1652,11 +1657,27 @@ function buildLoginHelp(){
   $('loginHint').innerHTML='Rangos de número de empleado:<br>'+rh+'<br><br>Tip: en tu celular usa <b>Compartir → “Agregar a pantalla de inicio”</b> para instalar la app. Funciona sin internet.';
 }
 function quickLogin(id){ $('inEmp').value=id; login(); }
+/* ===== Perfil por empleado (foto · datos · PIN) — por dispositivo (demo); Fase 2: servidor ===== */
+function profGet(emp){ try{ return JSON.parse(localStorage.getItem('hb_profile_'+emp)||'{}')||{}; }catch(e){ return {}; } }
+function profSave(emp,p){ try{ localStorage.setItem('hb_profile_'+emp, JSON.stringify(p)); }catch(e){ flash('No se pudo guardar (espacio lleno)'); } }
+function profInitials(){ var p=profGet(S.emp); var nm=(p.nombre||'').trim();
+  if(nm){ return nm.split(/\s+/).map(function(w){return (w[0]||'');}).slice(0,2).join('').toUpperCase(); }
+  return (''+S.emp).padStart(3,'0'); }
+function profAvatar(size,fs){ var p=profGet(S.emp);
+  if(p.foto) return '<img src="'+p.foto+'" alt="foto" style="width:'+size+'px;height:'+size+'px;border-radius:12px;object-fit:cover;flex:none;display:block">';
+  return '<span style="width:'+size+'px;height:'+size+'px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:'+fs+'px;color:#fff;background:linear-gradient(150deg,var(--accent),var(--accent2))">'+esc(profInitials())+'</span>'; }
 function login(){
   var raw=($('inEmp').value||'').trim(); var n=parseInt(raw,10);
   if(!raw || isNaN(n)){ flash('Escribe tu número de empleado'); return; }
   var r=rangeOf(n);
   if(!r){ flash('Ese número no tiene portal asignado'); return; }
+  // PIN: si este ID ya creó su PIN (en este dispositivo), se pide para entrar
+  var _prof=profGet(n);
+  if(_prof.pin){
+    var pf=$('pinField'), pv=(($('inPin')||{}).value||'').trim();
+    if(pf && pf.style.display==='none'){ pf.style.display=''; $('inPin').focus(); flash('Escribe tu PIN de 4 dígitos'); return; }
+    if(pv!==_prof.pin){ flash('PIN incorrecto'); return; }
+  }
   // construir sesión + cargar progreso guardado
   var saved=load(n)||{};
   S={ emp:n, key:r.key, area:r.area, icon:r.icon, accent:r.accent, accent2:r.accent2, admin:!!r.admin, dash:(r.dash||null), greet:r.greet,
@@ -1694,6 +1715,19 @@ function resetProgress(){
   flash('Progreso reiniciado'); renderHome();
 }
 
+/* ===== Protección básica del código (disuasión en el navegador) =====
+   Bloquea clic derecho, doble clic y los atajos de "inspeccionar"/"ver código".
+   OJO: es disuasión para el usuario común; la protección real llega con la
+   Fase 2 (PIN + reglas en el servidor). */
+document.addEventListener('contextmenu',function(e){ e.preventDefault(); },true);
+document.addEventListener('dblclick',function(e){ var tg=(e.target.tagName||''); if(tg!=='INPUT'&&tg!=='TEXTAREA') e.preventDefault(); },true);
+document.addEventListener('keydown',function(e){
+  var k=(e.key||'').toLowerCase();
+  if(e.key==='F12'){ e.preventDefault(); return; }
+  if((e.ctrlKey||e.metaKey) && !e.shiftKey && !e.altKey && (k==='u'||k==='s')){ e.preventDefault(); return; }
+  if((e.ctrlKey||e.metaKey) && (e.shiftKey||e.altKey) && (k==='i'||k==='j'||k==='c'||k==='k')){ e.preventDefault(); return; }
+},true);
+
 /* ====================== NAVEGACIÓN ====================== */
 var ICN={
   home:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>',
@@ -1713,12 +1747,12 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'" onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','thread','nom'];
+var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom'];
 function show(name){
   _screen=name;
   SCREENS.forEach(function(s){ var el=$('s-'+s); if(el) el.classList.toggle('hide', s!==name); });
   // nav activo (course/quiz/result/pay cuentan como "home")
-  var navKey = (name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay') ? 'home' : ((name==='thread'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas')?'msgs':((name==='encuestas'||name==='nom35'||name==='perm')?'news':name));
+  var navKey = (name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay') ? 'home' : ((name==='thread'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas')?'msgs':((name==='encuestas'||name==='nom35'||name==='perm')?'news':(name==='perfil'?(S.admin?'hr':'home'):name)));
   ['home','msgs','rewards','chat','hr','clases','news','buzon'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
   renderTop(name);
   window.scrollTo(0,0);
@@ -1735,15 +1769,17 @@ function go(name){
   if(name==='msgs') return renderMsgs();
 }
 function renderTop(name){
-  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderLineas()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : (name==='thread'||name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderLineas()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : (name==='thread'||name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : 'go(\'home\')';
     left.innerHTML='<button class="back" onclick="'+backTo+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
     left.classList.add('who');
-    left.innerHTML='<div><b>'+esc(S.area)+'</b><span>Empleado #'+(''+S.emp).padStart(3,'0')+'</span></div>';
+    var _pn=(profGet(S.emp).nombre||'').trim();
+    left.innerHTML='<span style="display:flex;align-items:center;gap:10px;min-width:0;cursor:pointer" onclick="renderPerfil()" title="Mi perfil">'+profAvatar(40,13)+
+      '<span style="min-width:0"><b>'+esc(_pn||S.area)+'</b><span>'+(_pn?esc(S.area)+' · ':'')+'#'+(''+S.emp).padStart(3,'0')+' · Mi perfil ›</span></span></span>';
   }
   var EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
   var a11yBtn='<button class="a11ybtn'+(S&&S.accessible?' on':'')+'" onclick="toggleAcc()" title="Texto grande (accesibilidad)" aria-label="Texto grande para accesibilidad">'+EYE+'Aa</button>';
@@ -3704,6 +3740,70 @@ function lockCard(){
 function demoToggleWork(){ _simWork=!_simWork; flash(_simWork?'Demo: simulando horario laboral':'Demo: fuera de horario'); renderHome(); }
 function demoUseUp(){ var d=learnState(); d.used=LOCK_SEC; d.consent=true; learnSave(d); _simWork=true; flash('Demo: 10 min agotados'); showLearnLock(); }
 function demoLearnReset(){ var d=learnState(); d.used=0; d.consent=false; learnSave(d); _simWork=false; flash('Demo: minutos de estudio restaurados'); renderHome(); }
+
+/* ============================================================================
+   MI PERFIL — foto, información personal y PIN (por dispositivo en la demo;
+   en Fase 2 vive en el servidor con el ID real del trabajador).
+   ============================================================================ */
+function renderPerfil(){
+  var p=profGet(S.emp);
+  var h='';
+  h+='<div class="panel" style="position:relative"><span style="position:absolute;top:14px;right:14px">'+speakBtn('Tu perfil. Aquí puedes cambiar tu foto, tu información personal y tu PIN de cuatro dígitos.')+'</span>'+
+     '<div class="hd" style="align-items:flex-start;margin-bottom:0;padding-right:46px"><div style="display:flex;gap:14px;align-items:center;min-width:0">'+profAvatar(64,20)+
+     '<div style="min-width:0"><div class="eyebrow">Mi perfil</div><b style="font-size:20px;display:block">'+esc((p.nombre||'').trim()||('Empleado #'+(''+S.emp).padStart(3,'0')))+'</b>'+
+     '<span class="note">'+esc(S.area)+' · #'+(''+S.emp).padStart(3,'0')+'</span></div></div></div></div>';
+  // Foto
+  h+='<div class="panel"><div class="hd"><b>Mi foto</b><span class="chipst'+(p.foto?'':' mut')+'">'+(p.foto?'Con foto':'Sin foto')+'</span></div>'+
+     '<div style="display:flex;gap:10px;align-items:center">'+
+     '<label class="btn sec" style="margin:0;flex:1;text-align:center;cursor:pointer">Cambiar foto<input type="file" accept="image/*" onchange="pfFotoLoad(this)" style="display:none"></label>'+
+     (p.foto?'<button class="btn ghost" style="margin:0;flex:none;width:auto;padding:13px 16px" onclick="pfFotoDel()">Quitar</button>':'')+
+     '</div><p class="note" style="margin:9px 0 0">Tu foto se ve arriba junto a tu nombre. Usa una donde se vea bien tu cara.</p></div>';
+  // Información personal
+  h+='<div class="panel"><div class="hd"><b>Mi información</b></div>'+
+     '<div class="note" style="margin-bottom:3px">Nombre completo</div><input id="pfNombre" class="fin" autocomplete="off" placeholder="Tu nombre y apellidos" value="'+esc(p.nombre||'')+'">'+
+     '<div class="note" style="margin:9px 0 3px">Teléfono</div><input id="pfTel" class="fin" inputmode="tel" autocomplete="off" placeholder="Tu número de celular" value="'+esc(p.tel||'')+'">'+
+     '<div class="note" style="margin:9px 0 3px">Contacto de emergencia (nombre y teléfono)</div><input id="pfEmg" class="fin" autocomplete="off" placeholder="Ej. María Pérez · 33 1234 5678" value="'+esc(p.emg||'')+'">'+
+     '<button class="btn" style="margin-top:12px" onclick="savePerfil()">Guardar mi información</button></div>';
+  // PIN
+  h+='<div class="panel"><div class="hd"><b>Mi PIN de entrada</b><span class="chipst'+(p.pin?'':' mut')+'">'+(p.pin?'Activado':'Sin PIN')+'</span></div>'+
+     '<p class="note" style="margin:0 0 9px">'+(p.pin?'Para cambiarlo, escribe tu PIN actual y el nuevo.':'Crea un PIN de 4 números. Te lo pedirá al entrar con tu número de colaborador.')+'</p>'+
+     (p.pin?'<div class="note" style="margin-bottom:3px">PIN actual</div><input id="pinOld" class="fin" type="password" inputmode="numeric" maxlength="4" placeholder="····">':'')+
+     '<div class="note" style="margin:9px 0 3px">PIN nuevo (4 números)</div><input id="pinNew" class="fin" type="password" inputmode="numeric" maxlength="4" placeholder="····">'+
+     '<div class="note" style="margin:9px 0 3px">Repite el PIN nuevo</div><input id="pinNew2" class="fin" type="password" inputmode="numeric" maxlength="4" placeholder="····">'+
+     '<button class="btn" style="margin-top:12px" onclick="savePin()">'+(p.pin?'Cambiar mi PIN':'Crear mi PIN')+'</button>'+
+     (p.pin?'<button class="lnkbtn" style="display:block;margin:10px auto 0" onclick="delPin()">Quitar mi PIN</button>':'')+'</div>';
+  h+='<div class="note" style="text-align:center">Demo: tu perfil se guarda en este dispositivo. En la versión final vivirá en el servidor con tu ID.</div>';
+  $('s-perfil').innerHTML=h; show('perfil');
+}
+function savePerfil(){
+  var p=profGet(S.emp);
+  p.nombre=(($('pfNombre')||{}).value||'').trim().slice(0,60);
+  p.tel=(($('pfTel')||{}).value||'').trim().slice(0,20);
+  p.emg=(($('pfEmg')||{}).value||'').trim().slice(0,80);
+  profSave(S.emp,p); flash('Información guardada'); renderTop(_screen); renderPerfil();
+}
+function pfFotoLoad(inp){
+  var f=inp.files&&inp.files[0]; if(!f) return;
+  var rd=new FileReader();
+  rd.onload=function(e){ var img=new Image();
+    img.onload=function(){ var S2=240, c=document.createElement('canvas'); c.width=S2; c.height=S2;
+      var side=Math.min(img.width,img.height), sx=(img.width-side)/2, sy=(img.height-side)/2;
+      c.getContext('2d').drawImage(img,sx,sy,side,side,0,0,S2,S2);
+      var p=profGet(S.emp); p.foto=c.toDataURL('image/jpeg',0.82); profSave(S.emp,p);
+      flash('Foto actualizada'); renderTop(_screen); renderPerfil(); };
+    img.src=e.target.result; };
+  rd.readAsDataURL(f);
+}
+function pfFotoDel(){ var p=profGet(S.emp); delete p.foto; profSave(S.emp,p); flash('Foto eliminada'); renderTop(_screen); renderPerfil(); }
+function savePin(){
+  var p=profGet(S.emp);
+  var o=(($('pinOld')||{}).value||'').trim(), n1=(($('pinNew')||{}).value||'').trim(), n2=(($('pinNew2')||{}).value||'').trim();
+  if(p.pin && o!==p.pin){ flash('Tu PIN actual no coincide'); return; }
+  if(!/^\d{4}$/.test(n1)){ flash('El PIN debe ser de 4 números'); return; }
+  if(n1!==n2){ flash('Los PIN nuevos no coinciden'); return; }
+  p.pin=n1; profSave(S.emp,p); burst(); flash('PIN guardado. Te lo pedirá al entrar.'); renderPerfil();
+}
+function delPin(){ if(!confirm('¿Quitar tu PIN? Podrás entrar solo con tu número.')) return; var p=profGet(S.emp); delete p.pin; profSave(S.emp,p); flash('PIN eliminado'); renderPerfil(); }
 
 /* ============================================================================
    MENSAJES (chat interno) — RRHH · grupo de área · directos por ID (estilo BBM)

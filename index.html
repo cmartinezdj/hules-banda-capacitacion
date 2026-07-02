@@ -103,9 +103,9 @@ button{font-family:var(--font)}
   background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
 .top .who{display:flex;align-items:center;gap:10px;min-width:0}
 /* marca central estilo logo (wordmark + barra roja) */
-.brandmid{position:absolute;left:122px;right:122px;top:calc(11px + env(safe-area-inset-top));height:40px;
+.brandmid{position:absolute;left:134px;right:134px;top:calc(11px + env(safe-area-inset-top));height:40px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;overflow:hidden;
-  font-weight:900;font-size:12.5px;letter-spacing:.2px;color:#fff;white-space:nowrap}
+  font-weight:900;font-size:12px;letter-spacing:.2px;color:#fff;white-space:nowrap}
 .brandmid:after{content:'';width:30px;height:3px;border-radius:2px;background:#c4161c;margin-top:2px}
 .top .who .av{width:40px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--accent) 22%,#14151d);padding:3px;flex:none}
 .top .who b{font-size:14px;display:block;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -113,7 +113,7 @@ button{font-family:var(--font)}
 .back{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);color:var(--txt);
   font-size:13px;font-weight:700;padding:8px 13px;border-radius:30px;cursor:pointer}
 .back:active{transform:scale(.96)}
-.ptchip{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:800;padding:8px 13px;border-radius:30px;
+.ptchip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;padding:7px 10px;border-radius:30px;
   background:color-mix(in srgb,var(--accent) 22%,transparent);color:#fff;border:1px solid color-mix(in srgb,var(--accent) 42%,transparent);white-space:nowrap}
 
 /* ============================== CARDS ============================== */
@@ -257,7 +257,7 @@ button{font-family:var(--font)}
 .fin{width:100%;padding:13px 15px;border-radius:13px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-size:15px;outline:none;font-family:inherit;display:block}
 .fin:focus{border-color:var(--accent)}
 textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
-.send{width:48px;height:48px;border-radius:50%;border:none;flex:none;cursor:pointer;color:#fff;font-size:18px;
+.send{width:48px;height:48px;border-radius:50%;border:none;flex:none;cursor:pointer;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;padding:0;
   background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 8px 20px color-mix(in srgb,var(--accent) 36%,transparent)}
 .send:active{transform:scale(.92)}
 .authrow{display:flex;align-items:center;gap:9px;margin:-2px 0 10px;flex-wrap:wrap}
@@ -358,8 +358,8 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 
 /* ----- topbar: botón de accesibilidad (ojo) junto a los puntos ----- */
 .topR{display:flex;align-items:center;gap:8px}
-.a11ybtn{display:flex;align-items:center;gap:5px;background:var(--card);border:1px solid var(--line);color:var(--mut);padding:8px 11px;border-radius:30px;cursor:pointer;font-size:11px;font-weight:800;transition:.15s}
-.a11ybtn svg{width:16px;height:16px}
+.a11ybtn{display:flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--line);color:var(--mut);padding:7px 9px;border-radius:30px;cursor:pointer;font-size:10.5px;font-weight:800;transition:.15s}
+.a11ybtn svg{width:15px;height:15px}
 .a11ybtn:active{transform:scale(.94)}
 .a11ybtn.on{background:color-mix(in srgb,var(--data) 16%,transparent);border-color:color-mix(in srgb,var(--data) 40%,transparent);color:var(--data)}
 
@@ -447,7 +447,7 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .evrow:last-child{border-bottom:none}
 .evrow .dt{width:48px;flex:none;text-align:center;background:color-mix(in srgb,var(--data) 14%,transparent);border-radius:11px;padding:6px 0;color:var(--data)}
 .evrow .dt .d{display:block;font-size:18px;font-weight:900;line-height:1;text-align:center}
-.evrow .dt .m{display:block;font-size:9px;font-weight:800;text-transform:uppercase;text-align:center;letter-spacing:1px;margin-top:2px}
+.evrow .dt .m{display:block;font-size:9px;font-weight:800;text-transform:uppercase;text-align:center;letter-spacing:1px;padding-left:1px;margin-top:2px}
 .evrow .et{flex:1;min-width:0}.evrow .et b{font-size:14px}.evrow .et span{font-size:11.5px;color:var(--mut);display:block}
 
 /* ============================== NAV INFERIOR ============================== */
@@ -809,22 +809,19 @@ window.CFG = {
     { ic:'', t:'Snack y refresco',                   cost:250 },
     { ic:'', t:'Recarga telefónica $100',            cost:350 },
     { ic:'', t:'Termo HB de acero',                  cost:500 },
-    { ic:'', t:'Salida 1 hora antes',                cost:600 },
-    { ic:'', t:'Tu foto en el tablero del mes',      cost:700 },
     { ic:'', t:'Gorra Hules Banda',                  cost:800 },
-    { ic:'', t:'Pizza familiar para llevar',         cost:950 },
     { ic:'', t:'Lugar de estacionamiento del mes',   cost:1000 },
     { ic:'', t:'Playera HB',                         cost:1200 },
     { ic:'', t:'Cine para tu familia',               cost:1500 },
     { ic:'', t:'Kit escolar para tus hijos',         cost:1700 },
     { ic:'', t:'Vale de despensa $200',              cost:2000 },
     { ic:'', t:'Vale de gasolina $300',              cost:2400 },
-    { ic:'', t:'Día libre pagado',                   cost:2800 },
     { ic:'', t:'Canasta básica',                     cost:3000 },
     { ic:'', t:'Botas de trabajo nuevas',            cost:3600 },
     { ic:'', t:'Comida con Dirección',               cost:4000 },
     { ic:'', t:'Gift card $500 MXN',                 cost:4500 },
-    { ic:'', t:'Gift card $1,000 MXN',               cost:8000 }
+    { ic:'', t:'Gift card $1,000 MXN',               cost:8000 },
+    { ic:'', t:'Motocicleta nueva',                  cost:50000 }
   ],
 
   /* --- Sistema de puntos (sin castigos: fallar no resta, solo no suma bonos) --- */
@@ -1705,7 +1702,7 @@ function renderTop(name){
     left.innerHTML='<div><b>'+esc(S.area)+'</b><span>Empleado #'+(''+S.emp).padStart(3,'0')+'</span></div>';
   }
   var EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
-  var a11yBtn='<button class="a11ybtn'+(S&&S.accessible?' on':'')+'" onclick="toggleAcc()" title="Texto grande (accesibilidad)" aria-label="Texto grande para accesibilidad">'+EYE+'</button>';
+  var a11yBtn='<button class="a11ybtn'+(S&&S.accessible?' on':'')+'" onclick="toggleAcc()" title="Texto grande (accesibilidad)" aria-label="Texto grande para accesibilidad">'+EYE+'Aa</button>';
   $('topRight').innerHTML = S.admin
     ? '<span class="topR">'+a11yBtn+'<button class="back" onclick="logout()">Salir</button></span>'
     : '<span class="topR">'+a11yBtn+'<span class="ptchip">'+S.points+' pts</span></span>';
@@ -1793,7 +1790,8 @@ var AP={
   fuel:'<path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M2.5 21h13M6.5 6h5v4h-5z"/><path d="M14 12h2.5a2 2 0 0 1 2 2v4a1.5 1.5 0 0 0 3 0v-7L18 7.5"/>',
   star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
   boot:'<path d="M8 3h6v9l5 2.5a2.5 2.5 0 0 1 1 2V19H4v-4a3 3 0 0 1 3-3h1z"/><path d="M9.5 6h3"/>',
-  dine:'<path d="M4 3v6a2.5 2.5 0 0 0 2.5 2.5h1A2.5 2.5 0 0 0 10 9V3M7 3v18"/><path d="M20 13V3a4.5 4.5 0 0 0-4.5 4.5V11a2 2 0 0 0 2 2H20zM20 13v8"/>'
+  dine:'<path d="M4 3v6a2.5 2.5 0 0 0 2.5 2.5h1A2.5 2.5 0 0 0 10 9V3M7 3v18"/><path d="M20 13V3a4.5 4.5 0 0 0-4.5 4.5V11a2 2 0 0 0 2 2H20zM20 13v8"/>',
+  moto:'<circle cx="5.5" cy="17" r="2.8"/><circle cx="18.5" cy="17" r="2.8"/><path d="M5.5 17l3-6.5h4.5l2.5 4.5h3"/><path d="M11.5 10.5L10 7.5H7.5M14.5 7.5h3L19 10"/>'
 };
 function cover(name,c1,c2){
   var p=AP[name]||AP.cap, gid='cg'+name+(c1+c2).replace(/[^a-z0-9]/gi,'');
@@ -1822,22 +1820,19 @@ var REWARD_ART=[
   {ic:'snack',   c1:'#e07a1f',c2:'#b3560c', d:'Un snack y un refresco de la cafetería. Ideal para tu descanso.'},
   {ic:'phone',   c1:'#0ea5b5',c2:'#065e68', d:'Recarga de $100 para tu celular. Para que hables con tu familia sin preocuparte por el saldo.'},
   {ic:'cup',     c1:'#0e9e8e',c2:'#0a6b60', d:'Termo Hules Banda de acero inoxidable. Conserva frío y caliente.'},
-  {ic:'clock',   c1:'#e0a11f',c2:'#8a5c07', d:'Sal una hora antes en el día que tú elijas, con goce de sueldo. Coordínalo con tu supervisor.'},
-  {ic:'star',    c1:'#d4a017',c2:'#8a6205', d:'Tu foto y tu nombre en el tablero de reconocimiento de la planta durante un mes. Que todos vean tu buen trabajo.'},
   {ic:'cap2',    c1:'#2a7de1',c2:'#1b4f91', d:'Gorra oficial Hules Banda. Cómoda y con el logo bordado.'},
-  {ic:'pizza',   c1:'#e0561f',c2:'#93300a', d:'Una pizza familiar grande para llevar a casa. Una cena rica con los tuyos, por tu esfuerzo.'},
   {ic:'parking', c1:'#3358d4',c2:'#182e85', d:'El mejor lugar de estacionamiento de la planta, con tu nombre, durante todo un mes.'},
   {ic:'shirt',   c1:'#8a3bd1',c2:'#5a2490', d:'Playera Hules Banda de algodón. Úsala con orgullo.'},
   {ic:'ticket',  c1:'#c9297e',c2:'#77104a', d:'Cuatro boletos de cine con palomitas y refrescos. Una tarde de película con tu familia.'},
   {ic:'backpack',c1:'#6b9e12',c2:'#3a5c05', d:'Mochila con útiles escolares completos para uno de tus hijos. Tu esfuerzo también los ayuda a ellos.'},
   {ic:'basket',  c1:'#1c9444',c2:'#0f5c2a', d:'Vale de despensa por $200 MXN para tu súper.'},
   {ic:'fuel',    c1:'#5c7a8a',c2:'#2c4552', d:'Vale de gasolina por $300 MXN. Para que venir a trabajar te cueste menos.'},
-  {ic:'sun',     c1:'#f2b01e',c2:'#a86a05', d:'El premio estrella: un día libre completo con goce de sueldo. Tú eliges el día, de acuerdo con tu supervisor.'},
   {ic:'basket',  c1:'#c4161c',c2:'#7d0d11', d:'Canasta básica con productos de la despensa.'},
   {ic:'boot',    c1:'#8a5a2c',c2:'#4a2e12', d:'Un par de botas de trabajo nuevas, de buena calidad, en tu talla.'},
   {ic:'dine',    c1:'#334155',c2:'#0f1c2e', d:'Una comida especial con el Director y tu jefe de área. Para agradecerte en persona por tu gran trabajo.'},
   {ic:'card',    c1:'#5b6cf0',c2:'#333db0', d:'Tarjeta de regalo por $500 MXN.'},
-  {ic:'card',    c1:'#b8860b',c2:'#7a5807', d:'Tarjeta de regalo por $1,000 MXN. El premio mayor.'}
+  {ic:'card',    c1:'#b8860b',c2:'#7a5807', d:'Tarjeta de regalo por $1,000 MXN.'},
+  {ic:'moto',    c1:'#c4161c',c2:'#5d0a0e', d:'El premio legendario: una motocicleta nueva para ir y venir del trabajo. Se gana con años de constancia. Alguien de Hules Banda lo va a lograr, ¿serás tú?'}
 ];
 function ricon(i){ return REWARD_ART[i]||REWARD_ART[0]; }
 
@@ -2079,14 +2074,14 @@ function newsInfographicDemo(){
     '<text x="20" y="34" fill="#fff" font-family="Inter,sans-serif" font-size="17" font-weight="800">Semana de Seguridad</text>'+
     '<text x="20" y="54" fill="rgba(255,255,255,.8)" font-family="Inter,sans-serif" font-size="11">Del 7 al 11 de julio · Planta Hules Banda</text>'+
     '<g font-family="Inter,sans-serif">'+
-      '<rect x="20" y="76" width="86" height="96" rx="12" fill="rgba(255,255,255,.12)"/><text x="63" y="120" fill="#fff" font-size="30" font-weight="900" text-anchor="middle">0</text><text x="63" y="150" fill="rgba(255,255,255,.85)" font-size="9" text-anchor="middle">ACCIDENTES</text>'+
-      '<rect x="117" y="76" width="86" height="96" rx="12" fill="rgba(255,255,255,.12)"/><text x="160" y="120" fill="#fff" font-size="30" font-weight="900" text-anchor="middle">100%</text><text x="160" y="150" fill="rgba(255,255,255,.85)" font-size="9" text-anchor="middle">USO DE EPP</text>'+
-      '<rect x="214" y="76" width="86" height="96" rx="12" fill="rgba(255,255,255,.12)"/><text x="257" y="120" fill="#fff" font-size="30" font-weight="900" text-anchor="middle">+50</text><text x="257" y="150" fill="rgba(255,255,255,.85)" font-size="9" text-anchor="middle">PAÍSES</text>'+
+      '<rect x="20" y="76" width="86" height="96" rx="12" fill="rgba(255,255,255,.12)"/><text x="63" y="118" fill="#fff" font-size="21" font-weight="900" text-anchor="middle">0</text><text x="63" y="150" fill="rgba(255,255,255,.85)" font-size="9" text-anchor="middle">ACCIDENTES</text>'+
+      '<rect x="117" y="76" width="86" height="96" rx="12" fill="rgba(255,255,255,.12)"/><text x="160" y="118" fill="#fff" font-size="21" font-weight="900" text-anchor="middle">100%</text><text x="160" y="150" fill="rgba(255,255,255,.85)" font-size="9" text-anchor="middle">USO DE EPP</text>'+
+      '<rect x="214" y="76" width="86" height="96" rx="12" fill="rgba(255,255,255,.12)"/><text x="257" y="118" fill="#fff" font-size="21" font-weight="900" text-anchor="middle">+50</text><text x="257" y="150" fill="rgba(255,255,255,.85)" font-size="9" text-anchor="middle">PAÍSES</text>'+
     '</g></svg>';
   return '<div class="card" style="position:relative">'+
-    '<span style="position:absolute;top:10px;right:10px;z-index:2">'+speakBtn('Semana de Seguridad. RRHH puede enviar infografías con imágenes a toda la planta.')+'</span>'+
+    '<span style="position:absolute;top:10px;right:10px;z-index:2">'+speakBtn('Semana de Seguridad, del 7 al 11 de julio. Plática de 10 minutos al inicio de cada turno y revisión de tu equipo de protección. Meta: cero accidentes.')+'</span>'+
     '<div style="margin-bottom:8px"><span class="tg">Ejemplo · así se ven las infografías</span></div>'+
-    '<b style="font-size:15.5px;display:block;padding-right:46px">Semana de Seguridad</b><p style="margin-top:5px;line-height:1.55">RRHH puede enviar infografías con imágenes a toda la planta. Así se ve una en tu tablero.</p>'+
+    '<b style="font-size:15.5px;display:block;padding-right:46px">Semana de Seguridad · 7 al 11 de julio</b><p style="margin-top:5px;line-height:1.55">Del lunes 7 al viernes 11 revisamos juntos el uso correcto del EPP en todas las áreas: plática de 10 minutos al inicio de cada turno y revisión de casco, lentes, guantes y botas. Meta de la semana: cero accidentes.</p>'+
     svg+'<div class="line" style="margin-top:10px;border-bottom:none;padding-bottom:0"><span class="note">Recursos Humanos · ejemplo</span></div></div>';
 }
 
@@ -2118,7 +2113,7 @@ function renderHome(){
   var _per=payPeriod(), _p=payData(S.emp), _signed=signRecord(S.emp,_per.key);
   h+='<div class="panel" style="cursor:pointer" onclick="renderPay()">'+
      '<div class="hd"><b>Mi recibo de nómina</b><span class="chipst'+(_signed?'':' mut')+'">'+(_signed?'Firmado ✓':'Por firmar')+'</span></div>'+
-     '<div class="ringwrap"><span style="width:48px;height:48px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--data);background:color-mix(in srgb,var(--data) 13%,transparent)">'+IC2.doc+'</span>'+
+     '<div class="ringwrap"><span style="width:48px;height:48px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--data);background:color-mix(in srgb,var(--data) 13%,transparent)"><span style="width:24px;height:24px;display:block">'+IC2.doc+'</span></span>'+
        '<div><div style="font-size:24px;font-weight:900;letter-spacing:-.5px">'+money(_p.neto)+'</div>'+
        '<div class="note" style="margin-top:2px">'+esc(_per.label)+' · '+(_signed?'ya lo firmaste':'toca para ver y firmar')+' ›</div></div>'+
      '</div></div>';
@@ -2935,19 +2930,19 @@ function renderNews(){
        '</div>'+
        '</div>';
     h+=dmAdminBlock();
-    h+=calendarBlock();
     h+=encuestasEntry();
+    h+=calendarBlock();
     h+=pollsBlock();
     h+='<div class="sec-t">Publicadas<span class="ln"></span></div>';
     h+= a.length? newsCards(a) : '<div class="card"><div class="note">Aún no hay noticias.</div></div>';
   } else {
     // Trabajador: 1) calendario arriba, 2) avisos de RRHH (con infografía demo), 3) encuestas
+    h+=encuestasEntry();
     h+=calendarBlock();
     h+='<div class="sec-t">Avisos de Recursos Humanos<span class="ln"></span></div>';
     h+=newsInfographicDemo();
     var vis = a.filter(function(n){ return inTarget(n.to, S.emp); });
     h+= vis.length? newsCards(vis) : '';
-    h+=encuestasEntry();
     h+=dmWorkerBlock();
   }
   $('s-news').innerHTML=h; show('news');
@@ -3042,17 +3037,24 @@ function dmAdminBlock(){   // RRHH compone avisos generales -> aparecen en Notic
   return h;
 }
 function dmWorkerBlock(){   // el trabajador ve los avisos generales de RRHH dentro de Noticias
+  var MEGA='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l4 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M14 8a4 4 0 0 1 0 8"/></svg>';
+  function avisoCard(text,when){
+    return '<div class="card" style="position:relative"><span style="position:absolute;top:10px;right:10px;z-index:2">'+speakBtn('Aviso de Recursos Humanos. '+text)+'</span>'+
+      '<div class="line" style="border:none;padding:0;padding-right:46px"><span style="display:flex;align-items:center;gap:10px;min-width:0">'+
+      '<span style="width:40px;height:40px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)"><span style="width:21px;height:21px;display:block">'+MEGA+'</span></span>'+
+      '<b>Aviso de RRHH</b></span><span class="note" style="flex:none">'+when+'</span></div>'+
+      '<p style="margin:9px 0 0;line-height:1.5">'+esc(text)+'</p></div>';
+  }
   var dms=dmGet().filter(function(d){ return inTarget(d.to, S.emp); });
-  if(!dms.length) return '';
   var h='<div class="sec-t">Mensajes de RRHH<span class="ln"></span></div>';
-  dms.forEach(function(d){ h+='<div class="card"><div class="line" style="border:none;padding:0"><span style="display:flex;align-items:center;gap:10px;min-width:0">'+
-    '<span style="width:40px;height:40px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;color:#39d6c0;background:color-mix(in srgb,#39d6c0 15%,transparent)"><span style="width:21px;height:21px;display:block">'+CHAN_IC.rrhh+'</span></span>'+
-    '<b>Recursos Humanos</b></span><span class="note" style="flex:none">'+buzTime(d.ts)+'</span></div>'+
-    '<p style="margin:9px 0 0;line-height:1.5">'+esc(d.text)+'</p><div class="line" style="border:none;padding:4px 0 0"><span></span>'+speakBtn('Mensaje de Recursos Humanos. '+d.text)+'</div></div>'; });
+  if(!dms.length){
+    return h+avisoCard('Este sábado 5 de julio no habrá agua en los vestidores de 8 a 11 de la mañana por mantenimiento. Trae tu botella llena. Gracias por tu comprensión.','Ejemplo');
+  }
+  dms.forEach(function(d){ h+=avisoCard(d.text, buzTime(d.ts)); });
   return h;
 }
 function reportFormBlock(){   // trabajador: queja / anormalidad / mejora
-  return '<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Buzón</div><b style="font-size:16px">Enviar a RRHH</b><div class="note" style="margin-top:3px;display:flex;gap:8px;align-items:center">Tu mensaje llega directo y privado.'+speakBtn('Enviar a Recursos Humanos. Tu mensaje llega directo y privado. Elige el tipo y cuéntanos.')+'</div></div></div>'+
+  return '<div class="panel" style="position:relative"><span style="position:absolute;top:12px;right:12px;z-index:2">'+speakBtn('Enviar a Recursos Humanos. Tu mensaje llega directo y privado. Elige el tipo y cuéntanos.')+'</span><div class="hd" style="align-items:flex-start;padding-right:46px"><div><div class="eyebrow">Buzón</div><b style="font-size:16px">Enviar a RRHH</b><div class="note" style="margin-top:3px">Tu mensaje llega directo y privado.</div></div></div>'+
     '<div class="note" style="margin:0 0 9px">Elige el tipo:</div>'+
     '<div class="lvgrid" style="margin-bottom:0">'+
     Object.keys(RPT).map(function(k){ var on=k===_buzType; return '<button class="lvcard'+(on?' on':'')+'" onclick="pickBuzType(\''+k+'\')"><span class="ico" style="margin-bottom:9px">'+rptIcon(k,22)+'</span><b>'+esc(RPT[k].l)+'</b></button>'; }).join('')+'</div>'+
@@ -3598,8 +3600,11 @@ var LOCK_MIN=10, LOCK_SEC=600, _simWork=false, _learnTimer=null, _consentCb=null
 var SHIFTS={ almacen:{ini:7,fin:16}, inventario:{ini:7,fin:16}, produccion:{ini:7,fin:17}, calidad:{ini:8,fin:17}, comercial:{ini:9,fin:18}, maquinaria:{ini:6,fin:15} };
 function myShift(){ return SHIFTS[S.key]||{ini:8,fin:17}; }
 function shiftEnd(){ return (''+myShift().fin).padStart(2,'0')+':00'; }
-function inWorkHours(){ if(_simWork) return true; var s=myShift(), d=new Date(); if(d.getDay()===0) return false; var hh=d.getHours()+d.getMinutes()/60; return hh>=s.ini && hh<s.fin; }
-function learnState(){ var d; try{ d=JSON.parse(localStorage.getItem('hb_learn_'+S.emp)||'{}')||{}; }catch(e){ d={}; } var today=new Date().toISOString().slice(0,10); if(d.date!==today) d={date:today,used:0,consent:false}; return d; }
+/* Hora oficial de la app: America/Mexico_City (centro de México), sin importar el reloj del teléfono */
+function mxNow(){ try{ return new Date(new Date().toLocaleString('en-US',{timeZone:'America/Mexico_City'})); }catch(e){ return new Date(); } }
+function mxToday(){ var d=mxNow(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function inWorkHours(){ if(_simWork) return true; var s=myShift(), d=mxNow(); if(d.getDay()===0) return false; var hh=d.getHours()+d.getMinutes()/60; return hh>=s.ini && hh<s.fin; }
+function learnState(){ var d; try{ d=JSON.parse(localStorage.getItem('hb_learn_'+S.emp)||'{}')||{}; }catch(e){ d={}; } var today=mxToday(); if(d.date!==today) d={date:today,used:0,consent:false}; return d; }
 function learnSave(d){ try{ localStorage.setItem('hb_learn_'+S.emp, JSON.stringify(d)); }catch(e){} }
 function learnLeft(){ return Math.max(0, LOCK_SEC-(learnState().used||0)); }
 /* ¿se puede entrar a capacitación/educación? si no, muestra consentimiento o bloqueo y devuelve false */
@@ -3645,15 +3650,16 @@ function showLearnLock(){
 function hideLock(){ var el=$('lockScreen'); if(el) el.classList.add('hide'); }
 function lockCard(){
   var on=inWorkHours(), leftMin=Math.ceil(learnLeft()/60), pctL=Math.round(learnLeft()/LOCK_SEC*100);
-  return '<div class="panel"><div class="hd"><div><div class="eyebrow">Tiempo de estudio</div><b style="font-size:16px">'+LOCK_MIN+' min en horario laboral</b></div><span class="chipst'+(on?'':' mut')+'"'+(on?' style="border-color:color-mix(in srgb,var(--warn) 40%,transparent);background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn)"':'')+'>'+(on?'En horario':'Libre')+'</span></div>'+
+  return '<div class="panel"><div class="hd"><div><div class="eyebrow">Tiempo de estudio</div><b style="font-size:16px">'+LOCK_MIN+' min en horario laboral</b></div><span style="display:flex;gap:8px;align-items:center"><span class="chipst'+(on?'':' mut')+'"'+(on?' style="border-color:color-mix(in srgb,var(--warn) 40%,transparent);background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn)"':'')+'>'+(on?'En horario':'Libre')+'</span>'+speakBtn('En tu turno tienes '+LOCK_MIN+' minutos al día para capacitación y educación básica. Lo demás siempre está libre. Hoy te quedan '+leftMin+' minutos.')+'</span></div>'+
     '<div class="ringwrap">'+ring(pctL,'var(--data)')+'<div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:800">Te quedan '+leftMin+' min hoy</div>'+
-    '<div class="note" style="margin-top:4px">En tu turno tienes <b>'+LOCK_MIN+' min al día</b> para <b>capacitación y educación básica</b>.</div></div>'+
-    speakBtn('En tu turno tienes '+LOCK_MIN+' minutos al día para capacitación y educación básica. Lo demás siempre está libre. Hoy te quedan '+leftMin+' minutos.')+'</div>'+
+    '<div class="note" style="margin-top:4px">En tu turno tienes <b>'+LOCK_MIN+' min al día</b> para <b>capacitación y educación básica</b>.</div></div></div>'+
     '<p class="note" style="margin:10px 0 0">Lo demás (mensajes, noticias, recibos, premios) <b>siempre libre</b>. Al salir de tu turno (<b>'+shiftEnd()+'</b>) se reanuda sin límite.</p>'+
-    '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn ghost" style="margin:0;flex:1;padding:10px;font-size:12px" onclick="demoToggleWork()">'+(_simWork?'Quitar horario (demo)':'Simular horario (demo)')+'</button><button class="btn ghost" style="margin:0;flex:1;padding:10px;font-size:12px" onclick="demoUseUp()">Simular 10 min usados</button></div></div>';
+    '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn ghost" style="margin:0;flex:1;padding:10px;font-size:12px" onclick="demoToggleWork()">'+(_simWork?'Quitar horario (demo)':'Simular horario (demo)')+'</button><button class="btn ghost" style="margin:0;flex:1;padding:10px;font-size:12px" onclick="demoUseUp()">Simular 10 min usados</button><button class="btn ghost" style="margin:0;flex:1;padding:10px;font-size:12px" onclick="demoLearnReset()">Reiniciar (demo)</button></div>'+
+    '<p class="note" style="margin:8px 0 0;text-align:center">Hora de la app: <b>'+(''+mxNow().getHours()).padStart(2,'0')+':'+(''+mxNow().getMinutes()).padStart(2,'0')+' · centro de México</b></p></div>';
 }
 function demoToggleWork(){ _simWork=!_simWork; flash(_simWork?'Demo: simulando horario laboral':'Demo: fuera de horario'); renderHome(); }
 function demoUseUp(){ var d=learnState(); d.used=LOCK_SEC; d.consent=true; learnSave(d); _simWork=true; flash('Demo: 10 min agotados'); showLearnLock(); }
+function demoLearnReset(){ var d=learnState(); d.used=0; d.consent=false; learnSave(d); _simWork=false; flash('Demo: minutos de estudio restaurados'); renderHome(); }
 
 /* ============================================================================
    MENSAJES (chat interno) — RRHH · grupo de área · directos por ID (estilo BBM)
@@ -3729,7 +3735,7 @@ function chanMeta(conv){
 function chanAvatar(conv){
   // Chats entre compañeros (d:): misma foto-portada para todos, estilo banners
   if(conv.indexOf('d:')===0){
-    return '<span style="width:44px;height:44px;border-radius:13px;flex:none;position:relative;overflow:hidden;display:block">'+cover('chat','#0e9e8e','#053b36')+'</span>';
+    return '<span style="width:44px;height:44px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(150deg,#0e9e8e,#053b36)"><span style="width:22px;height:22px;display:block">'+CHAN_IC.comp+'</span></span>';
   }
   var m=chanMeta(conv);
   return '<span style="width:44px;height:44px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;color:'+m[1]+';background:color-mix(in srgb,'+m[1]+' 15%,transparent)"><span style="width:23px;height:23px;display:block">'+m[0]+'</span></span>';
@@ -3974,7 +3980,7 @@ function openConv(conv){
   h+='<div class="msgs" id="thMsgs">'+threadHTML(convMsgs(conv), isGroup||S.admin||isLine)+'</div>';
   if(_pendImg && !isMonitor) h+='<div class="card" style="padding:8px;display:flex;gap:10px;align-items:center"><img src="'+_pendImg+'" style="max-height:70px;border-radius:8px"><span class="note" style="flex:1">Imagen lista para enviar</span><button class="back" style="padding:6px 10px" onclick="_pendImg=null;openConv(_curConv)">Quitar</button></div>';
   if(!isMonitor){
-    h+='<div class="composer"><label class="send" style="background:var(--card2);color:var(--txt);cursor:pointer;font-size:20px"><input type="file" accept="image/*" onchange="msgImgLoad(this)" style="display:none"></label><input id="thIn" placeholder="Escribe un mensaje…" autocomplete="off"><button class="send" onclick="sendFromThread()" aria-label="Enviar"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button></div>';
+    h+='<div class="composer"><label class="send" style="background:var(--card2);color:var(--txt);cursor:pointer"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg><input type="file" accept="image/*" onchange="msgImgLoad(this)" style="display:none"></label><input id="thIn" placeholder="Escribe un mensaje…" autocomplete="off"><button class="send" onclick="sendFromThread()" aria-label="Enviar"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button></div>';
   } else {
     h+='<div class="note" style="text-align:center;padding:12px">Estás observando esta conversación (monitoreo). No puedes escribir aquí.</div>';
   }

@@ -589,6 +589,11 @@ body.a11y .screen .seg button{ font-size:13px !important; }
   /* premios: estante ancho */
   .rgrid{grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:20px 12px}
 }
+/* ===== Bloqueo/aviso de pantallazos (deterrente web) ===== */
+.shotguard{position:fixed;inset:0;z-index:400;background:#07080b;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:34px 28px;
+  padding-top:calc(34px + env(safe-area-inset-top))}
+.shotguard h2{font-size:22px;font-weight:900;margin:18px 0 8px;color:#fff;max-width:340px;line-height:1.25}
+.shotguard p{font-size:14px;color:#9aa0b0;line-height:1.55;max-width:330px;margin:0}
 </style>
 <!-- Supabase (Fase 2: demo en vivo, cross-device). Si no carga (offline), la app sigue con localStorage. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -688,6 +693,11 @@ body.a11y .screen .seg button{ font-size:13px !important; }
   <div id="lockScreen" class="lockscreen hide"></div>
   <div id="beepScreen" class="lockscreen hide"></div>
   <div id="rwdModal" class="modal hide"></div>
+  <div id="shotGuard" class="shotguard hide" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="72" height="72" fill="none" stroke="#ff6b6b" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.4 8-8 9-4.6-1-8-4-8-9V6z"/><path d="M9.5 12.5l2 2 3.5-4"/><path d="M4 4l16 16" stroke="#ff6b6b" stroke-width="1.6"/></svg>
+    <h2>No puedes tomar pantallazo a esta aplicación</h2>
+    <p>El contenido de Hules Banda es confidencial. Los recibos, mensajes y datos personales están protegidos.</p>
+  </div>
 </div>
 
 <div id="flash" class="flash"></div>
@@ -1730,6 +1740,25 @@ function resetProgress(){
    OJO: es disuasión para el usuario común; la protección real llega con la
    Fase 2 (PIN + reglas en el servidor). */
 document.addEventListener('contextmenu',function(e){ e.preventDefault(); },true);
+/* ===== Aviso/tapa de pantallazos =====
+   Límite honesto: la web NO puede impedir un screenshot con la app en primer plano
+   en el celular. Sí podemos: (a) tapar el contenido cuando la app pasa a segundo
+   plano / multitarea (cubre la miniatura y el truco de cambiar-de-app), y
+   (b) en computadora, avisar al detectar PrintScreen y limpiar el portapapeles.
+   El bloqueo total requiere la app nativa (Android FLAG_SECURE). */
+function _shotShow(hold){ var g=document.getElementById('shotGuard'); if(!g) return; g.classList.remove('hide');
+  if(hold){ clearTimeout(window._shotT); window._shotT=setTimeout(function(){ g.classList.add('hide'); }, hold); } }
+function _shotHide(){ var g=document.getElementById('shotGuard'); if(g && !window._shotT) g.classList.add('hide'); if(document.visibilityState==='visible'){ clearTimeout(window._shotT); window._shotT=null; var gg=document.getElementById('shotGuard'); if(gg) gg.classList.add('hide'); } }
+document.addEventListener('visibilitychange',function(){ if(document.hidden){ _shotShow(0); } else { setTimeout(_shotHide,120); } });
+window.addEventListener('pagehide',function(){ _shotShow(0); });
+document.addEventListener('keydown',function(e){
+  var k=(e.key||'');
+  if(k==='PrintScreen' || ((e.metaKey||e.ctrlKey)&&e.shiftKey&&/^[34SsＳ]$/.test(k))){
+    _shotShow(2200);
+    try{ if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText('Contenido protegido - Hules Banda'); }catch(err){}
+  }
+},true);
+document.addEventListener('keyup',function(e){ if((e.key||'')==='PrintScreen'){ _shotShow(2200); try{ if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText('Contenido protegido - Hules Banda'); }catch(err){} } },true);
 document.addEventListener('dblclick',function(e){ var tg=(e.target.tagName||''); if(tg!=='INPUT'&&tg!=='TEXTAREA') e.preventDefault(); },true);
 document.addEventListener('keydown',function(e){
   var k=(e.key||'').toLowerCase();

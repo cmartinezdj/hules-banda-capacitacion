@@ -3643,9 +3643,22 @@ function leaveAdminBlock(){
 function payPeriod(){ var d=new Date(), mes=d.toLocaleDateString('es-MX',{month:'long',year:'numeric'});
   return d.getDate()<=15 ? {label:'1 al 15 de '+mes, key:d.getFullYear()+'-'+(d.getMonth()+1)+'-A'} : {label:'16 al fin de '+mes, key:d.getFullYear()+'-'+(d.getMonth()+1)+'-B'}; }
 function payData(emp){
-  var sueldo=3500+(emp%10)*50, bono=300, perc=sueldo+bono;
-  var imss=Math.round(perc*0.025), isr=Math.round(perc*0.09), ded=imss+isr;
-  return {sueldo:sueldo,bono:bono,perc:perc,imss:imss,isr:isr,ded:ded,neto:perc-ded};
+  // Sueldo mensual 10,500 -> 5,250 por quincena. Deducciones de ley (ISR + IMSS).
+  var sueldo=5250, isr=496.15, imss=124.69, ded=Math.round((isr+imss)*100)/100;
+  return {sueldo:sueldo,bono:0,perc:sueldo,imss:imss,isr:isr,ded:ded,neto:Math.round((sueldo-ded)*100)/100};
+}
+/* PDF de recibo (DEMO). En producción, RRHH sube el PDF real de cada trabajador
+   y este base64 se reemplaza por el del recibo recibido (recibo.pdf). */
+var PAY_PDF_DEMO='data:application/pdf;base64,JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA0IDAgUiAvRjIgNSAwIFIgPj4gPj4gL0NvbnRlbnRzIDYgMCBSID4+CmVuZG9iago0IDAgb2JqCjw8IC9UeXBlIC9Gb250IC9TdWJ0eXBlIC9UeXBlMSAvQmFzZUZvbnQgL0hlbHZldGljYSAvRW5jb2RpbmcgL1dpbkFuc2lFbmNvZGluZyA+PgplbmRvYmoKNSAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL0Jhc2VGb250IC9IZWx2ZXRpY2EtQm9sZCAvRW5jb2RpbmcgL1dpbkFuc2lFbmNvZGluZyA+PgplbmRvYmoKNiAwIG9iago8PCAvTGVuZ3RoIDQ4NTIgPj4Kc3RyZWFtCjAuMDQzIDAuMTQ1IDAuMzczIHJnCjQwNSA3MDYgMTY4IDM0IHJlIGYKNDAgNTkyIDI1MCAxNyByZSBmCjM0MCA1OTIgMjMyIDE3IHJlIGYKNDAgMzg3IDMwMCAxNiByZSBmCjAuNTUgMC41NSAwLjU1IFJHIDAuNyB3CjQwIDI5NiA5MCA5MCByZSBTCkJUIDAgMCAwIHJnIC9GMSA3IFRmIDc0IDMzOCBUZCAoUVIpIFRqIEVUCkJUIDAgMCAwIHJnIC9GMiAxNCBUZiAyNDAgNzYwIFRkIChIVUxFUyBCQU5EQSkgVGogRVQKQlQgMCAwIDAgcmcgL0YxIDcgVGYgNDAgNzM1IFRkIChBVkVOSURBIERFIExBIExVWiBOby4gODAsIENvbC4gUEFSUVVFIElORFVTVFJJQUwgTEEgTFVaLCkgVGogRVQKQlQgMCAwIDAgcmcgL0YxIDcgVGYgNDAgNzI1IFRkIChDVUFVVElUTFwzMDFOIElaQ0FMTEksIEVTVEFETyBERSBNXDMxMVhJQ08sIE1cMzExWElDTywgQy5QLiA1NDcxNikgVGogRVQKQlQgMCAwIDAgcmcgL0YxIDcgVGYgNDAgNzE1IFRkIChSRkM6IEhCQTgyMDQxNlVJMSkgVGogRVQKQlQgMCAwIDAgcmcgL0YxIDcgVGYgNDAgNzA1IFRkIChHZW5lcmFsIGRlIExleSBQZXJzb25hcyBNb3JhbGVzKSBUaiBFVApCVCAxIDEgMSByZyAvRjIgMTMgVGYgNDE4IDcyMCBUZCAoUkVDSUJPIERFIE5cMzIzTUlOQSkgVGogRVQKQlQgMCAwIDAgcmcgL0YyIDcgVGYgNDAgNjg1IFRkIChOby4gVHJhYi46KSBUaiBFVApCVCAwIDAgMCByZyAvRjEgNyBUZiAxMjAgNjg1IFRkICgwMjUwKSBUaiBFVApCVCAwIDAgMCByZyAvRjIgNyBUZiAzNDAgNjg1IFRkIChEZXB0by46KSBUaiBFVApCVCAwIDAgMCByZyAvRjEgNyBUZiA0MzAgNjg1IFRkIChQUk9EVUNDSVwzMjNOKSBUaiBFVApCVCAwIDAgMCByZyAvRjIgNyBUZiA0MCA2NzMgVGQgKE5vbWJyZTopIFRqIEVUCkJUIDAgMCAwIHJnIC9GMSA3IFRmIDEyMCA2NzMgVGQgKE1BUlwzMTVBIEdVQURBTFVQRSBTXDMwMU5DSEVaIFRPUlJFUykgVGogRVQKQlQgMCAwIDAgcmcgL0YyIDcgVGYgMzQwIDY3MyBUZCAoUHVlc3RvOikgVGogRVQKQlQgMCAwIDAgcmcgL0YxIDcgVGYgNDMwIDY3MyBUZCAoT1BFUkFET1JBIERFIFBST0RVQ0NJXDMyM04pIFRqIEVUCkJUIDAgMCAwIHJnIC9GMiA3IFRmIDQwIDY2MSBUZCAoQ1VSUDopIFRqIEVUCkJUIDAgMCAwIHJnIC9GMSA3IFRmIDEyMCA2NjEgVGQgKFNBVEc5MDAxMDFNTUNOUkQwNSBcKERFTU9cKSkgVGogRVQKQlQgMCAwIDAgcmcgL0YyIDcgVGYgMzQwIDY2MSBUZCAoTm8uIE5cMzYzbWluYTopIFRqIEVUCkJUIDAgMCAwIHJnIC9GMSA3IFRmIDQzMCA2NjEgVGQgKDEzKSBUaiBFVApCVCAwIDAgMCByZyAvRjIgNyBUZiA0MCA2NDkgVGQgKFJGQzopIFRqIEVUCkJUIDAgMCAwIHJnIC9GMSA3IFRmIDEyMCA2NDkgVGQgKFNBVEc5MDAxMDFBQjEgXChERU1PXCkpIFRqIEVUCkJUIDAgMCAwIHJnIC9GMiA3IFRmIDM0MCA2NDkgVGQgKFBlcmlvZG8gZGVsOikgVGogRVQKQlQgMCAwIDAgcmcgL0YxIDcgVGYgNDMwIDY0OSBUZCAoMDEvanVsLi8yMDI2IGFsIDE1L2p1bC4vMjAyNikgVGogRVQKQlQgMCAwIDAgcmcgL0YyIDcgVGYgNDAgNjM3IFRkIChSLiBJTVNTOikgVGogRVQKQlQgMCAwIDAgcmcgL0YxIDcgVGYgMTIwIDYzNyBUZCAoMTIzNDU2Nzg5MDEgXChERU1PXCkpIFRqIEVUCkJUIDAgMCAwIHJnIC9GMiA3IFRmIDM0MCA2MzcgVGQgKERcMzU1YXMgdHJhYmFqYWRvczopIFRqIEVUCkJUIDAgMCAwIHJnIC9GMSA3IFRmIDQzMCA2MzcgVGQgKDE1KSBUaiBFVApCVCAwIDAgMCByZyAvRjIgNyBUZiA0MCA2MjUgVGQgKFJcMzUxZ2ltZW4gVHJhYmFqYWRvcjopIFRqIEVUCkJUIDAgMCAwIHJnIC9GMSA3IFRmIDEyMCA2MjUgVGQgKFN1ZWxkb3MpIFRqIEVUCkJUIDAgMCAwIHJnIC9GMiA3IFRmIDM0MCA2MjUgVGQgKEZhbHRhczopIFRqIEVUCkJUIDAgMCAwIHJnIC9GMSA3IFRmIDQzMCA2MjUgVGQgKDApIFRqIEVUCkJUIDEgMSAxIHJnIC9GMiA5IFRmIDExMCA1OTggVGQgKFBFUkNFUENJT05FUykgVGogRVQKQlQgMSAxIDEgcmcgL0YyIDkgVGYgNDMwIDU5OCBUZCAoREVEVUNDSU9ORVMpIFRqIEVUCkJUIDAgMCAwIHJnIC9GMSA3IFRmIDQwIDU4MCBUZCAoUDAwMSkgVGogRVQKQlQgMCAwIDAgcmcgL0YxIDcgVGYgOTAgNTgwIFRkIChTVUVMRE8pIFRqIEVUCkJUIDAgMCAwIHJnIC9GMSA3IFRmIDI1MCA1ODAgVGQgKDUsMjUwLjAwKSBUaiBFVApCVCAwIDAgMCByZyAvRjEgNyBUZiAzNDAgNTgwIFRkIChEMDAxKSBUaiBFVApCVCAwIDAgMCByZyAvRjEgNyBUZiAzOTAgNTgwIFRkIChJU1IpIFRqIEVUCkJUIDAgMCAwIHJnIC9GMSA3IFRmIDUzMCA1ODAgVGQgKDQ5Ni4xNSkgVGogRVQKQlQgMCAwIDAgcmcgL0YxIDcgVGYgMzQwIDU2OCBUZCAoRDAwMikgVGogRVQKQlQgMCAwIDAgcmcgL0YxIDcgVGYgMzkwIDU2OCBUZCAoSU1TUykgVGogRVQKQlQgMCAwIDAgcmcgL0YxIDcgVGYgNTMwIDU2OCBUZCAoMTI0LjY5KSBUaiBFVApCVCAwIDAgMCByZyAvRjIgNyBUZiA0MCA0NzAgVGQgKFRvdGFsIFBlcmNlcGNpb25lcykgVGogRVQKQlQgMCAwIDAgcmcgL0YyIDcgVGYgMjUwIDQ3MCBUZCAoNSwyNTAuMDApIFRqIEVUCkJUIDAgMCAwIHJnIC9GMiA3IFRmIDM0MCA0NzAgVGQgKFRvdGFsIERlZHVjY2lvbmVzKSBUaiBFVApCVCAwIDAgMCByZyAvRjIgNyBUZiA1MjUgNDcwIFRkICg2MjAuODQpIFRqIEVUCkJUIDAgMCAwIHJnIC9GMiA3IFRmIDQwIDQ1NiBUZCAoTmV0byBQYWdhZG8pIFRqIEVUCkJUIDAgMCAwIHJnIC9GMiA3IFRmIDI1MCA0NTYgVGQgKDQsNjI5LjE2KSBUaiBFVApCVCAwIDAgMCByZyAvRjEgNyBUZiA0MCA0NDIgVGQgKFRvdGFsIGVuIEVmZWN0aXZvKSBUaiBFVApCVCAwIDAgMCByZyAvRjEgNyBUZiAyNTAgNDQyIFRkICg0LDYyOS4xNikgVGogRVQKQlQgMCAwIDAgcmcgL0YxIDggVGYgMzQwIDQyMCBUZCAoRklSTUE6IF9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fKSBUaiBFVApCVCAxIDEgMSByZyAvRjIgOSBUZiA0OCAzOTMgVGQgKENvbXByb2JhbnRlIEZpc2NhbCBEaWdpdGFsIHBvciBJbnRlcm5ldCkgVGogRVQKQlQgMCAwIDAgcmcgL0YxIDcgVGYgNDAgMzcyIFRkIChGb2xpbyBGaXNjYWw6IERFTU8xMjM0LUFCQ0QtNDMyMS1ERU1PLTAwMDAwMDAwMDAwMCkgVGogRVQKQlQgMCAwIDAgcmcgL0YxIDcgVGYgNDAgMzYwIFRkIChGZWNoYSB5IGhvcmEgZGUgY2VydGlmaWNhY2lcMzYzbjogMjAyNi0wNy0wMVQxMzoxNzo0MSkgVGogRVQKQlQgMCAwIDAgcmcgL0YxIDcgVGYgNDAgMzQ4IFRkIChObyBkZSBTZXJpZSBkZWwgQ1NEIGRlbCBTQVQ6IDAwMDAxMDAwMDAwNzAyNTAxODU4KSBUaiBFVApCVCAwIDAgMCByZyAvRjEgNyBUZiA0MCAzMzYgVGQgKEZvcm1hIGRlIHBhZ286IFBvciBkZWZpbmlyKSBUaiBFVApCVCAwIDAgMCByZyAvRjEgNyBUZiAzMjAgMzcyIFRkIChMdWdhciBkZSBlbWlzaVwzNjNuOiA1NDcxNikgVGogRVQKQlQgMCAwIDAgcmcgL0YxIDcgVGYgMzIwIDM2MCBUZCAoRmVjaGEgeSBob3JhIGRlIGVtaXNpXDM2M246IDIwMjYtMDctMDFUMTM6MTc6MTgpIFRqIEVUCkJUIDAgMCAwIHJnIC9GMSA3IFRmIDMyMCAzNDggVGQgKFNlcmllIHkgRm9saW8gaW50ZXJubzogTk9NT0JBUVVJTjAyNTApIFRqIEVUCkJUIDAgMCAwIHJnIC9GMSA3IFRmIDMyMCAzMjYgVGQgKFRvdGFsIHBlcmNlcGNpb25lczopIFRqIEVUCkJUIDAgMCAwIHJnIC9GMSA3IFRmIDUzMCAzMjYgVGQgKDUsMjUwLjAwKSBUaiBFVApCVCAwIDAgMCByZyAvRjEgNyBUZiAzMjAgMzE0IFRkIChUb3RhbCBkZWR1Y2Npb25lcyBzaW4gSVNSOikgVGogRVQKQlQgMCAwIDAgcmcgL0YxIDcgVGYgNTMzIDMxNCBUZCAoMTI0LjY5KSBUaiBFVApCVCAwIDAgMCByZyAvRjEgNyBUZiAzMjAgMzAyIFRkIChJU1IgcmV0ZW5pZG86KSBUaiBFVApCVCAwIDAgMCByZyAvRjEgNyBUZiA1MzMgMzAyIFRkICg0OTYuMTUpIFRqIEVUCkJUIDAgMCAwIHJnIC9GMiA4IFRmIDMyMCAyODggVGQgKFRvdGFsOikgVGogRVQKQlQgMCAwIDAgcmcgL0YyIDggVGYgNTI1IDI4OCBUZCAoNCw2MjkuMTYpIFRqIEVUCkJUIDAgMCAwIHJnIC9GMiA3IFRmIDQwIDI2MiBUZCAoU2VsbG8gRGlnaXRhbCBkZWwgQ29udHJpYnV5ZW50ZSBFbWlzb3I6KSBUaiBFVApCVCAwIDAgMCByZyAvRjEgNiBUZiA0MCAyNTAgVGQgKFwoREVNT1wpIFZNSnNIeUFMR2VZVUpwQWFBNTVGZDF3bVJqU1piRzVpUGtZeXZaS1RwdE9JYzV4NFlqSGVJMVpSdVRON1dLQjN5alBPRHluZTNjRHpOPT0pIFRqIEVUCkJUIDAgMCAwIHJnIC9GMiA3IFRmIDQwIDIzMiBUZCAoU2VsbG8gRGlnaXRhbCBkZWwgU0FUOikgVGogRVQKQlQgMCAwIDAgcmcgL0YxIDYgVGYgNDAgMjIwIFRkIChcKERFTU9cKSBYVGpBNENQZjMyZXRtbGhCbTlJMG55UDlTb2VweEExa1dmdVpFRy9NQkJCWEpDaE1oUmo1Y1pHVXF4bzZOYkZXZnBKN3pQdkJtMVlKc1JVPT0pIFRqIEVUCkJUIDAgMCAwIHJnIC9GMiA3IFRmIDQwIDIwMiBUZCAoQ2FkZW5hIE9yaWdpbmFsIGRlbCBjb21wbGVtZW50byBkZSBjZXJ0aWZpY2FjaVwzNjNuIGRpZ2l0YWwgZGVsIFNBVDopIFRqIEVUCkJUIDAgMCAwIHJnIC9GMSA2IFRmIDQwIDE5MCBUZCAoXChERU1PXCkgfHwxLjF8NjY4NzNGQjQtODUxRS0yMDQ4LTg5M0ItRTc5RkNBNDlCRTE2fDIwMjYtMDctMDFUMTM6MTc6NDF8U0NEMTAxMDU2NTQxPT18fCkgVGogRVQKQlQgMCAwIDAgcmcgL0YxIDggVGYgNDAgMTY2IFRkIChFc3RlIGRvY3VtZW50byBlcyB1bmEgcmVwcmVzZW50YWNpXDM2M24gaW1wcmVzYSBkZSB1biBDRkRJKSBUaiBFVApCVCAwIDAgMCByZyAvRjIgOCBUZiA0MCAxNDggVGQgKCoqKiBET0NVTUVOVE8gREUgREVNT1NUUkFDSVwzMjNOIC0gREFUT1MgRklDVElDSU9TIC0gU0lOIFZBTElERVogRklTQ0FMICoqKikgVGogRVQKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNwowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1OCAwMDAwMCBuIAowMDAwMDAwMTE1IDAwMDAwIG4gCjAwMDAwMDAyNTEgMDAwMDAgbiAKMDAwMDAwMDM0OCAwMDAwMCBuIAowMDAwMDAwNDUwIDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNyAvUm9vdCAxIDAgUiA+PgpzdGFydHhyZWYKNTM1NAolJUVPRg==';
+function payPdfFor(){ return PAY_PDF_DEMO; }   // demo: mismo PDF; producción: PDF por empleado/periodo
+function openPayPdf(){
+  try{
+    var b=payPdfFor().split(',')[1], bin=atob(b), n=bin.length, arr=new Uint8Array(n);
+    for(var i=0;i<n;i++) arr[i]=bin.charCodeAt(i);
+    var url=URL.createObjectURL(new Blob([arr],{type:'application/pdf'}));
+    var w=window.open(url,'_blank'); if(!w){ var a=document.createElement('a'); a.href=url; a.download='recibo.pdf'; a.click(); }
+    setTimeout(function(){ try{URL.revokeObjectURL(url);}catch(e){} },60000);
+  }catch(e){ flash('No se pudo abrir el PDF'); }
 }
 function recibosGet(){ return lsGet('hb_recibos'); }
 function signRecord(emp,key){ var a=recibosGet(); for(var i=0;i<a.length;i++){ if(a[i].emp===emp&&a[i].key===key) return a[i]; } return null; }
@@ -3657,22 +3670,31 @@ function renderPay(){
      '<div class="paysplit"><div class="pp" style="width:'+ppw+'%"></div><div class="dd" style="width:'+ddw+'%"></div></div>'+
      '<div class="line" style="border:none;padding:0"><span class="note" style="color:var(--data);font-weight:700">Percepciones '+money(p.perc)+'</span><span class="note" style="color:var(--accent2);font-weight:700">Deducciones − '+money(p.ded)+'</span></div></div>';
   h+='<div class="panel"><div class="hd"><b>Percepciones</b><b style="color:var(--data)">'+money(p.perc)+'</b></div>'+
-     '<div class="line"><span>Sueldo</span><span>'+money(p.sueldo)+'</span></div>'+
-     '<div class="line"><span>Bono de puntualidad</span><span>'+money(p.bono)+'</span></div></div>';
+     '<div class="line"><span>Sueldo quincenal</span><span>'+money(p.sueldo)+'</span></div></div>';
   h+='<div class="panel"><div class="hd"><b>Deducciones</b><b style="color:var(--accent2)">− '+money(p.ded)+'</b></div>'+
-     '<div class="line"><span>IMSS</span><span>− '+money(p.imss)+'</span></div>'+
-     '<div class="line"><span>ISR</span><span>− '+money(p.isr)+'</span></div></div>';
+     '<div class="line"><span>ISR</span><span>− '+money(p.isr)+'</span></div>'+
+     '<div class="line"><span>IMSS</span><span>− '+money(p.imss)+'</span></div></div>';
+  // ---- ver el PDF original que mandó RRHH ----
+  h+='<div class="pbar" style="cursor:pointer" onclick="openPayPdf()"><span class="ic">'+IC2.doc+'</span><span class="t">Ver recibo original (PDF)</span><span class="note">Abrir ›</span></div>';
+  // ---- firmar y enviar a RRHH con la firma PREDETERMINADA del perfil ----
+  var firma=(profGet(S.emp)||{}).firma;
   if(signed){
-    h+='<div class="card" style="border:1px solid var(--ok)"><div class="row">'+bandi('b-sm')+'<div><b style="color:var(--ok)">✓ Firmado</b><p class="note">Firmaste el '+fmtDate(signed.ts)+'. RRHH ya recibió tu acuse.</p></div></div>'+
-       (signed.img?'<img src="'+signed.img+'" alt="firma" style="width:100%;max-height:200px;object-fit:contain;margin-top:10px;background:#fff;border-radius:10px;padding:8px;display:block">':'')+'</div>';
+    h+='<div class="panel" style="border:1px solid var(--ok)"><div class="hd" style="margin-bottom:6px"><b style="color:var(--ok)">Firmado ✓</b><span class="chipst">enviado a RRHH</span></div>'+
+       '<p class="note">Enviaste tu recibo firmado el '+fmtDate(signed.ts)+'. RRHH ya lo recibió.</p>'+
+       (signed.img?'<img src="'+signed.img+'" alt="firma" style="width:100%;max-height:150px;object-fit:contain;margin-top:10px;background:#fff;border-radius:10px;padding:8px;display:block">':'')+'</div>';
+  } else if(firma){
+    h+='<div class="panel"><div class="hd"><b>Enviar recibo firmado</b><span class="chipst">tu firma</span></div>'+
+       '<p class="note" style="margin:0 0 9px">Al enviar, RRHH recibe tu acuse con tu <b>firma predeterminada</b>. Así todos reconocen que es tuya.</p>'+
+       '<img src="'+firma+'" alt="tu firma" style="width:100%;max-height:150px;object-fit:contain;background:#fff;border-radius:10px;padding:8px;display:block">'+
+       '<button class="btn" style="margin-top:11px" onclick="signPay()">Enviar recibo firmado a RRHH</button>'+
+       '<div style="text-align:center;margin-top:8px"><span class="lnkbtn" onclick="renderPerfil()">Cambiar mi firma en el perfil</span></div></div>';
   } else {
-    h+='<div class="card"><b>Firma de recibido</b><p class="note" style="margin:4px 0 9px">Firma con el dedo en el recuadro y confirma. Esto le avisa a RRHH que ya recibiste tu recibo.</p>'+
-       '<canvas id="sigPad" width="600" height="240" style="width:100%;height:210px;background:#fff;border-radius:10px;border:1px solid var(--line);touch-action:none"></canvas>'+
-       '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn ghost" style="margin:0;flex:none;padding:11px 14px" onclick="sigClear()">Borrar</button>'+
-       '<button class="btn" style="margin:0;flex:1;padding:11px" onclick="signPay()">Firmar y enviar a RRHH</button></div></div>';
+    h+='<div class="panel" style="border:1px solid var(--warn)"><div class="hd" style="margin-bottom:6px"><b style="color:var(--warn)">Necesitas agregar tu firma predeterminada a tu perfil</b>'+speakBtn('Necesitas agregar tu firma predeterminada a tu perfil. Ve a Perfil, luego Firma, establece tu firma predeterminada y regresa a esta pantalla para firmar tu recibo.')+'</div>'+
+       '<p class="note" style="margin:0 0 4px">Para firmar tu recibo, primero guarda tu firma una sola vez:</p>'+
+       '<div class="note" style="line-height:1.7"><b>1.</b> Ve a <b>Perfil</b> (toca tu nombre arriba)<br><b>2.</b> Entra a <b>Mi firma</b><br><b>3.</b> Dibuja tu firma y toca <b>Guardar firma</b><br><b>4.</b> Regresa a esta pantalla para firmar tu recibo</div>'+
+       '<button class="btn" style="margin-top:11px" onclick="renderPerfil()">Ir a mi perfil a firmar</button></div>';
   }
   $('s-pay').innerHTML=h; show('pay');
-  if(!signed) setTimeout(sigInit,40);
 }
 var _sig={on:false,drawn:false};
 function sigInit(){
@@ -3687,10 +3709,11 @@ function sigInit(){
 }
 function sigClear(){ var c=$('sigPad'); if(c){ c.getContext('2d').clearRect(0,0,c.width,c.height); _sig.drawn=false; } }
 function signPay(){
-  if(!_sig.drawn){ flash('Firma en el recuadro primero '); return; }
-  var c=$('sigPad'), per=payPeriod(), img=''; try{ img=c.toDataURL('image/png'); }catch(e){}
-  var a=recibosGet(); a.unshift({ emp:S.emp, area:S.area, key:per.key, period:per.label, img:img, ts:Date.now() }); lsSet('hb_recibos', a);
-  burst(); flash('¡Recibo firmado y enviado a RRHH!'); renderPay();
+  var firma=(profGet(S.emp)||{}).firma;
+  if(!firma){ flash('Primero guarda tu firma en tu perfil'); renderPerfil(); return; }
+  var per=payPeriod();
+  var a=recibosGet(); a.unshift({ emp:S.emp, area:S.area, key:per.key, period:per.label, img:firma, ts:Date.now() }); lsSet('hb_recibos', a);
+  burst(); flash('¡Recibo enviado a RRHH con tu firma!'); renderPay();
 }
 function recibosAdminBlock(){
   var a=recibosGet();
@@ -3851,6 +3874,13 @@ function renderPerfil(){
      '<div class="note" style="margin:9px 0 3px">Teléfono</div><input id="pfTel" class="fin" inputmode="tel" autocomplete="off" placeholder="Tu número de celular" value="'+esc(p.tel||'')+'">'+
      '<div class="note" style="margin:9px 0 3px">Contacto de emergencia (nombre y teléfono)</div><input id="pfEmg" class="fin" autocomplete="off" placeholder="Ej. María Pérez · 33 1234 5678" value="'+esc(p.emg||'')+'">'+
      '<button class="btn" style="margin-top:12px" onclick="savePerfil()">Guardar mi información</button></div>';
+  // Firma predeterminada
+  h+='<div class="panel"><div class="hd"><b>Mi firma</b><span class="chipst'+(p.firma?'':' mut')+'">'+(p.firma?'Guardada ✓':'Sin firma')+'</span></div>'+
+     '<p class="note" style="margin:0 0 9px">Dibuja tu firma UNA vez. Se queda guardada y se usará para firmar tus recibos de nómina, sin volver a dibujarla cada quincena.</p>'+
+     (p.firma?'<img src="'+p.firma+'" alt="mi firma" style="width:100%;max-height:150px;object-fit:contain;background:#fff;border-radius:10px;padding:8px;display:block;margin-bottom:9px">':'')+
+     '<canvas id="firmaPad" width="600" height="240" style="width:100%;height:190px;background:#fff;border-radius:10px;border:1px solid var(--line);touch-action:none"></canvas>'+
+     '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn ghost" style="margin:0;flex:none;width:auto;padding:11px 16px" onclick="pfFirmaClear()">Borrar</button>'+
+     '<button class="btn" style="margin:0;flex:1;width:auto;padding:11px" onclick="pfFirmaSave()">'+(p.firma?'Cambiar mi firma':'Guardar firma')+'</button></div></div>';
   // PIN
   h+='<div class="panel"><div class="hd"><b>Mi PIN de entrada</b><span class="chipst'+(p.pin?'':' mut')+'">'+(p.pin?'Activado':'Sin PIN')+'</span></div>'+
      '<p class="note" style="margin:0 0 9px">'+(p.pin?'Para cambiarlo, escribe tu PIN actual y el nuevo.':'Crea un PIN de 4 números. Te lo pedirá al entrar con tu número de colaborador.')+'</p>'+
@@ -3861,6 +3891,27 @@ function renderPerfil(){
      (p.pin?'<button class="lnkbtn" style="display:block;margin:10px auto 0" onclick="delPin()">Quitar mi PIN</button>':'')+'</div>';
   h+='<div class="note" style="text-align:center">Demo: tu perfil se guarda en este dispositivo. En la versión final vivirá en el servidor con tu ID.</div>';
   $('s-perfil').innerHTML=h; show('perfil');
+  setTimeout(pfFirmaInit,40);
+}
+/* ===== canvas de firma del perfil ===== */
+var _pfSig={on:false,drawn:false,ctx:null,c:null};
+function pfFirmaInit(){
+  var c=$('firmaPad'); if(!c) return; var ctx=c.getContext('2d'); _pfSig.drawn=false; _pfSig.ctx=ctx; _pfSig.c=c;
+  ctx.strokeStyle='#16181d'; ctx.lineWidth=2.8; ctx.lineCap='round'; ctx.lineJoin='round';
+  function pos(e){ var r=c.getBoundingClientRect(), tt=(e.touches&&e.touches[0])?e.touches[0]:e; return {x:(tt.clientX-r.left)*(c.width/r.width), y:(tt.clientY-r.top)*(c.height/r.height)}; }
+  function down(e){ e.preventDefault(); _pfSig.on=true; var p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); }
+  function move(e){ if(!_pfSig.on) return; e.preventDefault(); var p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); _pfSig.drawn=true; }
+  function up(){ _pfSig.on=false; }
+  c.onmousedown=down; c.onmousemove=move; c.onmouseup=up; c.onmouseleave=up;
+  c.ontouchstart=down; c.ontouchmove=move; c.ontouchend=up;
+}
+function pfFirmaClear(){ if(_pfSig.c){ _pfSig.ctx.clearRect(0,0,_pfSig.c.width,_pfSig.c.height); _pfSig.drawn=false; } }
+function pfFirmaSave(){
+  if(!_pfSig.drawn){ flash('Dibuja tu firma en el recuadro primero'); return; }
+  var img=''; try{ img=_pfSig.c.toDataURL('image/png'); }catch(e){}
+  if(!img){ flash('No se pudo guardar la firma'); return; }
+  var p=profGet(S.emp); p.firma=img; profSave(S.emp,p);
+  burst(); flash('Firma guardada. Ya puedes firmar tus recibos.'); renderPerfil();
 }
 function savePerfil(){
   var p=profGet(S.emp);

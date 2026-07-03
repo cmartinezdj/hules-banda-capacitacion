@@ -1780,7 +1780,7 @@ var ICN={
 };
 function buildNav(){
   var items = S.admin
-    ? [['hr',dashLabel(),ICN.hr],['msgs','Mensajes',ICN.msgs],['news','Noticias',ICN.news],['chat','Asistente',ICN.chat]]
+    ? [['hr',dashLabel(),ICN.hr],['news','Noticias',ICN.news],['msgs','Mensajes',ICN.msgs],['chat','Asistente',ICN.chat]]
     : [['home','Inicio',ICN.home],['msgs','Mensajes',ICN.msgs],['news','Noticias',ICN.news],['rewards','Premios',ICN.rewards],['chat','Asistente',ICN.chat],['clases','Educación',ICN.clases]];
   $('nav').innerHTML = items.map(function(it){
     return '<button id="nav-'+it[0]+'" onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';

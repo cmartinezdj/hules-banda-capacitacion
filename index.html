@@ -754,12 +754,12 @@ window.CFG = {
 
   /* --- Cursos COMUNES (los ve todo el personal) --- */
   common: [
-    { id:'ind1', t:'Inducción: Conoce Hules Banda', dur:'6 min', m:true, ic:'',
+    { id:'ind1', t:'Inducción: Conoce Hules Banda', dur:'6 min', m:true, ic:'', video:'videos/induccion.mp4',
       d:'Hules Banda es una empresa mexicana que fabrica banda de precurado: hule ya vulcanizado, con el dibujo listo, para dar nueva vida a las llantas de camión. Nosotros no aplicamos el renovado ni vendemos llantas: fabricamos la banda que usan los renovadores. Aquí verás cómo nace una banda paso a paso: mezclado del compuesto, formado del dibujo, prensa de vulcanizado e inspección de calidad. Sabrás por qué renovar cuesta mucho menos que comprar llanta nueva y cuida el planeta, porque la carcasa se aprovecha varias veces y se gasta menos petróleo. Y conocerás lo que nos guía: seguridad primero, calidad en cada banda, respeto y trabajo en equipo. Nuestra banda rueda en más de 50 países, y eso empieza con tu trabajo de hoy.', q:[
       { q:'Un amigo te pregunta a qué se dedica Hules Banda. ¿Qué le contestas?', o:['Aplicamos el renovado y vendemos llantas a los choferes','Hacemos rines y refacciones para camión','Fabricamos la banda de precurado que los renovadores usan para renovar llantas','Reparamos motores de tráiler'], c:2 },
       { q:'La banda se llama «de precurado» porque…', o:['Ya viene vulcanizada y con su dibujo listo antes de aplicarse a la llanta','Se vende cruda y el cliente la cuece','Se cura sola con el sol del camino','Se precalienta al momento de empacarla'], c:0 },
       { q:'¿Por qué renovar una llanta conviene más que tirarla y comprar nueva?', o:['Porque la llanta renovada ya no necesita aire','Porque se aprovecha la carcasa: cuesta mucho menos y se gasta menos hule y petróleo','Porque el camión corre más rápido','Porque las llantas nuevas ya no se fabrican'], c:1 } ] },
-    { id:'seg1', t:'Seguridad Industrial (EPP)', dur:'5 min', m:true, ic:'',
+    { id:'seg1', t:'Seguridad Industrial (EPP)', dur:'5 min', m:true, ic:'', video:'videos/seguridad.mp4',
       d:'Tu equipo de protección personal es tu escudo de todos los días: casco, lentes, guantes, botas con casquillo y tapones para el ruido. Aquí verás cuándo usarlo y cómo revisarlo antes del turno, qué hacer antes de meter mano a una máquina (bloqueo y etiquetado, LOTO), cómo manejar cementos y solventes con su hoja de datos de seguridad, y por qué el orden y la limpieza del área evitan caídas y accidentes. En Hules Banda la regla es una sola: primero tu seguridad, luego la producción. Ningún pendiente vale más que regresar completo a tu casa.', q:[
       { q:'A media jornada se te rompe un guante. ¿Qué es lo correcto?', o:['Seguir trabajando con más cuidado','Terminar el turno y avisar mañana','Quitarte los dos guantes para trabajar parejo','Cambiarlo de inmediato: un EPP dañado ya no te protege'], c:3 },
       { q:'Vas a limpiar una máquina atascada. Antes de tocarla debes…', o:['Ponerla en velocidad baja','Aplicar bloqueo y etiquetado (LOTO) para que nadie la pueda encender','Pedirle a un compañero que la vigile mientras metes la mano','Meter la mano rápido para no perder tiempo'], c:1 },
@@ -793,7 +793,7 @@ window.CFG = {
         { q:'Materiales incompatibles entre sí:', o:['Se pueden mezclar sin problema','Pueden causar defectos; se separan','Mejoran la unión','Dan igual'], c:1 } ] }
     ],
     produccion: [
-      { id:'prd1', t:'Manufactura (proceso de renovación)', dur:'6 min', m:true, ic:'',
+      { id:'prd1', t:'Manufactura (proceso de renovación)', video:'videos/manufactura.mp4', dur:'6 min', m:true, ic:'',
         d:'El proceso completo: de la recepción de la llanta a la liberación final del producto.', q:[
         { q:'¿Cuál es un orden correcto del proceso?', o:['Vulcanizar y luego raspar','Recepción, inspección, raspado, reparación, cementado, banda, envelopado, vulcanizado y acabado','Solo inflar y entregar','Pintar y vender'], c:1 },
         { q:'El raspado técnico sirve para:', o:['Adornar la llanta','Preparar la superficie de la carcasa para la banda nueva','Inflarla','Pintarla'], c:1 },
@@ -2341,13 +2341,15 @@ function openCourse(id){
          '<div style="flex:1;min-width:0"><span class="chipst'+(seen?'':' mut')+'">'+(seen?'Video visto ✓':'+'+CFG.points.watch+' pts por ver el video')+'</span>'+
          '<div class="note" style="margin-top:8px;display:flex;gap:8px;align-items:flex-start"><span style="flex:1">Este curso te sirve <b>hoy</b> en tu trabajo. Mira el video y responde <b>3 preguntas</b>. Con <b>2 de 3</b> apruebas. Si te equivocas, no pasa nada: puedes intentar las veces que quieras.</span>'+speakBtn(introTxt)+'</div></div></div></div>';
   h+='<div class="panel" style="padding:0;overflow:hidden;position:relative">'+
-       '<div class="player" style="border-radius:0;border:none">'+courseCover(c)+
-         '<div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.55),rgba(0,0,0,.12) 60%)"></div>'+
-         '<span class="vtag">Capacitación</span>'+
-         '<button class="vplay'+(seen?' hide':'')+'" id="vplay" onclick="watch()" aria-label="Reproducir"></button>'+
-         '<div class="vstat" id="vstat">'+(seen?'Video visto ✓':'Toca para reproducir · +'+CFG.points.watch+' pts')+'</div>'+
-         '<div class="vbarwrap"><i id="vbar"'+(seen?' style="width:100%"':'')+'></i></div>'+
-       '</div>'+
+       (c.video
+         ? '<video id="vid" src="'+c.video+'" playsinline preload="metadata" controls controlsList="nodownload" oncontextmenu="return false" style="width:100%;display:block;background:#000;aspect-ratio:16/9" onended="videoDone()"></video>'
+         : '<div class="player" style="border-radius:0;border:none">'+courseCover(c)+
+             '<div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.55),rgba(0,0,0,.12) 60%)"></div>'+
+             '<span class="vtag">Capacitación</span>'+
+             '<button class="vplay'+(seen?' hide':'')+'" id="vplay" onclick="watch()" aria-label="Reproducir"></button>'+
+             '<div class="vstat" id="vstat">'+(seen?'Video visto ✓':'Toca para reproducir · +'+CFG.points.watch+' pts')+'</div>'+
+             '<div class="vbarwrap"><i id="vbar"'+(seen?' style="width:100%"':'')+'></i></div>'+
+           '</div>')+
        '<div style="padding:15px"><span class="tg">Para qué te sirve</span>'+
          '<div style="display:flex;gap:8px;align-items:flex-start;margin-top:9px"><p style="flex:1;color:var(--mut);font-size:13px;line-height:1.5;margin:0">'+esc(c.d||'')+'</p>'+speakBtn(c.t+'. '+(c.d||''))+'</div>'+
          vidNote+doneNote+
@@ -2367,12 +2369,19 @@ function watch(){
     if(w>=100){ clearInterval(cur._t); cur.watched=true;
       $('vstat').textContent='Video visto ✓';
       var b=$('btnQuiz'); b.disabled=false; b.classList.remove('off');
-      var cid=cur.course.id;
-      if(!S.watched[cid]){ S.watched[cid]=1; S.points+=CFG.points.watch; save(); renderTop();
-        burst(); flash('+'+CFG.points.watch+' puntos. ¡Bien hecho por darte el tiempo de aprender!'); }
-      else { flash('¡Listo! Ya puedes responder las preguntas'); }
+      videoDone();
     }
   },70);
+}
+/* Se llama cuando el video (real o simulado) termina: habilita el quiz y otorga puntos una vez */
+function videoDone(){
+  cur.watched=true;
+  var b=$('btnQuiz'); if(b){ b.disabled=false; b.classList.remove('off'); }
+  var vs=$('vstat'); if(vs) vs.textContent='Video visto ✓';
+  var cid=cur.course.id;
+  if(!S.watched[cid]){ S.watched[cid]=1; S.points+=CFG.points.watch; save(); renderTop();
+    burst(); flash('+'+CFG.points.watch+' puntos. ¡Bien hecho por darte el tiempo de aprender!'); }
+  else { flash('¡Listo! Ya puedes responder las preguntas'); }
 }
 
 /* ====================== QUIZ ====================== */

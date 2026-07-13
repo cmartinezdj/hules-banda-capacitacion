@@ -1798,6 +1798,7 @@ function lgBusy(on){ var g=$('lgGo'); if(g){ g.disabled=on; g.classList.toggle('
 /* PRIMER INGRESO: clave -> confirma quién eres -> T&C -> crea PIN -> registra */
 function lgPrimer(){
   if(!sbReady()){ lgSay('No hay conexión con el servidor. Revisa tu internet e intenta de nuevo.',true); return; }
+  if(!V3_ON){ lgSay('El sistema se está activando (la base de datos aún no está lista). Espera un momento e intenta otra vez.',true); v3Detect(); return; }
   var clave=claveNorm($('lgClave').value);
   if(!clave){ lgSay('Escribe tu número de colaborador.',true); return; }
   lgBusy(true); lgSay('Buscando tu registro…');
@@ -1853,6 +1854,7 @@ function lgRegistrar(clave){
 /* MIEMBROS: clave + PIN -> entrar */
 function lgMiembro(){
   if(!sbReady()){ lgSay('No hay conexión con el servidor. Revisa tu internet.',true); return; }
+  if(!V3_ON){ lgSay('El sistema se está activando (la base de datos aún no está lista). Espera un momento e intenta otra vez.',true); v3Detect(); return; }
   var clave=claveNorm($('lgClave').value), pin=($('lgPin').value||'').trim();
   if(!clave){ lgSay('Escribe tu número de colaborador.',true); return; }
   if(!/^[0-9]{4}$/.test(pin)){ lgSay('Escribe tu PIN de 4 dígitos.',true); return; }
@@ -5131,27 +5133,19 @@ function kvInit(){
 /* Detecta si el servidor está en V3 (roster + candados). Si sí: login real y
    auto-restaura sesión. Si no (aún sin correr el SQL, u offline): deja el login
    demo como respaldo para no dejar el sitio inservible durante la transición. */
-function v3Detect(){
-  if(!sbReady()){ v3ShowDemoFallback('sin conexión'); try{ sbInit(); }catch(e){} return; }
+/* Detecta si el servidor ya es V3 (roster + candados). El login REAL siempre queda
+   a la vista; si el servidor aún no está listo (falta correr el SQL, o el caché de
+   PostgREST no ha recargado) reintenta en silencio y los botones avisan con claridad.
+   NO se revierte al login viejo (eso confundía). El demo queda solo tras #demo. */
+function v3Detect(tries){
+  tries=tries||0;
+  if(location.hash==='#demo'){ V3_ON=false; var d=$('lgDemo'); if(d) d.style.display='';
+    var c=$('lgChoose'); if(c) c.style.display='none'; try{ sbInit(); }catch(e){} return; }
+  if(!sbReady()){ return; }   // sin conexión: el login real se queda visible
   SB.rpc('hb_v3').then(function(r){
-    if(!r.error && r.data===true){
-      V3_ON=true;
-      // login real ya está visible por defecto; NO cargamos tablas como anónimo (los candados lo niegan)
-      v3Restore();
-    } else {
-      v3ShowDemoFallback('servidor aún en preparación');
-      try{ sbInit(); }catch(e){}
-    }
-  }, function(){ v3ShowDemoFallback('servidor no disponible'); try{ sbInit(); }catch(e){} });
-}
-function v3ShowDemoFallback(){
-  // El servidor todavía no es V3 (falta correr el SQL, u offline): respaldo temporal
-  // para no dejar el sitio inservible. Se oculta el "probar como" y los rangos.
-  var d=$('lgDemo'); if(d) d.style.display='';
-  var c=$('lgChoose'); if(c) c.style.display='none';
-  var f=$('lgForm'); if(f) f.style.display='none';
-  var tr=$('tryRow'); if(tr) tr.style.display='none';
-  var lh=$('loginHint'); if(lh) lh.innerHTML='El sistema se está activando. Si no puedes entrar, intenta en unos minutos.';
+    if(!r.error && r.data===true){ V3_ON=true; v3Restore(); }
+    else if(tries<6){ setTimeout(function(){ v3Detect(tries+1); }, 2500); }
+  }, function(){ if(tries<6) setTimeout(function(){ v3Detect(tries+1); }, 2500); });
 }
 </script>
 </body>

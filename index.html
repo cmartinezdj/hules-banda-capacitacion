@@ -655,6 +655,8 @@ body.a11y .screen .seg button{ font-size:13px !important; }
     <!-- V3: formularios (ocultos hasta elegir) -->
     <div id="lgForm" style="display:none;width:100%;max-width:320px">
       <div class="field"><input id="lgClave" inputmode="numeric" autocomplete="off" placeholder="Número de colaborador (clave)" maxlength="6"></div>
+      <div class="field" id="lgNacWrap" style="display:none"><input id="lgNac" type="date" autocomplete="off" style="color-scheme:dark"></div>
+      <div id="lgNacLbl" class="note" style="display:none;margin:-2px 0 8px;text-align:left">Tu fecha de nacimiento (para confirmar que eres tú)</div>
       <div class="field" id="lgPinWrap" style="display:none"><input id="lgPin" inputmode="numeric" type="password" autocomplete="off" placeholder="PIN de 4 dígitos" maxlength="4"></div>
       <button class="btn" id="lgGo">Continuar</button>
       <button class="lnkbtn" style="display:block;margin:12px auto 0" onclick="lgMode('choose')">‹ Regresar</button>
@@ -1786,11 +1788,11 @@ function lgMode(m){
   $('lgChoose').style.display = (m==='choose')?'':'none';
   $('lgForm').style.display   = (m==='choose')?'none':'';
   $('lgMsg').innerHTML=''; $('lgMsg').className='hint';
-  var pinWrap=$('lgPinWrap'), go=$('lgGo'), clave=$('lgClave');
-  if(m==='miembro'){ pinWrap.style.display=''; go.textContent='Entrar'; go.onclick=lgMiembro; }
-  else if(m==='primer'){ pinWrap.style.display='none'; go.textContent='Continuar'; go.onclick=lgPrimer; }
+  var pinWrap=$('lgPinWrap'), go=$('lgGo'), clave=$('lgClave'), nacW=$('lgNacWrap'), nacL=$('lgNacLbl');
+  if(m==='miembro'){ pinWrap.style.display=''; if(nacW)nacW.style.display='none'; if(nacL)nacL.style.display='none'; go.textContent='Entrar'; go.onclick=lgMiembro; }
+  else if(m==='primer'){ pinWrap.style.display='none'; if(nacW)nacW.style.display=''; if(nacL)nacL.style.display=''; go.textContent='Continuar'; go.onclick=lgPrimer; }
   if(clave){ clave.value=''; if(m!=='choose') setTimeout(function(){clave.focus();},60); }
-  var p=$('lgPin'); if(p) p.value='';
+  var p=$('lgPin'); if(p) p.value=''; var nn=$('lgNac'); if(nn) nn.value='';
 }
 function lgSay(msg,bad){ var m=$('lgMsg'); if(!m) return; m.innerHTML=msg; m.className='hint'+(bad?' lgbad':''); }
 function lgBusy(on){ var g=$('lgGo'); if(g){ g.disabled=on; g.classList.toggle('off',on); } }
@@ -1801,21 +1803,27 @@ function lgPrimer(){
   if(!V3_ON){ lgSay('El sistema se está activando (la base de datos aún no está lista). Espera un momento e intenta otra vez.',true); v3Detect(); return; }
   var clave=claveNorm($('lgClave').value);
   if(!clave){ lgSay('Escribe tu número de colaborador.',true); return; }
+  var nac=nac6($('lgNac').value);
+  if(!nac){ lgSay('Escribe tu fecha de nacimiento (para confirmar que eres tú).',true); return; }
   lgBusy(true); lgSay('Buscando tu registro…');
-  SB.rpc('hb_registro_info',{p_clave:clave}).then(function(r){
+  SB.rpc('hb_registro_info',{p_clave:clave,p_nac:nac}).then(function(r){
     lgBusy(false);
     var d=r&&r.data;
     if(r.error || !d){ lgSay('No pudimos verificar tu clave. Intenta más tarde.',true); return; }
     if(!d.ok){
       if(d.error==='no_existe') lgSay('Esa clave no está en el sistema. Verifícala con Recursos Humanos.',true);
       else if(d.error==='ya_registrado') lgSay('Esta clave <b>ya tiene cuenta</b>. Entra con el botón <b>Ya soy miembro</b> usando tu clave y tu PIN.',true);
+      else if(d.error==='datos_no_coinciden') lgSay('La clave y la fecha de nacimiento no coinciden. Revísalas; si el problema sigue, avisa a Recursos Humanos.',true);
+      else if(d.error==='falta_nac') lgSay('Escribe tu fecha de nacimiento.',true);
       else lgSay('No se pudo continuar. Avisa a Recursos Humanos.',true);
       return;
     }
-    showTyc(function(){ lgCrearPin(d.clave, d.nombre, d.depto); });
+    showTyc(function(){ lgCrearPin(d.clave, d.nombre, d.depto, nac); });
   }, function(){ lgBusy(false); lgSay('No hay conexión con el servidor.',true); });
 }
-function lgCrearPin(clave, nombre, depto){
+/* fecha 'YYYY-MM-DD' -> 'YYMMDD' (para el segundo factor) */
+function nac6(v){ v=(v||'').trim(); var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v); if(!m) return ''; return m[1].slice(2)+m[2]+m[3]; }
+function lgCrearPin(clave, nombre, depto, nac){
   var h='<button class="btn" id="lgGo">Crear mi cuenta</button>';
   $('lgForm').innerHTML=
     '<div style="margin-bottom:12px;font-size:14px;line-height:1.5">Hola, <b>'+esc(nombre||'')+'</b>'+(depto?' <span class="note">('+esc(depto)+')</span>':'')+'.<br>Crea tu <b>PIN de 4 dígitos</b>. Lo usarás para entrar a partir de ahora — no lo olvides ni lo compartas.</div>'+
@@ -1823,10 +1831,10 @@ function lgCrearPin(clave, nombre, depto){
     '<div class="field"><input id="lgPin2" inputmode="numeric" type="password" autocomplete="off" placeholder="Repite tu PIN" maxlength="4"></div>'+
     h+'<button class="lnkbtn" style="display:block;margin:12px auto 0" onclick="resetLoginUI()">‹ Cancelar</button>'+
     '<div class="hint" id="lgMsg" style="margin-top:14px"></div>';
-  $('lgGo').onclick=function(){ lgRegistrar(clave); };
+  $('lgGo').onclick=function(){ lgRegistrar(clave, nac); };
   setTimeout(function(){ $('lgPin').focus(); },60);
 }
-function lgRegistrar(clave){
+function lgRegistrar(clave, nac){
   var pin=($('lgPin').value||'').trim(), pin2=($('lgPin2').value||'').trim();
   if(!/^[0-9]{4}$/.test(pin)){ lgSay('El PIN debe ser de 4 números.',true); return; }
   if(pin!==pin2){ lgSay('Los dos PIN no son iguales. Vuelve a escribirlos.',true); return; }
@@ -1837,7 +1845,7 @@ function lgRegistrar(clave){
     // asegurar sesión activa (si "confirm email" está OFF, signUp ya deja sesión; si no, iniciamos)
     SB.auth.signInWithPassword({email:email,password:pass}).then(function(si){
       if(si.error){ lgBusy(false); lgSay('Cuenta creada, pero no pudimos entrar. Usa <b>Ya soy miembro</b>.',true); return; }
-      SB.rpc('hb_vincular',{p_clave:clave,p_pin:pin}).then(function(v){
+      SB.rpc('hb_vincular',{p_clave:clave,p_pin:pin,p_nac:nac}).then(function(v){
         lgBusy(false);
         var d=v&&v.data;
         if(v.error || !d || !d.ok){
@@ -1985,6 +1993,7 @@ function show(name){
   if(typeof updateMsgBadge==='function') updateMsgBadge();
 }
 function go(name){
+  _adminScr=null; _fichaEmp=null;   // salir de sub-pantallas (personal / ficha) al usar el menú
   if(name==='home') return renderHome();
   if(name==='rewards') return renderRewards();
   if(name==='chat') return renderChat();
@@ -3008,11 +3017,91 @@ function sendChat(){
    ============================================================================ */
 function dashLabel(){ return S.dash==='ceo'?'Dirección':(S.dash==='resp'?'Mi Área':'RRHH'); }
 function renderDash(){
+  if(_adminScr==='personal' && S.admin) return renderPersonal();
   if(S.dash==='ceo') return renderCEO();
   if(S.dash==='resp') return (_fichaEmp? renderFicha(_fichaEmp) : renderResp());
   return renderHR();
 }
 var _fichaEmp=null;   // ficha abierta de Mi equipo (para que el refresh en vivo no la cierre)
+var _adminScr=null, _perFilter='';
+
+/* ===== GESTIÓN DE PERSONAL (solo acceso total): altas, bajas, roles, reset ===== */
+function openPersonal(){ _adminScr='personal'; DBC.adminList=null; renderPersonal(); v3LoadAdminList(); }
+function closePersonal(){ _adminScr=null; renderDash(); }
+function v3LoadAdminList(){
+  if(!sbReady()){ return; }
+  SB.rpc('hb_admin_lista').then(function(r){
+    if(!r.error && r.data && r.data.ok){ DBC.adminList=r.data.gente||[]; }
+    else { DBC.adminList=[]; DBC.adminErr=true; }
+    if(_adminScr==='personal') renderPersonal();
+  }, function(){ DBC.adminList=[]; DBC.adminErr=true; if(_adminScr==='personal') renderPersonal(); });
+}
+function perFilter(v){ _perFilter=(v||''); renderPersonal(); }
+function renderPersonal(){
+  var list=DBC.adminList, h='';
+  h+='<button class="back" style="margin-bottom:12px" onclick="closePersonal()">‹ Tablero</button>';
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">RRHH · acceso total</div><b style="font-size:20px">Gestión de personal</b>'+
+     '<div class="note" style="margin-top:3px">Altas de nuevo ingreso, bajas y permisos. Cada ID que agregues podrá hacer su Primer ingreso.</div></div>'+
+     '<span class="chipst">'+(list?list.length:'…')+'</span></div></div>';
+  /* ---- ALTA ---- */
+  var deptos=Object.keys(DEPTO_AREA).sort();
+  h+='<div class="panel"><div class="hd"><b>Dar de alta (nuevo ingreso)</b></div>'+
+     '<div class="note" style="margin:2px 0 3px">Clave / número de colaborador</div><input id="alClave" class="fin" inputmode="numeric" placeholder="Ej. 7500">'+
+     '<div class="note" style="margin:9px 0 3px">Nombre completo</div><input id="alNombre" class="fin" placeholder="APELLIDOS NOMBRE(S)">'+
+     '<div class="note" style="margin:9px 0 3px">Puesto</div><input id="alPuesto" class="fin" placeholder="Ej. AYUDANTE GENERAL">'+
+     '<div class="note" style="margin:9px 0 3px">Departamento</div><select id="alDepto" class="fin">'+deptos.map(function(d){return '<option value="'+esc(d)+'">'+esc(d)+'</option>';}).join('')+'</select>'+
+     '<div class="note" style="margin:9px 0 3px">Fecha de nacimiento <span style="opacity:.7">(recomendada — activa el candado extra al registrarse)</span></div><input id="alNac" type="date" class="fin" style="color-scheme:dark">'+
+     '<label style="display:flex;gap:9px;align-items:center;margin-top:11px;font-size:14px;cursor:pointer"><input type="checkbox" id="alMando" style="width:18px;height:18px"> Es responsable / supervisor (tablero de su departamento)</label>'+
+     '<label style="display:flex;gap:9px;align-items:center;margin-top:8px;font-size:14px;cursor:pointer"><input type="checkbox" id="alAdmin" style="width:18px;height:18px"> Acceso total (ve toda la planta) — solo Dirección/RRHH</label>'+
+     '<button class="btn" style="margin-top:13px" onclick="doAlta()">Dar de alta</button></div>';
+  /* ---- LISTA + BUSCADOR ---- */
+  h+='<div class="panel"><div class="hd"><b>Personal</b><span class="chipst mut">'+(list?list.length:'…')+'</span></div>'+
+     '<input id="perSearch" class="fin" placeholder="Buscar por nombre, clave o departamento…" oninput="perFilter(this.value)" value="'+esc(_perFilter)+'">';
+  if(!list){ h+='<div class="note" style="margin-top:10px">Cargando…</div></div>'; $('s-hr').innerHTML=h; show('hr'); return; }
+  if(DBC.adminErr && !list.length){ h+='<div class="note" style="margin-top:10px;color:var(--warn)">No se pudo cargar el personal. Falta correr el parche de seguridad <b>schema_v3_1_SEGURIDAD.sql</b> en Supabase.</div></div>'; $('s-hr').innerHTML=h; show('hr'); return; }
+  var q=_perFilter.trim().toLowerCase();
+  var fil=q? list.filter(function(p){ return (p.nombre+' '+p.clave+' '+p.depto+' '+(p.puesto||'')).toLowerCase().indexOf(q)>=0; }) : list;
+  var shown=fil.slice(0,60);
+  h+='<div class="note" style="margin:8px 0">'+(q?fil.length+' resultado(s)':'Mostrando '+shown.length+' de '+list.length+' · usa el buscador')+'</div>';
+  shown.forEach(function(p){
+    var badges=(p.admin?'<span class="tg g">Acceso total</span>':(p.mando?'<span class="tg g">Responsable</span>':''))+
+               (p.registrado?'<span class="tg">Registrado</span>':'<span class="tg" style="opacity:.6">Sin registrar</span>');
+    h+='<div class="card"><div class="line" style="border:none;padding:0"><span style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(p.nombre)+'</b>'+
+       '<span class="note">clave '+esc(p.clave)+' · '+esc(p.depto)+'</span></span></div>'+
+       '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center">'+badges+'</div>'+
+       '<div style="display:flex;gap:6px;margin-top:10px">'+
+         '<button class="btn ghost" style="margin:0;flex:1;padding:9px;font-size:12px" onclick="perRol(\''+p.clave+'\','+(!p.mando)+','+p.admin+')">'+(p.mando?'Quitar resp.':'Hacer resp.')+'</button>'+
+         (p.registrado?'<button class="btn ghost" style="margin:0;flex:1;padding:9px;font-size:12px" onclick="perReset(\''+p.clave+'\')">Reiniciar acceso</button>':'')+
+         (p.admin?'':'<button class="btn ghost" style="margin:0;flex:1;padding:9px;font-size:12px;color:var(--bad)" onclick="perBaja(\''+p.clave+'\',\''+esc(p.nombre).replace(/\\/g,'').replace(/'/g,'')+'\')">Baja</button>')+
+       '</div></div>';
+  });
+  if(fil.length>60) h+='<div class="note" style="margin-top:8px">…y '+(fil.length-60)+' más. Afina el buscador.</div>';
+  h+='</div>';
+  $('s-hr').innerHTML=h; show('hr');
+}
+function doAlta(){
+  var clave=(($('alClave')||{}).value||'').trim(), nombre=(($('alNombre')||{}).value||'').trim();
+  var puesto=(($('alPuesto')||{}).value||'').trim(), depto=(($('alDepto')||{}).value||'').trim();
+  var nac=nac6(($('alNac')||{}).value||''), mando=!!($('alMando')||{}).checked, admin=!!($('alAdmin')||{}).checked;
+  if(!clave||!nombre||!depto){ flash('Escribe al menos clave, nombre y departamento'); return; }
+  SB.rpc('hb_admin_alta',{p_clave:clave,p_nombre:nombre,p_puesto:puesto,p_depto:depto,p_nac:nac||null,p_mando:mando,p_admin:admin}).then(function(r){
+    var d=r&&r.data;
+    if(r.error||!d||!d.ok){ flash(d&&d.error==='ya_existe'?'Esa clave ya existe':'No se pudo dar de alta'); return; }
+    burst(); flash('Alta lista · clave '+d.clave+'. Ya puede hacer su Primer ingreso.');
+    v3LoadAdminList();
+  }, function(){ flash('Sin conexión'); });
+}
+function perRol(clave,mando,admin){
+  SB.rpc('hb_admin_rol',{p_clave:clave,p_mando:mando,p_admin:admin}).then(function(r){ if(r.data&&r.data.ok){ flash('Rol actualizado'); v3LoadAdminList(); } else flash('No se pudo'); });
+}
+function perReset(clave){
+  if(!confirm('¿Reiniciar el acceso de '+clave+'? Podrá volver a hacer Primer ingreso. IMPORTANTE: además borra su usuario en Supabase → Authentication → Users ('+clave+'@ids.hulesbanda.com.mx) para que su PIN viejo deje de servir.')) return;
+  SB.rpc('hb_admin_reset',{p_clave:clave}).then(function(r){ if(r.data&&r.data.ok){ flash('Acceso reiniciado. Recuerda borrar su usuario en Authentication.'); v3LoadAdminList(); } else flash('No se pudo'); });
+}
+function perBaja(clave,nombre){
+  if(!confirm('¿Dar de BAJA a '+nombre+' (clave '+clave+')? Se borra su ID, progreso y perfil. No se puede deshacer.')) return;
+  SB.rpc('hb_admin_baja',{p_clave:clave}).then(function(r){ var d=r&&r.data; if(d&&d.ok){ flash('Baja aplicada'); v3LoadAdminList(); } else flash(d&&d.error==='es_admin'?'No puedes dar de baja una cuenta de acceso total':'No se pudo'); });
+}
 function kpiRow(cells){ return '<div class="kpi">'+cells.map(function(c){ return '<div class="b'+(c[2]?' '+c[2]:'')+'"><div class="n">'+c[0]+'</div><div class="l">'+c[1]+'</div></div>'; }).join('')+'</div>'; }
 function areaCount(key){ for(var i=0;i<CFG.ranges.length;i++){ var r=CFG.ranges[i]; if(r.key===key && !r.admin) return r.max-r.min+1; } return 0; }
 
@@ -3254,6 +3343,10 @@ function managerDash(role){
        '<div class="note" style="margin-top:10px">Un tema muy fallado puede indicar que falta capacitación… o que hay un problema en el proceso.</div></div>';
   }
   else if(T==='ppl'){
+    if(V3_ON && S.admin){
+      h+='<div class="panel" style="cursor:pointer" onclick="openPersonal()"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Acceso total</div><b style="font-size:16px">Gestión de personal</b>'+
+         '<div class="note" style="margin-top:3px">Altas de nuevo ingreso, bajas, permisos y reinicio de acceso.</div></div><span class="chipst">Abrir ›</span></div></div>';
+    }
     h+='<div class="panel"><div class="hd"><b>Ranking de puntos</b></div><div class="note" style="margin:-6px 0 8px">Visible solo para '+esc(role)+'. Los empleados nunca ven el ranking.</div>'+
        H.top.map(function(e,i){
          return '<div class="rank"><span class="medal">'+(i+1)+'</span><span class="rn">'+esc(e[0])+'</span><span class="tg g">'+e[1]+' pts</span></div>';

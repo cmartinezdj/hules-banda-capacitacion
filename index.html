@@ -2740,9 +2740,10 @@ function sendChat(){
 function dashLabel(){ return S.dash==='ceo'?'Dirección':(S.dash==='resp'?'Mi Área':'RRHH'); }
 function renderDash(){
   if(S.dash==='ceo') return renderCEO();
-  if(S.dash==='resp') return renderResp();
+  if(S.dash==='resp') return (_fichaEmp? renderFicha(_fichaEmp) : renderResp());
   return renderHR();
 }
+var _fichaEmp=null;   // ficha abierta de Mi equipo (para que el refresh en vivo no la cierre)
 function kpiRow(cells){ return '<div class="kpi">'+cells.map(function(c){ return '<div class="b'+(c[2]?' '+c[2]:'')+'"><div class="n">'+c[0]+'</div><div class="l">'+c[1]+'</div></div>'; }).join('')+'</div>'; }
 function areaCount(key){ for(var i=0;i<CFG.ranges.length;i++){ var r=CFG.ranges[i]; if(r.key===key && !r.admin) return r.max-r.min+1; } return 0; }
 
@@ -2765,26 +2766,123 @@ function bandiFeedBlock(){
 /* ===== CEO / Dirección (César, Ana): mismo tablero que RRHH, solo cambia la etiqueta ===== */
 function renderCEO(){ managerDash('Dirección'); }
 /* ===== Responsable de Área (un responsable por área): control de su área ===== */
+/* --- MI EQUIPO: la gente del área con semáforo real (datos del servidor KV) --- */
+function coursesForKey(key){ return (CFG.common||[]).concat(CFG.areas[key]||[]); }
+function teamRangeOf(key){ for(var i=0;i<CFG.ranges.length;i++){ var r=CFG.ranges[i]; if(r.key===key && !r.admin) return r; } return null; }
+/* Semáforo: 🟢 al día (≥80% de sus cursos) · 🟡 atención (40–79%) · 🔴 actuar (<40%) */
+function semOf(pct){ return pct>=80?'g':(pct>=40?'y':'r'); }
+function semColor(s){ return s==='g'?'var(--ok)':(s==='y'?'var(--warn)':'var(--bad)'); }
+function semLabel(s){ return s==='g'?'Al día':(s==='y'?'Atención':'Actuar'); }
+function semDot(s,sz){ sz=sz||12; var c=semColor(s);
+  return '<span style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;flex:none;background:'+c+';box-shadow:0 0 9px color-mix(in srgb,'+c+' 65%,transparent)"></span>'; }
+function teamMember(key,n){
+  var d=kvGet('hb_'+n), p=kvGet('hb_profile_'+n);
+  var hasP=p&&Object.keys(p).length;
+  if(d===undefined && !hasP) return null;   // nunca ha entrado a la app
+  d=d||{}; p=p||{};
+  var cs=coursesForKey(key), dm=d.done||{}, done=0;
+  for(var i=0;i<cs.length;i++) if(dm[cs[i].id]) done++;
+  var pct=cs.length?Math.round(done/cs.length*100):0;
+  return { emp:n, nombre:(p.nombre||'').trim(), foto:p.foto||'', tel:(p.tel||'').trim(), emg:(p.emg||'').trim(),
+           points:d.points||0, streak:d.streak||0, done:done, total:cs.length, pct:pct, sem:semOf(pct) };
+}
+function teamList(key){
+  var r=teamRangeOf(key); if(!r) return [];
+  var list=[];
+  for(var n=r.min;n<=r.max;n++){ var m=teamMember(key,n); if(m) list.push(m); }
+  var w={r:0,y:1,g:2};
+  list.sort(function(a,b){ return w[a.sem]-w[b.sem] || a.pct-b.pct || a.emp-b.emp; });
+  return list;
+}
+function teamAvatar(m,size,fs){
+  if(m.foto) return '<img src="'+m.foto+'" alt="" style="width:'+size+'px;height:'+size+'px;border-radius:12px;object-fit:cover;flex:none;display:block">';
+  var ini=m.nombre? m.nombre.split(/\s+/).slice(0,2).map(function(x){return (x[0]||'').toUpperCase();}).join('') : (''+m.emp).padStart(3,'0');
+  return '<span style="width:'+size+'px;height:'+size+'px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:'+(m.nombre?fs:Math.round(fs*.8))+'px;color:#fff;background:linear-gradient(150deg,var(--accent),var(--accent2))">'+esc(ini)+'</span>';
+}
+function teamName(m){ return m.nombre || ('Empleado #'+(''+m.emp).padStart(3,'0')); }
+function teamRow(m){
+  return '<div class="card" onclick="renderFicha('+m.emp+')" style="cursor:pointer">'+
+    '<div class="line" style="border:none;padding:0"><span style="display:flex;align-items:center;gap:11px;min-width:0">'+teamAvatar(m,44,15)+
+    '<span style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(teamName(m))+'</b>'+
+    '<span class="note">#'+(''+m.emp).padStart(3,'0')+' · '+m.done+' de '+m.total+' cursos</span></span></span>'+
+    '<span style="display:flex;align-items:center;gap:9px;flex:none">'+semDot(m.sem)+'<b style="font-size:13px;color:'+semColor(m.sem)+'">'+m.pct+'%</b><span class="note" style="font-size:16px">›</span></span></div>'+
+    '<div style="margin-top:9px;height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden"><i style="display:block;height:100%;width:'+m.pct+'%;border-radius:4px;background:'+semColor(m.sem)+'"></i></div></div>';
+}
 function renderResp(){
+  _fichaEmp=null;
   var area=S.area, h='';
-  var av=(CFG.hr.byArea.filter(function(a){return a[0]===area;})[0]||[area,0])[1];
   var myReports=reportsGet().filter(function(r){ return r.area===area; });
   var myAlerts=(qstats().alerts||[]).filter(function(a){ return a.area===area; });
+  var team=teamList(S.key), rr=teamRangeOf(S.key);
+  var nG=0,nY=0,nR=0; team.forEach(function(m){ if(m.sem==='g')nG++; else if(m.sem==='y')nY++; else nR++; });
+  var av=team.length? Math.round(team.reduce(function(s,m){return s+m.pct;},0)/team.length) : 0;
   h+='<div class="panel"><div class="hd" style="align-items:flex-start">'+
      '<div><div class="eyebrow">Mi área</div><b style="font-size:20px">'+esc(area)+'</b></div>'+
      '<span class="status"><span class="d"></span>En línea</span></div>'+
      '<div class="gaugeWrap">'+
-       '<div class="statile" style="flex:1.25;padding:10px 8px 8px">'+semiGauge(av,(rangeOf(S.emp)||{}).accent2||'var(--data)')+'<div class="l" style="margin-top:2px">Del área</div></div>'+
+       '<div class="statile" style="flex:1.25;padding:10px 8px 8px">'+semiGauge(av,(rangeOf(S.emp)||{}).accent2||'var(--data)')+'<div class="l" style="margin-top:2px">Del equipo</div></div>'+
        '<div class="statile"><div class="n"'+(myAlerts.length?' style="color:var(--bad)"':'')+'>'+myAlerts.length+'</div><div class="l">Focos</div></div>'+
        '<div class="statile"><div class="n">'+myReports.length+'</div><div class="l">Reportes</div></div>'+
-       '<div class="statile"><div class="n">'+areaCount(S.key)+'</div><div class="l">Equipo</div></div>'+
+       '<div class="statile"><div class="n">'+team.length+'</div><div class="l">En la app</div></div>'+
      '</div></div>';
+  /* ---- MI EQUIPO: semáforo por trabajador ---- */
+  var legTxt='Mi equipo. Semáforo de capacitación de tu gente. Verde: al día. Amarillo: necesita atención. Rojo: hay que actuar. Toca un nombre para ver su ficha.';
+  h+='<div class="sec-t">Mi equipo<span class="ln"></span></div>';
+  h+='<div class="panel" style="position:relative"><span style="position:absolute;top:12px;right:12px;z-index:2">'+speakBtn(legTxt)+'</span>'+
+     '<div class="hd" style="align-items:flex-start;padding-right:46px;margin-bottom:8px"><div><div class="eyebrow">Semáforo</div><b style="font-size:16px">¿Cómo va tu gente?</b>'+
+     '<div class="note" style="margin-top:3px">Toca un nombre para ver su ficha completa.</div></div></div>'+
+     '<div style="display:flex;gap:8px">'+
+       [['g',nG],['y',nY],['r',nR]].map(function(x){ return '<div class="statile" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 6px"><span style="display:flex;align-items:center;gap:7px">'+semDot(x[0])+'<b style="font-size:18px">'+x[1]+'</b></span><div class="l">'+semLabel(x[0])+'</div></div>'; }).join('')+
+     '</div></div>';
+  if(!team.length){
+    h+='<div class="card"><div class="note">Tu gente aparecerá aquí en cuanto entre a la app con su número de colaborador'+(rr?' (números '+rr.min+' a '+rr.max+')':'')+'. Su avance se actualiza solo, en vivo.</div></div>';
+  } else {
+    team.forEach(function(m){ h+=teamRow(m); });
+    if(rr){ var falta=(rr.max-rr.min+1)-team.length;
+      if(falta>0) h+='<div class="note" style="margin-top:10px;text-align:center">Los demás números de tu rango aún no entran a la app. Invítalos: su avance aparece aquí solito.</div>'; }
+  }
   h+='<div class="sec-t">Reportes de tu área<span class="ln"></span></div>';
   if(!myReports.length){ h+='<div class="card"><div class="note">Sin reportes de tu área todavía.</div></div>'; }
   myReports.slice(0,10).forEach(function(r){ var ty=RPT[r.type]||{ic:'•',l:r.type};
     h+='<div class="card"><div class="line"><b>'+ty.ic+' '+esc(ty.l)+'</b>'+stTag(r.status)+'</div><p style="margin:6px 0 0;line-height:1.5;color:var(--mut)">'+esc(r.text)+'</p><div class="line" style="margin-top:5px"><span class="note">#'+(''+r.emp).padStart(3,'0')+' · '+buzTime(r.ts)+'</span>'+speakBtn(ty.l+'. '+r.text)+'</div></div>'; });
-  h+='<div class="note" style="margin-top:12px">Para llamar a un trabajador de tu equipo, usa el <b>Beeper</b> en Mensajes; las quejas/mejoras válidas las aprueba RRHH (suman puntos).</div>';
+  h+='<div class="note" style="margin-top:12px">Para hablar con alguien de tu equipo usa <b>Mensajes</b>; las anormalidades e ideas de mejora válidas las aprueba RRHH (suman puntos).</div>';
   $('s-hr').innerHTML=h; show('hr');
+}
+/* ---- FICHA del trabajador (para el responsable): avance, cursos, reportes y contacto ---- */
+function renderFicha(emp){
+  var m=teamMember(S.key,emp); if(!m){ renderResp(); return; }
+  _fichaEmp=emp;
+  var cs=coursesForKey(S.key), dmap=(kvGet('hb_'+emp)||{}).done||{};
+  var sus=reportsGet().filter(function(r){ return r.emp===emp; });
+  var resumen=teamName(m)+', empleado '+m.emp+'. Lleva '+m.done+' de '+m.total+' cursos, '+m.pct+' por ciento. Semáforo: '+semLabel(m.sem)+'. Tiene '+m.points+' puntos y racha de '+m.streak+' días.';
+  var h='';
+  h+='<button class="back" style="margin-bottom:12px" onclick="renderResp()">‹ Mi área</button>';
+  h+='<div class="panel" style="position:relative"><span style="position:absolute;top:12px;right:12px;z-index:2">'+speakBtn(resumen)+'</span>'+
+     '<div class="hd" style="align-items:flex-start;margin-bottom:0;padding-right:46px"><div style="display:flex;gap:14px;align-items:center;min-width:0">'+teamAvatar(m,64,20)+
+     '<div style="min-width:0"><div class="eyebrow">Ficha de mi equipo</div><b style="font-size:20px;display:block">'+esc(teamName(m))+'</b>'+
+     '<span class="note">'+esc(S.area)+' · #'+(''+m.emp).padStart(3,'0')+'</span>'+
+     '<div style="display:flex;align-items:center;gap:7px;margin-top:7px">'+semDot(m.sem)+'<b style="font-size:13px;color:'+semColor(m.sem)+'">'+semLabel(m.sem)+'</b></div></div></div></div>'+
+     '<div class="gaugeWrap" style="margin-top:14px">'+
+       '<div class="statile" style="flex:1.25;padding:10px 8px 8px">'+semiGauge(m.pct,semColor(m.sem))+'<div class="l" style="margin-top:2px">Avance</div></div>'+
+       '<div class="statile"><div class="n">'+m.done+'/'+m.total+'</div><div class="l">Cursos</div></div>'+
+       '<div class="statile"><div class="n">'+m.points+'</div><div class="l">Puntos</div></div>'+
+       '<div class="statile"><div class="n">'+m.streak+'</div><div class="l">Racha</div></div>'+
+     '</div></div>';
+  h+='<div class="sec-t">Sus cursos<span class="ln"></span></div><div class="panel">'+
+     cs.map(function(c){ var st=dmap[c.id];
+       var pill = st==='exempt' ? '<span class="tg g">Exento ✓</span>' : st ? '<span class="tg g">Aprobado ✓</span>' : '<span class="tg">Pendiente</span>';
+       return '<div class="line"><span style="min-width:0">'+esc(c.t)+(c.m?' <span class="note">· obligatorio</span>':'')+'</span>'+pill+'</div>'; }).join('')+
+     (m.sem!=='g'?'<div class="note" style="margin-top:9px">Consejo: acuerda con '+esc(m.nombre?m.nombre.split(' ')[0]:'tu colaborador')+' un curso pendiente para esta semana. Diez minutos al día alcanzan.</div>':'<div class="note" style="margin-top:9px">Va al día. Un reconocimiento a tiempo hace más que mil regaños. 👏</div>')+'</div>';
+  h+='<div class="sec-t">Sus reportes<span class="ln"></span></div>';
+  if(!sus.length){ h+='<div class="card"><div class="note">No ha enviado reportes.</div></div>'; }
+  sus.slice(0,5).forEach(function(r){ var ty=RPT[r.type]||{l:r.type};
+    h+='<div class="card"><div class="line"><b>'+esc(ty.l)+'</b>'+stTag(r.status)+'</div><p style="margin:6px 0 0;line-height:1.5;color:var(--mut)">'+esc(r.text)+'</p><div class="note" style="margin-top:5px">'+buzTime(r.ts)+'</div></div>'; });
+  if(m.tel||m.emg){
+    h+='<div class="sec-t">Contacto<span class="ln"></span></div><div class="panel">'+
+       (m.tel?'<div class="line"><span>Teléfono</span><a href="tel:'+esc(m.tel).replace(/\s+/g,'')+'" style="color:var(--data);font-weight:800;text-decoration:none">'+esc(m.tel)+'</a></div>':'')+
+       (m.emg?'<div class="line"><span>Emergencia</span><b style="text-align:right;min-width:0">'+esc(m.emg)+'</b></div>':'')+'</div>';
+  }
+  $('s-hr').innerHTML=h; show('hr'); window.scrollTo(0,0);
 }
 
 /* Tablero compartido por RRHH y Dirección (acceso total, idéntico; solo cambia la etiqueta). */

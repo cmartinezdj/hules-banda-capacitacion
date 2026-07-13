@@ -904,7 +904,8 @@ window.CFG = {
     read:8,         // marcar "Enterado" de una noticia de RRHH (1 sola vez por aviso)
     poll:8,       // responder una encuesta
     perm:10,      // responder la Encuesta de Permanencia         // responder una encuesta de RRHH (1 sola vez por encuesta)
-    report:75,      // reporte de anormalidad/mejora aceptado por RRHH (una capacitación ≈ 100)
+    report:75,      // reporte de anormalidad aceptado por RRHH (una capacitación ≈ 100)
+    idea:150,       // IDEA DE MEJORA aceptada por RRHH — paga más: nadie conoce el trabajo mejor que quien lo hace
     perLevel:300    // puntos para subir de nivel
   },
   levels:['Aprendiz','Operario','Técnico','Especialista','Maestro','Leyenda HB'],
@@ -2230,7 +2231,7 @@ function permAdminBlock(){
 
 /* ===== QUEJAS Y REPORTES (pantalla) ===== */
 function renderQuejas(){
-  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Mensajes</div><b style="font-size:20px">Quejas y reportes</b><p class="note" style="margin:4px 0 0;max-width:250px">Cuéntale a RRHH una queja, una mejora o algo fuera de lo normal. Es privado.</p></div></div></div>';
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Mensajes</div><b style="font-size:20px">Quejas y reportes</b><p class="note" style="margin:4px 0 0;max-width:250px">Cuéntale a RRHH una queja, una idea de mejora o algo fuera de lo normal. Es privado y tus ideas suman puntos.</p></div></div></div>';
   h+=reportFormBlock(); h+=myReportsBlock();
   $('s-quejas').innerHTML=h; show('quejas');
 }
@@ -3268,12 +3269,14 @@ function sendDM(){
   var a=dmGet(); a.unshift({ id:'d'+Date.now(), to:to, text:txt, ts:Date.now() }); dmSave(a);
   flash('Aviso enviado · '+targetLabel(to)); renderNews();
 }
-var RPT={ queja:{ic:'',l:'Queja',pts:false}, anormalidad:{ic:'',l:'Reporte de anormalidad',pts:true}, mejora:{ic:'',l:'Mejora continua',pts:true} };
+var RPT={ queja:{ic:'',l:'Queja',pts:false}, anormalidad:{ic:'',l:'Reporte de anormalidad',pts:true}, mejora:{ic:'',l:'Idea de mejora',pts:true} };
+/* puntos por tipo de reporte aceptado: la idea de mejora paga MÁS (empuja la mejora continua) */
+function rptPts(type){ return type==='mejora' ? CFG.points.idea : CFG.points.report; }
 /* íconos SVG por tipo de reporte (lookup de presentación; RPT no se toca) */
 var RPT_IC={ queja:AP.mega, anormalidad:AP.shield, mejora:AP.check };
 function rptIcon(k,sz){ sz=sz||18; return '<span style="width:'+sz+'px;height:'+sz+'px;display:inline-flex;flex:none;color:var(--data)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%">'+(RPT_IC[k]||AP.chat)+'</svg></span>'; }
 var _buzType='queja';
-function pickBuzType(t){ _buzType=t; renderMsgs(); }
+function pickBuzType(t){ _buzType=t; renderQuejas(); }   // re-pinta la pantalla del buzón (antes te regresaba a Mensajes)
 function buzTime(ts){ try{ var d=new Date(ts); return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' · '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
 function stTag(s){ return s==='aceptado'?'<span class="tg g">Aceptado</span>':s==='rechazado'?'<span class="tg">No procede</span>':'<span class="tg">Pendiente</span>'; }
 function submitReport(){
@@ -3282,11 +3285,11 @@ function submitReport(){
   var a=reportsGet();
   a.unshift({ id:'r'+Date.now(), emp:S.emp, area:S.area, type:_buzType, text:txt, status:'pendiente', pts:0, ts:Date.now() });
   reportsSave(a);
-  flash(RPT[_buzType].pts?'Enviado a RRHH. Si lo aprueban, ganas '+CFG.points.report+' puntos.':'Tu queja llegó directo a RRHH.');
-  renderMsgs();
+  flash(RPT[_buzType].pts?'Enviado a RRHH. Si lo aprueban, ganas '+rptPts(_buzType)+' puntos.':'Tu queja llegó directo a RRHH.');
+  renderQuejas();   // se queda en el buzón: el trabajador ve su envío en "Mis envíos" como Pendiente
 }
 function awardPointsTo(emp,pts){
-  try{ var k='hb_'+emp, d=JSON.parse(localStorage.getItem(k)||'{}')||{}; d.points=(d.points||0)+pts; localStorage.setItem(k,JSON.stringify(d));
+  try{ var k='hb_'+emp, d=kvGet(k)||{}; d.points=(d.points||0)+pts; kvSet(k,d);   // KV: sincroniza al dispositivo del trabajador
     if(S&&S.emp===emp){ S.points+=pts; renderTop(); }
   }catch(e){}
 }
@@ -3295,8 +3298,8 @@ function reviewReport(id,accept){
   if(!r||r.status!=='pendiente') return;
   if(accept){
     r.status='aceptado';
-    if(RPT[r.type]&&RPT[r.type].pts){ r.pts=CFG.points.report; awardPointsTo(r.emp,CFG.points.report);
-      flash('Aceptado · +'+CFG.points.report+' pts para el empleado #'+(''+r.emp).padStart(3,'0')); }
+    if(RPT[r.type]&&RPT[r.type].pts){ var _pp=rptPts(r.type); r.pts=_pp; awardPointsTo(r.emp,_pp);
+      flash('Aceptado · +'+_pp+' pts para el empleado #'+(''+r.emp).padStart(3,'0')); }
     else { flash('Queja marcada como atendida'); }
   } else { r.status='rechazado'; flash('Marcado como no procedente'); }
   reportsSave(a); renderDash();
@@ -3330,14 +3333,22 @@ function dmWorkerBlock(){   // el trabajador ve los avisos generales de RRHH den
   dms.forEach(function(d){ h+=avisoCard(d.text, buzTime(d.ts)); });
   return h;
 }
-function reportFormBlock(){   // trabajador: queja / anormalidad / mejora
-  return '<div class="panel" style="position:relative"><span style="position:absolute;top:12px;right:12px;z-index:2">'+speakBtn('Enviar a Recursos Humanos. Tu mensaje llega directo y privado. Elige el tipo y cuéntanos.')+'</span><div class="hd" style="align-items:flex-start;padding-right:46px"><div><div class="eyebrow">Buzón</div><b style="font-size:16px">Enviar a RRHH</b><div class="note" style="margin-top:3px">Tu mensaje llega directo y privado.</div></div></div>'+
+function reportFormBlock(){   // trabajador: queja / anormalidad / idea de mejora
+  var SUB={ queja:'directa y privada', anormalidad:'+'+CFG.points.report+' pts si procede', mejora:'+'+CFG.points.idea+' pts si se acepta' };
+  var NOTE={
+    queja:'Tu queja llega directa y privada a RRHH. Nadie más la ve.',
+    anormalidad:'¿Algo raro en tu máquina, tu material o tu área? Avísalo. Si RRHH lo confirma, ganas <b>'+CFG.points.report+' puntos</b>. Avisar a tiempo evita accidentes y paros.',
+    mejora:'¿Cómo harías tu trabajo más fácil, más seguro o con menos desperdicio? <b>Nadie conoce tu puesto mejor que tú.</b> Si tu idea se acepta, ganas <b>'+CFG.points.idea+' puntos</b> — más que una capacitación completa.'
+  };
+  var PH={ queja:'Cuéntale a RRHH…', anormalidad:'¿Qué viste y en dónde? Ej. “La prensa 2 tira aceite por abajo”…', mejora:'Cuéntanos tu idea: ¿qué cambiarías y qué mejoraría?…' };
+  var VOZ={ queja:'Queja. Tu queja llega directa y privada a Recursos Humanos.', anormalidad:'Reporte de anormalidad. Si algo anda raro en tu máquina o tu área, avísalo aquí. Si se confirma, ganas '+CFG.points.report+' puntos.', mejora:'Idea de mejora. Nadie conoce tu puesto mejor que tú. Si tu idea se acepta, ganas '+CFG.points.idea+' puntos.' };
+  return '<div class="panel" style="position:relative"><span style="position:absolute;top:12px;right:12px;z-index:2">'+speakBtn('Enviar a Recursos Humanos. Elige el tipo y cuéntanos. '+VOZ[_buzType])+'</span><div class="hd" style="align-items:flex-start;padding-right:46px"><div><div class="eyebrow">Buzón</div><b style="font-size:16px">Enviar a RRHH</b><div class="note" style="margin-top:3px">Tu mensaje llega directo y privado.</div></div></div>'+
     '<div class="note" style="margin:0 0 9px">Elige el tipo:</div>'+
     '<div class="lvgrid" style="margin-bottom:0">'+
-    Object.keys(RPT).map(function(k){ var on=k===_buzType; return '<button class="lvcard'+(on?' on':'')+'" onclick="pickBuzType(\''+k+'\')"><span class="ico" style="margin-bottom:9px">'+rptIcon(k,22)+'</span><b>'+esc(RPT[k].l)+'</b></button>'; }).join('')+'</div>'+
-    '<textarea id="buzText" class="fin" rows="4" placeholder="Cuéntale a RRHH…" style="margin-top:11px"></textarea>'+
-    (RPT[_buzType].pts?'<div class="note" style="margin-top:8px">Si RRHH lo aprueba, ganas <b>'+CFG.points.report+' puntos</b> (una capacitación da ≈100).</div>':'<div class="note" style="margin-top:8px">Tu queja llega directa y privada a RRHH.</div>')+
-    '<button class="btn" style="margin-top:10px;padding:13px;font-size:15px" onclick="submitReport()">Enviar a RRHH</button></div>';
+    Object.keys(RPT).map(function(k){ var on=k===_buzType; return '<button class="lvcard'+(on?' on':'')+'" onclick="pickBuzType(\''+k+'\')"><span class="ico" style="margin-bottom:9px">'+rptIcon(k,22)+'</span><b>'+esc(RPT[k].l)+'</b><span>'+esc(SUB[k])+'</span></button>'; }).join('')+'</div>'+
+    '<textarea id="buzText" class="fin" rows="4" placeholder="'+PH[_buzType]+'" style="margin-top:11px"></textarea>'+
+    '<div class="note" style="margin-top:8px">'+NOTE[_buzType]+'</div>'+
+    '<button class="btn" style="margin-top:10px;padding:13px;font-size:15px" onclick="submitReport()">'+(_buzType==='mejora'?'Enviar mi idea':'Enviar a RRHH')+'</button></div>';
 }
 function myReportsBlock(){
   var mine=reportsGet().filter(function(r){ return r.emp===S.emp; });
@@ -3352,11 +3363,11 @@ function myReportsBlock(){
 function reportsAdminBlock(){
   var a=reportsGet(), pend=a.filter(function(r){return r.status==='pendiente';});
   var cnt={queja:0,anormalidad:0,mejora:0}; a.forEach(function(r){ if(cnt[r.type]!=null) cnt[r.type]++; });
-  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Buzón</div><b style="font-size:16px">Quejas y reportes</b><div class="note" style="margin-top:3px">Si una <b>anormalidad</b> o <b>mejora</b> es válida, acéptala: se guarda y el trabajador gana <b>'+CFG.points.report+' puntos</b>. Las quejas solo se marcan como atendidas.</div></div><span class="chipst'+(pend.length?'':' mut')+'">'+pend.length+' pendientes</span></div>'+
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Buzón</div><b style="font-size:16px">Quejas y reportes</b><div class="note" style="margin-top:3px">Si una <b>anormalidad</b> (+'+CFG.points.report+' pts) o una <b>idea de mejora</b> (+'+CFG.points.idea+' pts) es válida, acéptala: se guarda y el trabajador gana sus puntos. Las quejas solo se marcan como atendidas.</div></div><span class="chipst'+(pend.length?'':' mut')+'">'+pend.length+' pendientes</span></div>'+
      '<div class="dotgrid" style="grid-template-columns:repeat(3,1fr)">'+
        dotStat(Math.min(100,cnt.queja*20), cnt.queja, 'Quejas','')+
        dotStat(Math.min(100,cnt.anormalidad*20), cnt.anormalidad, 'Anormalidad','')+
-       dotStat(Math.min(100,cnt.mejora*20), cnt.mejora, 'Mejoras','')+
+       dotStat(Math.min(100,cnt.mejora*20), cnt.mejora, 'Ideas','')+
      '</div></div>';
   if(!a.length) h+='<div class="card"><div class="note">Sin envíos todavía.</div></div>';
   a.forEach(function(r){ var ty=RPT[r.type]||{ic:'•',l:r.type,pts:false};
@@ -3364,7 +3375,7 @@ function reportsAdminBlock(){
        '<p style="margin:7px 0;line-height:1.5">'+esc(r.text)+'</p>'+
        '<div class="line"><span class="note">Empleado #'+(''+r.emp).padStart(3,'0')+' · '+esc(r.area||'')+' · '+buzTime(r.ts)+'</span>'+speakBtn(ty.l+'. '+r.text)+'</div>'+
        (r.status==='pendiente'
-         ? '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="margin:0;flex:1;padding:11px;font-size:13px" onclick="reviewReport(\''+r.id+'\',true)">✓ '+(ty.pts?'Aceptar (+'+CFG.points.report+')':'Atendida')+'</button><button class="btn ghost" style="margin:0;flex:1;padding:11px;font-size:13px" onclick="reviewReport(\''+r.id+'\',false)">✗ No procede</button></div>'
+         ? '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="margin:0;flex:1;padding:11px;font-size:13px" onclick="reviewReport(\''+r.id+'\',true)">✓ '+(ty.pts?'Aceptar (+'+rptPts(r.type)+')':'Atendida')+'</button><button class="btn ghost" style="margin:0;flex:1;padding:11px;font-size:13px" onclick="reviewReport(\''+r.id+'\',false)">✗ No procede</button></div>'
          : (r.pts?'<div class="note" style="margin-top:7px">+'+r.pts+' puntos otorgados al empleado.</div>':''))+'</div>'; });
   return h;
 }
@@ -4189,7 +4200,7 @@ function renderMsgs(){
     else { h+='<div class="card"><div class="note">Aún no tienes conversaciones. Abre una desde <b>Líneas directas</b>.</div></div>'; }
     // Vacaciones + Quejas (banners)
     h+=bnrCard("renderVacaciones()",'Vacaciones','Días disponibles y solicitudes', cover('sun','#e0a020','#6b4708'),'');
-    h+=bnrCard("renderQuejas()",'Quejas y reportes','Queja, mejora o algo fuera de lo normal', cover('mega','#e0564b','#7a1410'),'');
+    h+=bnrCard("renderQuejas()",'Quejas y reportes','Queja, idea de mejora (da puntos) o anormalidad', cover('mega','#e0564b','#7a1410'),'');
   }
   $('s-msgs').innerHTML=h; show('msgs');
 }

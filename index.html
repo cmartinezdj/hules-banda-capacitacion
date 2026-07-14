@@ -106,13 +106,10 @@ button{font-family:var(--font)}
   padding:11px 14px;padding-top:calc(11px + env(safe-area-inset-top));
   background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
 .top .who{display:flex;align-items:center;gap:10px;min-width:0;flex:1;overflow:hidden}
-/* marca central estilo logo (wordmark + barra roja) */
-.brandmid{position:absolute;left:134px;right:134px;top:calc(11px + env(safe-area-inset-top));height:40px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;overflow:hidden;
-  font-weight:900;font-size:12px;letter-spacing:.2px;color:#fff;white-space:nowrap}
-.brandmid:after{content:'';width:30px;height:3px;border-radius:2px;background:#c4161c;margin-top:2px}
-/* En pantallas angostas la marca central se oculta: los nombres reales son largos y chocaban */
-@media (max-width:640px){ .brandmid{display:none} }
+/* marca central estilo logo — OCULTA: con nombres reales largos se encimaba con
+   el nombre del usuario. El logo grande ya vive en el login; el topbar prioriza
+   el nombre + controles. */
+.brandmid{display:none}
 .top .who .av{width:40px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--accent) 22%,#14151d);padding:3px;flex:none}
 .top .who b{font-size:14px;display:block;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .top .who span{font-size:11px;color:var(--mut)}

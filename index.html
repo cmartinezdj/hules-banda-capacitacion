@@ -202,9 +202,6 @@ button{font-family:var(--font)}
 .result .emo{font-size:64px;margin:6px 0}
 .result h2{font-size:24px;margin:4px 0 2px;font-weight:900}
 .result .ms{color:var(--mut);font-size:14px;line-height:1.5;max-width:330px;margin:0 auto 6px}
-.scorering{width:120px;height:120px;margin:10px auto;position:relative;display:flex;align-items:center;justify-content:center}
-.scorering svg{position:absolute;inset:0;transform:rotate(-90deg)}
-.scorering b{font-size:30px;font-weight:900}.scorering span{font-size:11px;color:var(--mut);display:block;margin-top:-4px}
 .brk{text-align:left;margin-top:8px}
 .brk .r{display:flex;justify-content:space-between;align-items:center;padding:11px 2px;border-bottom:1px dashed var(--line);font-size:13.5px}
 .brk .r:last-child{border-bottom:none}
@@ -271,11 +268,6 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .lnkbtn:active{transform:scale(.95)}
 
 /* ============================== TABLERO RRHH ============================== */
-.kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:13px}
-.kpi .b{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;backdrop-filter:blur(10px);text-align:center}
-.kpi .b .n{font-size:28px;font-weight:900;line-height:1}
-.kpi .b .l{font-size:11px;color:var(--mut);margin-top:4px;font-weight:600}
-.kpi .b.grn .n{color:#5fe093}.kpi .b.red .n{color:var(--bad)}
 .barrow{font-size:12.5px;margin-top:12px;display:flex;justify-content:space-between;font-weight:600}
 .barrow .v{color:var(--mut)}
 .bar{height:9px;border-radius:30px;background:rgba(255,255,255,.07);overflow:hidden;margin-top:6px}
@@ -287,10 +279,10 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .rank{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}
 .rank:last-child{border-bottom:none}
 .medal{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex:none;background:var(--card2);color:var(--mut)}
-.rank:nth-child(1) .medal{background:linear-gradient(135deg,#ffd76a,#e0a019);color:#3a2400}
-.rank:nth-child(2) .medal{background:linear-gradient(135deg,#e3e7ef,#a9b0c0);color:#22252e}
-.rank:nth-child(3) .medal{background:linear-gradient(135deg,#e6a463,#b06a2e);color:#2a1400}
-.rank .rn{flex:1;font-size:13.5px;font-weight:600}
+.medal.m1{background:linear-gradient(135deg,#ffd76a,#e0a019);color:#3a2400}
+.medal.m2{background:linear-gradient(135deg,#e3e7ef,#a9b0c0);color:#22252e}
+.medal.m3{background:linear-gradient(135deg,#e6a463,#b06a2e);color:#2a1400}
+.rank .rn{flex:1;min-width:0;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ============================================================================
    HUD 2026 · KIT DE COMPONENTES VISUALES (referencia panel de planta)
@@ -316,7 +308,7 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 /* kit de gráficos interactivos (tableros) */
 .gaugeWrap{display:flex;gap:10px;align-items:stretch}
 .statile{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 6px;text-align:center;display:flex;flex-direction:column;justify-content:center}
-.statile .n{font-size:22px;font-weight:900;line-height:1}
+.statile .n{font-size:22px;font-weight:900;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px;margin:auto 0}
 .statile .l{font-size:9px;color:var(--mut);font-weight:800;letter-spacing:.3px;margin-top:5px;text-transform:uppercase;line-height:1.15;padding:0 2px}
 .cbar{cursor:pointer}
 .cbar:hover rect{filter:brightness(1.3)}
@@ -329,9 +321,10 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .pbar{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 13px;margin-bottom:9px}
 .pbar .ic{width:30px;height:30px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--data)}
 .pbar .ic svg{width:18px;height:18px}
-.pbar .t{flex:1;min-width:0;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbar .tw{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
+.pbar .t{min-width:0;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pbar .t small{color:var(--mut);font-weight:600}
-.pbar .tr{width:92px;height:8px;border-radius:30px;background:rgba(255,255,255,.09);overflow:hidden;flex:none}
+.pbar .tr{width:100%;height:8px;border-radius:30px;background:rgba(255,255,255,.09);overflow:hidden;flex:none}
 .pbar .tr i{display:block;height:100%;border-radius:30px;background:linear-gradient(90deg,var(--data2),var(--data));transition:width .9s cubic-bezier(.2,.8,.2,1)}
 
 /* ----- grid de áreas ----- */
@@ -533,9 +526,7 @@ body.a11y .screen h2{ font-size:22px !important; }
 body.a11y .screen .btn, body.a11y .screen .bigbtn{ font-size:16.5px !important; }
 body.a11y .screen .seg button{ font-size:13px !important; }
 /* ===== Beeper (alarma de llamada) ===== */
-.bp-emoji{ font-size:56px; animation:bppulse 1s infinite; }
-@keyframes bppulse{ 0%,100%{ transform:scale(1); opacity:1 } 50%{ transform:scale(1.18); opacity:.7 } }
-.nav button span{white-space:nowrap}
+.nav button span{white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;display:block}
 
 /* ===== Reporte semanal imprimible (RRHH) — solo se ve al imprimir ===== */
 #printReport{display:none}
@@ -1730,7 +1721,7 @@ function startSession(cfg, saved, forceProfile){
   document.body.classList.toggle('admin', !!S.admin);
   ['lockScreen','beepScreen'].forEach(function(id){ var el=$(id); if(el) el.classList.add('hide'); });
   if(typeof beepStop==='function') beepStop();
-  if(!S.admin){ checkPage(); if(!window._pagePoll) window._pagePoll=setInterval(checkPage,3000); }
+  // (el "beeper/llamar a un trabajador" se eliminó: ya no hay polling de llamadas)
   if(V3_ON){ try{ sbInit(); }catch(e){} if(S.mando||S.admin){ try{ v3LoadEquipo(); }catch(e){} } }   // conectar datos en vivo ya autenticado
   window._forceProfile=!!forceProfile;
   if(forceProfile){ renderPerfil(); }
@@ -1981,8 +1972,10 @@ var ICN={
   msgs:'<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-11.9 7.6L3 21l1.9-5.6A8.4 8.4 0 1 1 21 11.5z"/><path d="M8.5 10.5h7M8.5 14h4"/></svg>'
 };
 function buildNav(){
+  // Dashboard HÍBRIDO: además del tablero, los admins tienen todo lo del trabajador
+  // (Inicio con recibo + Tu día, noticias, mensajes) MENOS capacitación y educación básica.
   var items = S.admin
-    ? [['hr',dashLabel(),ICN.hr],['news','Noticias',ICN.news],['msgs','Mensajes',ICN.msgs],['chat','Asistente',ICN.chat]]
+    ? [['hr',dashLabel(),ICN.hr],['home','Inicio',ICN.home],['news','Noticias',ICN.news],['msgs','Mensajes',ICN.msgs],['chat','Asistente',ICN.chat]]
     : [['home','Inicio',ICN.home],['msgs','Mensajes',ICN.msgs],['news','Noticias',ICN.news],['rewards','Premios',ICN.rewards],['chat','Asistente',ICN.chat],['clases','Educación',ICN.clases]];
   $('nav').innerHTML = items.map(function(it){
     return '<button id="nav-'+it[0]+'" onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
@@ -2014,7 +2007,7 @@ function renderTop(name){
   var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderLineas()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : (name==='thread'||name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? (S.admin?'renderMsgs()':'renderLineas()') : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : (name==='thread'||name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : 'go(\'home\')';
     left.innerHTML='<button class="back" onclick="'+backTo+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
@@ -2112,7 +2105,7 @@ function heatBars(items,sufijo){               // barras de calor [etiqueta, %] 
 function areaAccent(name){ for(var i=0;i<CFG.ranges.length;i++){ var r=CFG.ranges[i]; if(r.area===name && !r.admin) return r.accent2||r.accent; } return 'var(--data)'; }
 function pbarRow(icon,label,done,total){
   var pct=total?Math.round(done/total*100):0;
-  return '<div class="pbar"><span class="ic">'+(icon||'')+'</span><span class="t">'+esc(label)+' <small>· '+done+'/'+total+'</small></span><span class="tr"><i style="width:'+pct+'%"></i></span></div>';
+  return '<div class="pbar"><span class="ic">'+(icon||'')+'</span><span class="tw"><span class="t">'+esc(label)+' <small>· '+done+'/'+total+'</small></span><span class="tr"><i style="width:'+pct+'%"></i></span></span></div>';
 }
 function switchRow(label,sub,on,onclick){
   return '<div class="swrow"><div class="t"><b>'+esc(label)+'</b>'+(sub?'<span>'+esc(sub)+'</span>':'')+'</div>'+
@@ -2534,6 +2527,7 @@ function newsInfographicDemo(){
 
 /* ====================== INICIO (PORTAL) ====================== */
 function renderHome(){
+  if(S.admin){ renderHomeAdmin(); return; }
   var total=myCourses().length, done=doneCount();
   var lvl=level(), inLvl=S.points%CFG.points.perLevel, lpct=Math.round(inLvl/CFG.points.perLevel*100);
   var cpct= total? Math.round(done/total*100):0;
@@ -2574,6 +2568,31 @@ function renderHome(){
      '</div></div>';
   // control de uso (lock-down) — demo
   h+=lockCard();
+  $('s-home').innerHTML=h; show('home');
+}
+/* ===== INICIO del dashboard híbrido (admins): recibo + Tu día. Sin capacitación ni educación. ===== */
+function renderHomeAdmin(){
+  var h='';
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start">'+
+     '<div><div class="eyebrow">'+esc(S.area)+'</div><b style="font-size:20px">Hola'+(S.nombre?', '+esc((S.nombre.split(' ').pop()||'').toLowerCase().replace(/^./,function(c){return c.toUpperCase();})):'')+'</b>'+
+     '<p class="note" style="margin:4px 0 0;max-width:230px">Tu espacio personal: recibo, comedor, transporte y directorio. El tablero vive en su pestaña.</p></div>'+
+     '<span class="status"><span class="d"></span>En línea</span></div></div>';
+  // recibo de nómina (igual que el trabajador)
+  var _per=payPeriod(), _p=payData(S.emp), _signed=signRecord(S.emp,_per.key);
+  h+='<div class="panel" style="cursor:pointer" onclick="renderPay()">'+
+     '<div class="hd"><b>Mi recibo de nómina</b><span class="chipst'+(_signed?'':' mut')+'">'+(_signed?'Firmado ✓':'Por firmar')+'</span></div>'+
+     '<div class="ringwrap"><span style="width:48px;height:48px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--data);background:color-mix(in srgb,var(--data) 13%,transparent)"><span style="width:24px;height:24px;display:block">'+IC2.doc+'</span></span>'+
+       '<div><div style="font-size:24px;font-weight:900;letter-spacing:-.5px">'+money(_p.neto)+'</div>'+
+       '<div class="note" style="margin-top:2px">'+esc(_per.label)+' · '+(_signed?'ya lo firmaste':'toca para ver y firmar')+' ›</div></div>'+
+     '</div></div>';
+  // Tu día (comedor / transporte / directorio)
+  var _hoyM=(comedorGet()[diaHoyKey()]||'').split(',')[0];
+  h+='<div class="panel"><div class="hd"><b>Tu día</b><span class="chipst'+(_hoyM?'':' mut')+'">'+(_hoyM?'Hoy: '+esc(_hoyM):'todos los días')+'</span></div>'+
+     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px">'+
+     [['comedor','Comedor',IC2.food],['transporte','Transporte',IC2.bus],['directorio','Directorio',IC2.phone]].map(function(x){
+       return '<button class="lvcard" style="text-align:center;padding:14px 6px" onclick="renderDia(\''+x[0]+'\')">'+
+         '<span class="ico" style="margin:0 auto 8px">'+x[2]+'</span><b style="font-size:13px">'+x[1]+'</b></button>'; }).join('')+
+     '</div></div>';
   $('s-home').innerHTML=h; show('home');
 }
 /* ====================== MIS CURSOS (lista completa) ====================== */
@@ -3079,9 +3098,9 @@ function renderPersonal(){
        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center">'+badges+'</div>'+
        '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">'+
          '<button class="btn ghost" style="margin:0;flex:1;min-width:31%;padding:9px;font-size:12px" onclick="perRol(\''+p.clave+'\','+(!p.mando)+','+p.admin+')">'+(p.mando?'Quitar resp.':'Hacer resp.')+'</button>'+
-         '<button class="btn ghost" style="margin:0;flex:1;min-width:31%;padding:9px;font-size:12px'+(p.admin?'':';color:var(--warn)')+'" onclick="perAdmin(\''+p.clave+'\',\''+esc(p.nombre).replace(/\\/g,'').replace(/'/g,'')+'\','+(!p.admin)+','+p.mando+')">'+(p.admin?'Quitar acceso total':'Dar acceso total')+'</button>'+
+         '<button class="btn ghost" style="margin:0;flex:1;min-width:31%;padding:9px;font-size:12px'+(p.admin?'':';color:var(--warn)')+'" onclick="perAdmin(\''+p.clave+'\',\''+escA(p.nombre).replace(/\\/g,'').replace(/'/g,'')+'\','+(!p.admin)+','+p.mando+')">'+(p.admin?'Quitar acceso total':'Dar acceso total')+'</button>'+
          (p.registrado?'<button class="btn ghost" style="margin:0;flex:1;min-width:31%;padding:9px;font-size:12px" onclick="perReset(\''+p.clave+'\')">Reiniciar acceso</button>':'')+
-         (p.admin?'':'<button class="btn ghost" style="margin:0;flex:1;min-width:31%;padding:9px;font-size:12px;color:var(--bad)" onclick="perBaja(\''+p.clave+'\',\''+esc(p.nombre).replace(/\\/g,'').replace(/'/g,'')+'\')">Baja</button>')+
+         (p.admin?'':'<button class="btn ghost" style="margin:0;flex:1;min-width:31%;padding:9px;font-size:12px;color:var(--bad)" onclick="perBaja(\''+p.clave+'\',\''+escA(p.nombre).replace(/\\/g,'').replace(/'/g,'')+'\')">Baja</button>')+
        '</div></div>';
   });
   if(fil.length>60) h+='<div class="note" style="margin-top:8px">…y '+(fil.length-60)+' más. Afina el buscador.</div>';
@@ -3127,7 +3146,6 @@ function perBaja(clave,nombre){
   if(!confirm('¿Dar de BAJA a '+nombre+' (clave '+clave+')? Se borra su ID, progreso y perfil. No se puede deshacer.')) return;
   SB.rpc('hb_admin_baja',{p_clave:clave}).then(function(r){ var d=r&&r.data; if(d&&d.ok){ flash('Baja aplicada'); v3LoadAdminList(); } else flash(d&&d.error==='es_admin'?'No puedes dar de baja una cuenta de acceso total':'No se pudo'); });
 }
-function kpiRow(cells){ return '<div class="kpi">'+cells.map(function(c){ return '<div class="b'+(c[2]?' '+c[2]:'')+'"><div class="n">'+c[0]+'</div><div class="l">'+c[1]+'</div></div>'; }).join('')+'</div>'; }
 function areaCount(key){ for(var i=0;i<CFG.ranges.length;i++){ var r=CFG.ranges[i]; if(r.key===key && !r.admin) return r.max-r.min+1; } return 0; }
 
 /* ===== Bloque reutilizable: feed de preguntas al Asistente + reporte semanal (RRHH y CEO) ===== */
@@ -3235,7 +3253,7 @@ function renderResp(){
      '<div><div class="eyebrow">Mi área</div><b style="font-size:20px">'+esc(area)+'</b></div>'+
      '<span class="status"><span class="d"></span>En línea</span></div>'+
      '<div class="gaugeWrap">'+
-       '<div class="statile" style="flex:1.25;padding:10px 8px 8px">'+semiGauge(av,(rangeOf(S.emp)||{}).accent2||'var(--data)')+'<div class="l" style="margin-top:2px">Del equipo</div></div>'+
+       '<div class="statile" style="flex:1.25;padding:10px 8px 12px">'+semiGauge(av,(rangeOf(S.emp)||{}).accent2||'var(--data)')+'<div class="l" style="margin-top:2px">Del equipo</div></div>'+
        '<div class="statile"><div class="n"'+(myAlerts.length?' style="color:var(--bad)"':'')+'>'+myAlerts.length+'</div><div class="l">Focos</div></div>'+
        '<div class="statile"><div class="n">'+myReports.length+'</div><div class="l">Reportes</div></div>'+
        '<div class="statile"><div class="n">'+team.length+'</div><div class="l">En la app</div></div>'+
@@ -3278,7 +3296,7 @@ function renderFicha(emp){
      '<span class="note">'+esc(S.area)+' · #'+(''+m.emp).padStart(3,'0')+'</span>'+
      '<div style="display:flex;align-items:center;gap:7px;margin-top:7px">'+semDot(m.sem)+'<b style="font-size:13px;color:'+semColor(m.sem)+'">'+semLabel(m.sem)+'</b></div></div></div></div>'+
      '<div class="gaugeWrap" style="margin-top:14px">'+
-       '<div class="statile" style="flex:1.25;padding:10px 8px 8px">'+semiGauge(m.pct,semColor(m.sem))+'<div class="l" style="margin-top:2px">Avance</div></div>'+
+       '<div class="statile" style="flex:1.25;padding:10px 8px 12px">'+semiGauge(m.pct,semColor(m.sem))+'<div class="l" style="margin-top:2px">Avance</div></div>'+
        '<div class="statile"><div class="n">'+m.done+'/'+m.total+'</div><div class="l">Cursos</div></div>'+
        '<div class="statile"><div class="n">'+m.points+'</div><div class="l">Puntos</div></div>'+
        '<div class="statile"><div class="n">'+m.streak+'</div><div class="l">Racha</div></div>'+
@@ -3317,7 +3335,7 @@ function managerDash(role){
      '<div><div class="eyebrow">Tablero</div><b style="font-size:20px">'+esc(role)+'</b></div>'+
      '<span class="status"><span class="d"></span>En línea</span></div>'+
      '<div class="gaugeWrap">'+
-       '<div class="statile" style="flex:1.25;padding:10px 8px 8px">'+semiGauge(H.globalAvg)+'<div class="l" style="margin-top:2px">Global</div></div>'+
+       '<div class="statile" style="flex:1.25;padding:10px 8px 12px">'+semiGauge(H.globalAvg)+'<div class="l" style="margin-top:2px">Global</div></div>'+
        '<div class="statile"><div class="n"'+(foco?' style="color:var(--bad)"':'')+'>'+foco+'</div><div class="l">Focos</div></div>'+
        '<div class="statile"><div class="n">'+H.employees+'</div><div class="l">Equipo</div></div>'+
        '<div class="statile"><div class="n">'+nAreas+'</div><div class="l">Áreas</div></div>'+
@@ -3360,7 +3378,7 @@ function managerDash(role){
   else if(T==='area'){
     h+='<div class="agrid">'+H.byArea.map(function(a){
          var k=(CFG.ranges.filter(function(r){return r.area===a[0]&&!r.admin;})[0]||{}).key||'';
-         return '<div class="acard"><span class="ico">'+areaIcon(k)+'</span><span class="an">'+esc(a[0])+'</span><span class="as">avance del área</span>'+
+         return '<div class="acard" onclick="flash(\''+esc(a[0])+': '+a[1]+'% de avance\')"><span class="ico">'+areaIcon(k)+'</span><span class="an">'+esc(a[0])+'</span><span class="as">avance del área</span>'+
            '<div style="margin-top:8px">'+semiGauge(a[1], areaAccent(a[0]))+'</div></div>';
        }).join('')+'</div>';
     h+='<div class="panel" style="margin-top:12px"><div class="hd"><b>Temas con más fallos</b><span class="chipst mut">tocar para detalle</span></div>'+
@@ -3374,7 +3392,7 @@ function managerDash(role){
     }
     h+='<div class="panel"><div class="hd"><b>Ranking de puntos</b></div><div class="note" style="margin:-6px 0 8px">Visible solo para '+esc(role)+'. Los empleados nunca ven el ranking.</div>'+
        H.top.map(function(e,i){
-         return '<div class="rank"><span class="medal">'+(i+1)+'</span><span class="rn">'+esc(e[0])+'</span><span class="tg g">'+e[1]+' pts</span></div>';
+         return '<div class="rank"><span class="medal'+(i<3?' m'+(i+1):'')+'">'+(i+1)+'</span><span class="rn">'+esc(e[0])+'</span><span class="tg g" style="flex:none">'+e[1]+' pts</span></div>';
        }).join('')+'</div>';
     h+=leaveAdminBlock();     // RRHH aprueba vacaciones/permisos
     h+=recibosAdminBlock();   // acceso total: RRHH también ve los recibos de nómina firmados
@@ -3535,7 +3553,7 @@ function legacyCopy(t){
    RRHH publica avisos e infografías; los trabajadores los reciben en su área "Noticias".
    Demo: localStorage 'hb_news'. En producción esto vive en el servidor y llega a todos. */
 function newsGet(){ if(DBC.news!=null) return DBC.news; try{ return JSON.parse(localStorage.getItem('hb_news')||'[]')||[]; }catch(e){ return []; } }
-function newsSave(a){ try{ localStorage.setItem('hb_news', JSON.stringify(a)); }catch(e){ flash('No se pudo guardar (espacio lleno)'); } DBC.news=a; sbSync('news', a); }
+function newsSave(a,cb){ try{ localStorage.setItem('hb_news', JSON.stringify(a)); }catch(e){ flash('No se pudo guardar (espacio lleno)'); } DBC.news=a; sbSync('news', a, cb); }
 function newsTime(ts){ try{ var d=new Date(ts); return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}); }catch(e){ return ''; } }
 /* segmentación por rango de número de empleado (compartido por Noticias y mensajes directos) */
 function inTarget(to,emp){ if(!to||to.mode==='all') return true; if(to.mode==='range'){ var mn=+to.min,mx=+to.max; if(isNaN(mn)||isNaN(mx)) return true; if(mn>mx){ var t=mn; mn=mx; mx=t; } return emp>=mn&&emp<=mx; } return true; }
@@ -3578,7 +3596,13 @@ function postNews(){
   var a=newsGet();
   a.unshift({ id:'n'+Date.now(), t:t, b:b, img:_newsImg||'', to:to, by:'RRHH', ts:Date.now() });
   if(a.length>100) a.length=100;
-  newsSave(a); _newsImg=null; flash('Publicada · '+targetLabel(to)); renderNews();
+  // confirmar contra el SERVIDOR: si no sube, avisar fuerte (antes fallaba en silencio
+  // y la noticia solo se veía en el dispositivo que la publicó)
+  newsSave(a, function(err){
+    if(err) flash('⚠ NO se publicó al servidor ('+err+'). Revisa tu conexión y vuelve a intentar.');
+    else flash('✓ Publicada en el servidor · '+targetLabel(to)+' · ya la ven todos');
+  });
+  _newsImg=null; renderNews();
 }
 function delNews(id){ if(!confirm('¿Eliminar esta noticia?')) return; sbDelRec('news', id); newsSave(newsGet().filter(function(n){ return n.id!==id; })); renderNews(); }
 /* ===== Acuse "Enterado": el trabajador confirma que leyó (da puntos bajos 1 sola vez) y RRHH ve quién leyó.
@@ -3596,6 +3620,8 @@ function markRead(id){
   renderNews();
 }
 function renderNews(){
+  // al entrar, jala lo más nuevo del servidor (además del refresco en vivo)
+  if(sbReady() && Date.now()-(window._lastLoadNews||0)>4000){ window._lastLoadNews=Date.now(); sbLoad('news'); }
   var a=newsGet(), h='';
   h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">'+(S.admin?'Panel':'Noticias')+'</div><b style="font-size:20px">Noticias y avisos</b><p class="note" style="margin:4px 0 0;max-width:250px">'+(S.admin?'Publica avisos, infografías, eventos y encuestas.':'Calendario, avisos de RRHH y encuestas.')+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
   if(S.admin){
@@ -3681,8 +3707,10 @@ function newsCards(vis){
 function reportsGet(){ if(DBC.reports!=null) return DBC.reports; try{ return JSON.parse(localStorage.getItem('hb_reports')||'[]')||[]; }catch(e){ return []; } }
 function reportsSave(a){ try{ localStorage.setItem('hb_reports', JSON.stringify(a)); }catch(e){} DBC.reports=a; sbSync('reports', a); }
 /* Mensajes directos de RRHH al personal (un trabajador, un rango o todos) */
-function dmGet(){ try{ return JSON.parse(localStorage.getItem('hb_dm')||'[]')||[]; }catch(e){ return []; } }
-function dmSave(a){ try{ localStorage.setItem('hb_dm', JSON.stringify(a)); }catch(e){} }
+/* Avisos de RRHH: en el KV del servidor (antes localStorage → solo se veían en el
+   dispositivo que los escribió; ahora llegan a todos, en vivo). */
+function dmGet(){ try{ var v=kvGet('hb_dm'); if(v) return v; return JSON.parse(localStorage.getItem('hb_dm')||'[]')||[]; }catch(e){ return []; } }
+function dmSave(a){ kvSet('hb_dm', a); }
 function sendDM(){
   var txt=(($('dmText')||{}).value||'').trim(); if(!txt){ flash('Escribe el mensaje'); return; }
   var to=readTarget('dm'); if(!to){ flash('Escribe el rango de IDs (desde–hasta)'); return; }
@@ -4159,38 +4187,6 @@ var _leaveType='vacaciones';
 function leaveGet(){ return lsGet('hb_leave'); }
 function leaveSave(a){ lsSet('hb_leave', a); }
 function vacBalance(emp){ return 12; }   // demo: según LFT/antigüedad; en Fase 2 viene de RRHH
-function setLeaveType(t){ _leaveType=t; renderMsgs(); }
-function submitLeave(){
-  var from=(($('lvFrom')||{}).value||''), to=(($('lvTo')||{}).value||''), reason=(($('lvReason')||{}).value||'').trim();
-  if(!from||!to){ flash('Elige las fechas (desde y hasta)'); return; }
-  var days=Math.max(1, Math.round((new Date(to)-new Date(from))/86400000)+1);
-  var a=leaveGet(); a.unshift({ id:'l'+Date.now(), emp:S.emp, area:S.area, type:_leaveType, from:from, to:to, days:days, reason:reason, status:'pendiente', ts:Date.now() });
-  leaveSave(a); flash('Solicitud enviada a RRHH'); renderMsgs();
-}
-function reviewLeave(id,ok){
-  var a=leaveGet(), r=null; for(var i=0;i<a.length;i++){ if(a[i].id===id){ r=a[i]; break; } }
-  if(!r||r.status!=='pendiente') return;
-  r.status= ok?'aprobado':'rechazado'; leaveSave(a); flash(ok?'Aprobado':'Rechazado'); renderDash();
-}
-function leaveWorkerBlock(){
-  var mine=leaveGet().filter(function(r){ return r.emp===S.emp; });
-  var h='<div class="sec-t">Vacaciones y permisos<span class="ln"></span></div>';
-  h+='<div class="card"><div class="line"><b>Días disponibles</b><span class="ptchip">'+vacBalance(S.emp)+' días</span></div>'+
-     '<p class="note" style="margin-top:5px">Según tu antigüedad (Ley Federal del Trabajo). En la versión final, el saldo viene de RRHH.</p></div>';
-  var chips=''; for(var k in LEAVE){ chips+='<button class="chip2" style="'+(_leaveType===k?'background:var(--accent);color:#fff;border-color:var(--accent)':'')+'" onclick="setLeaveType(\''+k+'\')">'+LEAVE[k].ic+' '+LEAVE[k].l+'</button>'; }
-  h+='<div class="card"><b>Solicitar</b><div style="display:flex;gap:7px;flex-wrap:wrap;margin:10px 0">'+chips+'</div>'+
-     '<div style="display:flex;gap:10px">'+
-       '<div style="flex:1;min-width:0"><div class="note" style="margin-bottom:3px">Desde</div><input id="lvFrom" class="fin" type="date" style="width:100%"></div>'+
-       '<div style="flex:1;min-width:0"><div class="note" style="margin-bottom:3px">hasta</div><input id="lvTo" class="fin" type="date" style="width:100%"></div>'+
-     '</div>'+
-     '<textarea id="lvReason" class="fin" rows="2" placeholder="Motivo (opcional)" style="margin-top:8px"></textarea>'+
-     '<button class="btn" style="margin-top:10px" onclick="submitLeave()">Enviar solicitud</button></div>';
-  if(mine.length){ h+='<div class="card"><b>Mis solicitudes</b>'+mine.map(function(r){
-    var st=r.status==='aprobado'?'<span class="pill done">Aprobado ✓</span>':r.status==='rechazado'?'<span class="pill">Rechazado</span>':'<span class="pill pend">Pendiente</span>';
-    return '<div class="line" style="margin-top:9px"><span>'+LEAVE[r.type].ic+' '+LEAVE[r.type].l+'<br><span class="note">'+fmtDate(r.from)+' → '+fmtDate(r.to)+' · '+r.days+' día(s)</span></span>'+st+'</div>';
-  }).join('')+'</div>'; }
-  return h;
-}
 function leaveAdminBlock(){
   var a=leaveGet(), pend=a.filter(function(r){return r.status==='pendiente';}).length;
   var LV_IC={ vacaciones:AP.sun, permiso_goce:AP.cal, permiso_singoce:AP.cal, incapacidad:AP.shield };
@@ -4242,7 +4238,7 @@ function renderPay(){
      '<div class="line"><span>ISR</span><span>− '+money(p.isr)+'</span></div>'+
      '<div class="line"><span>IMSS</span><span>− '+money(p.imss)+'</span></div></div>';
   // ---- ver el PDF original que mandó RRHH ----
-  h+='<div class="pbar" style="cursor:pointer" onclick="openPayPdf()"><span class="ic">'+IC2.doc+'</span><span class="t">Ver recibo original (PDF)</span><span class="note">Abrir ›</span></div>';
+  h+='<div class="pbar" style="cursor:pointer" onclick="openPayPdf()"><span class="ic">'+IC2.doc+'</span><span class="t" style="flex:1">Ver recibo original (PDF)</span><span class="note" style="flex:none">Abrir ›</span></div>';
   // ---- firmar y enviar a RRHH con la firma PREDETERMINADA del perfil ----
   var firma=(profGet(S.emp)||{}).firma;
   if(signed){
@@ -4263,18 +4259,6 @@ function renderPay(){
   }
   $('s-pay').innerHTML=h; show('pay');
 }
-var _sig={on:false,drawn:false};
-function sigInit(){
-  var c=$('sigPad'); if(!c) return; var ctx=c.getContext('2d'); _sig.drawn=false;
-  ctx.strokeStyle='#16181d'; ctx.lineWidth=2.6; ctx.lineCap='round'; ctx.lineJoin='round';
-  function pos(e){ var r=c.getBoundingClientRect(), t=(e.touches&&e.touches[0])?e.touches[0]:e; return {x:(t.clientX-r.left)*(c.width/r.width), y:(t.clientY-r.top)*(c.height/r.height)}; }
-  function down(e){ e.preventDefault(); _sig.on=true; var p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); }
-  function move(e){ if(!_sig.on) return; e.preventDefault(); var p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); _sig.drawn=true; }
-  function up(){ _sig.on=false; }
-  c.onmousedown=down; c.onmousemove=move; c.onmouseup=up; c.onmouseleave=up;
-  c.ontouchstart=down; c.ontouchmove=move; c.ontouchend=up;
-}
-function sigClear(){ var c=$('sigPad'); if(c){ c.getContext('2d').clearRect(0,0,c.width,c.height); _sig.drawn=false; } }
 function signPay(){
   var firma=(profGet(S.emp)||{}).firma;
   if(!firma){ flash('Primero guarda tu firma en tu perfil'); renderPerfil(); return; }
@@ -4587,8 +4571,11 @@ function jConv(key,emp){ return 'j:'+key+':'+emp; } // línea del trabajador con
 function areaName(key){ for(var i=0;i<CFG.ranges.length;i++){ if(CFG.ranges[i].key===key) return CFG.ranges[i].area; } return key; }
 /* Quién puede ESCRIBIR en una conversación (lo demás es monitoreo/solo lectura para management). */
 function canWriteConv(conv){
-  // Chat directo: solo los participantes. (Management que no participa = monitoreo)
+  // Chat directo: solo los participantes. (Cualquier otro = monitoreo; escribir en un
+  // chat privado ajeno delataría la supervisión.)
   if(conv.indexOf('d:')===0){ var p=conv.slice(2).split('-').map(Number); return p.indexOf(S.emp)>=0; }
+  // ACCESO TOTAL (RRHH/Dirección/Administración): escriben en cualquier línea o grupo.
+  if(S.admin && S.dash!=='resp') return true;
   // Grupo de área: los miembros del área (comparten key) + management.
   if(conv.indexOf('g:')===0){ return S.key===conv.slice(2) || S.dash==='rrhh' || S.dash==='ceo'; }
   // Línea con RRHH: la responde RRHH (Dirección solo monitorea).
@@ -4662,13 +4649,14 @@ function convRow(conv,title,sub){
 var _curConv=null, _pendImg=null;
 function renderMsgs(){
   _pendImg=null;
+  if(sbReady() && Date.now()-(window._lastLoadMsgs||0)>4000){ window._lastLoadMsgs=Date.now(); sbLoad('msgs'); }
   var h='';
   var sub = S.admin ? (S.dash==='resp' ? 'Tu equipo, tu grupo de área y tus líneas con Dirección y RRHH.' : 'Líneas con la planta, monitoreo, quejas/reportes, vacaciones y recibos — todo en un lugar.')
                     : 'Escribe a RRHH, a Dirección, a tu responsable o a tu grupo. Aquí también van tus quejas y vacaciones.';
   h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">'+(S.admin?'Panel':'Mensajes')+'</div><b style="font-size:20px">Mensajes</b><p class="note" style="margin:4px 0 0;max-width:240px">'+sub+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
   if(S.admin){
     if(S.dash==='resp') h+=respMsgs();
-    else { h+=beeperAdminCard(); h+=msgAdminInbox(); }
+    else { h+=msgAdminInbox(); }
   } else {
     // Banners-portada de cada función (más visual, distinto diseño)
     var lineUn=convUnread(rConv(S.emp))+convUnread(cConv(S.emp))+convUnread(jConv(S.key,S.emp));
@@ -4726,32 +4714,43 @@ var DEMO_DIR=[
 ];
 var SEARCH_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>';
 function renderNewChat(){
+  // V3: directorio REAL del servidor (solo gente registrada; gafete, sin datos personales)
+  if(V3_ON && sbReady() && !DBC.dir){ SB.rpc('hb_directorio').then(function(r){ if(r.data&&r.data.ok){ DBC.dir=r.data.dir||[]; dirFilter(); } }); }
   var h='';
-  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Líneas directas</div><b style="font-size:20px">Escribir a un compañero</b><p class="note" style="margin:4px 0 0;max-width:250px">Busca por <b>nombre</b> o por <b>número</b> y toca a la persona.</p></div></div>'+
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Líneas directas</div><b style="font-size:20px">'+(S.admin?'Escribir a un trabajador':'Escribir a un compañero')+'</b><p class="note" style="margin:4px 0 0;max-width:250px">Busca por <b>nombre</b> o por <b>clave</b> y toca a la persona.</p></div></div>'+
      '<div class="search">'+SEARCH_SVG+'<input id="dirSearch" placeholder="Nombre o número…" autocomplete="off" oninput="dirFilter()"></div>'+
-     '<div class="note">Directorio del personal, organizado por área.</div></div>';
+     '<div class="note">'+(V3_ON?'Aparece la gente que ya se registró en el sistema.':'Directorio del personal, organizado por área.')+'</div></div>';
   h+='<div id="dirList">'+dirListHTML('')+'</div>';
   $('s-newchat').innerHTML=h; show('newchat');
   var si=$('dirSearch'); if(si) si.focus();
 }
 function dirFilter(){ var el=$('dirList'); if(el) el.innerHTML=dirListHTML((($('dirSearch')||{}).value||'')); }
+function dirPeople(){
+  if(V3_ON){
+    if(!DBC.dir) return null;   // aún cargando
+    return DBC.dir.map(function(p){ return {id:p.n, name:p.nombre, area:p.depto}; });
+  }
+  return DEMO_DIR.map(function(p){ var r=rangeOf(p.id); return {id:p.id, name:p.name, area:r?r.area:'Otros'}; });
+}
 function dirListHTML(term){
+  var people=dirPeople();
+  if(!people) return '<div class="card"><div class="note">Cargando directorio…</div></div>';
   var q=_norm(term||''), digits=(term||'').replace(/\D/g,''), byArea={}, order=[];
-  DEMO_DIR.forEach(function(p){
+  people.forEach(function(p){
     if(p.id===S.emp) return;
     if(term){ var byName=q&&_norm(p.name).indexOf(q)>=0; var byId=digits&&(''+p.id).padStart(3,'0').indexOf(digits)>=0; if(!byName&&!byId) return; }
-    var r=rangeOf(p.id), area=r?r.area:'Otros';
+    var area=p.area||'Otros';
     if(!byArea[area]){ byArea[area]=[]; order.push(area); }
     byArea[area].push(p);
   });
-  if(!order.length) return '<div class="card"><div class="note">Nadie coincide con «'+esc(term)+'».</div></div>';
+  if(!order.length) return '<div class="card"><div class="note">'+(term?('Nadie coincide con «'+esc(term)+'».'):'Aún no hay nadie registrado.')+'</div></div>';
   var h='';
   order.forEach(function(area){
     h+='<div class="sec-t">'+esc(area)+'<span class="ln"></span></div>';
     byArea[area].forEach(function(p){
-      var r=rangeOf(p.id), col=r?r.accent:'#666';
+      var r=rangeOf(p.id), col=(r&&r.accent)||'var(--accent)';
       var init=p.name.split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase();
-      h+='<div class="dirrow" onclick="openConv(dConv('+S.emp+','+p.id+'))"><span class="ava" style="background:'+col+'">'+init+'</span><span class="t"><b>'+esc(p.name)+'</b><span>'+esc(area)+'</span></span><span class="idtag">#'+(''+p.id).padStart(3,'0')+'</span></div>';
+      h+='<div class="dirrow" onclick="openConv(dConv('+S.emp+','+p.id+'))"><span class="ava" style="background:'+col+'">'+esc(init)+'</span><span class="t"><b>'+esc(p.name)+'</b><span>'+esc(area)+'</span></span><span class="idtag">#'+(''+p.id).padStart(3,'0')+'</span></div>';
     });
   });
   return h;
@@ -4806,13 +4805,12 @@ function submitVac(){
   leaveSave(a); _vacPick=null; burst(); flash('Solicitud enviada a RRHH'); renderVacaciones();
 }
 
-/* Bandeja del responsable de área: solo SU equipo (líneas j: de su key) + su grupo + sus líneas con Dirección/RRHH + beeper de su equipo. */
+/* Bandeja del responsable de área: solo SU equipo (líneas j: de su key) + su grupo + sus líneas con Dirección/RRHH. (El "beeper/llamar" se eliminó: solo mensajería.) */
 function respMsgs(){
   var h='';
   h+='<div class="sec-t">Tus líneas directas<span class="ln"></span></div>';
   h+=lineChanCard(cConv(S.emp),'Dirección','Tu canal con Dirección',CHAN_IC.dir,'#ffd166');
   h+=lineChanCard(rConv(S.emp),'Recursos Humanos','Tu canal con RRHH',CHAN_IC.rrhh,'#39d6c0');
-  h+=beeperAdminCard();
   h+='<div class="sec-t">Grupo de '+esc(S.area)+'<span class="ln"></span></div>'+lineChanCard(gConv(S.key),'Grupo · '+S.area,'Mensajes de toda tu área',IC2.people,'#2a7de1');
   h+='<div class="sec-t">Tu equipo te escribe<span class="ln"></span></div>';
   var pre='j:'+S.key+':', seen={};
@@ -4828,7 +4826,12 @@ function msgAdminInbox(){
     if(c.indexOf('r:')===0) rc[c]=1; else if(c.indexOf('c:')===0) cc[c]=1; else if(c.indexOf('j:')===0) jc[c]=1;
     else if(c.indexOf('g:')===0) gc[c]=1; else if(c.indexOf('d:')===0) dc[c]=1; });
   var rk=Object.keys(rc), ck=Object.keys(cc), jk=Object.keys(jc), gk=Object.keys(gc), dk=Object.keys(dc);
-  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Monitoreo</div><b style="font-size:16px">Mensajes de la planta</b><div class="note" style="margin-top:3px">Puedes leer cualquier conversación de la planta. Los trabajadores no ven que tienes acceso.</div></div><span class="status"><span class="d"></span>En línea</span></div>'+
+  var h='';
+  // Escribir directo a cualquier trabajador (chat 1 a 1, como cualquier empleado)
+  h+='<div class="panel" style="cursor:pointer" onclick="renderNewChat()"><div class="hd" style="margin-bottom:0"><div style="display:flex;align-items:center;gap:11px;min-width:0">'+
+     '<span style="width:42px;height:42px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--data);background:color-mix(in srgb,var(--data) 13%,transparent)"><span style="width:22px;height:22px;display:block">'+IC2.people+'</span></span>'+
+     '<div style="min-width:0"><b>Escribir a un trabajador</b><div class="note" style="margin-top:2px">Chat directo con cualquier persona registrada.</div></div></div><span class="chipst">Abrir ›</span></div></div>';
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Monitoreo</div><b style="font-size:16px">Mensajes de la planta</b><div class="note" style="margin-top:3px">Puedes leer cualquier conversación de la planta. Los trabajadores no ven que tienes acceso.</div></div><span class="status"><span class="d"></span>En línea</span></div>'+
     '<div class="dotgrid">'+
       dotStat(Math.min(100,rk.length*12), rk.length, 'RRHH','')+
       dotStat(Math.min(100,ck.length*12), ck.length, 'Dirección','')+
@@ -4851,14 +4854,6 @@ function msgAdminInbox(){
   if(!dk.length) h+='<div class="card"><div class="note">Sin conversaciones todavía.</div></div>';
   dk.forEach(function(c){ var p=c.slice(2).split('-'); h+=convRow(c,'#'+(''+p[0]).padStart(3,'0')+' ↔ #'+(''+p[1]).padStart(3,'0'),null); });
   return h;
-}
-function newChatById(){
-  var v=parseInt(($('newChatId')||{}).value,10);
-  if(isNaN(v)){ flash('Escribe un número de empleado'); return; }
-  if(v===S.emp){ flash('Ese eres tú '); return; }
-  if(!rangeOf(v)){ flash('Ese número de empleado no existe'); return; }
-  if(isAdminId(v)){ flash('Para RRHH, Dirección o tu responsable usa tus líneas directas de arriba.'); return; }
-  openConv(dConv(S.emp,v));
 }
 function msgImgLoad(inp){
   var f=inp.files&&inp.files[0]; if(!f) return;
@@ -5025,58 +5020,11 @@ function cerrarNom(){
   flash('Resultado guardado en el historial'); renderDash();
 }
 
-/* ============================================================================
-   BEEPER — RRHH/supervisor llama a un trabajador por su ID; le llega una alarma
-   (sonido + vibración + pantalla completa) para que se presente donde se necesita.
-   Demo: localStorage 'hb_pages' + sondeo cada 3 s. En vivo (Fase 2): push del servidor. */
-function pagesGet(){ return (DBC.pages!=null)?DBC.pages:lsGet('hb_pages'); }
-function pagesSave(a){ lsSet('hb_pages', a); DBC.pages=a; sbSync('pages', a); }
-function beeperAdminCard(){
-  var recent=pagesGet().slice(0,5);
-  var calling=recent.filter(function(p){ return !p.ackTs; }).length;
-  var list = recent.length ? '<div style="margin-top:6px">'+recent.map(function(p){ return '<div class="line" style="padding:8px 0"><span class="note" style="font-weight:700">#'+(''+p.to).padStart(3,'0')+'</span>'+(p.ackTs?'<span class="tg g">✓ confirmó</span>':'<span class="tg">Llamando…</span>')+'</div>'; }).join('')+'</div>' : '';
-  var soloEquipo = (S.dash==='resp');
-  return '<div class="panel"><div class="hd"><div><div class="eyebrow">Beeper</div><b style="font-size:16px">Llamar a un trabajador</b></div><span class="chipst'+(calling?'':' mut')+'"'+(calling?' style="border-color:color-mix(in srgb,var(--warn) 40%,transparent);background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn)"':'')+'>'+(calling?calling+' llamando':'Listo')+'</span></div>'+
-    '<div class="note" style="margin:0 0 9px">Escribe su número y le llega una <b>alarma</b> para que se presente.'+(soloEquipo?' Solo puedes llamar a <b>tu equipo de '+esc(S.area)+'</b>.':'')+'</div>'+
-    '<div style="display:flex;gap:8px;margin-bottom:9px"><input id="beepId" class="fin" type="number" placeholder="N° empleado" style="flex:none;width:130px"><input id="beepMsg" class="fin" placeholder="Motivo / lugar (ej. Ven a RRHH)" style="flex:1"></div>'+
-    '<button class="btn" style="margin:0;padding:12px" onclick="sendPage()">Llamar</button>'+list+'</div>';
-}
-function sendPage(){
-  var id=parseInt(($('beepId')||{}).value,10), msg=(($('beepMsg')||{}).value||'').trim();
-  if(isNaN(id)){ flash('Escribe el número de empleado'); return; }
-  var r=rangeOf(id);
-  if(!r){ flash('Ese número de empleado no existe'); return; }
-  // El responsable solo puede llamar a trabajadores de SU propia área.
-  if(S.dash==='resp' && (r.admin || r.key!==S.key)){ flash('Solo puedes llamar a tu equipo de '+S.area+'.'); return; }
-  var a=pagesGet(); a.unshift({ id:'pg'+Date.now(), to:id, by:(S&&S.emp), msg:msg||'Preséntate donde se te indica', ts:Date.now(), ackTs:0 });
-  pagesSave(a); flash('Llamando al #'+(''+id).padStart(3,'0')); renderMsgs();
-}
-function myPendingPage(){ var a=pagesGet(); for(var i=0;i<a.length;i++){ if(a[i].to===S.emp && !a[i].ackTs) return a[i]; } return null; }
-function checkPage(){ if(!S||S.admin) return; var bs=$('beepScreen'); if(!bs||!bs.classList.contains('hide')) return; var p=myPendingPage(); if(p) showBeep(p); }
-function showBeep(p){
-  var el=$('beepScreen'); if(!el) return;
-  el.innerHTML='<div class="bp-emoji" style="width:110px;height:110px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--warn);background:color-mix(in srgb,var(--warn) 16%,transparent);box-shadow:0 0 0 12px color-mix(in srgb,var(--warn) 8%,transparent)"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+AP.mega+'</svg></div>'+
-    '<h2>¡Te están llamando!</h2>'+
-    '<p style="display:flex;align-items:center;justify-content:center;gap:8px"><span>'+esc(p.msg)+'</span>'+speakBtn('Te están llamando. '+p.msg)+'</p>'+
-    '<div class="lk-time">'+esc(roleLabel(p.by)||'La planta')+' te necesita</div>'+
-    '<button class="btn" style="max-width:280px" onclick="ackPage()">✓ Voy para allá</button>';
-  el.classList.remove('hide'); beepStart();
-}
-function ackPage(){ var p=myPendingPage(); if(p){ var a=pagesGet(); for(var i=0;i<a.length;i++){ if(a[i].id===p.id){ a[i].ackTs=Date.now(); break; } } pagesSave(a); } beepStop(); var el=$('beepScreen'); if(el) el.classList.add('hide'); }
-/* sonido tipo alarma (Web Audio) + vibración */
-var _beepInt=null, _beepCtx=null;
-function beepStart(){
-  try{ _beepCtx=_beepCtx||new (window.AudioContext||window.webkitAudioContext)();
-    var ring=function(){ var o=_beepCtx.createOscillator(), g=_beepCtx.createGain(); o.type='square'; o.frequency.value=880; o.connect(g); g.connect(_beepCtx.destination); g.gain.value=0.15; o.start(); o.stop(_beepCtx.currentTime+0.35); };
-    ring(); if(_beepInt) clearInterval(_beepInt); _beepInt=setInterval(ring,850);
-  }catch(e){}
-  try{ if(navigator.vibrate) navigator.vibrate([400,180,400,180,600]); }catch(e){}
-}
-function beepStop(){ try{ if(_beepInt){ clearInterval(_beepInt); _beepInt=null; } }catch(e){} try{ if(navigator.vibrate) navigator.vibrate(0); }catch(e){} }
+function checkPage(){ /* FUNCIÓN ELIMINADA (13-jul-2026): el "beeper/llamar a un trabajador" ya no existe; solo mensajería. Se deja el stub porque sbRerender la invoca. */ }
 
 /* ============================================================================
    SUPABASE — Fase 2: demo EN VIVO (cross-device en tiempo real).
-   Mantiene la API síncrona de la app (msgsGet/pagesGet/newsGet/reportsGet) leyendo
+   Mantiene la API síncrona de la app (msgsGet/newsGet/reportsGet) leyendo
    de un caché en memoria (DBC) que se sincroniza con el servidor por Realtime.
    Degrada con gracia: si no hay servidor (offline o CDN no cargó), usa localStorage.
    La llave publishable es PÚBLICA por diseño; en modo demo las tablas van abiertas
@@ -5094,9 +5042,11 @@ function sbLoad(tbl, cb){
     if(cb) cb();
   }); }catch(e){ if(cb) cb(); }
 }
-function sbSync(tbl, arr){   // sube/actualiza el arreglo completo (demo: tamaños chicos)
-  if(!sbReady() || !arr || !arr.length) return;
-  try{ SB.from(tbl).upsert(arr.map(function(o){ return {id:o.id, data:o, ts:(o.ts||Date.now())}; })).then(function(){}); }catch(e){}
+function sbSync(tbl, arr, cb){   // sube/actualiza el arreglo completo; cb(errorMsg|null) para avisar si falló
+  if(!sbReady() || !arr || !arr.length){ if(cb) cb(sbReady()?null:'sin conexión'); return; }
+  try{ SB.from(tbl).upsert(arr.map(function(o){ return {id:o.id, data:o, ts:(o.ts||Date.now())}; })).then(function(r){
+    if(cb) cb(r&&r.error ? (r.error.message||'error del servidor') : null);
+  }); }catch(e){ if(cb) cb('sin conexión'); }
 }
 function sbDelRec(tbl, id){ if(sbReady()){ try{ SB.from(tbl).delete().eq('id',id).then(function(){}); }catch(e){} } }
 function sbSubscribe(tbl){ if(!sbReady()) return; try{ SB.channel('rt-'+tbl).on('postgres_changes',{event:'*',schema:'public',table:tbl},function(){ sbLoad(tbl); }).subscribe(); }catch(e){} }
@@ -5116,8 +5066,8 @@ function sbRerender(){ try{
 function sbInit(){
   if(!sbReady() || window._sbInited) return;
   window._sbInited=true;
-  ['msgs','pages','news','reports'].forEach(function(t){ sbSubscribe(t); });
-  sbLoad('msgs'); sbLoad('pages');
+  ['msgs','news','reports'].forEach(function(t){ sbSubscribe(t); });
+  sbLoad('msgs');
   // noticias/reportes: si el servidor viene vacío, sembrar desde localStorage (para que la demo se vea poblada)
   sbLoad('news', function(){ if(!(DBC.news&&DBC.news.length)){ var s=lsArr('hb_news'); if(s.length){ DBC.news=s; sbSync('news', s); } } });
   sbLoad('reports', function(){ if(!(DBC.reports&&DBC.reports.length)){ var s=lsArr('hb_reports'); if(s.length){ DBC.reports=s; sbSync('reports', s); } } });

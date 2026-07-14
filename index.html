@@ -655,8 +655,8 @@ body.a11y .screen .seg button{ font-size:13px !important; }
     <!-- V3: formularios (ocultos hasta elegir) -->
     <div id="lgForm" style="display:none;width:100%;max-width:320px">
       <div class="field"><input id="lgClave" inputmode="numeric" autocomplete="off" placeholder="Número de colaborador (clave)" maxlength="6"></div>
-      <div class="field" id="lgNacWrap" style="display:none"><input id="lgNac" type="date" autocomplete="off" style="color-scheme:dark"></div>
-      <div id="lgNacLbl" class="note" style="display:none;margin:-2px 0 8px;text-align:left">Tu fecha de nacimiento (para confirmar que eres tú)</div>
+      <div class="field" id="lgNacWrap" style="display:none"><input id="lgNac" inputmode="numeric" autocomplete="off" placeholder="Tu fecha de nacimiento (8 números)" maxlength="14"></div>
+      <div id="lgNacLbl" class="note" style="display:none;margin:-2px 0 8px;text-align:left">Día, mes y año — <b>en el orden que quieras</b>. Ej. <b>24/07/1968</b> o <b>07/24/1968</b>. Es para confirmar que eres tú.</div>
       <div class="field" id="lgPinWrap" style="display:none"><input id="lgPin" inputmode="numeric" type="password" autocomplete="off" placeholder="PIN de 4 dígitos" maxlength="4"></div>
       <button class="btn" id="lgGo">Continuar</button>
       <button class="lnkbtn" style="display:block;margin:12px auto 0" onclick="lgMode('choose')">‹ Regresar</button>
@@ -1803,8 +1803,9 @@ function lgPrimer(){
   if(!V3_ON){ lgSay('El sistema se está activando (la base de datos aún no está lista). Espera un momento e intenta otra vez.',true); v3Detect(); return; }
   var clave=claveNorm($('lgClave').value);
   if(!clave){ lgSay('Escribe tu número de colaborador.',true); return; }
-  var nac=nac6($('lgNac').value);
-  if(!nac){ lgSay('Escribe tu fecha de nacimiento (para confirmar que eres tú).',true); return; }
+  // fecha SIN formato fijo: solo importan los 8 números (día, mes y año en cualquier orden)
+  var nac=($('lgNac').value||'').replace(/\D/g,'');
+  if(nac.length!==8){ lgSay('Escribe tu fecha de nacimiento completa: <b>8 números</b> (día, mes y año, en el orden que quieras).',true); return; }
   lgBusy(true); lgSay('Buscando tu registro…');
   SB.rpc('hb_registro_info',{p_clave:clave,p_nac:nac}).then(function(r){
     lgBusy(false);

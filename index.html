@@ -3058,7 +3058,7 @@ function renderPersonal(){
      '<div class="note" style="margin:9px 0 3px">Nombre completo</div><input id="alNombre" class="fin" placeholder="APELLIDOS NOMBRE(S)">'+
      '<div class="note" style="margin:9px 0 3px">Puesto</div><input id="alPuesto" class="fin" placeholder="Ej. AYUDANTE GENERAL">'+
      '<div class="note" style="margin:9px 0 3px">Departamento</div><select id="alDepto" class="fin">'+deptos.map(function(d){return '<option value="'+esc(d)+'">'+esc(d)+'</option>';}).join('')+'</select>'+
-     '<div class="note" style="margin:9px 0 3px">Fecha de nacimiento <span style="opacity:.7">(recomendada — activa el candado extra al registrarse)</span></div><input id="alNac" type="date" class="fin" style="color-scheme:dark">'+
+     '<div class="note" style="margin:9px 0 3px">Fecha de nacimiento <span style="opacity:.7">(opcional — activa el candado extra al registrarse; en el orden que sea)</span></div><input id="alNac" class="fin" inputmode="numeric" placeholder="__/__/____" maxlength="10" oninput="nacMask(this)" style="text-align:center;letter-spacing:2px">'+
      '<label style="display:flex;gap:9px;align-items:center;margin-top:11px;font-size:14px;cursor:pointer"><input type="checkbox" id="alMando" style="width:18px;height:18px"> Es responsable / supervisor (tablero de su departamento)</label>'+
      '<label style="display:flex;gap:9px;align-items:center;margin-top:8px;font-size:14px;cursor:pointer"><input type="checkbox" id="alAdmin" style="width:18px;height:18px"> Acceso total (ve toda la planta) — solo Dirección/RRHH</label>'+
      '<button class="btn" style="margin-top:13px" onclick="doAlta()">Dar de alta</button></div>';
@@ -3090,14 +3090,20 @@ function renderPersonal(){
 function doAlta(){
   var clave=(($('alClave')||{}).value||'').trim(), nombre=(($('alNombre')||{}).value||'').trim();
   var puesto=(($('alPuesto')||{}).value||'').trim(), depto=(($('alDepto')||{}).value||'').trim();
-  var nac=nac6(($('alNac')||{}).value||''), mando=!!($('alMando')||{}).checked, admin=!!($('alAdmin')||{}).checked;
+  var nacRaw=(($('alNac')||{}).value||'').replace(/\D/g,''); var nac=(nacRaw.length===8)?nacRaw:'';
+  var mando=!!($('alMando')||{}).checked, admin=!!($('alAdmin')||{}).checked;
   if(!clave||!nombre||!depto){ flash('Escribe al menos clave, nombre y departamento'); return; }
+  if(!sbReady()){ flash('Sin conexión con el servidor'); return; }
+  if(!V3_ON){ flash('El sistema aún no está activo (base de datos)'); return; }
+  var ALTA_ERR={ no_autorizado:'Tu cuenta no tiene acceso para dar de alta (solo Dirección/RRHH)', ya_existe:'Esa clave ya existe en el sistema', clave_invalida:'La clave debe ser numérica', faltan_datos:'Faltan nombre o departamento' };
   SB.rpc('hb_admin_alta',{p_clave:clave,p_nombre:nombre,p_puesto:puesto,p_depto:depto,p_nac:nac||null,p_mando:mando,p_admin:admin}).then(function(r){
     var d=r&&r.data;
-    if(r.error||!d||!d.ok){ flash(d&&d.error==='ya_existe'?'Esa clave ya existe':'No se pudo dar de alta'); return; }
-    burst(); flash('Alta lista · clave '+d.clave+'. Ya puede hacer su Primer ingreso.');
+    if(r.error){ flash('Error del servidor: '+(r.error.message||r.error.code||'desconocido')); return; }
+    if(!d||!d.ok){ flash((d&&ALTA_ERR[d.error])||('No se pudo dar de alta'+(d&&d.error?' ('+d.error+')':''))); return; }
+    burst(); flash('✓ Alta lista · '+esc(nombre)+' (clave '+d.clave+'). Ya puede hacer su Primer ingreso.');
+    ['alClave','alNombre','alPuesto','alNac'].forEach(function(id){ var e=$(id); if(e) e.value=''; });
     v3LoadAdminList();
-  }, function(){ flash('Sin conexión'); });
+  }, function(e){ flash('Sin conexión con el servidor'); });
 }
 function perRol(clave,mando,admin){
   SB.rpc('hb_admin_rol',{p_clave:clave,p_mando:mando,p_admin:admin}).then(function(r){ if(r.data&&r.data.ok){ flash('Rol actualizado'); v3LoadAdminList(); } else flash('No se pudo'); });

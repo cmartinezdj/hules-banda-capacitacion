@@ -105,15 +105,18 @@ button{font-family:var(--font)}
 .top{position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:11px 14px;padding-top:calc(11px + env(safe-area-inset-top));
   background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
-.top .who{display:flex;align-items:center;gap:10px;min-width:0}
+.top .who{display:flex;align-items:center;gap:10px;min-width:0;flex:1;overflow:hidden}
 /* marca central estilo logo (wordmark + barra roja) */
 .brandmid{position:absolute;left:134px;right:134px;top:calc(11px + env(safe-area-inset-top));height:40px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;overflow:hidden;
   font-weight:900;font-size:12px;letter-spacing:.2px;color:#fff;white-space:nowrap}
 .brandmid:after{content:'';width:30px;height:3px;border-radius:2px;background:#c4161c;margin-top:2px}
+/* En pantallas angostas la marca central se oculta: los nombres reales son largos y chocaban */
+@media (max-width:640px){ .brandmid{display:none} }
 .top .who .av{width:40px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--accent) 22%,#14151d);padding:3px;flex:none}
 .top .who b{font-size:14px;display:block;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .top .who span{font-size:11px;color:var(--mut)}
+.top .who b+span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .back{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);color:var(--txt);
   font-size:13px;font-weight:700;padding:8px 13px;border-radius:30px;cursor:pointer}
 .back:active{transform:scale(.96)}
@@ -370,7 +373,7 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .seg button .sbadge{position:absolute;top:2px;right:6px;min-width:15px;height:15px;padding:0 4px;border-radius:9px;background:var(--bad);color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center}
 
 /* ----- topbar: botón de accesibilidad (ojo) junto a los puntos ----- */
-.topR{display:flex;align-items:center;gap:8px}
+.topR{display:flex;align-items:center;gap:8px;flex:none}
 .a11ybtn{display:flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--line);color:var(--mut);padding:7px 9px;border-radius:30px;cursor:pointer;font-size:10.5px;font-weight:800;transition:.15s}
 .a11ybtn svg{width:15px;height:15px}
 .a11ybtn:active{transform:scale(.94)}
@@ -655,8 +658,8 @@ body.a11y .screen .seg button{ font-size:13px !important; }
     <!-- V3: formularios (ocultos hasta elegir) -->
     <div id="lgForm" style="display:none;width:100%;max-width:320px">
       <div class="field"><input id="lgClave" inputmode="numeric" autocomplete="off" placeholder="Número de colaborador (clave)" maxlength="6"></div>
-      <div class="field" id="lgNacWrap" style="display:none"><input id="lgNac" inputmode="numeric" autocomplete="off" placeholder="Tu fecha de nacimiento (8 números)" maxlength="14"></div>
-      <div id="lgNacLbl" class="note" style="display:none;margin:-2px 0 8px;text-align:left">Día, mes y año — <b>en el orden que quieras</b>. Ej. <b>24/07/1968</b> o <b>07/24/1968</b>. Es para confirmar que eres tú.</div>
+      <div class="field" id="lgNacWrap" style="display:none"><input id="lgNac" inputmode="numeric" autocomplete="off" placeholder="__/__/____" maxlength="10" oninput="nacMask(this)" style="text-align:center;letter-spacing:2px;font-variant-numeric:tabular-nums"></div>
+      <div id="lgNacLbl" class="note" style="display:none;margin:-2px 0 8px;text-align:left">Tu fecha de nacimiento: día, mes y año — <b>en el orden que quieras</b> (24/07/1968 o 07/24/1968). Es para confirmar que eres tú.</div>
       <div class="field" id="lgPinWrap" style="display:none"><input id="lgPin" inputmode="numeric" type="password" autocomplete="off" placeholder="PIN de 4 dígitos" maxlength="4"></div>
       <button class="btn" id="lgGo">Continuar</button>
       <button class="lnkbtn" style="display:block;margin:12px auto 0" onclick="lgMode('choose')">‹ Regresar</button>
@@ -1824,6 +1827,13 @@ function lgPrimer(){
 }
 /* fecha 'YYYY-MM-DD' -> 'YYMMDD' (para el segundo factor) */
 function nac6(v){ v=(v||'').trim(); var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v); if(!m) return ''; return m[1].slice(2)+m[2]+m[3]; }
+/* máscara __/__/____ mientras escriben (solo acomoda las diagonales; el orden da igual) */
+function nacMask(el){
+  var d=(el.value||'').replace(/\D/g,'').slice(0,8), out=d;
+  if(d.length>4) out=d.slice(0,2)+'/'+d.slice(2,4)+'/'+d.slice(4);
+  else if(d.length>2) out=d.slice(0,2)+'/'+d.slice(2);
+  el.value=out;
+}
 function lgCrearPin(clave, nombre, depto, nac){
   var h='<button class="btn" id="lgGo">Crear mi cuenta</button>';
   $('lgForm').innerHTML=

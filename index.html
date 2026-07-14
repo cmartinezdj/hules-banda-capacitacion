@@ -299,10 +299,10 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .hd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
 .hd b{font-size:15px;font-weight:800;letter-spacing:-.2px}
 .eyebrow{font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--mut);font-weight:800}
-.status{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--data)}
+.status{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--data);white-space:nowrap;flex:none}
 .status .d{width:8px;height:8px;border-radius:50%;background:var(--data);box-shadow:0 0 0 3px color-mix(in srgb,var(--data) 22%,transparent);animation:pulseDot 2.4s ease-in-out infinite}
 @keyframes pulseDot{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--data) 8%,transparent)}}
-.chipst{font-size:11px;font-weight:800;letter-spacing:.3px;padding:5px 11px;border-radius:30px;border:1px solid color-mix(in srgb,var(--data) 34%,transparent);background:color-mix(in srgb,var(--data) 12%,transparent);color:var(--data)}
+.chipst{font-size:11px;font-weight:800;letter-spacing:.3px;padding:5px 11px;border-radius:30px;border:1px solid color-mix(in srgb,var(--data) 34%,transparent);background:color-mix(in srgb,var(--data) 12%,transparent);color:var(--data);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%;flex:none}
 .chipst.mut{border-color:var(--line);background:var(--card);color:var(--mut)}
 
 /* ----- columnas de dots (tipo ecualizador) ----- */
@@ -2300,7 +2300,7 @@ function renderNom35(){
   var vis=filOk? n35Visible() : [];
   var tot=vis.length, ans=vis.filter(function(r){ return _n35Ans[r.it.n]!=null; }).length;
   var h='';
-  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">NOM-035 · Anónimo</div><b style="font-size:20px">Riesgo psicosocial</b><p class="note" style="margin:4px 0 0;max-width:250px">'+esc(NOM.intro)+'</p></div><span style="position:absolute;top:14px;right:14px">'+speakBtn(NOM.intro)+'</span></div>'+
+  h+='<div class="panel" style="position:relative"><div class="hd" style="align-items:flex-start;padding-right:46px"><div><div class="eyebrow">NOM-035 · Anónimo</div><b style="font-size:20px">Riesgo psicosocial</b><p class="note" style="margin:4px 0 0;max-width:250px">'+esc(NOM.intro)+'</p></div><span style="position:absolute;top:14px;right:14px">'+speakBtn(NOM.intro)+'</span></div>'+
      '<div class="line" style="border:none;padding:4px 0 0"><span class="chipst'+(ans?'':' mut')+'">'+(filOk? ans+'/'+tot+' contestadas':'Primero 2 preguntas rápidas')+'</span><span class="note">'+esc(NOM.nota)+'</span></div></div>';
   // filtros Sí/No
   h+='<div class="panel"><div class="hd"><b>Antes de empezar</b></div>'+NOM.filtros.map(function(f){
@@ -2360,7 +2360,7 @@ function renderPerm(){
   var P=CFG.permanencia;
   var ans=P.qs.filter(function(q){ return _pmAns[q.n]!=null; }).length;
   var h='';
-  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Encuesta · Anónima</div><b style="font-size:20px">'+esc(P.nombre)+'</b><p class="note" style="margin:4px 0 0;max-width:250px">'+esc(P.intro)+'</p></div><span style="position:absolute;top:14px;right:14px">'+speakBtn(P.intro)+'</span></div>'+
+  h+='<div class="panel" style="position:relative"><div class="hd" style="align-items:flex-start;padding-right:46px"><div><div class="eyebrow">Encuesta · Anónima</div><b style="font-size:20px">'+esc(P.nombre)+'</b><p class="note" style="margin:4px 0 0;max-width:250px">'+esc(P.intro)+'</p></div><span style="position:absolute;top:14px;right:14px">'+speakBtn(P.intro)+'</span></div>'+
      '<div class="line" style="border:none;padding:4px 0 0"><span class="chipst'+(ans?'':' mut')+'">'+ans+'/'+P.qs.length+' contestadas</span><span class="chipst mut">+'+(CFG.points.perm||10)+' pts</span></div></div>';
   h+='<div class="panel">'+P.qs.map(function(q){
     var sel=_pmAns[q.n];

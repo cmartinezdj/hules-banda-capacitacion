@@ -3553,7 +3553,7 @@ function legacyCopy(t){
    RRHH publica avisos e infografías; los trabajadores los reciben en su área "Noticias".
    Demo: localStorage 'hb_news'. En producción esto vive en el servidor y llega a todos. */
 function newsGet(){ if(DBC.news!=null) return DBC.news; try{ return JSON.parse(localStorage.getItem('hb_news')||'[]')||[]; }catch(e){ return []; } }
-function newsSave(a,cb){ try{ localStorage.setItem('hb_news', JSON.stringify(a)); }catch(e){ flash('No se pudo guardar (espacio lleno)'); } DBC.news=a; sbSync('news', a, cb); }
+function newsSave(a){ try{ localStorage.setItem('hb_news', JSON.stringify(a)); }catch(e){ flash('No se pudo guardar (espacio lleno)'); } DBC.news=a; }
 function newsTime(ts){ try{ var d=new Date(ts); return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}); }catch(e){ return ''; } }
 /* segmentación por rango de número de empleado (compartido por Noticias y mensajes directos) */
 function inTarget(to,emp){ if(!to||to.mode==='all') return true; if(to.mode==='range'){ var mn=+to.min,mx=+to.max; if(isNaN(mn)||isNaN(mx)) return true; if(mn>mx){ var t=mn; mn=mx; mx=t; } return emp>=mn&&emp<=mx; } return true; }
@@ -3598,7 +3598,8 @@ function postNews(){
   if(a.length>100) a.length=100;
   // confirmar contra el SERVIDOR: si no sube, avisar fuerte (antes fallaba en silencio
   // y la noticia solo se veía en el dispositivo que la publicó)
-  newsSave(a, function(err){
+  newsSave(a);
+  sbSyncOne('news', a[0], function(err){
     if(err) flash('⚠ NO se publicó al servidor ('+err+'). Revisa tu conexión y vuelve a intentar.');
     else flash('✓ Publicada en el servidor · '+targetLabel(to)+' · ya la ven todos');
   });
@@ -3614,7 +3615,7 @@ function markRead(id){
   n.reads=n.reads||[];
   if(hasRead(n)){ renderNews(); return; }      // ya estaba marcada: no re-otorga puntos
   n.reads.push({ emp:S.emp, ts:Date.now() });
-  newsSave(a);
+  newsSave(a); sbSyncOne('news', n);
   S.points+=CFG.points.read; save(); renderTop();
   flash('¡Gracias por enterarte! +'+CFG.points.read+' pts');
   renderNews();
@@ -3705,7 +3706,7 @@ function newsCards(vis){
    acepta una anormalidad/mejora válida, se guarda y el trabajador gana CFG.points.report (75).
    Demo: localStorage 'hb_reports'. En producción: servidor + aviso inmediato a RRHH. */
 function reportsGet(){ if(DBC.reports!=null) return DBC.reports; try{ return JSON.parse(localStorage.getItem('hb_reports')||'[]')||[]; }catch(e){ return []; } }
-function reportsSave(a){ try{ localStorage.setItem('hb_reports', JSON.stringify(a)); }catch(e){} DBC.reports=a; sbSync('reports', a); }
+function reportsSave(a){ try{ localStorage.setItem('hb_reports', JSON.stringify(a)); }catch(e){} DBC.reports=a; }
 /* Mensajes directos de RRHH al personal (un trabajador, un rango o todos) */
 /* Avisos de RRHH: en el KV del servidor (antes localStorage → solo se veían en el
    dispositivo que los escribió; ahora llegan a todos, en vivo). */
@@ -3730,9 +3731,9 @@ function stTag(s){ return s==='aceptado'?'<span class="tg g">Aceptado</span>':s=
 function submitReport(){
   var txt=(($('buzText')||{}).value||'').trim();
   if(!txt){ flash('Escribe tu mensaje'); return; }
-  var a=reportsGet();
-  a.unshift({ id:'r'+Date.now(), emp:S.emp, area:S.area, type:_buzType, text:txt, status:'pendiente', pts:0, ts:Date.now() });
-  reportsSave(a);
+  var a=reportsGet(), rec={ id:'r'+Date.now(), emp:S.emp, area:S.area, type:_buzType, text:txt, status:'pendiente', pts:0, ts:Date.now() };
+  a.unshift(rec);
+  reportsSave(a); sbSyncOne('reports', rec);
   flash(RPT[_buzType].pts?'Enviado a RRHH. Si lo aprueban, ganas '+rptPts(_buzType)+' puntos.':'Tu queja llegó directo a RRHH.');
   renderQuejas();   // se queda en el buzón: el trabajador ve su envío en "Mis envíos" como Pendiente
 }
@@ -3750,7 +3751,7 @@ function reviewReport(id,accept){
       flash('Aceptado · +'+_pp+' pts para el empleado #'+(''+r.emp).padStart(3,'0')); }
     else { flash('Queja marcada como atendida'); }
   } else { r.status='rechazado'; flash('Marcado como no procedente'); }
-  reportsSave(a); renderDash();
+  reportsSave(a); sbSyncOne('reports', r); renderDash();
 }
 /* ===== Bloques de "Buzón" ahora repartidos: quejas + vacaciones viven en MENSAJES;
    los avisos generales de RRHH (DM) viven en NOTICIAS. (Consolidación pedida por el dueño.) ===== */
@@ -4562,9 +4563,14 @@ function delPin(){ if(!confirm('¿Quitar tu PIN? Podrás entrar solo con tu núm
    RRHH puede leer cualquier conversación (encubierto). Anti-sabotaje: alerta solo a RRHH.
    ============================================================================ */
 function msgsGet(){ return (DBC.msgs!=null)?DBC.msgs:lsGet('hb_msgs'); }
-function msgsSave(a){ lsSet('hb_msgs', a); DBC.msgs=a; sbSync('msgs', a); }
+function msgsSave(a){ lsSet('hb_msgs', a); DBC.msgs=a; }
 function dConv(a,b){ a=+a; b=+b; return 'd:'+Math.min(a,b)+'-'+Math.max(a,b); }
 function gConv(key){ return 'g:'+key; }
+/* Grupos y línea-de-responsable por DEPARTAMENTO REAL (23), no por área de cursos.
+   El slug debe ser IDÉNTICO al de hb_depto_slug() en el servidor (RLS del chat). */
+function deptoSlug(d){ return (d||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
+function myGroup(){ return V3_ON ? deptoSlug(S.area) : S.key; }   // demo: key de área
+function groupName(slug){ return V3_ON ? (slug||'').replace(/-/g,' ').toUpperCase() : areaName(slug); }
 function rConv(emp){ return 'r:'+emp; }            // línea del trabajador con RRHH
 function cConv(emp){ return 'c:'+emp; }            // línea del trabajador con Dirección
 function jConv(key,emp){ return 'j:'+key+':'+emp; } // línea del trabajador con el responsable de SU área
@@ -4577,13 +4583,13 @@ function canWriteConv(conv){
   // ACCESO TOTAL (RRHH/Dirección/Administración): escriben en cualquier línea o grupo.
   if(S.admin && S.dash!=='resp') return true;
   // Grupo de área: los miembros del área (comparten key) + management.
-  if(conv.indexOf('g:')===0){ return S.key===conv.slice(2) || S.dash==='rrhh' || S.dash==='ceo'; }
+  if(conv.indexOf('g:')===0){ return myGroup()===conv.slice(2) || S.dash==='rrhh' || S.dash==='ceo'; }
   // Línea con RRHH: la responde RRHH (Dirección solo monitorea).
   if(conv.indexOf('r:')===0){ var or=+conv.slice(2); return or===S.emp || S.dash==='rrhh'; }
   // Línea con Dirección: la responde Dirección (RRHH solo monitorea).
   if(conv.indexOf('c:')===0){ var oc=+conv.slice(2); return oc===S.emp || S.dash==='ceo'; }
   // Línea con el responsable: la responde el responsable de ESA área (RRHH/Dirección solo monitorean).
-  if(conv.indexOf('j:')===0){ var pp=conv.slice(2).split(':'); return (+pp[1])===S.emp || (S.dash==='resp' && S.key===pp[0]); }
+  if(conv.indexOf('j:')===0){ var pp=conv.slice(2).split(':'); return (+pp[1])===S.emp || (S.dash==='resp' && myGroup()===pp[0]); }
   return true;
 }
 function convMsgs(conv){ return msgsGet().filter(function(m){ return m.conv===conv; }).sort(function(x,y){ return x.ts-y.ts; }); }
@@ -4600,21 +4606,22 @@ function senderLabel(from){ return isAdminId(from)?roleLabel(from):('#'+(''+from
 function convTitle(conv){
   if(conv.indexOf('r:')===0) return 'Recursos Humanos';
   if(conv.indexOf('c:')===0) return 'Dirección';
-  if(conv.indexOf('j:')===0){ var parts=conv.slice(2).split(':'); return 'Responsable · '+areaName(parts[0]); }
-  if(conv.indexOf('g:')===0) return 'Grupo · '+areaName(conv.slice(2));
+  if(conv.indexOf('j:')===0){ var parts=conv.slice(2).split(':'); return 'Responsable · '+groupName(parts[0]); }
+  if(conv.indexOf('g:')===0) return 'Grupo · '+groupName(conv.slice(2));
   if(conv.indexOf('d:')===0) return empName(convOther(conv));
   return conv;
 }
 function sendMsg(conv,text,img){
   text=(text||'').trim(); if(!text&&!img) return;
-  var a=msgsGet(); a.push({ id:'m'+Date.now()+'-'+S.emp, conv:conv, from:S.emp, text:text, img:img||'', ts:Date.now() });
+  var rec={ id:'m'+Date.now()+'-'+S.emp, conv:conv, from:S.emp, text:text, img:img||'', ts:Date.now() };
+  var a=msgsGet(); a.push(rec);
   if(a.length>4000) a.splice(0,a.length-4000);
-  msgsSave(a);
+  msgsSave(a); sbSyncOne('msgs', rec);   // sube SOLO este mensaje (no todo el historial)
   // anti-sabotaje: intención de daño → alerta SOLO a RRHH; el trabajador NO se entera (el mensaje se envía normal)
   if(text && typeof maliceCheck==='function' && maliceCheck(text)) logAlert('[Chat] '+text);
   markConvRead(conv);
 }
-function totalUnread(){ if(!S||S.admin) return 0; var t=convUnread(rConv(S.emp))+convUnread(cConv(S.emp))+convUnread(jConv(S.key,S.emp))+convUnread(gConv(S.key)); myDirects().forEach(function(c){ t+=convUnread(c); }); return t; }
+function totalUnread(){ if(!S||S.admin) return 0; var t=convUnread(rConv(S.emp))+convUnread(cConv(S.emp))+convUnread(jConv(myGroup(),S.emp))+convUnread(gConv(myGroup())); myDirects().forEach(function(c){ t+=convUnread(c); }); return t; }
 function updateMsgBadge(){ var b=$('nav-msgs'); if(!b) return; var ex=b.querySelector('.nbadge'); if(ex) ex.remove(); var n=totalUnread(); if(n>0){ var s=document.createElement('span'); s.className='nbadge'; s.textContent=n>9?'9+':(''+n); b.appendChild(s); } }
 function myDirects(){
   var seen={}, out=[];
@@ -4659,10 +4666,10 @@ function renderMsgs(){
     else { h+=msgAdminInbox(); }
   } else {
     // Banners-portada de cada función (más visual, distinto diseño)
-    var lineUn=convUnread(rConv(S.emp))+convUnread(cConv(S.emp))+convUnread(jConv(S.key,S.emp));
-    var grpUn=convUnread(gConv(S.key));
+    var lineUn=convUnread(rConv(S.emp))+convUnread(cConv(S.emp))+convUnread(jConv(myGroup(),S.emp));
+    var grpUn=convUnread(gConv(myGroup()));
     h+=bnrCard("renderLineas()",'Líneas directas','RRHH, Dirección, responsable y compañeros', cover('chat','#0e9e8e','#053b36'), lineUn||'');
-    h+=bnrCard("openConv('"+gConv(S.key)+"')",'Grupo · '+S.area,'Mensajes de toda tu área', cover('people','#2a7de1','#123a6b'), grpUn||'');
+    h+=bnrCard("openConv('"+gConv(myGroup())+"')",'Grupo · '+S.area,'Mensajes de toda tu área', cover('people','#2a7de1','#123a6b'), grpUn||'');
     // Conversaciones activas
     var dir=myDirects();
     h+='<div class="sec-t">Conversaciones<span class="ln"></span></div>';
@@ -4680,7 +4687,7 @@ function renderLineas(){
   h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Mensajes</div><b style="font-size:20px">Líneas directas</b><p class="note" style="margin:4px 0 0;max-width:240px">Elige a quién escribirle. Tus mensajes son privados.</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
   h+=lineChanCard(rConv(S.emp),'Recursos Humanos','Tu canal privado con RRHH',CHAN_IC.rrhh,'#39d6c0');
   h+=lineChanCard(cConv(S.emp),'Dirección','Escríbele directo a Dirección',CHAN_IC.dir,'#ffd166');
-  h+=lineChanCard(jConv(S.key,S.emp),'Responsable de '+S.area,'El jefe de tu área',CHAN_IC.resp,(rangeOf(S.emp)||{}).accent||'#39d6c0');
+  h+=lineChanCard(jConv(myGroup(),S.emp),'Responsable de '+S.area,'El jefe de tu área',CHAN_IC.resp,(rangeOf(S.emp)||{}).accent||'#39d6c0');
   h+=lineChanCard(null,'Escribir a un compañero','Busca por nombre o número',CHAN_IC.comp,'#8b8ff7','renderNewChat()');
   $('s-lineas').innerHTML=h; show('lineas');
 }
@@ -4811,9 +4818,9 @@ function respMsgs(){
   h+='<div class="sec-t">Tus líneas directas<span class="ln"></span></div>';
   h+=lineChanCard(cConv(S.emp),'Dirección','Tu canal con Dirección',CHAN_IC.dir,'#ffd166');
   h+=lineChanCard(rConv(S.emp),'Recursos Humanos','Tu canal con RRHH',CHAN_IC.rrhh,'#39d6c0');
-  h+='<div class="sec-t">Grupo de '+esc(S.area)+'<span class="ln"></span></div>'+lineChanCard(gConv(S.key),'Grupo · '+S.area,'Mensajes de toda tu área',IC2.people,'#2a7de1');
+  h+='<div class="sec-t">Grupo de '+esc(S.area)+'<span class="ln"></span></div>'+lineChanCard(gConv(myGroup()),'Grupo · '+S.area,'Mensajes de toda tu área',IC2.people,'#2a7de1');
   h+='<div class="sec-t">Tu equipo te escribe<span class="ln"></span></div>';
-  var pre='j:'+S.key+':', seen={};
+  var pre='j:'+myGroup()+':', seen={};
   msgsGet().forEach(function(m){ if(m.conv.indexOf(pre)===0) seen[m.conv]=1; });
   var ks=Object.keys(seen);
   if(!ks.length) h+='<div class="card"><div class="note">Nadie de tu equipo te ha escrito todavía.</div></div>';
@@ -4846,7 +4853,7 @@ function msgAdminInbox(){
   ck.forEach(function(c){ h+=convRow(c,'#'+(''+c.slice(2)).padStart(3,'0')+' → Dirección',null); });
   h+='<div class="sec-t">Líneas con responsables<span class="ln"></span></div>';
   if(!jk.length) h+='<div class="card"><div class="note">Sin mensajes a responsables.</div></div>';
-  jk.forEach(function(c){ var parts=c.slice(2).split(':'); h+=convRow(c,'#'+(''+parts[1]).padStart(3,'0')+' → Resp. '+areaName(parts[0]),null); });
+  jk.forEach(function(c){ var parts=c.slice(2).split(':'); h+=convRow(c,'#'+(''+parts[1]).padStart(3,'0')+' → Resp. '+groupName(parts[0]),null); });
   h+='<div class="sec-t">Grupos de área<span class="ln"></span></div>';
   if(!gk.length) h+='<div class="card"><div class="note">Sin mensajes de grupo.</div></div>';
   gk.forEach(function(c){ h+=convRow(c,convTitle(c),null); });
@@ -5045,6 +5052,15 @@ function sbLoad(tbl, cb){
 function sbSync(tbl, arr, cb){   // sube/actualiza el arreglo completo; cb(errorMsg|null) para avisar si falló
   if(!sbReady() || !arr || !arr.length){ if(cb) cb(sbReady()?null:'sin conexión'); return; }
   try{ SB.from(tbl).upsert(arr.map(function(o){ return {id:o.id, data:o, ts:(o.ts||Date.now())}; })).then(function(r){
+    if(cb) cb(r&&r.error ? (r.error.message||'error del servidor') : null);
+  }); }catch(e){ if(cb) cb('sin conexión'); }
+}
+/* Sube UN SOLO registro (no toda la lista). Clave para noticias/mensajes con FOTO:
+   re-subir toda la lista con imágenes excede el límite del servidor y fallaba en
+   silencio (por eso una noticia con foto no le llegaba a los demás). */
+function sbSyncOne(tbl, obj, cb){
+  if(!sbReady()){ if(cb) cb('sin conexión'); return; }
+  try{ SB.from(tbl).upsert({id:obj.id, data:obj, ts:(obj.ts||Date.now())}).then(function(r){
     if(cb) cb(r&&r.error ? (r.error.message||'error del servidor') : null);
   }); }catch(e){ if(cb) cb('sin conexión'); }
 }

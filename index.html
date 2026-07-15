@@ -4978,6 +4978,7 @@ function openConv(conv){
 function sendFromThread(){
   var inp=$('thIn'), t=inp?(inp.value||'').trim():'';
   if(!t && !_pendImg) return;
+  if(inp) inp.value='';   // limpiar ANTES de re-pintar: si no, el guardado de borrador lo restaura
   sendMsg(_curConv,t,_pendImg); _pendImg=null;
   openConv(_curConv);
 }

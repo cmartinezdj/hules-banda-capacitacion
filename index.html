@@ -463,7 +463,8 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .nav button{flex:1;max-width:80px;position:relative;background:none;border:none;color:var(--mut);font-size:9px;font-weight:700;cursor:pointer;
   display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;border-radius:14px;transition:.18s}
 .nav button .ni{width:20px;height:20px}
-.nbadge{position:absolute;top:2px;right:8px;min-width:15px;height:15px;padding:0 4px;border-radius:9px;background:var(--accent);color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1}
+/* Puntito AZUL de mensaje recibido (todas las cuentas) — vive en el menú, junto a "Mensajes" */
+.nbadge{position:absolute;top:2px;right:8px;min-width:15px;height:15px;padding:0 4px;border-radius:9px;background:#2a7de1;color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 8px rgba(42,125,225,.75)}
 .nav button.on{color:var(--accent2)}
 .nav button.on .ni{filter:drop-shadow(0 4px 8px color-mix(in srgb,var(--accent) 50%,transparent))}
 .nav button:active{transform:scale(.92)}
@@ -701,6 +702,10 @@ body.a11y .screen .seg button{ font-size:13px !important; }
     <section id="s-thread"  class="screen pad hide"></section>
     <section id="s-nom"     class="screen pad hide"></section>
     <section id="s-dia"     class="screen pad hide"></section>
+    <section id="s-wconvs"  class="screen pad hide"></section>
+    <section id="s-cal"     class="screen pad hide"></section>
+    <section id="s-docs"    class="screen pad hide"></section>
+    <section id="s-perfilpub" class="screen pad hide"></section>
   </main>
 
   <!-- ===================== NAV INFERIOR ===================== -->
@@ -1696,6 +1701,45 @@ function quickLogin(id){ $('inEmp').value=id; login(); }
 /* ===== Perfil por empleado (foto · datos · PIN) — por dispositivo (demo); Fase 2: servidor ===== */
 function profGet(emp){ try{ return kvGet('hb_profile_'+emp)||{}; }catch(e){ return {}; } }
 function profSave(emp,p){ kvSet('hb_profile_'+emp, p); }
+/* Solo caché local (NO toca el servidor): se usa al armar la sesión para no pisar
+   la foto/firma que ya vive en el servidor con una copia recién hecha del roster. */
+function profSaveLocal(emp,p){
+  try{ localStorage.setItem('hb_profile_'+emp, JSON.stringify(p)); }catch(e){}
+  if(!DBC.kv) DBC.kv={}; DBC.kv['hb_profile_'+emp]=p;
+}
+/* Guarda MI perfil y CONFIRMA contra el servidor (foto, firma, datos): si no se
+   guardó, avisa por qué; si sí, avisa "cambio exitoso". Cada cuenta tiene su
+   propio registro hb_profile_<n> (dueño = esa persona por RLS). */
+function profSaveServer(p, okMsg){
+  var k='hb_profile_'+S.emp;
+  profSaveLocal(S.emp, p);                 // optimista: la UI ya lo muestra
+  if(!(V3_ON && sbReady())){ flash(okMsg?('✓ '+okMsg+' (en este dispositivo)'):'Guardado en este dispositivo'); return; }
+  var ts=Date.now(); _kvSent[k]=ts;
+  try{
+    SB.from('kv').upsert({k:k, data:p, ts:ts}).then(function(r){
+      if(r&&r.error) flash('⚠ No se pudo guardar en el servidor: '+(r.error.message||'error')+'. Revisa tu conexión e intenta otra vez.');
+      else flash('✓ '+(okMsg||'Cambio guardado en el servidor'));
+    }, function(){ flash('⚠ Sin conexión: el cambio NO se guardó en el servidor. Intenta otra vez.'); });
+  }catch(e){ flash('⚠ No se pudo guardar en el servidor. Intenta otra vez.'); }
+}
+/* ===== Perfil PÚBLICO de otras personas (lo que TODAS las cuentas pueden ver de
+   otro: nombre, clave, área, foto y si está registrado — nada más). Se pide al
+   servidor y se cachea. La demás información es clasificada. ===== */
+function pubGet(n){ return (DBC.pub&&DBC.pub[+n])||null; }
+function pubEnsure(ids, cb){
+  if(!(V3_ON && sbReady())){ if(cb) cb(); return; }
+  if(!DBC.pub) DBC.pub={};
+  var faltan=[]; (ids||[]).forEach(function(n){ n=+n; if(n&&!DBC.pub[n]&&faltan.indexOf(n)<0) faltan.push(n); });
+  if(!faltan.length){ if(cb) cb(); return; }
+  SB.rpc('hb_perfiles_publicos',{p_ns:faltan}).then(function(r){
+    if(r.data&&r.data.ok){ (r.data.perfiles||[]).forEach(function(p){ DBC.pub[+p.n]=p; }); }
+    faltan.forEach(function(n){ if(!DBC.pub[n]) DBC.pub[n]={n:n}; });   // marca "ya intentado" (evita reintentos infinitos)
+    if(cb) cb();
+  }, function(){ if(cb) cb(); });
+}
+/* Foto de una persona para los avatares de mensajería (la mía o, si la cargó el
+   servidor, la de la otra persona). */
+function personFoto(n){ if(+n===S.emp) return profGet(S.emp).foto||''; var p=pubGet(n); return (p&&p.foto)||''; }
 function profInitials(){ var p=profGet(S.emp); var nm=(p.nombre||'').trim();
   if(nm){ return nm.split(/\s+/).map(function(w){return (w[0]||'');}).slice(0,2).join('').toUpperCase(); }
   return (''+S.emp).padStart(3,'0'); }
@@ -1886,8 +1930,10 @@ function bootV3(forceProfile){
     var cfg={ emp:d.n, clave:d.clave, key:akey, area:d.depto, accent:ac.accent, accent2:ac.accent2,
               admin:admin, dash:(admin?'rrhh':(mando?'resp':null)), mando:mando, nombre:d.nombre,
               greet:'¡Hola, '+(niceName(d.nombre||'').split(' ')[0]||'')+'! Aquí nace la banda que rueda por +50 países.' };
-    // guardar nombre en el perfil local si aún no está (para el avatar y saludos)
-    try{ var pf=profGet(d.n); if(!pf.nombre && d.nombre){ pf.nombre=d.nombre; profSave(d.n,pf); } if(d.privado){ pf.datos=d.privado; profSave(d.n,pf);} }catch(e){}
+    // Nombre/datos en el perfil SOLO en caché local (NO al servidor): así no pisamos
+    // la foto/firma que ya vive en el servidor. kvInit cargará el perfil real (con
+    // foto) unos instantes después y lo reconcilia.
+    try{ var pf=profGet(d.n); var ch=false; if(!pf.nombre && d.nombre){ pf.nombre=d.nombre; ch=true; } if(d.privado){ pf.datos=d.privado; ch=true; } if(ch) profSaveLocal(d.n,pf); }catch(e){}
     var saved=load(d.n)||{};
     startSession(cfg, saved, forceProfile);
   }, function(){ lgBusy(false); lgSay('No hay conexión con el servidor.',true); });
@@ -1985,14 +2031,14 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'" onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia'];
+var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','docs','perfilpub'];
 var _prevShown=null;
 function show(name){
   var cambio = (name!==_prevShown);
   _prevShown=name; _screen=name;
   SCREENS.forEach(function(s){ var el=$('s-'+s); if(el) el.classList.toggle('hide', s!==name); });
   // nav activo (course/quiz/result/pay cuentan como "home")
-  var navKey = (name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='dia') ? 'home' : ((name==='thread'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas')?'msgs':((name==='encuestas'||name==='nom35'||name==='perm')?'news':(name==='perfil'?(S.admin?'hr':'home'):name)));
+  var navKey = (name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='dia') ? 'home' : ((name==='thread'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='wconvs'||name==='perfilpub')?'msgs':((name==='encuestas'||name==='nom35'||name==='perm'||name==='cal')?'news':(name==='perfil'?(S.admin?'hr':'home'):(name==='docs'?(S.admin?'hr':'news'):name))));
   ['home','msgs','rewards','chat','hr','clases','news','buzon'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
   renderTop(name);
   // ANTI-PARPADEO: la animación de entrada y el scroll-al-tope SOLO al cambiar de
@@ -2014,10 +2060,10 @@ function go(name){
   if(name==='msgs') return renderMsgs();
 }
 function renderTop(name){
-  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='docs'||name==='perfilpub');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? (S.admin?'renderMsgs()':'renderLineas()') : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : (name==='thread'||name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? (S.admin?'renderMsgs()':'renderLineas()') : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':'renderMsgs()') : name==='cal' ? 'renderNews()' : name==='docs' ? ('go(\''+(S.admin?'hr':'news')+'\')') : 'go(\'home\')';
     left.innerHTML='<button class="back" onclick="'+backTo+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
@@ -2218,19 +2264,9 @@ function ricon(i){ return REWARD_ART[i]||REWARD_ART[0]; }
 /* ===== CALENDARIO VISUAL (próximos eventos) ===== */
 var MESES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 var MESL=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-function demoEvents(){
-  var d=new Date(), y=d.getFullYear(), m=d.getMonth(), day=d.getDate();
-  function iso(dd){ var x=new Date(y,m,dd); return x.getFullYear()+'-'+('0'+(x.getMonth()+1)).slice(-2)+'-'+('0'+x.getDate()).slice(-2); }
-  return [
-    {t:'Día de pago', d:iso(Math.min(day+2,28))},
-    {t:'Junta de seguridad', d:iso(Math.min(day+5,27))},
-    {t:'Simulacro de evacuación', d:iso(Math.min(day+9,26))},
-    {t:'Convivio del mes', d:iso(Math.min(day+15,28))}
-  ];
-}
 function calendarBlock(){
   var d=new Date(), y=d.getFullYear(), m=d.getMonth(), today=d.getDate();
-  var evs=demoEvents().concat(evGet());
+  var evs=evGet();   // SOLO eventos reales (los demo hardcodeados se retiraron: ya todo se edita en el calendario)
   var byDay={}; evs.forEach(function(e){ var p=(e.d||'').split('-'); if(+p[0]===y && (+p[1]-1)===m) byDay[+p[2]]=(byDay[+p[2]]||[]).concat(e); });
   var first=new Date(y,m,1).getDay(), dim=new Date(y,m+1,0).getDate();
   var h='<div class="cal"><div class="cah"><b>'+MESL[m]+' '+y+'</b></div><div class="calg">';
@@ -2241,7 +2277,80 @@ function calendarBlock(){
   var up=evs.filter(function(e){ var p=(e.d||'').split('-'); var ed=new Date(+p[0],+p[1]-1,+p[2]); return ed>=new Date(y,m,today); })
            .sort(function(a,b){ return a.d<b.d?-1:1; }).slice(0,5);
   if(up.length){ h+='<div style="margin-top:14px">'; up.forEach(function(e){ var p=e.d.split('-'); h+='<div class="evrow"><span class="dt"><span class="d">'+(+p[2])+'</span><span class="m">'+MESES[+p[1]-1]+'</span></span><span class="et"><b>'+esc(e.t)+'</b><span>'+fmtDate(e.d)+'</span></span>'+speakBtn(e.t+'. '+fmtDate(e.d))+'</div>'; }); h+='</div>'; }
+  h+='<button class="btn ghost w" style="margin-top:12px" onclick="openCal()">'+(S&&S.admin?'Abrir calendario · editar eventos ›':'Ver calendario completo ›')+'</button>';
   return h+'</div>';
+}
+/* ===== PANTALLA CALENDARIO — pantalla propia; los dashboards AGREGAN / MODIFICAN /
+   QUITAN cualquier evento. Vive en la kv compartida 'hb_events': kvSet la sube al
+   servidor y el canal realtime la repinta en TODAS las cuentas al instante. ===== */
+var _calOff=0, _evEdit=null;
+function openCal(){ _calOff=0; _evEdit=null; renderCal(); }   // entra siempre al mes actual, sin edición pendiente
+function calNav(d){ _calOff+=d; renderCal(); }
+function calEdit(id){ _evEdit=id; renderCal(); var t=$('calTitle'); if(t) t.focus(); }
+function calDel(id){
+  if(!S||!S.admin){ flash('Solo los tableros de administración editan el calendario'); return; }
+  var e=null; evGet().forEach(function(x){ if(x.id===id) e=x; });
+  if(!confirm('¿Quitar el evento'+(e?' «'+e.t+'»':'')+' del calendario de toda la planta?')) return;
+  lsSet('hb_events', evGet().filter(function(x){ return x.id!==id; }));
+  if(_evEdit===id) _evEdit=null;
+  flash('Evento quitado'); renderCal();
+}
+function calSave(){
+  if(!S||!S.admin){ flash('Solo los tableros de administración editan el calendario'); return; }   // defensa (el servidor también lo exige)
+  var t=(($('calTitle')||{}).value||'').trim(), d=(($('calDate')||{}).value||'').trim();
+  if(!t||!d){ flash('Escribe el evento y elige la fecha'); return; }
+  var a=evGet().slice();
+  if(_evEdit){
+    if(!a.some(function(e){ return e.id===_evEdit; })){   // otro tablero lo borró mientras editabas
+      flash('Ese evento ya fue quitado por otro tablero. Lo agrego como nuevo.'); _evEdit=null;
+      a.push({ id:'e'+Date.now(), t:t, d:d, ts:Date.now() });
+    } else {
+      a=a.map(function(e){ return e.id===_evEdit?{id:e.id,t:t,d:d,ts:Date.now()}:e; }); _evEdit=null;
+      flash('✓ Evento actualizado en todas las cuentas');
+    }
+  }
+  else { a.push({ id:'e'+Date.now(), t:t, d:d, ts:Date.now() }); flash('✓ Evento agregado al calendario'); }
+  lsSet('hb_events', a);
+  renderCal();
+}
+function calRow(e){
+  var p=(e.d||'').split('-');
+  return '<div class="card"><div class="evrow" style="margin:0"><span class="dt"><span class="d">'+(+p[2])+'</span><span class="m">'+MESES[(+p[1]-1)]+'</span></span>'+
+    '<span class="et"><b>'+esc(e.t)+'</b><span>'+fmtDate(e.d)+'</span></span>'+speakBtn(e.t+'. '+fmtDate(e.d))+'</div>'+
+    (S.admin?'<div style="display:flex;gap:7px;margin-top:9px"><button class="btn ghost" style="margin:0;flex:1;padding:8px;font-size:12.5px" onclick="calEdit(\''+e.id+'\')">Modificar</button><button class="btn ghost" style="margin:0;flex:1;padding:8px;font-size:12.5px;color:var(--bad)" onclick="calDel(\''+e.id+'\')">Quitar</button></div>':'')+'</div>';
+}
+function renderCal(){
+  var base=new Date(); base.setDate(1); base.setMonth(base.getMonth()+_calOff);
+  var y=base.getFullYear(), m=base.getMonth();
+  var now=new Date(), ty=now.getFullYear(), tm=now.getMonth(), td=now.getDate();
+  var evs=evGet().slice().sort(function(a,b){ return a.d<b.d?-1:1; });
+  var byDay={}; evs.forEach(function(e){ var p=(e.d||'').split('-'); if(+p[0]===y&&(+p[1]-1)===m) byDay[+p[2]]=(byDay[+p[2]]||[]).concat(e); });
+  var first=new Date(y,m,1).getDay(), dim=new Date(y,m+1,0).getDate();
+  var h='';
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Noticias</div><b style="font-size:20px">Calendario</b><p class="note" style="margin:4px 0 0;max-width:250px">'+(S.admin?'Agrega, modifica o quita eventos a tu gusto. Se actualiza al instante en todas las cuentas.':'Los eventos importantes de la planta.')+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
+  h+='<div class="panel"><div class="line" style="border:none;padding:0 0 8px"><button class="back" style="padding:6px 12px" onclick="calNav(-1)" aria-label="Mes anterior">‹</button><b style="flex:1;text-align:center;font-size:15px">'+MESL[m]+' '+y+'</b><button class="back" style="padding:6px 12px" onclick="calNav(1)" aria-label="Mes siguiente">›</button></div>'+
+     '<div class="cal" style="padding:0;border:none;background:transparent"><div class="calg">';
+  ['D','L','M','M','J','V','S'].forEach(function(w){ h+='<div class="wd">'+w+'</div>'; });
+  for(var i=0;i<first;i++) h+='<div class="dc mut"></div>';
+  for(var dd=1;dd<=dim;dd++){ var cls='dc'+((dd===td&&y===ty&&m===tm)?' today':(byDay[dd]?' has':'')); h+='<div class="'+cls+'">'+dd+(byDay[dd]?'<span class="ev"></span>':'')+'</div>'; }
+  h+='</div></div></div>';
+  if(S.admin){
+    var ed=null; if(_evEdit){ evs.forEach(function(e){ if(e.id===_evEdit) ed=e; }); if(!ed) _evEdit=null; }
+    h+='<div class="panel"><div class="hd"><b>'+(ed?'Modificar evento':'Agregar evento')+'</b>'+(ed?'<button class="back" style="padding:6px 10px" onclick="_evEdit=null;renderCal()">Cancelar</button>':'')+'</div>'+
+       '<input id="calTitle" class="fin" placeholder="Evento (ej. Día de pago, junta de seguridad)" autocomplete="off" value="'+(ed?escA(ed.t):'')+'" style="margin:0 0 8px">'+
+       '<input id="calDate" class="fin" type="date" value="'+(ed?escA(ed.d):'')+'">'+
+       '<button class="btn" style="margin-top:10px" onclick="calSave()">'+(ed?'Guardar cambios':'Agregar al calendario')+'</button></div>';
+  }
+  var monthEvs=evs.filter(function(e){ var p=(e.d||'').split('-'); return +p[0]===y&&(+p[1]-1)===m; });
+  h+='<div class="sec-t">Eventos de '+MESL[m]+'<span class="ln"></span></div>';
+  if(!monthEvs.length) h+='<div class="card"><div class="note">Sin eventos este mes.</div></div>';
+  monthEvs.forEach(function(e){ h+=calRow(e); });
+  var todayIso=ty+'-'+('0'+(tm+1)).slice(-2)+'-'+('0'+td).slice(-2);
+  var futuros=evs.filter(function(e){ return (e.d||'')>=todayIso; });
+  h+='<div class="sec-t">Todos los próximos<span class="ln"></span></div>';
+  if(!futuros.length) h+='<div class="card"><div class="note">No hay eventos próximos. '+(S.admin?'Agrega el primero arriba.':'')+'</div></div>';
+  futuros.forEach(function(e){ h+=calRow(e); });
+  $('s-cal').innerHTML=h; show('cal');
 }
 
 /* ===== ENCUESTAS (bloque de entrada + pantalla con todas) ===== */
@@ -2943,7 +3052,9 @@ function renderChat(){
   h+='<div class="composer"><input id="chatIn" placeholder="Escribe tu pregunta…" autocomplete="off"><button class="send" onclick="sendChat()" aria-label="Enviar"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button></div>';
   h+='</div>';
   $('s-chat').innerHTML=h;
-  var sugg=['¿Qué es la banda de precurado?','¿Llantas de camión por posición?','¿Cómo funciona una llanta?','¿Por qué renovar?','¿Quién es Bandamatic?'];
+  var sugg=(V3_ON && (S.admin||S.mando))
+    ? [(S.admin?'¿Cómo va la planta?':'¿Cómo va mi área?'),'¿Hay alertas pendientes?','¿Qué es la banda de precurado?','¿Por qué renovar?','¿Quién es Bandamatic?']
+    : ['¿Qué es la banda de precurado?','¿Llantas de camión por posición?','¿Cómo funciona una llanta?','¿Por qué renovar?','¿Quién es Bandamatic?'];
   $('chips').innerHTML=sugg.map(function(s){return '<button class="chip2" onclick="quickAsk(this)">'+esc(s)+'</button>';}).join('');
   paintChat();
   var ci=$('chatIn'); if(ci){ ci.onkeydown=function(ev){ if(ev.key==='Enter') sendChat(); }; }
@@ -3010,6 +3121,61 @@ function kbFind(t){
   return { hit:false, topic:null, answer:null };
 }
 function kbTopics(){ return (CFG.kb||[]).filter(function(e){return e.t;}).map(function(e){return e.t;}); }
+/* ===== BANDI CON DATOS VIVOS (solo mando / acceso total) =====
+   Antes de la biblioteca, Bandi intenta responder con MÉTRICAS REALES del
+   sistema (deptStats de los 23 departamentos + registro de preguntas):
+   "¿avance del Banbury?" → el avance real, en lenguaje de reporte para CEO.
+   NO usa IA online (HARD RULE 4): son plantillas en español con datos del
+   servidor, y cada respuesta queda registrada como pregunta frecuente. */
+function dynDepto(tn,DS){
+  var best=null;
+  DS.list.forEach(function(x){
+    if(best) return;
+    var dn=_norm(x.dep).trim(); if(!dn) return;
+    if(tn.indexOf(dn)>=0){ best=x; return; }
+    var toks=dn.split(/\s+/).filter(function(w){ return w.length>=4; });
+    for(var i=0;i<toks.length;i++){
+      var w=toks[i], ws=w.replace(/(es|s)$/,'');
+      if(tn.indexOf(w)>=0 || (ws.length>=4 && tn.indexOf(ws)>=0)){ best=x; return; }
+    }
+  });
+  return best;
+}
+function dynFind(t){
+  if(!S || !(S.admin||S.mando)) return null;   // los datos del equipo son solo de tableros
+  var tn=' '+_norm(t)+' ';
+  var reAv=/(avance|progreso|como va|como van|al dia|porcentaje|curso|capacitacion)/;
+  var reReg=/(registrad|cuanta gente|inscrit|cuantos han entrado)/;
+  var reAl=/(alerta|foco rojo|focos rojos|sabotaje|sin responder|pendiente)/;
+  var reGl=/(planta|global|general|todos los departamentos|toda la empresa|resumen)/;
+  if(reAl.test(tn)){
+    var Q=qstats(), na=(Q.alerts||[]).length, nu=Object.keys(Q.unans||{}).length;
+    return { topic:'(Datos) Alertas y pendientes', answer:'Ahora mismo hay '+na+' alerta(s) de seguridad'+(na?' SIN atender — revísalas en el tablero':'')+' y '+nu+' pregunta(s) del Asistente sin respuesta autorizada. '+(na?'Atiende primero las alertas.':'Por ese lado, todo bajo control.') };
+  }
+  var DS=deptStats();
+  // Solo con datos vivos del servidor (en demo/offline no hay roster: que siga el flujo normal a la biblioteca)
+  if(!DS){ if(reGl.test(tn) && V3_ON) return { topic:'(Datos) Equipo aún cargando', answer:'Aún estoy cargando los datos del equipo del servidor. Dame unos segundos y pregúntame otra vez. Si sigue así, revisa tu conexión.' }; return null; }
+  // 1) ¿Nombró un departamento? → avance de ESE depto (aunque no use palabras de "avance")
+  var dep=dynDepto(tn,DS);
+  if(dep){
+    var esAdmin=!!S.admin, ref=esAdmin?'la planta':'tu área';
+    var dif=dep.avg-DS.global;
+    var cmp=esAdmin?(dif>2?('Va '+dif+' puntos arriba del global de la planta ('+DS.global+'%).'):(dif<-2?('Va '+(-dif)+' puntos abajo del global de la planta ('+DS.global+'%); vale la pena hablar con su responsable.'):('Va parejo con el global de la planta ('+DS.global+'%).'))):'';
+    var sem=dep.avg>=80?'🟢':(dep.avg>=40?'🟡':'🔴');
+    return { topic:'(Datos) Avance · '+dep.dep, answer:sem+' '+dep.dep+': avance promedio de '+dep.avg+'% en sus cursos, con '+dep.reg+' de '+dep.total+' personas registradas. '+cmp };
+  }
+  // 2) Resumen SOLO si preguntó explícitamente por el global/planta; si solo dijo
+  //    "avance/curso" sin depto, dejamos pasar a la biblioteca (no secuestrar).
+  if(!reGl.test(tn)) return null;
+  if(!S.admin){   // un mando solo tiene datos de SU departamento
+    var m=DS.list[0]||{avg:DS.global,reg:DS.reg,total:DS.total,dep:(S.area||'tu área')};
+    var semM=m.avg>=80?'🟢':(m.avg>=40?'🟡':'🔴');
+    return { topic:'(Datos) Avance · '+(m.dep||S.area), answer:semM+' Tu departamento ('+(m.dep||S.area)+'): avance promedio de '+m.avg+'% en cursos, con '+m.reg+' de '+m.total+' personas registradas. (Como responsable ves los datos de tu área.)' };
+  }
+  var top=DS.list.slice().sort(function(a,b){ return b.avg-a.avg; }).filter(function(x){ return x.reg>0; });
+  var lead=top[0], lag=top[top.length-1];
+  return { topic:'(Datos) Resumen de planta', answer:'📊 Planta completa: avance global de '+DS.global+'%, con '+DS.reg+' de '+DS.total+' personas registradas en '+DS.list.length+' departamentos.'+(lead?(' El más avanzado: '+lead.dep+' ('+lead.avg+'%).'):'')+((lag&&lag!==lead)?(' El más rezagado: '+lag.dep+' ('+lag.avg+'%).'):'') };
+}
 function qstats(){ try{ return kvGet('hb_qstats')||{freq:{},unans:{}}; }catch(e){ return {freq:{},unans:{}}; } }
 function logQ(topic,text,hit){
   try{ var s=qstats();
@@ -3035,6 +3201,11 @@ function sendChat(){
     setTimeout(function(){ chatBusy=false; S.chat.push({role:'assistant',content:'Ese tipo de preguntas no son bienvenidas en el Asistente. Estoy para ayudarte a aprender y a cuidar la planta, a tus compañeros y tu propio trabajo. Si fue un malentendido, vuelve a preguntar de otra forma.'}); paintChat(); }, 350);
     return;
   }
+  // BANDI CON DATOS VIVOS (solo tableros): métricas reales del sistema, sin IA online.
+  // Corre ANTES del guardrail para que "¿cuántos registrados hay en X?" no choque
+  // con el filtro de inventario (los datos del equipo SÍ son de este rol).
+  var dyn=dynFind(t);
+  if(dyn){ logQ(dyn.topic,t,true); setTimeout(function(){ chatBusy=false; S.chat.push({role:'assistant',content:dyn.answer}); paintChat(); }, 380); return; }
   // GUARDRAIL (online y offline): bloquea info sensible / inventario sin permiso / fuera de tema
   var blk=guard(t);
   if(blk){ setTimeout(function(){ chatBusy=false; S.chat.push({role:'assistant',content:blk}); paintChat(); }, 350); return; }
@@ -3107,17 +3278,22 @@ function renderPersonal(){
   var shown=fil.slice(0,60);
   h+='<div class="note" style="margin:8px 0">'+(q?fil.length+' resultado(s)':'Mostrando '+shown.length+' de '+list.length+' · usa el buscador')+'</div>';
   shown.forEach(function(p){
-    var badges=(p.admin?'<span class="tg g">Acceso total</span>':(p.mando?'<span class="tg g">Responsable</span>':''))+
+    // Cuenta PROTEGIDA (Dirección · 0917): NADIE la toca desde la app — ni rol, ni
+    // reset, ni baja. Solo un SQL directo en Supabase puede cambiarla. El candado
+    // real está en el servidor (schema_v3_2); esto solo esconde los botones.
+    var prot=(p.clave==='0917');
+    var badges=(prot?'<span class="tg" style="border-color:var(--warn);color:var(--warn)">Protegida · Dirección</span>':'')+
+               (p.admin?'<span class="tg g">Acceso total</span>':(p.mando?'<span class="tg g">Responsable</span>':''))+
                (p.registrado?'<span class="tg">Registrado</span>':'<span class="tg" style="opacity:.6">Sin registrar</span>');
     h+='<div class="card"><div class="line" style="border:none;padding:0"><span style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(p.nombre)+'</b>'+
        '<span class="note">clave '+esc(p.clave)+' · '+esc(p.depto)+'</span></span></div>'+
        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center">'+badges+'</div>'+
-       '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">'+
+       (prot?'':'<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">'+
          '<button class="btn ghost" style="margin:0;flex:1;min-width:31%;padding:9px;font-size:12px" onclick="perRol(\''+p.clave+'\','+(!p.mando)+','+p.admin+')">'+(p.mando?'Quitar resp.':'Hacer resp.')+'</button>'+
          '<button class="btn ghost" style="margin:0;flex:1;min-width:31%;padding:9px;font-size:12px'+(p.admin?'':';color:var(--warn)')+'" onclick="perAdmin(\''+p.clave+'\',\''+escA(p.nombre).replace(/\\/g,'').replace(/'/g,'')+'\','+(!p.admin)+','+p.mando+')">'+(p.admin?'Quitar acceso total':'Dar acceso total')+'</button>'+
          (p.registrado?'<button class="btn ghost" style="margin:0;flex:1;min-width:31%;padding:9px;font-size:12px" onclick="perReset(\''+p.clave+'\')">Reiniciar acceso</button>':'')+
          (p.admin?'':'<button class="btn ghost" style="margin:0;flex:1;min-width:31%;padding:9px;font-size:12px;color:var(--bad)" onclick="perBaja(\''+p.clave+'\',\''+escA(p.nombre).replace(/\\/g,'').replace(/'/g,'')+'\')">Baja</button>')+
-       '</div></div>';
+       '</div>')+'</div>';
   });
   if(fil.length>60) h+='<div class="note" style="margin-top:8px">…y '+(fil.length-60)+' más. Afina el buscador.</div>';
   h+='</div>';
@@ -3141,8 +3317,9 @@ function doAlta(){
     v3LoadAdminList();
   }, function(e){ flash('Sin conexión con el servidor'); });
 }
+var PER_ERR={ protegido:'Cuenta protegida por Dirección: solo se cambia con SQL directo en Supabase', no_autorizado:'Tu cuenta no tiene acceso para esto', es_admin:'Primero quítale el acceso total, luego dale de baja', no_existe:'Esa clave no existe' };
 function perRol(clave,mando,admin){
-  SB.rpc('hb_admin_rol',{p_clave:clave,p_mando:mando,p_admin:admin}).then(function(r){ if(r.data&&r.data.ok){ flash('Rol actualizado'); v3LoadAdminList(); } else flash('No se pudo: '+((r.data&&r.data.error)||(r.error&&r.error.message)||'')); });
+  SB.rpc('hb_admin_rol',{p_clave:clave,p_mando:mando,p_admin:admin}).then(function(r){ if(r.data&&r.data.ok){ flash('Rol actualizado'); v3LoadAdminList(); } else flash('No se pudo: '+(PER_ERR[(r.data||{}).error]||(r.data&&r.data.error)||(r.error&&r.error.message)||'')); });
 }
 /* Acceso total (ver toda la planta): otorgar pide confirmación; nadie puede quitárselo a sí mismo */
 function perAdmin(clave,nombre,admin,mando){
@@ -3151,16 +3328,16 @@ function perAdmin(clave,nombre,admin,mando){
   if(!admin && !confirm('¿Quitar el acceso total a '+nombre+'? Quedará como '+(mando?'responsable de su departamento':'trabajador normal')+'.')) return;
   SB.rpc('hb_admin_rol',{p_clave:clave,p_mando:mando,p_admin:admin}).then(function(r){
     if(r.data&&r.data.ok){ burst(); flash(admin?('✓ '+nombre+' ya tiene acceso total'):'Acceso total retirado'); v3LoadAdminList(); }
-    else flash('No se pudo: '+((r.data&&r.data.error)||(r.error&&r.error.message)||'desconocido'));
+    else flash('No se pudo: '+(PER_ERR[(r.data||{}).error]||(r.data&&r.data.error)||(r.error&&r.error.message)||'desconocido'));
   }, function(){ flash('Sin conexión con el servidor'); });
 }
 function perReset(clave){
   if(!confirm('¿Reiniciar el acceso de '+clave+'? Podrá volver a hacer Primer ingreso. IMPORTANTE: además borra su usuario en Supabase → Authentication → Users ('+clave+'@ids.hulesbanda.com.mx) para que su PIN viejo deje de servir.')) return;
-  SB.rpc('hb_admin_reset',{p_clave:clave}).then(function(r){ if(r.data&&r.data.ok){ flash('Acceso reiniciado. Recuerda borrar su usuario en Authentication.'); v3LoadAdminList(); } else flash('No se pudo'); });
+  SB.rpc('hb_admin_reset',{p_clave:clave}).then(function(r){ if(r.data&&r.data.ok){ flash('Acceso reiniciado. Recuerda borrar su usuario en Authentication.'); v3LoadAdminList(); } else flash('No se pudo'+((r.data&&PER_ERR[r.data.error])?': '+PER_ERR[r.data.error]:'')); });
 }
 function perBaja(clave,nombre){
   if(!confirm('¿Dar de BAJA a '+nombre+' (clave '+clave+')? Se borra su ID, progreso y perfil. No se puede deshacer.')) return;
-  SB.rpc('hb_admin_baja',{p_clave:clave}).then(function(r){ var d=r&&r.data; if(d&&d.ok){ flash('Baja aplicada'); v3LoadAdminList(); } else flash(d&&d.error==='es_admin'?'No puedes dar de baja una cuenta de acceso total':'No se pudo'); });
+  SB.rpc('hb_admin_baja',{p_clave:clave}).then(function(r){ var d=r&&r.data; if(d&&d.ok){ flash('Baja aplicada'); v3LoadAdminList(); } else flash(d&&PER_ERR[d.error]?PER_ERR[d.error]:'No se pudo'); });
 }
 function areaCount(key){ for(var i=0;i<CFG.ranges.length;i++){ var r=CFG.ranges[i]; if(r.key===key && !r.admin) return r.max-r.min+1; } return 0; }
 
@@ -3454,6 +3631,9 @@ function managerDash(role){
     h+=recibosAdminBlock();   // acceso total: RRHH también ve los recibos de nómina firmados
   }
   else { // op
+    // Documentos por departamento (manuales/procesos con acceso controlado)
+    h+='<div class="panel" style="cursor:pointer" onclick="renderDocs()"><div class="hd" style="align-items:flex-start;margin-bottom:0"><div><div class="eyebrow">Biblioteca</div><b style="font-size:16px">Documentos por departamento</b>'+
+       '<div class="note" style="margin-top:3px">Sube manuales y procesos (PDF/imagen) y decide quién ve cada uno.</div></div><span class="chipst">Abrir ›</span></div></div>';
     h+=bandiFeedBlock();      // preguntas al Asistente + reporte semanal
     h+=reportsAdminBlock();   // RRHH revisa quejas/anormalidad/idea de mejora (otorga puntos)
     h+=comedorAdminBlock();   // menú del comedor de la semana (lo ve todo el personal en Tu día)
@@ -3737,6 +3917,8 @@ function renderNews(){
       h+='<div class="sec-t" style="cursor:pointer" onclick="var e=document.getElementById(\'newsLeidas\');var v=e.style.display===\'none\';e.style.display=v?\'\':\'none\';var c=document.getElementById(\'newsLeidasChev\');if(c)c.textContent=v?\'▾\':\'▸\';">Noticias ya leídas · '+leidas.length+' <span id="newsLeidasChev">▸</span><span class="ln"></span></div>'+
          '<div id="newsLeidas" style="display:none">'+newsCards(leidas)+'</div>';
     }
+    // Documentos autorizados para esta persona (la RLS del servidor ya filtró la lista)
+    if(docsGet().length) h+=bnrCard("renderDocs()",'Documentos','Manuales y procesos autorizados para ti · '+docsGet().length, cover('cap','#8b5cf6','#3b2a78'),'');
     h+=calendarBlock();
   }
   $('s-news').innerHTML=h; show('news');
@@ -3933,6 +4115,10 @@ function speak(text,lang){
   }catch(e){}
 }
 function escA(s){ return esc(s).replace(/"/g,'&quot;'); }
+/* Seguro para inyectar un string DENTRO de un onclick="fn('...')": escapa el
+   string JS (backslash y comilla simple) y luego el atributo HTML. Evita XSS si
+   el valor viene de datos del servidor manipulables (p.ej. una conv 'd:...'). */
+function jsAttr(s){ return escA(String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'")); }
 var ICN_SPK='<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14"/></svg>';
 function speakBtn(text,lang){ return '<button class="speak" data-s="'+escA(text)+'"'+(lang?(' data-l="'+lang+'"'):'')+' onclick="event.stopPropagation();speak(this.getAttribute(\'data-s\'),this.getAttribute(\'data-l\'))" aria-label="Escuchar">'+ICN_SPK+'</button>'; }
 var clState={};
@@ -4187,20 +4373,8 @@ function addEvent(){
   var a=evGet(); a.push({ id:'e'+Date.now(), t:t, d:d, ts:Date.now() }); lsSet('hb_events', a);
   flash('Evento agregado'); renderNews();
 }
-function delEvent(id){ lsSet('hb_events', evGet().filter(function(e){ return e.id!==id; })); renderNews(); }
-function eventsBlock(){
-  var a=evGet().slice().sort(function(x,y){ return x.d<y.d?-1:1; });
-  var today=new Date().toISOString().slice(0,10);
-  var vis = S.admin ? a : a.filter(function(e){ return e.d>=today; });
-  if(!vis.length) return '';
-  var h='<div class="sec-t">Próximos eventos<span class="ln"></span></div>';
-  vis.forEach(function(e){
-    h+='<div class="card"><div class="line"><span><b>'+esc(e.t)+'</b><br><span class="note">'+fmtDate(e.d)+'</span></span>'+
-       '<span style="display:flex;gap:7px;flex:none;align-items:center">'+speakBtn(e.t+'. Fecha: '+fmtDate(e.d))+
-       (S.admin?'<button class="back" style="padding:6px 10px" onclick="delEvent(\''+e.id+'\')">Quitar</button>':'')+'</span></div></div>';
-  });
-  return h;
-}
+/* (delEvent/eventsBlock eliminados 15-jul-2026: eran código muerto; quitar/editar
+   eventos ahora vive en la pantalla Calendario — calDel/calSave/renderCal) */
 
 /* ===== #4 ENCUESTAS (RRHH → personal) · hb_polls ===== */
 function pollGet(){ return lsGet('hb_polls'); }
@@ -4568,15 +4742,15 @@ function pfFirmaSave(){
   if(!_pfSig.drawn){ flash('Dibuja tu firma en el recuadro primero'); return; }
   var img=''; try{ img=_pfSig.c.toDataURL('image/png'); }catch(e){}
   if(!img){ flash('No se pudo guardar la firma'); return; }
-  var p=profGet(S.emp); p.firma=img; profSave(S.emp,p);
-  burst(); flash('Firma guardada. Ya puedes firmar tus recibos.'); renderPerfil();
+  var p=profGet(S.emp); p.firma=img; profSaveServer(p,'Firma guardada. Ya puedes firmar tus recibos.');
+  burst(); renderPerfil();
 }
 function savePerfil(){
   var p=profGet(S.emp);
   p.nombre=(($('pfNombre')||{}).value||'').trim().slice(0,60);
   p.tel=(($('pfTel')||{}).value||'').trim().slice(0,20);
   p.emg=(($('pfEmg')||{}).value||'').trim().slice(0,80);
-  profSave(S.emp,p); flash('Información guardada'); renderTop(_screen); renderPerfil();
+  profSaveServer(p,'Información guardada'); renderTop(_screen); renderPerfil();
 }
 function pfFotoLoad(inp){
   var f=inp.files&&inp.files[0]; if(!f) return;
@@ -4585,12 +4759,12 @@ function pfFotoLoad(inp){
     img.onload=function(){ var S2=240, c=document.createElement('canvas'); c.width=S2; c.height=S2;
       var side=Math.min(img.width,img.height), sx=(img.width-side)/2, sy=(img.height-side)/2;
       c.getContext('2d').drawImage(img,sx,sy,side,side,0,0,S2,S2);
-      var p=profGet(S.emp); p.foto=c.toDataURL('image/jpeg',0.82); profSave(S.emp,p);
-      flash('Foto actualizada'); renderTop(_screen); renderPerfil(); };
+      var p=profGet(S.emp); p.foto=c.toDataURL('image/jpeg',0.82); profSaveServer(p,'Foto actualizada');
+      renderTop(_screen); renderPerfil(); };
     img.src=e.target.result; };
   rd.readAsDataURL(f);
 }
-function pfFotoDel(){ var p=profGet(S.emp); delete p.foto; profSave(S.emp,p); flash('Foto eliminada'); renderTop(_screen); renderPerfil(); }
+function pfFotoDel(){ var p=profGet(S.emp); delete p.foto; profSaveServer(p,'Foto eliminada'); renderTop(_screen); renderPerfil(); }
 function savePin(){
   var p=profGet(S.emp);
   var o=(($('pinOld')||{}).value||'').trim(), n1=(($('pinNew')||{}).value||'').trim(), n2=(($('pinNew2')||{}).value||'').trim();
@@ -4605,9 +4779,9 @@ function savePerfilV3(){
           municipio:val('pfMun',60), ciudad:val('pfCiu',60), entidad:val('pfEnt',40), cp:val('pfCp',10) };
   if(!sbReady()){ flash('Sin conexión: intenta más tarde'); return; }
   SB.rpc('hb_actualizar_datos',{p:d}).then(function(r){
-    if(r.error || !(r.data&&r.data.ok)){ flash('No se pudo guardar. Intenta de nuevo'); return; }
-    var p=profGet(S.emp); p.datos=Object.assign({}, p.datos||{}, d); profSave(S.emp,p);
-    burst(); flash('Datos guardados');
+    if(r.error || !(r.data&&r.data.ok)){ flash('⚠ No se pudo guardar en el servidor: '+((r.error&&r.error.message)||(r.data&&r.data.error)||'intenta de nuevo')); return; }
+    var p=profGet(S.emp); p.datos=Object.assign({}, p.datos||{}, d); profSaveLocal(S.emp,p);
+    burst(); flash('✓ Datos guardados en el servidor');
     if(window._forceProfile){ window._forceProfile=false; renderTop(_screen); renderHome(); }
     else { renderTop(_screen); renderPerfil(); }
   }, function(){ flash('Sin conexión: intenta más tarde'); });
@@ -4668,10 +4842,44 @@ function readMap(){ try{ return kvGet('hb_read_'+S.emp)||{}; }catch(e){ return {
 function readSave(m){ kvSet('hb_read_'+S.emp, m); }
 function markConvRead(conv){ var r=readMap(); r[conv]=Date.now(); readSave(r); }
 function convUnread(conv){ var last=(readMap()[conv]||0), n=0; convMsgs(conv).forEach(function(m){ if(m.ts>last && m.from!==S.emp) n++; }); return n; }
-function isAdminId(id){ var r=rangeOf(+id); return !!(r&&r.admin); }
-function empName(id){ var r=rangeOf(+id); return '#'+(''+id).padStart(3,'0')+(r?' · '+r.area:''); }
+function isAdminId(id){ var p=dirInfo(id); if(p&&p.admin!==undefined) return !!p.admin; var r=rangeOf(+id); return !!(r&&r.admin); }
+/* ===== IDENTIDAD REAL (V3): nombre + rol desde el directorio del servidor =====
+   hb_directorio regresa {clave,n,nombre,depto,admin,mando} de los REGISTRADOS.
+   Si el directorio aún no carga, o la persona fue dada de baja, se cae a '#NNN'. */
+var _dirIdx=null;
+function dirLoad(cb){
+  if(!V3_ON || !sbReady() || DBC.dir){ if(cb) cb(); return; }
+  if(window._dirBusy){ if(cb) cb(); return; }
+  window._dirBusy=true;
+  SB.rpc('hb_directorio').then(function(r){ window._dirBusy=false;
+    if(r.data&&r.data.ok){ DBC.dir=r.data.dir||[]; _dirIdx=null; }
+    if(cb) cb();
+    // repintar la pantalla activa para que los IDs se vuelvan nombres
+    if(_screen==='msgs') renderMsgs();
+    else if(_screen==='thread'&&_curConv) openConv(_curConv);
+    else if(_screen==='wconvs'&&typeof renderWConvs==='function') renderWConvs();
+    else if(_screen==='newchat'&&typeof dirFilter==='function') dirFilter();   // no dejar 'Cargando directorio…' pegado
+  }, function(){ window._dirBusy=false; if(cb) cb(); });
+}
+function dirInfo(n){
+  if(!DBC.dir) return null;
+  if(!_dirIdx){ _dirIdx={}; DBC.dir.forEach(function(p){ _dirIdx[+p.n]=p; }); }
+  return _dirIdx[+n]||null;
+}
+function empName(id){ var p=dirInfo(id); if(p&&p.nombre) return niceName(p.nombre); var r=rangeOf(+id); return '#'+(''+id).padStart(3,'0')+(r?' · '+r.area:''); }
 function roleLabel(id){ var r=rangeOf(+id); if(!r) return '#'+(''+id).padStart(3,'0'); if(r.dash==='ceo') return 'Dirección'; if(r.dash==='rrhh') return 'Recursos Humanos'; if(r.dash==='resp') return 'Responsable · '+r.area; return '#'+(''+id).padStart(3,'0'); }
-function senderLabel(from){ return isAdminId(from)?roleLabel(from):('#'+(''+from).padStart(3,'0')); }
+/* Rol/departamento "en pequeño" junto al nombre del remitente */
+function senderSub(from){
+  var p=dirInfo(from); if(!p) return '';
+  if(p.admin) return /RECURSOS\s*HUMANOS/i.test(p.depto||'')?'Recursos Humanos':'Administración';
+  if(p.mando) return 'Responsable · '+(p.depto||'');
+  return p.depto||'';
+}
+function senderLabel(from){   // "0917 · Carlos Martínez" (fallback: rol demo o '#NNN')
+  var p=dirInfo(from);
+  if(p&&p.nombre) return p.clave+' · '+niceName(p.nombre);
+  return isAdminId(from)?roleLabel(from):('#'+(''+from).padStart(3,'0'));
+}
 function convTitle(conv){
   if(conv.indexOf('r:')===0) return 'Recursos Humanos';
   if(conv.indexOf('c:')===0) return 'Dirección';
@@ -4690,7 +4898,20 @@ function sendMsg(conv,text,img){
   if(text && typeof maliceCheck==='function' && maliceCheck(text)) logAlert('[Chat] '+text);
   markConvRead(conv);
 }
-function totalUnread(){ if(!S||S.admin) return 0; var t=convUnread(rConv(S.emp))+convUnread(cConv(S.emp))+convUnread(jConv(myGroup(),S.emp))+convUnread(gConv(myGroup())); myDirects().forEach(function(c){ t+=convUnread(c); }); return t; }
+function totalUnread(){
+  if(!S) return 0;
+  // Admins/dashboards: el puntito cuenta SOLO sus mensajes directos (no el monitoreo de la planta)
+  if(S.admin){ var ta=0; myDirects().forEach(function(c){ ta+=convUnread(c); }); return ta; }
+  var t=convUnread(rConv(S.emp))+convUnread(cConv(S.emp))+convUnread(jConv(myGroup(),S.emp))+convUnread(gConv(myGroup()));
+  myDirects().forEach(function(c){ t+=convUnread(c); });
+  // Responsables: también las líneas j: de SU equipo (antes no contaban y el puntito no salía)
+  if(S.mando){
+    var pre='j:'+myGroup()+':', mio='j:'+myGroup()+':'+S.emp, seen={};
+    msgsGet().forEach(function(m){ if(m.conv.indexOf(pre)===0 && m.conv!==mio) seen[m.conv]=1; });
+    Object.keys(seen).forEach(function(c){ t+=convUnread(c); });
+  }
+  return t;
+}
 function updateMsgBadge(){ var b=$('nav-msgs'); if(!b) return; var ex=b.querySelector('.nbadge'); if(ex) ex.remove(); var n=totalUnread(); if(n>0){ var s=document.createElement('span'); s.className='nbadge'; s.textContent=n>9?'9+':(''+n); b.appendChild(s); } }
 function myDirects(){
   var seen={}, out=[];
@@ -4706,18 +4927,57 @@ function chanMeta(conv){
   if(conv.indexOf('g:')===0) return [IC2.people,'#2a7de1'];
   return [CHAN_IC.comp,'#8b8ff7'];
 }
+/* Avatar de una PERSONA: su foto de perfil si existe, si no sus iniciales. */
+function personAvatar(n,size){ size=size||44;
+  var foto=personFoto(n), nm=empName(n);
+  if(foto) return '<img src="'+esc(foto)+'" alt="" style="width:'+size+'px;height:'+size+'px;border-radius:13px;object-fit:cover;flex:none;display:block">';
+  var ini=(nm&&nm.charAt(0)!=='#')?nm.split(/\s+/).slice(0,2).map(function(w){return (w[0]||'').toUpperCase();}).join(''):(''+n).slice(-2);
+  return '<span style="width:'+size+'px;height:'+size+'px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:'+Math.round(size*0.34)+'px;color:#fff;background:linear-gradient(150deg,#0e9e8e,#053b36)">'+esc(ini)+'</span>';
+}
 function chanAvatar(conv){
-  // Chats entre compañeros (d:): misma foto-portada para todos, estilo banners
-  if(conv.indexOf('d:')===0){
-    return '<span style="width:44px;height:44px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(150deg,#0e9e8e,#053b36)"><span style="width:22px;height:22px;display:block">'+CHAN_IC.comp+'</span></span>';
-  }
+  // Chats entre compañeros (d:): la FOTO de perfil de la otra persona (cambia por persona)
+  if(conv.indexOf('d:')===0){ return personAvatar(convOther(conv),44); }
   var m=chanMeta(conv);
   return '<span style="width:44px;height:44px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;color:'+m[1]+';background:color-mix(in srgb,'+m[1]+' 15%,transparent)"><span style="width:23px;height:23px;display:block">'+m[0]+'</span></span>';
+}
+/* ===== PERFIL PÚBLICO de otra persona (lo único visible: foto, nombre, clave,
+   área y si está registrado; el resto es clasificado). Cualquier cuenta lo abre
+   tocando la foto/nombre de esa persona en mensajería. ===== */
+var _pubBack='renderMsgs()';
+function pubBack(){ try{ eval(_pubBack); }catch(e){ renderMsgs(); } }
+function openPerfilPublico(n, back){
+  n=+n; if(!n) return;
+  if(n===S.emp){ renderPerfil(); return; }   // yo mismo → mi perfil editable
+  _pubBack=back||'renderMsgs()';
+  pubEnsure([n], function(){ if(_screen==='perfilpub') renderPerfilPublico(n); });
+  renderPerfilPublico(n);
+}
+function renderPerfilPublico(n){
+  n=+n; var p=pubGet(n)||{}, dinfo=dirInfo(n)||{};
+  var nombre=p.nombre?niceName(p.nombre):(dinfo.nombre?niceName(dinfo.nombre):('#'+(''+n).padStart(3,'0')));
+  var clave=p.clave||dinfo.clave||(''+n).padStart(3,'0');
+  var depto=p.depto||dinfo.depto||'';
+  var reg=(p.registrado!==undefined)?p.registrado:true;
+  var h='';
+  h+='<div class="panel" style="text-align:center;padding-top:22px">'+
+     '<div style="display:flex;justify-content:center;margin-bottom:12px">'+personAvatar(n,96)+'</div>'+
+     '<b style="font-size:22px;display:block">'+esc(nombre)+'</b>'+
+     '<div class="note" style="margin-top:4px">'+esc(depto)+'</div>'+
+     '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px">'+
+       '<span class="tg">Clave '+esc(clave)+'</span>'+
+       (p.mando?'<span class="tg g">Responsable</span>':'')+(p.admin?'<span class="tg g">Administración</span>':'')+
+       (reg?'<span class="tg g">Registrado ✓</span>':'<span class="tg" style="opacity:.6">Sin registrar</span>')+
+     '</div>'+
+     '<div style="margin-top:14px">'+speakBtn(nombre+'. '+depto+'. Clave '+clave)+'</div>'+
+     '</div>';
+  h+='<div class="card"><div class="note" style="text-align:center">Solo puedes ver el nombre, la clave, el área, la foto y si la persona ya se registró. El resto de su información es privada.</div></div>';
+  if(!pubGet(n)) h+='<div class="card"><div class="note" style="text-align:center">Cargando perfil…</div></div>';
+  $('s-perfilpub').innerHTML=h; show('perfilpub');
 }
 function convRow(conv,title,sub){
   var last=convLast(conv), un=convUnread(conv);
   var prev = last ? ((last.from===S.emp?'Tú: ':'')+(last.img&&!last.text?'Foto':esc((last.text||'').slice(0,42)))) : (sub||'Sin mensajes todavía');
-  return '<div class="card" style="cursor:pointer" onclick="openConv(\''+conv+'\')"><div class="line"><span style="flex:1;min-width:0;display:flex;align-items:center;gap:12px">'+
+  return '<div class="card" style="cursor:pointer" onclick="openConv(\''+jsAttr(conv)+'\')"><div class="line"><span style="flex:1;min-width:0;display:flex;align-items:center;gap:12px">'+
     chanAvatar(conv)+
     '<span style="min-width:0"><b>'+esc(title)+'</b><br><span class="note">'+prev+'</span></span></span>'+
     (un?'<span class="tg" style="background:var(--accent);color:#fff;flex:none">'+un+'</span>':'<span class="note" style="flex:none">›</span>')+'</div></div>';
@@ -4725,6 +4985,9 @@ function convRow(conv,title,sub){
 var _curConv=null, _pendImg=null;
 function renderMsgs(){
   _pendImg=null;
+  dirLoad();   // nombres reales de remitentes (una sola carga por sesión)
+  // fotos de perfil para los avatares de los chats directos (una sola llamada por tanda)
+  try{ var otros=myDirects().map(function(c){ return convOther(c); }); if(otros.length) pubEnsure(otros, function(){ if(_screen==='msgs') renderMsgs(); }); }catch(e){}
   if(sbReady() && Date.now()-(window._lastLoadMsgs||0)>4000){ window._lastLoadMsgs=Date.now(); sbLoad('msgs'); }
   var h='';
   var sub = S.admin ? (S.dash==='resp' ? 'Tu equipo, tu grupo de área y tus líneas con Dirección y RRHH.' : 'Líneas con la planta, monitoreo, quejas/reportes, vacaciones y recibos — todo en un lugar.')
@@ -4791,7 +5054,7 @@ var DEMO_DIR=[
 var SEARCH_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>';
 function renderNewChat(){
   // V3: directorio REAL del servidor (solo gente registrada; gafete, sin datos personales)
-  if(V3_ON && sbReady() && !DBC.dir){ SB.rpc('hb_directorio').then(function(r){ if(r.data&&r.data.ok){ DBC.dir=r.data.dir||[]; dirFilter(); } }); }
+  dirLoad(dirFilter);
   var h='';
   h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Líneas directas</div><b style="font-size:20px">'+(S.admin?'Escribir a un trabajador':'Escribir a un compañero')+'</b><p class="note" style="margin:4px 0 0;max-width:250px">Busca por <b>nombre</b> o por <b>clave</b> y toca a la persona.</p></div></div>'+
      '<div class="search">'+SEARCH_SVG+'<input id="dirSearch" placeholder="Nombre o número…" autocomplete="off" oninput="dirFilter()"></div>'+
@@ -4893,7 +5156,7 @@ function respMsgs(){
   msgsGet().forEach(function(m){ if(m.conv.indexOf(pre)===0) seen[m.conv]=1; });
   var ks=Object.keys(seen);
   if(!ks.length) h+='<div class="card"><div class="note">Nadie de tu equipo te ha escrito todavía.</div></div>';
-  ks.forEach(function(c){ var emp=c.slice(pre.length); h+=convRow(c,'#'+(''+emp).padStart(3,'0')+' · '+S.area,null); });
+  ks.forEach(function(c){ var emp=c.slice(pre.length); h+=convRow(c,empName(+emp),null); });
   return h;
 }
 function msgAdminInbox(){
@@ -4907,6 +5170,10 @@ function msgAdminInbox(){
   h+='<div class="panel" style="cursor:pointer" onclick="renderNewChat()"><div class="hd" style="margin-bottom:0"><div style="display:flex;align-items:center;gap:11px;min-width:0">'+
      '<span style="width:42px;height:42px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--data);background:color-mix(in srgb,var(--data) 13%,transparent)"><span style="width:22px;height:22px;display:block">'+IC2.people+'</span></span>'+
      '<div style="min-width:0"><b>Escribir a un trabajador</b><div class="note" style="margin-top:2px">Chat directo con cualquier persona registrada.</div></div></div><span class="chipst">Abrir ›</span></div></div>';
+  // Revisión por persona: TODOS los chats de un trabajador, en solo lectura
+  h+='<div class="panel" style="cursor:pointer" onclick="_wcPick=null;renderWConvs()"><div class="hd" style="margin-bottom:0"><div style="display:flex;align-items:center;gap:11px;min-width:0">'+
+     '<span style="width:42px;height:42px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--warn);background:color-mix(in srgb,var(--warn) 13%,transparent)"><span style="width:22px;height:22px;display:block">'+CHAN_IC.comp+'</span></span>'+
+     '<div style="min-width:0"><b>Conversaciones de trabajadores</b><div class="note" style="margin-top:2px">Elige a una persona y revisa todos sus chats (solo lectura).</div></div></div><span class="chipst">Abrir ›</span></div></div>';
   h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Monitoreo</div><b style="font-size:16px">Mensajes de la planta</b><div class="note" style="margin-top:3px">Puedes leer cualquier conversación de la planta. Los trabajadores no ven que tienes acceso.</div></div><span class="status"><span class="d"></span>En línea</span></div>'+
     '<div class="dotgrid">'+
       dotStat(Math.min(100,rk.length*12), rk.length, 'RRHH','')+
@@ -4916,20 +5183,87 @@ function msgAdminInbox(){
     '</div></div>';
   h+='<div class="sec-t">Líneas con RRHH<span class="ln"></span></div>';
   if(!rk.length) h+='<div class="card"><div class="note">Nadie ha escrito a RRHH todavía.</div></div>';
-  rk.forEach(function(c){ h+=convRow(c,'#'+(''+c.slice(2)).padStart(3,'0')+' → RRHH',null); });
+  rk.forEach(function(c){ h+=convRow(c,empName(+c.slice(2))+' → RRHH',null); });
   h+='<div class="sec-t">Líneas con Dirección<span class="ln"></span></div>';
   if(!ck.length) h+='<div class="card"><div class="note">Nadie ha escrito a Dirección todavía.</div></div>';
-  ck.forEach(function(c){ h+=convRow(c,'#'+(''+c.slice(2)).padStart(3,'0')+' → Dirección',null); });
+  ck.forEach(function(c){ h+=convRow(c,empName(+c.slice(2))+' → Dirección',null); });
   h+='<div class="sec-t">Líneas con responsables<span class="ln"></span></div>';
   if(!jk.length) h+='<div class="card"><div class="note">Sin mensajes a responsables.</div></div>';
-  jk.forEach(function(c){ var parts=c.slice(2).split(':'); h+=convRow(c,'#'+(''+parts[1]).padStart(3,'0')+' → Resp. '+groupName(parts[0]),null); });
+  jk.forEach(function(c){ var parts=c.slice(2).split(':'); h+=convRow(c,empName(+parts[1])+' → Resp. '+groupName(parts[0]),null); });
   h+='<div class="sec-t">Grupos de área<span class="ln"></span></div>';
   if(!gk.length) h+='<div class="card"><div class="note">Sin mensajes de grupo.</div></div>';
   gk.forEach(function(c){ h+=convRow(c,convTitle(c),null); });
   h+='<div class="sec-t">Chats entre empleados (monitoreo)<span class="ln"></span></div>';
   if(!dk.length) h+='<div class="card"><div class="note">Sin conversaciones todavía.</div></div>';
-  dk.forEach(function(c){ var p=c.slice(2).split('-'); h+=convRow(c,'#'+(''+p[0]).padStart(3,'0')+' ↔ #'+(''+p[1]).padStart(3,'0'),null); });
+  dk.forEach(function(c){ var p=c.slice(2).split('-'); h+=convRow(c,empName(+p[0])+' ↔ '+empName(+p[1]),null); });
   return h;
+}
+/* ===== CONVERSACIONES DE TRABAJADORES (solo acceso total): elige a una persona
+   y revisa TODOS sus chats en SOLO LECTURA — para auditar qué ha escrito en el
+   sistema. Desde aquí NUNCA se puede escribir (ni en líneas donde el admin sí
+   podría responder): es revisión, no conversación. ===== */
+var _wcPick=null, _wcFilter='';
+function wcBack(){ _wcPick=null; renderWConvs(); }
+function wcFilter(v){ _wcFilter=(v||''); var el=$('wcList'); if(el) el.innerHTML=wcListHTML(_wcFilter); }
+function workerConvs(n){
+  n=+n;
+  var p=dirInfo(n), slug=(p&&p.depto)?deptoSlug(p.depto):null, out=[], seen={};
+  msgsGet().forEach(function(m){ var c=m.conv, mine=false;
+    if(c==='r:'+n || c==='c:'+n) mine=true;
+    else if(c.indexOf('j:')===0){ var pp=c.slice(2).split(':'); mine=(+pp[1]===n); }
+    else if(c.indexOf('d:')===0){ var dd=c.slice(2).split('-'); mine=(+dd[0]===n||+dd[1]===n); }
+    else if(slug && c==='g:'+slug) mine=true;
+    if(mine && !seen[c]){ seen[c]=1; out.push(c); }
+  });
+  out.sort(function(a,b){ var la=convLast(a),lb=convLast(b); return (lb?lb.ts:0)-(la?la.ts:0); });
+  return out;
+}
+function wcConvTitle(conv,n){   // título visto desde el trabajador revisado
+  if(conv.indexOf('r:')===0) return 'Con Recursos Humanos';
+  if(conv.indexOf('c:')===0) return 'Con Dirección';
+  if(conv.indexOf('j:')===0) return 'Con su responsable';
+  if(conv.indexOf('g:')===0) return 'Grupo · '+groupName(conv.slice(2));
+  if(conv.indexOf('d:')===0){ var p=conv.slice(2).split('-'); var o=(+p[0]===+n)?+p[1]:+p[0]; return 'Con '+empName(o); }
+  return conv;
+}
+function wcListHTML(term){
+  var people=dirPeople();
+  if(!people) return '<div class="card"><div class="note">Cargando directorio…</div></div>';
+  var q=_norm(term||''), digits=(term||'').replace(/\D/g,''), h='';
+  var list=people.filter(function(p){ if(p.id===S.emp) return false; if(!term) return true;
+    var byName=q&&_norm(p.name).indexOf(q)>=0, byId=digits&&(''+p.id).padStart(3,'0').indexOf(digits)>=0; return !!(byName||byId); });
+  if(!list.length) return '<div class="card"><div class="note">'+(term?'Nadie coincide con la búsqueda.':'Aún no hay nadie registrado.')+'</div></div>';
+  list.forEach(function(p){
+    var init=p.name.split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase();
+    h+='<div class="dirrow" onclick="wcOpen('+p.id+')"><span class="ava" style="background:var(--warn)">'+esc(init)+'</span><span class="t"><b>'+esc(p.name)+'</b><span>'+esc(p.area||'')+'</span></span><span class="idtag">#'+(''+p.id).padStart(3,'0')+'</span></div>';
+  });
+  return h;
+}
+function wcOpen(n){ _wcPick=+n; renderWConvs(); }
+function renderWConvs(){
+  if(!S || !S.admin) return;
+  dirLoad();
+  var h='';
+  if(_wcPick==null){
+    h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Monitoreo</div><b style="font-size:20px">Conversaciones de trabajadores</b><p class="note" style="margin:4px 0 0;max-width:260px">Toca a una persona para revisar todo lo que ha escrito en el sistema. Solo lectura: aquí no se puede escribir.</p></div></div>'+
+       '<div class="search">'+SEARCH_SVG+'<input id="wcSearch" placeholder="Nombre o número…" autocomplete="off" oninput="wcFilter(this.value)" value="'+escA(_wcFilter)+'"></div></div>';
+    h+='<div id="wcList">'+wcListHTML(_wcFilter)+'</div>';
+  } else {
+    var p=dirInfo(_wcPick);
+    var nm=(p&&p.nombre)?niceName(p.nombre):('#'+(''+_wcPick).padStart(3,'0'));
+    h+='<button class="back" style="margin-bottom:12px" onclick="wcBack()">‹ Elegir otra persona</button>';
+    h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Monitoreo · solo lectura</div><b style="font-size:20px">'+esc(nm)+'</b><p class="note" style="margin:4px 0 0">'+(p?esc(p.depto||'')+' · clave '+esc(p.clave||''):'')+'</p></div></div></div>';
+    var convs=workerConvs(_wcPick);
+    if(!convs.length) h+='<div class="card"><div class="note">'+esc(nm)+' todavía no tiene conversaciones en el sistema.</div></div>';
+    convs.forEach(function(c){
+      var last=convLast(c);
+      var prev=last?((last.from===_wcPick?'':esc(senderLabel(last.from)+': '))+(last.img&&!last.text?'Foto':esc((last.text||'').slice(0,38)))):'Sin mensajes';
+      h+='<div class="card" style="cursor:pointer" onclick="openConvRO(\''+jsAttr(c)+'\')"><div class="line"><span style="flex:1;min-width:0;display:flex;align-items:center;gap:12px">'+chanAvatar(c)+
+         '<span style="min-width:0"><b>'+esc(wcConvTitle(c,_wcPick))+'</b><br><span class="note">'+prev+'</span></span></span><span class="note" style="flex:none">›</span></div></div>';
+    });
+  }
+  $('s-wconvs').innerHTML=h; show('wconvs');
+  var si=$('wcSearch'); if(si&&_wcFilter) si.focus();
 }
 function msgImgLoad(inp){
   var f=inp.files&&inp.files[0]; if(!f) return;
@@ -4946,21 +5280,33 @@ function threadHTML(msgs,showSender){
   return msgs.map(function(m){
     var mine=m.from===S.emp;
     var body=(m.img?'<img src="'+m.img+'" style="max-width:200px;border-radius:10px;display:block;'+(m.text?'margin-bottom:6px':'')+'">':'')+(m.text?esc(m.text):'');
-    var lbl=(showSender&&!mine)?'<div class="note" style="margin-bottom:2px;font-size:10px">'+esc(senderLabel(m.from))+'</div>':'';
+    var sub=(showSender&&!mine)?senderSub(m.from):'';
+    var lbl=(showSender&&!mine)?'<div class="note" style="margin-bottom:2px;font-size:10px;cursor:pointer" onclick="openPerfilPublico('+(+m.from)+',\'reopenThread()\')"><b>'+esc(senderLabel(m.from))+'</b>'+(sub?' <span style="opacity:.65">· '+esc(sub)+'</span>':'')+'</div>':'';
     return '<div class="m '+(mine?'user':'bot')+'"><div class="bub">'+lbl+body+'</div></div>';
   }).join('');
 }
+var _roNext=false, _viewRO=false;   // visor "Conversaciones de trabajadores": abre el hilo en SOLO lectura
+function openConvRO(conv){ _roNext=true; openConv(conv); }
 function openConv(conv){
+  // _viewRO se conserva SOLO en re-pintados en vivo del mismo hilo (pantalla 'thread');
+  // al abrir desde cualquier lista se resetea, salvo que venga de openConvRO.
+  if(_roNext){ _viewRO=true; _roNext=false; } else if(_screen!=='thread' || _curConv!==conv){ _viewRO=false; }
   // conservar lo que el usuario está escribiendo si esto es un re-pintado en vivo
   var _draft=(_curConv===conv && $('thIn')) ? $('thIn').value : '';
   var _hadFocus=(_curConv===conv && document.activeElement && document.activeElement.id==='thIn');
-  _curConv=conv; markConvRead(conv);
-  // Es "monitoreo" (solo lectura) cuando el management NO tiene permiso de escribir en esa conversación.
-  var isMonitor = S.admin && !canWriteConv(conv);
+  _curConv=conv; if(!_viewRO) markConvRead(conv);
+  // Es "monitoreo" (solo lectura) cuando el management NO tiene permiso de escribir en esa
+  // conversación, o cuando se entró desde el visor de Conversaciones de trabajadores.
+  var isMonitor = (S.admin && !canWriteConv(conv)) || _viewRO;
   var isGroup = conv.indexOf('g:')===0;
+  var isDirect = conv.indexOf('d:')===0;
   var isLine = /^(r:|c:|j:)/.test(conv);   // líneas con RRHH / Dirección / responsable → mostrar quién responde
+  if(isDirect) pubEnsure([convOther(conv)], function(){ if(_screen==='thread'&&_curConv===conv) openConv(conv); });  // foto + perfil de la otra persona
   var h='';
-  h+='<div class="chathead">'+chanAvatar(conv)+'<div class="t"><b>'+esc(convTitle(conv))+'</b><span>'+(isMonitor?'Monitoreo · solo lectura':(isGroup?'Grupo de área':'Conversación'))+'</span></div><span class="status"><span class="d"></span>En línea</span></div>';
+  // En chats directos, la cabecera (foto + nombre) lleva al PERFIL de la otra persona
+  var headTapOpen = isDirect ? (' style="cursor:pointer" onclick="openPerfilPublico('+(+convOther(conv))+',\'reopenThread()\')"') : '';
+  var headSub = isMonitor?'Monitoreo · solo lectura':(isGroup?'Grupo de área':(isDirect?'Toca para ver el perfil':'Conversación'));
+  h+='<div class="chathead"'+headTapOpen+'>'+chanAvatar(conv)+'<div class="t"><b>'+esc(convTitle(conv))+'</b><span>'+headSub+'</span></div><span class="status"><span class="d"></span>En línea</span></div>';
   if(isMonitor) h+='<div class="panel" style="border-color:color-mix(in srgb,var(--warn) 45%,transparent);padding:11px 14px;margin-bottom:10px"><div class="note" style="color:var(--warn);font-weight:700">Monitoreo · solo lectura. Los trabajadores no ven que tienes acceso.</div></div>';
   h+='<div class="msgs" id="thMsgs">'+threadHTML(convMsgs(conv), isGroup||S.admin||isLine)+'</div>';
   if(_pendImg && !isMonitor) h+='<div class="card" style="padding:8px;display:flex;gap:10px;align-items:center"><img src="'+_pendImg+'" style="max-height:70px;border-radius:8px"><span class="note" style="flex:1">Imagen lista para enviar</span><button class="back" style="padding:6px 10px" onclick="_pendImg=null;openConv(_curConv)">Quitar</button></div>';
@@ -4975,6 +5321,7 @@ function openConv(conv){
     if(_draft) ci.value=_draft;                    // no perder lo tecleado en re-pintados en vivo
     if(_hadFocus || !_draft) ci.focus(); }
 }
+function reopenThread(){ if(!_curConv){ renderMsgs(); return; } if(_viewRO){ openConvRO(_curConv); } else { openConv(_curConv); } }
 function sendFromThread(){
   var inp=$('thIn'), t=inp?(inp.value||'').trim():'';
   if(!t && !_pendImg) return;
@@ -5105,6 +5452,111 @@ function cerrarNom(){
 function checkPage(){ /* FUNCIÓN ELIMINADA (13-jul-2026): el "beeper/llamar a un trabajador" ya no existe; solo mensajería. Se deja el stub porque sbRerender la invoca. */ }
 
 /* ============================================================================
+   DOCUMENTOS POR DEPARTAMENTO (V3.5) — manuales y procesos (arranca Mantenimiento/Zeus).
+   Metadatos en la tabla 'docs' (RLS: cada quien recibe SOLO los autorizados — por
+   departamento, por lista de IDs, o toda la planta). El archivo (PDF/imagen) vive
+   en Supabase Storage, bucket privado 'docs', y se abre con liga firmada temporal.
+   Subir/eliminar: solo acceso total. Requiere correr el parche schema_v3_2.
+   Bandi responderá sobre estos documentos SOLO a autorizados (fase con checklist Zeus).
+   ============================================================================ */
+function docsGet(){ return DBC.docs||[]; }
+var _docAcl='depto';
+function docAclSet(m){ _docAcl=m;
+  var ids=$('docIds'); if(ids) ids.style.display=(m==='ids'?'':'none');
+  var act='background:var(--accent);color:#fff;border-color:var(--accent)';
+  ['depto','ids','all'].forEach(function(k){ var b=$('docAcl_'+k); if(b) b.style.cssText=(k===m?act:''); });
+}
+function renderDocs(){
+  if(sbReady() && Date.now()-(window._lastLoadDocs||0)>4000){ window._lastLoadDocs=Date.now(); sbLoad('docs'); }
+  var list=docsGet().slice().sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
+  var h='';
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">'+(S.admin?'Panel':'Biblioteca')+'</div><b style="font-size:20px">Documentos</b><p class="note" style="margin:4px 0 0;max-width:260px">'+(S.admin?'Manuales y procesos por departamento. Tú decides quién ve cada documento.':'Manuales y procesos de tu área. Solo ves lo autorizado para ti.')+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
+  if(S.admin){
+    var deptos=Object.keys(DEPTO_AREA).sort();
+    h+='<div class="panel"><div class="hd"><b>Subir documento</b></div>'+
+       '<div class="note" style="margin:2px 0 3px">Título del documento</div><input id="docTitle" class="fin" placeholder="Ej. Manual Banbury — arranque seguro" autocomplete="off">'+
+       '<div class="note" style="margin:9px 0 3px">Departamento</div><select id="docDepto" class="fin">'+deptos.map(function(d){return '<option value="'+escA(d)+'">'+esc(d)+'</option>';}).join('')+'</select>'+
+       '<div class="note" style="margin:9px 0 6px">¿Quién puede verlo?</div>'+
+       '<div style="display:flex;gap:7px;flex-wrap:wrap">'+
+         '<button id="docAcl_depto" class="chip2" onclick="docAclSet(\'depto\')">Su departamento</button>'+
+         '<button id="docAcl_ids" class="chip2" onclick="docAclSet(\'ids\')">Solo IDs autorizados</button>'+
+         '<button id="docAcl_all" class="chip2" onclick="docAclSet(\'all\')">Toda la planta</button></div>'+
+       '<input id="docIds" class="fin" placeholder="Claves autorizadas, separadas por coma (ej. 0917, 0379)" style="margin-top:8px;display:none">'+
+       '<div style="margin-top:10px"><label class="btn ghost" style="margin:0;padding:11px;font-size:14px;display:inline-block;cursor:pointer;width:auto">Elegir archivo (PDF o imagen)<input id="docFile" type="file" accept="application/pdf,image/*" style="display:none" onchange="var n=(this.files&&this.files[0])?this.files[0].name:\'\';var e=document.getElementById(\'docFileName\');if(e)e.textContent=n;"></label> <span id="docFileName" class="note"></span></div>'+
+       '<button class="btn" style="margin-top:12px" onclick="docUpload()">Subir documento</button>'+
+       '<div class="note" style="margin-top:8px">Máximo 20 MB. El acceso se vigila en el servidor: nadie sin autorización puede abrirlo, ni con la liga.</div></div>';
+  }
+  if(!DBC.docs){ h+='<div class="card"><div class="note">'+(sbReady()?'Cargando documentos… Si no aparecen, falta correr el parche <b>schema_v3_2</b> en Supabase.':'Sin conexión: los documentos requieren internet.')+'</div></div>'; }
+  else if(!list.length){ h+='<div class="card"><div class="note">'+(S.admin?'Aún no hay documentos. Sube el primero (arranca con el manual de Mantenimiento de Zeus).':'Aún no hay documentos autorizados para ti.')+'</div></div>'; }
+  else {
+    var byDep={}, order=[];
+    list.forEach(function(d){ var k=d.depto||'GENERAL'; if(!byDep[k]){ byDep[k]=[]; order.push(k); } byDep[k].push(d); });
+    order.forEach(function(dep){
+      h+='<div class="sec-t">'+esc(dep)+'<span class="ln"></span></div>';
+      byDep[dep].forEach(function(d){
+        var acl=d.acl||{}; var quien=acl.mode==='all'?'Toda la planta':(acl.mode==='ids'?('IDs: '+((acl.ids||[]).join(', ')||'—')):'Su departamento');
+        h+='<div class="card"><div class="line" style="border:none;padding:0"><span style="min-width:0;flex:1"><b style="display:block">'+esc(d.titulo)+'</b>'+
+           '<span class="note">'+(d.mime==='application/pdf'?'PDF':'Imagen')+' · '+Math.max(1,Math.round((d.size||0)/1024))+' KB'+(S.admin?' · '+esc(quien):'')+'</span></span>'+
+           speakBtn('Documento: '+d.titulo+'. Departamento '+dep)+'</div>'+
+           '<div style="display:flex;gap:7px;margin-top:10px">'+
+             '<button class="btn ghost" style="margin:0;flex:1;padding:9px;font-size:13px" onclick="docOpen(\''+d.id+'\')">Abrir documento</button>'+
+             (S.admin?'<button class="btn ghost" style="margin:0;flex:1;padding:9px;font-size:13px;color:var(--bad)" onclick="docDel(\''+d.id+'\')">Eliminar</button>':'')+
+           '</div></div>';
+      });
+    });
+  }
+  $('s-docs').innerHTML=h; show('docs');
+  if(S.admin) docAclSet(_docAcl);
+}
+function docOpen(id){
+  var d=null; docsGet().forEach(function(x){ if(x.id===id) d=x; });
+  if(!d) return;
+  if(!sbReady()){ flash('Sin conexión: los documentos requieren internet'); return; }
+  // Abrir la pestaña YA (dentro del gesto del usuario) para que Safari iOS / la PWA
+  // instalada no la bloqueen; la liga firmada llega después y se le asigna.
+  var w=window.open('', '_blank');
+  flash('Abriendo documento…');
+  SB.storage.from('docs').createSignedUrl(d.path, 3600).then(function(r){
+    if(r.error||!r.data||!r.data.signedUrl){ if(w) w.close(); flash('No se pudo abrir'+((r.error&&r.error.message)?' ('+r.error.message+')':'')+'. ¿Ya corriste el SQL v3_2?'); return; }
+    if(w){ w.location=r.data.signedUrl; } else { location.href=r.data.signedUrl; }   // si el navegador bloqueó la pestaña, navegar aquí
+  }, function(){ if(w) w.close(); flash('Sin conexión: no se pudo abrir el documento'); });
+}
+function docUpload(){
+  if(!S||!S.admin) return;
+  if(!sbReady()){ flash('Sin conexión con el servidor'); return; }
+  var t=(($('docTitle')||{}).value||'').trim(), dep=(($('docDepto')||{}).value||'').trim();
+  var inp=$('docFile'), f=inp&&inp.files&&inp.files[0];
+  if(!t){ flash('Escribe el título del documento'); return; }
+  if(!f){ flash('Elige el archivo (PDF o imagen)'); return; }
+  if(f.size>20*1024*1024){ flash('El archivo pasa de 20 MB. Comprímelo primero.'); return; }
+  var acl={mode:_docAcl};
+  if(_docAcl==='ids'){
+    var ids=(($('docIds')||{}).value||'').split(',').map(function(x){ var dg=(x||'').replace(/\D/g,''); return dg?(dg.length<4?('0000'+dg).slice(-4):dg):''; }).filter(function(x){ return x; });
+    if(!ids.length){ flash('Escribe al menos una clave autorizada'); return; }
+    acl.ids=ids;
+  }
+  var path=Date.now()+'-'+f.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+  flash('Subiendo documento…');
+  SB.storage.from('docs').upload(path, f, {contentType:(f.type||'application/octet-stream'), upsert:false}).then(function(r){
+    if(r.error){ flash('⚠ NO se subió: '+(r.error.message||'error')+'. ¿Ya corriste el SQL v3_2 (crea el bucket)?'); return; }
+    var rec={ id:'doc'+Date.now(), titulo:t, depto:dep, deptoSlug:deptoSlug(dep), acl:acl, path:path, mime:(f.type||''), size:f.size, by:(S.clave||''), ts:Date.now() };
+    SB.from('docs').upsert({id:rec.id, data:rec, ts:rec.ts}).then(function(r2){
+      if(r2&&r2.error){ flash('⚠ El archivo subió pero no quedó registrado: '+r2.error.message); return; }
+      burst(); flash('✓ Documento publicado · '+(acl.mode==='all'?'toda la planta':(acl.mode==='ids'?'solo IDs autorizados':dep)));
+      var ti=$('docTitle'); if(ti) ti.value=''; if(inp) inp.value=''; var fn=$('docFileName'); if(fn) fn.textContent='';
+      sbLoad('docs');
+    });
+  });
+}
+function docDel(id){
+  var d=null; docsGet().forEach(function(x){ if(x.id===id) d=x; });
+  if(!d) return;
+  if(!confirm('¿Eliminar «'+d.titulo+'»? Nadie podrá abrirlo más. No se puede deshacer.')) return;
+  try{ SB.storage.from('docs').remove([d.path]).then(function(){}); }catch(e){}
+  SB.from('docs').delete().eq('id',id).then(function(){ flash('Documento eliminado'); sbLoad('docs'); });
+}
+
+/* ============================================================================
    SUPABASE — Fase 2: demo EN VIVO (cross-device en tiempo real).
    Mantiene la API síncrona de la app (msgsGet/newsGet/reportsGet) leyendo
    de un caché en memoria (DBC) que se sincroniza con el servidor por Realtime.
@@ -5183,13 +5635,26 @@ function _sbRerenderNow(){ try{
   else if(_screen==='courses') renderCourses();
   else if(_screen==='encuestas') renderEncuestas();
   else if(_screen==='dia') renderDia();
+  // Calendario/Documentos: NO re-pintar en vivo si el admin está escribiendo o ya
+  // eligió un archivo (perdería lo tecleado / el archivo). El repintado llega al salir/guardar.
+  else if(_screen==='cal'){ if(!_sectionBusy('s-cal')) renderCal(); }
+  else if(_screen==='wconvs') renderWConvs();
+  else if(_screen==='docs'){ if(!_sectionBusy('s-docs') && !(($('docFile')||{}).files||[]).length) renderDocs(); }
   if(typeof updateMsgBadge==='function') updateMsgBadge();
 }catch(e){} }
+/* ¿el usuario está escribiendo dentro de esta sección? (evita que un repintado en
+   vivo le borre lo tecleado en un formulario) */
+function _sectionBusy(secId){
+  var a=document.activeElement; if(!a) return false;
+  var tag=(a.tagName||''); if(tag!=='INPUT'&&tag!=='TEXTAREA') return false;
+  var sec=$(secId); return !!(sec && sec.contains(a));
+}
 function sbInit(){
   if(!sbReady() || window._sbInited) return;
   window._sbInited=true;
-  ['msgs','news','reports'].forEach(function(t){ sbSubscribe(t); });
+  ['msgs','news','reports','docs'].forEach(function(t){ sbSubscribe(t); });
   sbLoad('msgs');
+  sbLoad('docs');   // documentos por departamento (RLS: cada quien recibe SOLO los autorizados)
   // noticias/reportes: si el servidor viene vacío, sembrar desde localStorage (para que la demo se vea poblada)
   sbLoad('news', function(){ if(!(DBC.news&&DBC.news.length)){ var s=lsArr('hb_news'); if(s.length){ DBC.news=s; sbSync('news', s); } } });
   sbLoad('reports', function(){ if(!(DBC.reports&&DBC.reports.length)){ var s=lsArr('hb_reports'); if(s.length){ DBC.reports=s; sbSync('reports', s); } } });
@@ -5203,7 +5668,7 @@ function lsArr(k){ try{ return JSON.parse(localStorage.getItem(k)||'[]')||[]; }c
    preguntas del Asistente (alertas), NOM-035, Permanencia, lectura y minutos
    de estudio. Espejo en localStorage → si no hay internet, la app sigue.
    ============================================================================ */
-var KV_SKIP={hb_msgs:1,hb_news:1,hb_reports:1,hb_pages:1,hb_key:1,hb_model:1}; // tabla propia o solo-local
+var KV_SKIP={hb_msgs:1,hb_news:1,hb_reports:1,hb_pages:1,hb_docs:1,hb_key:1,hb_model:1}; // tabla propia o solo-local
 var _kvSent={};
 function kvGet(k){
   if(DBC.kv && Object.prototype.hasOwnProperty.call(DBC.kv,k)) return DBC.kv[k];
@@ -5223,6 +5688,7 @@ function kvSeed(){   // primera corrida: sube al servidor lo local que el servid
     var subir=[];
     for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i);
       if(!k || k.indexOf('hb_')!==0 || KV_SKIP[k]) continue;
+      if(k==='hb_events' && !(S&&S.admin)) continue;   // solo un admin escribe el calendario (RLS lo exige); no romper el batch de un trabajador
       if(DBC.kv && Object.prototype.hasOwnProperty.call(DBC.kv,k)) continue;
       try{ var v=JSON.parse(localStorage.getItem(k)); if(v!==null && v!==undefined){ subir.push({k:k,data:v,ts:Date.now()}); DBC.kv[k]=v; } }catch(e){}
     }
@@ -5271,12 +5737,8 @@ function kvInit(){
   try{ if(!localStorage.getItem('hb_dm')){ localStorage.setItem('hb_dm', JSON.stringify([
     { id:'d1', to:{mode:'all'}, text:'Recordatorio: el viernes es día de pago. Cualquier duda con tu recibo, pásala por aquí a RRHH.', ts:Date.now()-43200000 }
   ])); } }catch(e){}
-  try{ if(!localStorage.getItem('hb_events')){ var _d=function(n){ return new Date(Date.now()+n*86400000).toISOString().slice(0,10); };
-    localStorage.setItem('hb_events', JSON.stringify([
-      { id:'e1', t:'Día de pago de nómina', d:_d(2), ts:Date.now() },
-      { id:'e2', t:'Junta de seguridad mensual', d:_d(5), ts:Date.now() },
-      { id:'e3', t:'Simulacro de evacuación', d:_d(9), ts:Date.now() }
-    ])); } }catch(e){}
+  /* (13-jul-2026: se retiró la siembra demo de hb_events — el calendario ya es
+     100% editable desde los dashboards y los eventos reales viven en el servidor) */
   try{ if(!localStorage.getItem('hb_comedor')){ localStorage.setItem('hb_comedor', JSON.stringify({ lun:'Pollo en salsa verde, arroz, frijoles y agua de jamaica', mar:'Bistec encebollado, sopa de pasta y agua de horchata', mie:'Enchiladas rojas con pollo, frijoles y agua de limón', jue:'Milanesa de res, puré de papa y agua de tamarindo', vie:'Pescado empanizado, ensalada y agua de piña', sab:'Chilaquiles con pollo, frijoles y café de olla' })); } }catch(e){}
   try{ if(!localStorage.getItem('hb_transporte')){ localStorage.setItem('hb_transporte', JSON.stringify([
     { n:'Ruta 1 · Centro',      det:'Salida 6:00 a.m. — Central camionera, Mercado, Av. Principal, Planta', reg:'Regreso: 5:15 p.m. desde la caseta' },

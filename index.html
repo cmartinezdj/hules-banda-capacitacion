@@ -1723,6 +1723,8 @@ function startSession(cfg, saved, forceProfile){
   if(typeof beepStop==='function') beepStop();
   // (el "beeper/llamar a un trabajador" se eliminó: ya no hay polling de llamadas)
   if(V3_ON){ try{ sbInit(); }catch(e){} if(S.mando||S.admin){ try{ v3LoadEquipo(); }catch(e){} } }   // conectar datos en vivo ya autenticado
+  // permiso de notificaciones (para avisar mensajes nuevos con la app en segundo plano)
+  try{ if('Notification' in window && Notification.permission==='default') setTimeout(function(){ Notification.requestPermission(); }, 2500); }catch(e){}
   window._forceProfile=!!forceProfile;
   if(forceProfile){ renderPerfil(); }
   else if(S.admin) renderDash(); else renderHome();
@@ -1883,7 +1885,7 @@ function bootV3(forceProfile){
     var admin=!!d.admin, mando=!!d.mando;
     var cfg={ emp:d.n, clave:d.clave, key:akey, area:d.depto, accent:ac.accent, accent2:ac.accent2,
               admin:admin, dash:(admin?'rrhh':(mando?'resp':null)), mando:mando, nombre:d.nombre,
-              greet:'¡Hola, '+((d.nombre||'').split(' ')[0]||'')+'! Aquí nace la banda que rueda por +50 países.' };
+              greet:'¡Hola, '+(niceName(d.nombre||'').split(' ')[0]||'')+'! Aquí nace la banda que rueda por +50 países.' };
     // guardar nombre en el perfil local si aún no está (para el avatar y saludos)
     try{ var pf=profGet(d.n); if(!pf.nombre && d.nombre){ pf.nombre=d.nombre; profSave(d.n,pf); } if(d.privado){ pf.datos=d.privado; profSave(d.n,pf);} }catch(e){}
     var saved=load(d.n)||{};
@@ -1976,21 +1978,29 @@ function buildNav(){
   // (Inicio con recibo + Tu día, noticias, mensajes) MENOS capacitación y educación básica.
   var items = S.admin
     ? [['hr',dashLabel(),ICN.hr],['home','Inicio',ICN.home],['news','Noticias',ICN.news],['msgs','Mensajes',ICN.msgs],['chat','Asistente',ICN.chat]]
-    : [['home','Inicio',ICN.home],['msgs','Mensajes',ICN.msgs],['news','Noticias',ICN.news],['rewards','Premios',ICN.rewards],['chat','Asistente',ICN.chat],['clases','Educación',ICN.clases]];
+    : (S.mando
+      ? [['hr','Mi Área',ICN.hr],['home','Inicio',ICN.home],['msgs','Mensajes',ICN.msgs],['news','Noticias',ICN.news],['rewards','Premios',ICN.rewards],['chat','Asistente',ICN.chat],['clases','Educación',ICN.clases]]
+      : [['home','Inicio',ICN.home],['msgs','Mensajes',ICN.msgs],['news','Noticias',ICN.news],['rewards','Premios',ICN.rewards],['chat','Asistente',ICN.chat],['clases','Educación',ICN.clases]]);
   $('nav').innerHTML = items.map(function(it){
     return '<button id="nav-'+it[0]+'" onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
 var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia'];
+var _prevShown=null;
 function show(name){
-  _screen=name;
+  var cambio = (name!==_prevShown);
+  _prevShown=name; _screen=name;
   SCREENS.forEach(function(s){ var el=$('s-'+s); if(el) el.classList.toggle('hide', s!==name); });
   // nav activo (course/quiz/result/pay cuentan como "home")
   var navKey = (name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='dia') ? 'home' : ((name==='thread'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas')?'msgs':((name==='encuestas'||name==='nom35'||name==='perm')?'news':(name==='perfil'?(S.admin?'hr':'home'):name)));
   ['home','msgs','rewards','chat','hr','clases','news','buzon'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
   renderTop(name);
-  window.scrollTo(0,0);
-  var el=$('s-'+name); if(el){ el.classList.remove('fade'); void el.offsetWidth; el.classList.add('fade'); }
+  // ANTI-PARPADEO: la animación de entrada y el scroll-al-tope SOLO al cambiar de
+  // pantalla. Los re-pintados en vivo (datos nuevos) actualizan sin "flash" ni brincos.
+  if(cambio){
+    window.scrollTo(0,0);
+    var el=$('s-'+name); if(el){ el.classList.remove('fade'); void el.offsetWidth; el.classList.add('fade'); }
+  }
   if(typeof updateMsgBadge==='function') updateMsgBadge();
 }
 function go(name){
@@ -2018,9 +2028,10 @@ function renderTop(name){
   }
   var EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
   var a11yBtn='<button class="a11ybtn'+(S&&S.accessible?' on':'')+'" onclick="toggleAcc()" title="Texto grande (accesibilidad)" aria-label="Texto grande para accesibilidad">'+EYE+'Aa</button>';
+  var salir='<button class="back" onclick="logout()" style="padding:8px 11px">Salir</button>';
   $('topRight').innerHTML = S.admin
-    ? '<span class="topR">'+a11yBtn+'<button class="back" onclick="logout()">Salir</button></span>'
-    : '<span class="topR">'+a11yBtn+'<span class="ptchip">'+S.points+' pts</span></span>';
+    ? '<span class="topR">'+a11yBtn+salir+'</span>'
+    : '<span class="topR">'+a11yBtn+'<span class="ptchip">'+S.points+' pts</span>'+salir+'</span>';
 }
 
 /* ====================== HELPERS VISUALES (HUD) ======================
@@ -2570,31 +2581,36 @@ function renderHome(){
   h+=lockCard();
   $('s-home').innerHTML=h; show('home');
 }
-/* ===== INICIO del dashboard híbrido (admins): recibo + Tu día. Sin capacitación ni educación. ===== */
+/* ===== INICIO del dashboard GENERAL (acceso total): saludo + directorio. Sin recibo
+   (los generales no firman nómina), sin comedor/transporte, sin capacitación. Los
+   HÍBRIDOS (responsables) y trabajadores usan el Inicio completo con todo. ===== */
 function renderHomeAdmin(){
   var h='';
   h+='<div class="panel"><div class="hd" style="align-items:flex-start">'+
-     '<div><div class="eyebrow">'+esc(S.area)+'</div><b style="font-size:20px">Hola'+(S.nombre?', '+esc((S.nombre.split(' ').pop()||'').toLowerCase().replace(/^./,function(c){return c.toUpperCase();})):'')+'</b>'+
-     '<p class="note" style="margin:4px 0 0;max-width:230px">Tu espacio personal: recibo, comedor, transporte y directorio. El tablero vive en su pestaña.</p></div>'+
+     '<div><div class="eyebrow">'+esc(S.area)+'</div><b style="font-size:20px">Hola'+(S.nombre?', '+esc(niceName(S.nombre)):'')+'</b>'+
+     '<p class="note" style="margin:4px 0 0;max-width:230px">Tu espacio personal. El tablero de la planta vive en su pestaña.</p></div>'+
      '<span class="status"><span class="d"></span>En línea</span></div></div>';
-  // recibo de nómina (igual que el trabajador)
-  var _per=payPeriod(), _p=payData(S.emp), _signed=signRecord(S.emp,_per.key);
-  h+='<div class="panel" style="cursor:pointer" onclick="renderPay()">'+
-     '<div class="hd"><b>Mi recibo de nómina</b><span class="chipst'+(_signed?'':' mut')+'">'+(_signed?'Firmado ✓':'Por firmar')+'</span></div>'+
-     '<div class="ringwrap"><span style="width:48px;height:48px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--data);background:color-mix(in srgb,var(--data) 13%,transparent)"><span style="width:24px;height:24px;display:block">'+IC2.doc+'</span></span>'+
-       '<div><div style="font-size:24px;font-weight:900;letter-spacing:-.5px">'+money(_p.neto)+'</div>'+
-       '<div class="note" style="margin-top:2px">'+esc(_per.label)+' · '+(_signed?'ya lo firmaste':'toca para ver y firmar')+' ›</div></div>'+
-     '</div></div>';
-  // Tu día (comedor / transporte / directorio)
-  var _hoyM=(comedorGet()[diaHoyKey()]||'').split(',')[0];
-  h+='<div class="panel"><div class="hd"><b>Tu día</b><span class="chipst'+(_hoyM?'':' mut')+'">'+(_hoyM?'Hoy: '+esc(_hoyM):'todos los días')+'</span></div>'+
-     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px">'+
-     [['comedor','Comedor',IC2.food],['transporte','Transporte',IC2.bus],['directorio','Directorio',IC2.phone]].map(function(x){
-       return '<button class="lvcard" style="text-align:center;padding:14px 6px" onclick="renderDia(\''+x[0]+'\')">'+
-         '<span class="ico" style="margin:0 auto 8px">'+x[2]+'</span><b style="font-size:13px">'+x[1]+'</b></button>'; }).join('')+
-     '</div></div>';
+  // Directorio interno (a quién llamar)
+  h+='<div class="panel" style="cursor:pointer" onclick="renderDia(\'directorio\')"><div class="hd" style="margin-bottom:0"><div style="display:flex;align-items:center;gap:12px;min-width:0">'+
+     '<span style="width:46px;height:46px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--data);background:color-mix(in srgb,var(--data) 13%,transparent)"><span style="width:23px;height:23px;display:block">'+IC2.phone+'</span></span>'+
+     '<div style="min-width:0"><b>Directorio interno</b><div class="note" style="margin-top:2px">Extensiones: a quién llamar en la planta.</div></div></div><span class="chipst">Abrir ›</span></div></div>';
   $('s-home').innerHTML=h; show('home');
 }
+/* "APELLIDOS NOMBRE(S)" -> "PrimerNombre PrimerApellido" (formato de nómina; respeta
+   partículas DE/DEL/LA/...: DEL ANGEL GONZALEZ JUAN CARLOS -> Juan Del Angel). */
+function niceName(full){
+  var t=(full||'').trim().split(/\s+/); if(t.length<2) return tcase(t.join(' '));
+  if(t.length===2) return tcase(t[0]+' '+t[1]);   // alta manual corta: se muestra tal cual
+  var PART={'DE':1,'DEL':1,'LA':1,'LAS':1,'LOS':1,'SAN':1,'SANTA':1,'Y':1,'MC':1,'VAN':1,'VON':1};
+  var i=0, ap1=[t[i++]];
+  while(i<t.length-1 && PART[ap1[ap1.length-1].toUpperCase()]) ap1.push(t[i++]);   // completa partícula (DE LA …)
+  var ap2s=i; var ap2=[t[i++]];
+  while(i<t.length-1 && PART[ap2[ap2.length-1].toUpperCase()]) ap2.push(t[i++]);
+  var nombres=t.slice(i);
+  if(!nombres.length){ nombres=[t[t.length-1]]; }
+  return tcase(nombres[0]+' '+ap1.join(' '));
+}
+function tcase(s){ return (s||'').toLowerCase().replace(/(^|\s)\S/g, function(c){ return c.toUpperCase(); }); }
 /* ====================== MIS CURSOS (lista completa) ====================== */
 function renderCourses(){
   var common=CFG.common||[], area=(CFG.areas[S.key]||[]);
@@ -3323,8 +3339,30 @@ function renderFicha(emp){
 function renderHR(){ managerDash('RRHH'); }
 var _mgrTab='res';
 function mgrTab(t){ _mgrTab=t; renderDash(); }
+/* Estadísticas REALES por los 23 DEPARTAMENTOS (roster vivo + avance del KV).
+   Devuelve null si aún no hay roster cargado (cae al demo por áreas). */
+function deptStats(){
+  if(!V3_ON || !DBC.equipo || !DBC.equipo.length) return null;
+  var by={}, order=[];
+  DBC.equipo.forEach(function(e){
+    var d=e.depto||'—';
+    if(!by[d]){ by[d]={dep:d, total:0, reg:0, sum:0, con:0}; order.push(d); }
+    by[d].total++;
+    if(e.registrado){ by[d].reg++;
+      var akey=DEPTO_AREA[d]||'produccion', cs=coursesForKey(akey), dm=(kvGet('hb_'+e.n)||{}).done||{}, done=0;
+      for(var i=0;i<cs.length;i++) if(dm[cs[i].id]) done++;
+      by[d].sum += cs.length?Math.round(done/cs.length*100):0; by[d].con++;
+    }
+  });
+  var list=order.map(function(d){ var x=by[d]; x.avg=x.con?Math.round(x.sum/x.con):0; return x; });
+  list.sort(function(a,b){ return b.total-a.total; });
+  var regTot=0, sumTot=0, conTot=0;
+  list.forEach(function(x){ regTot+=x.reg; sumTot+=x.sum; conTot+=x.con; });
+  return { list:list, total:DBC.equipo.length, reg:regTot, global:conTot?Math.round(sumTot/conTot):0 };
+}
 function managerDash(role){
   var H=CFG.hr;
+  var DS=deptStats();   // 23 departamentos reales (o null si aún no carga el roster)
   var ALERTS=(qstats().alerts||[]); _HRAL=ALERTS;   // focos rojos de sabotaje (anti-sabotaje del chat)
   var nAreas=CFG.ranges.filter(function(r){return !r.admin;}).length;
   var foco=H.redFlags.length+ALERTS.length;
@@ -3335,21 +3373,22 @@ function managerDash(role){
      '<div><div class="eyebrow">Tablero</div><b style="font-size:20px">'+esc(role)+'</b></div>'+
      '<span class="status"><span class="d"></span>En línea</span></div>'+
      '<div class="gaugeWrap">'+
-       '<div class="statile" style="flex:1.25;padding:10px 8px 12px">'+semiGauge(H.globalAvg)+'<div class="l" style="margin-top:2px">Global</div></div>'+
+       '<div class="statile" style="flex:1.25;padding:10px 8px 12px">'+semiGauge(DS?DS.global:H.globalAvg)+'<div class="l" style="margin-top:2px">Global</div></div>'+
        '<div class="statile"><div class="n"'+(foco?' style="color:var(--bad)"':'')+'>'+foco+'</div><div class="l">Focos</div></div>'+
-       '<div class="statile"><div class="n">'+H.employees+'</div><div class="l">Equipo</div></div>'+
-       '<div class="statile"><div class="n">'+nAreas+'</div><div class="l">Áreas</div></div>'+
+       '<div class="statile"><div class="n">'+(DS?DS.total:H.employees)+'</div><div class="l">Equipo</div></div>'+
+       '<div class="statile"><div class="n">'+(DS?DS.list.length:nAreas)+'</div><div class="l">'+(DS?'Deptos':'Áreas')+'</div></div>'+
      '</div></div>';
   // ----- ALERTAS DE SEGURIDAD (posible sabotaje) — máxima prioridad, SIEMPRE visibles -----
   if(ALERTS.length){
-    h+='<div class="panel" style="border-color:#e74c3c;background:rgba(192,57,43,0.10)">'+
-       '<b style="color:#ff6b5e">Alertas de seguridad — posible sabotaje ('+ALERTS.length+')</b>'+
-       '<div class="note" style="margin:3px 0 10px">Preguntas con intención de dañar procesos, equipo o el agua/comida. El Asistente <b>no respondió</b> y registró al trabajador. Atiende de inmediato.</div>'+
+    // Alargada y delgada (pedido del dueño): título+resumen en UNA línea, cada alerta
+    // en una fila compacta, y aire abajo para no pegarse con las pestañas.
+    h+='<div class="panel" style="border-color:#e74c3c;background:rgba(192,57,43,0.10);padding:12px 14px;margin-bottom:16px">'+
+       '<div class="line" style="border:none;padding:0 0 6px"><b style="color:#ff6b5e;font-size:14px">Alertas de seguridad — posible sabotaje</b><span class="tg" style="flex:none;border-color:#e74c3c;color:#ff6b5e">'+ALERTS.length+'</span></div>'+
+       '<div class="note" style="margin:0 0 8px;font-size:11px;line-height:1.45">El Asistente <b>no respondió</b> y registró al trabajador. Atiende de inmediato.</div>'+
        ALERTS.map(function(a,i){
-         return '<div class="line" style="align-items:flex-start;border-left:3px solid #e74c3c;padding-left:9px;margin-bottom:4px">'+
-           '<span><b style="color:#fff">Empleado #'+(''+a.emp).padStart(3,'0')+'</b>'+(a.area?' · '+esc(a.area):'')+'<br>'+
-           '<span style="color:#ff9d92">«'+esc(a.q)+'»</span><br>'+
-           '<small class="mut">'+alertTime(a.t)+'</small></span>'+
+         return '<div class="line" style="align-items:center;border-left:3px solid #e74c3c;padding:6px 0 6px 9px;border-bottom:none;gap:10px">'+
+           '<span style="min-width:0;line-height:1.4"><b style="color:#fff">#'+(''+a.emp).padStart(3,'0')+'</b>'+(a.area?' <span class="note">'+esc(a.area)+'</span>':'')+' '+
+           '<span style="color:#ff9d92">«'+esc(a.q)+'»</span> <small class="mut" style="white-space:nowrap">'+alertTime(a.t)+'</small></span>'+
            '<button class="back" style="padding:6px 10px;flex:none" onclick="dismissAlert('+i+')">Visto</button>'+
          '</div>';
        }).join('')+'</div>';
@@ -3363,24 +3402,41 @@ function managerDash(role){
 
   if(T==='res'){
     h+=centinelaBlock();
-    h+='<div class="panel"><div class="hd"><b>Avance por área</b><span class="chipst">'+H.globalAvg+'% global</span></div>'+
-       colChart(H.byArea.map(function(a){ return [a[0], a[1], areaAccent(a[0])]; }))+
-       '<div class="note" style="margin-top:6px">Toca una columna para ver el detalle. Datos de ejemplo.</div></div>';
-    h+='<div class="panel"><div class="hd"><b>Equipo por área</b><span class="chipst mut">plantilla</span></div>'+
-       donutChart((function(){ var rs=CFG.ranges.filter(function(r){ return !r.admin; }); var cap=0; rs.forEach(function(r){ cap+=r.max-r.min+1; });
-         return rs.map(function(r){ return [r.area, Math.round((r.max-r.min+1)/cap*H.employees), r.accent2||r.accent]; }); })(),'personas')+
-       '<div class="note" style="margin-top:8px">Toca una rebanada para ver cuántas personas tiene cada área.</div></div>';
+    if(DS){
+      // DATOS REALES: los 23 departamentos con su gente y avance (barra por depto)
+      h+='<div class="panel"><div class="hd"><b>Avance por departamento</b><span class="chipst">'+DS.global+'% global · '+DS.reg+' registrados</span></div>'+
+         DS.list.map(function(x){
+           var col=semColor(semOf(x.avg));
+           return '<div style="padding:7px 0;border-bottom:1px solid var(--line)">'+
+             '<div class="line" style="border:none;padding:0"><span style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px;font-weight:700">'+esc(x.dep)+'</span>'+
+             '<span class="note" style="flex:none">'+x.reg+'/'+x.total+' · <b style="color:'+col+'">'+x.avg+'%</b></span></div>'+
+             '<div style="margin-top:5px;height:5px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden"><i style="display:block;height:100%;width:'+x.avg+'%;border-radius:4px;background:'+col+'"></i></div></div>';
+         }).join('')+
+         '<div class="note" style="margin-top:8px">Personas registradas / plantilla del departamento, y su avance real de cursos.</div></div>';
+    } else {
+      h+='<div class="panel"><div class="hd"><b>Avance por área</b><span class="chipst">'+H.globalAvg+'% global</span></div>'+
+         colChart(H.byArea.map(function(a){ return [a[0], a[1], areaAccent(a[0])]; }))+
+         '<div class="note" style="margin-top:6px">Toca una columna para ver el detalle. Datos de ejemplo.</div></div>';
+    }
     h+=horasBlock();
     h+='<div class="panel"><div class="hd"><b>Focos rojos</b></div>'+H.redFlags.map(function(x){
          return '<div class="line"><span>'+esc(x)+'</span><span class="tg">Atender</span></div>';
        }).join('')+'</div>';
   }
   else if(T==='area'){
-    h+='<div class="agrid">'+H.byArea.map(function(a){
-         var k=(CFG.ranges.filter(function(r){return r.area===a[0]&&!r.admin;})[0]||{}).key||'';
-         return '<div class="acard" onclick="flash(\''+esc(a[0])+': '+a[1]+'% de avance\')"><span class="ico">'+areaIcon(k)+'</span><span class="an">'+esc(a[0])+'</span><span class="as">avance del área</span>'+
-           '<div style="margin-top:8px">'+semiGauge(a[1], areaAccent(a[0]))+'</div></div>';
-       }).join('')+'</div>';
+    if(DS){
+      h+='<div class="agrid">'+DS.list.map(function(x){
+           var k=DEPTO_AREA[x.dep]||'produccion';
+           return '<div class="acard" onclick="flash(\''+esc(x.dep)+': '+x.avg+'% · '+x.reg+' de '+x.total+' registrados\')"><span class="ico">'+areaIcon(k)+'</span><span class="an">'+esc(x.dep)+'</span><span class="as">'+x.reg+'/'+x.total+' registrados</span>'+
+             '<div style="margin-top:8px">'+semiGauge(x.avg, semColor(semOf(x.avg)))+'</div></div>';
+         }).join('')+'</div>';
+    } else {
+      h+='<div class="agrid">'+H.byArea.map(function(a){
+           var k=(CFG.ranges.filter(function(r){return r.area===a[0]&&!r.admin;})[0]||{}).key||'';
+           return '<div class="acard" onclick="flash(\''+esc(a[0])+': '+a[1]+'% de avance\')"><span class="ico">'+areaIcon(k)+'</span><span class="an">'+esc(a[0])+'</span><span class="as">avance del área</span>'+
+             '<div style="margin-top:8px">'+semiGauge(a[1], areaAccent(a[0]))+'</div></div>';
+         }).join('')+'</div>';
+    }
     h+='<div class="panel" style="margin-top:12px"><div class="hd"><b>Temas con más fallos</b><span class="chipst mut">tocar para detalle</span></div>'+
        heatBars(H.failed,' de fallos')+
        '<div class="note" style="margin-top:10px">Un tema muy fallado puede indicar que falta capacitación… o que hay un problema en el proceso.</div></div>';
@@ -3424,10 +3480,15 @@ function centinelaRun(){
   try{ var U=Object.keys(qstats().unans||{}).length;
     if(U>0){ items.push({sev:(U>=5?'alta':'media'), icon:IC2.cap, titulo:'Preguntas del Asistente sin respuesta', detalle:U+' pregunta(s) esperan una respuesta autorizada. Revísalas y márcalas como atendidas.', accion:{label:'Revisar preguntas', js:'mgrTab(\'op\')'}}); }
   }catch(e){}
-  // R3 · Área con avance bajo (<50%)
-  try{ ((CFG.hr||{}).byArea||[]).forEach(function(a){
-    if(a[1]<50){ items.push({sev:'alta', icon:IC2.gear, titulo:'Avance bajo en '+a[0], detalle:'El área va en '+a[1]+'% de sus cursos. Habla con su responsable para ponerse al corriente.', accion:{label:'Ver áreas', js:'mgrTab(\'area\')'}}); }
-  }); }catch(e){}
+  // R3 · Departamento con avance bajo (<50%) — datos reales si hay roster; demo si no
+  try{ var _ds=(typeof deptStats==='function')?deptStats():null;
+    if(_ds){ _ds.list.forEach(function(x){
+      if(x.reg>0 && x.avg<50){ items.push({sev:'alta', icon:IC2.gear, titulo:'Avance bajo en '+x.dep, detalle:'El departamento va en '+x.avg+'% de sus cursos ('+x.reg+' registrados). Habla con su responsable.', accion:{label:'Ver departamentos', js:'mgrTab(\'area\')'}}); }
+    }); }
+    else{ ((CFG.hr||{}).byArea||[]).forEach(function(a){
+      if(a[1]<50){ items.push({sev:'alta', icon:IC2.gear, titulo:'Avance bajo en '+a[0], detalle:'El área va en '+a[1]+'% de sus cursos. Habla con su responsable para ponerse al corriente.', accion:{label:'Ver áreas', js:'mgrTab(\'area\')'}}); }
+    }); }
+  }catch(e){}
   // R4 · Tema muy fallado (>35%)
   try{ ((CFG.hr||{}).failed||[]).forEach(function(x){
     if(x[1]>35){ items.push({sev:'media', icon:IC2.check, titulo:'Muchos fallos en: '+x[0], detalle:x[1]+'% de fallo en los quizzes. Puede faltar capacitación… o haber un problema en el proceso.', accion:{label:'Ver temas', js:'mgrTab(\'area\')'}}); }
@@ -3667,7 +3728,15 @@ function renderNews(){
     h+=dmWorkerBlock();
     h+=newsInfographicDemo();
     var vis = a.filter(function(n){ return inTarget(n.to, S.emp); });
-    h+= vis.length? newsCards(vis) : '';
+    // las NUEVAS arriba; las que ya marcaste "leí esto" se guardan en su propio apartado
+    var nuevas=vis.filter(function(n){ return !hasRead(n); });
+    var leidas=vis.filter(function(n){ return hasRead(n); });
+    h+= nuevas.length? newsCards(nuevas) : (vis.length?'':'');
+    if(!nuevas.length && vis.length) h+='<div class="card"><div class="note">Estás al día: no hay avisos nuevos. ✓</div></div>';
+    if(leidas.length){
+      h+='<div class="sec-t" style="cursor:pointer" onclick="var e=document.getElementById(\'newsLeidas\');var v=e.style.display===\'none\';e.style.display=v?\'\':\'none\';var c=document.getElementById(\'newsLeidasChev\');if(c)c.textContent=v?\'▾\':\'▸\';">Noticias ya leídas · '+leidas.length+' <span id="newsLeidasChev">▸</span><span class="ln"></span></div>'+
+         '<div id="newsLeidas" style="display:none">'+newsCards(leidas)+'</div>';
+    }
     h+=calendarBlock();
   }
   $('s-news').innerHTML=h; show('news');
@@ -4882,6 +4951,9 @@ function threadHTML(msgs,showSender){
   }).join('');
 }
 function openConv(conv){
+  // conservar lo que el usuario está escribiendo si esto es un re-pintado en vivo
+  var _draft=(_curConv===conv && $('thIn')) ? $('thIn').value : '';
+  var _hadFocus=(_curConv===conv && document.activeElement && document.activeElement.id==='thIn');
   _curConv=conv; markConvRead(conv);
   // Es "monitoreo" (solo lectura) cuando el management NO tiene permiso de escribir en esa conversación.
   var isMonitor = S.admin && !canWriteConv(conv);
@@ -4899,7 +4971,9 @@ function openConv(conv){
   }
   $('s-thread').innerHTML=h; show('thread');
   var t=$('thMsgs'); if(t) t.scrollTop=t.scrollHeight;
-  var ci=$('thIn'); if(ci){ ci.onkeydown=function(ev){ if(ev.key==='Enter') sendFromThread(); }; ci.focus(); }
+  var ci=$('thIn'); if(ci){ ci.onkeydown=function(ev){ if(ev.key==='Enter') sendFromThread(); };
+    if(_draft) ci.value=_draft;                    // no perder lo tecleado en re-pintados en vivo
+    if(_hadFocus || !_draft) ci.focus(); }
 }
 function sendFromThread(){
   var inp=$('thIn'), t=inp?(inp.value||'').trim():'';
@@ -5045,9 +5119,36 @@ function sbReady(){ return !!(SB_ON && SB); }
 function sbLoad(tbl, cb){
   if(!sbReady()){ if(cb) cb(); return; }
   try{ SB.from(tbl).select('data').order('ts',{ascending:true}).then(function(r){
-    if(!r.error && r.data){ DBC[tbl]=r.data.map(function(x){ return x.data; }); try{ lsSet('hb_'+tbl, DBC[tbl]); }catch(e){} sbRerender(); }
+    if(!r.error && r.data){ DBC[tbl]=r.data.map(function(x){ return x.data; }); try{ lsSet('hb_'+tbl, DBC[tbl]); }catch(e){}
+      if(tbl==='msgs') msgNotifyCheck();   // avisar si llegó un mensaje para mí
+      sbRerender(); }
     if(cb) cb();
   }); }catch(e){ if(cb) cb(); }
+}
+/* ===== NOTIFICACIÓN de mensaje nuevo: toast dentro de la app + notificación del
+   sistema (si diste permiso y la app está en segundo plano). ===== */
+function myConvQuick(conv){ if(!S||!conv) return false; if(S.admin) return true;
+  if(conv==='r:'+S.emp || conv==='c:'+S.emp) return true;
+  if(conv==='g:'+myGroup()) return true;
+  if(conv.indexOf('j:')===0){ var p=conv.slice(2).split(':'); return +p[1]===S.emp || (S.mando && p[0]===myGroup()); }
+  if(conv.indexOf('d:')===0){ var p2=conv.slice(2).split('-'); return +p2[0]===S.emp || +p2[1]===S.emp; }
+  return false; }
+function msgNotifyCheck(){
+  try{
+    if(!S) return;
+    var arr=DBC.msgs||[], maxPrev=window._msgMaxTs, maxNow=0;
+    arr.forEach(function(m){ if(m.ts>maxNow) maxNow=m.ts; });
+    if(maxPrev===undefined){ window._msgMaxTs=maxNow; return; }   // primera carga: sin avisos del historial
+    var nuevos=arr.filter(function(m){ return m.ts>maxPrev && m.from!==S.emp && myConvQuick(m.conv); });
+    window._msgMaxTs=Math.max(maxPrev,maxNow);
+    if(!nuevos.length) return;
+    var m=nuevos[nuevos.length-1];
+    if(_screen==='thread' && _curConv===m.conv) return;           // ya estás viendo esa conversación
+    flash('💬 Mensaje nuevo · '+(nuevos.length>1? nuevos.length+' mensajes' : esc(convTitle(m.conv))));
+    try{ if('Notification' in window && Notification.permission==='granted' && document.hidden){
+      new Notification('Hules Banda — Mensaje nuevo', { body:(m.text||'📷 Imagen').slice(0,90) });
+    } }catch(e){}
+  }catch(e){}
 }
 function sbSync(tbl, arr, cb){   // sube/actualiza el arreglo completo; cb(errorMsg|null) para avisar si falló
   if(!sbReady() || !arr || !arr.length){ if(cb) cb(sbReady()?null:'sin conexión'); return; }
@@ -5066,18 +5167,22 @@ function sbSyncOne(tbl, obj, cb){
 }
 function sbDelRec(tbl, id){ if(sbReady()){ try{ SB.from(tbl).delete().eq('id',id).then(function(){}); }catch(e){} } }
 function sbSubscribe(tbl){ if(!sbReady()) return; try{ SB.channel('rt-'+tbl).on('postgres_changes',{event:'*',schema:'public',table:tbl},function(){ sbLoad(tbl); }).subscribe(); }catch(e){} }
-function sbRerender(){ try{
+/* ANTI-PARPADEO: los eventos en vivo llegan en ráfagas (varios por segundo). Se juntan
+   y se re-pinta UNA sola vez, 350 ms después del último — sin flash (ver show()). */
+var _rrT=null;
+function sbRerender(){ clearTimeout(_rrT); _rrT=setTimeout(_sbRerenderNow, 350); }
+function _sbRerenderNow(){ try{
+  if(!S) return;   // aún en el login: nada que re-pintar
   if(_screen==='msgs') renderMsgs();
   else if(_screen==='thread' && _curConv) openConv(_curConv);
   else if(_screen==='hr' && typeof renderDash==='function') renderDash();
   else if(_screen==='news') renderNews();
-  else if(_screen==='home' && S && !S.admin) renderHome();
+  else if(_screen==='home') renderHome();
   else if(_screen==='rewards') renderRewards();
   else if(_screen==='courses') renderCourses();
   else if(_screen==='encuestas') renderEncuestas();
   else if(_screen==='dia') renderDia();
   if(typeof updateMsgBadge==='function') updateMsgBadge();
-  if(S && !S.admin && typeof checkPage==='function') checkPage();
 }catch(e){} }
 function sbInit(){
   if(!sbReady() || window._sbInited) return;

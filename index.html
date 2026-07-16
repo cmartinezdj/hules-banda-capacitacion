@@ -66,7 +66,7 @@ button{font-family:var(--font)}
 @keyframes bob{50%{transform:translateY(-8px)}}
 .bandi.roll .bv{animation:tilt 5.5s ease-in-out infinite;transform-origin:50% 70%}
 @keyframes tilt{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
-.bandi.cheer{animation:cheer .9s cubic-bezier(.2,.8,.3,1.3)}
+.bandi.cheer{animation:cheer .9s cubic-bezier(.23,1,.32,1)}
 @keyframes cheer{0%{transform:scale(1)}25%{transform:scale(1.14) rotate(-7deg)}55%{transform:scale(1.04) rotate(7deg)}100%{transform:none}}
 .b-xl{width:172px;height:172px}.b-lg{width:84px;height:84px}.b-md{width:54px;height:54px}.b-sm{width:38px;height:38px}.b-xs{width:30px;height:30px}
 
@@ -165,7 +165,7 @@ button{font-family:var(--font)}
 /* stats */
 .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:6px}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 6px;text-align:center;backdrop-filter:blur(10px)}
-.stat .n{font-size:25px;font-weight:900;line-height:1;background:linear-gradient(135deg,#fff,var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat .n{font-size:25px;font-weight:900;line-height:1;color:#fff}
 .stat .l{font-size:9.5px;letter-spacing:1px;color:var(--mut);text-transform:uppercase;margin-top:6px;font-weight:700}
 
 /* guía Asistente (tip con globo) */
@@ -4417,8 +4417,8 @@ function nextCourse(){
 }
 function rutaCard(){
   var c=nextCourse();
-  if(!c){ return '<div class="card" style="border-left:4px solid var(--ok)"><div class="row">'+bandi('b-md')+'<div><b>¡Vas al corriente!</b><p class="note" style="margin-top:3px">Completaste todos tus cursos. Repasa el que quieras cuando gustes.</p></div></div></div>'; }
-  return '<div class="card" style="border-left:4px solid var(--accent)">'+
+  if(!c){ return '<div class="card" style="border:1px solid color-mix(in srgb,var(--ok) 34%,var(--line))"><div class="row">'+bandi('b-md')+'<div><b>¡Vas al corriente!</b><p class="note" style="margin-top:3px">Completaste todos tus cursos. Repasa el que quieras cuando gustes.</p></div></div></div>'; }
+  return '<div class="card" style="border:1px solid color-mix(in srgb,var(--accent) 34%,var(--line))">'+
     '<div class="line"><span class="tg">Tu siguiente paso</span>'+speakBtn('Tu siguiente curso es: '+c.t)+'</div>'+
     '<b style="font-size:16px;display:block;margin:8px 0 2px">'+esc(c.t)+'</b>'+
     '<p class="note">Velo y gana <b>'+CFG.points.watch+' puntos</b> · ⏱ '+esc(c.dur||'')+'</p>'+
@@ -4484,7 +4484,7 @@ function coachCard(noCurso){
   if(!S || S.admin) return '';
   var a; try{ a=coachNext(); }catch(e){ return ''; }
   if(noCurso && (a.kind==='curso' || a.kind==='repaso' || a.kind==='ok')) return '';  // en Mis cursos, rutaCard ya cubre eso
-  return '<div class="panel" style="border-left:4px solid var(--data)">'+
+  return '<div class="panel" style="border:1px solid color-mix(in srgb,var(--accent) 34%,var(--line))">'+
     '<div class="line" style="border-bottom:none;padding:0"><span class="tg">Tu coach</span>'+speakBtn(a.titulo+'. '+a.detalle)+'</div>'+
     '<b style="font-size:16px;display:block;margin:8px 0 2px">'+esc(a.titulo)+'</b>'+
     '<p class="note">'+esc(a.detalle)+'</p>'+
@@ -5532,7 +5532,7 @@ function nomDoneKey(id){ return 'hb_nom035_done_'+id+'_'+(S&&S.emp); }
 function nomWorkerCard(){
   var st=nomGet(); if(!st.current) return '';
   var done=false; try{ done=!!localStorage.getItem(nomDoneKey(st.current.id)); }catch(e){}
-  if(done) return '<div class="card" style="border-left:4px solid var(--ok)"><div class="line" style="align-items:flex-start;border-bottom:none;padding:0"><div style="flex:1"><b style="color:var(--ok)">✓ Gracias por responder</b><p class="note">Tu cuestionario NOM-035 quedó registrado de forma anónima.</p></div>'+speakBtn('Gracias por responder. Tu cuestionario quedó registrado de forma anónima.')+'</div></div>';
+  if(done) return '<div class="card" style="border:1px solid color-mix(in srgb,var(--ok) 34%,var(--line))"><div class="line" style="align-items:flex-start;border-bottom:none;padding:0"><div style="flex:1"><b style="color:var(--ok)">✓ Gracias por responder</b><p class="note">Tu cuestionario NOM-035 quedó registrado de forma anónima.</p></div>'+speakBtn('Gracias por responder. Tu cuestionario quedó registrado de forma anónima.')+'</div></div>';
   return bnrCard("renderNom()",'Cuestionario NOM-035','Anónimo · '+nomTotalQ()+' preguntas · ayuda a mejorar la planta',cover('shield','#e0564b','#7a1410'),'Nuevo');
 }
 /* ---- Pantalla del cuestionario (con audio) ---- */

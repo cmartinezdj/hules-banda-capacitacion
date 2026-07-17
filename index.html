@@ -683,8 +683,12 @@ body.a11y .screen .seg button{ font-size:13px !important; }
 .shotguard h2{font-size:22px;font-weight:900;margin:18px 0 8px;color:#fff;max-width:340px;line-height:1.25}
 .shotguard p{font-size:14px;color:#9aa0b0;line-height:1.55;max-width:330px;margin:0}
 </style>
-<!-- Supabase (Fase 2: demo en vivo, cross-device). Si no carga (offline), la app sigue con localStorage. -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Supabase SDK HOSPEDADO JUNTO A LA APP (mismo origen = tan confiable como que cargue la
+     página). 'defer' = NO bloquea el dibujado, así la portada aparece al instante aunque la
+     red vaya lenta (antes venía de un CDN externo en el <head> y, si tardaba/fallaba, la
+     pantalla se quedaba en blanco hasta refrescar). Si por lo que sea faltara el archivo
+     local, 'onerror' cae al CDN de respaldo; el arranque (arranca()) espera al SDK igual. -->
+<script defer src="supabase.min.js" onerror="var s=document.createElement('script');s.defer=true;s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';document.head.appendChild(s);"></script>
 </head>
 <body>
 <div class="mesh"></div><div class="grain"></div>
@@ -6198,7 +6202,14 @@ function docDel(id){
 var SB_URL='https://vuyetjbeoeezuniwwquv.supabase.co';
 var SB_KEY='sb_publishable_9obls1EHbWYQoYZyhE2QWA_PiOe1-Xs';
 var SB=null, SB_ON=false, DBC={};   // DBC[tabla]: caché en memoria (undefined = aún no cargada → usar localStorage)
-try{ if(window.supabase && /^https?:/.test(SB_URL)){ SB=window.supabase.createClient(SB_URL, SB_KEY); SB_ON=true; } }catch(e){ SB_ON=false; }
+/* Crea el cliente EN CUANTO el SDK esté disponible. Reintentable: con 'defer' el SDK
+   puede no estar listo la primera vez que corre esto — arranca() lo vuelve a llamar. */
+function sbBoot(){
+  if(SB) return true;
+  try{ if(window.supabase && /^https?:/.test(SB_URL)){ SB=window.supabase.createClient(SB_URL, SB_KEY); SB_ON=true; return true; } }catch(e){ SB_ON=false; }
+  return false;
+}
+sbBoot();
 function sbReady(){ return !!(SB_ON && SB); }
 function sbLoad(tbl, cb){
   if(!sbReady()){ if(cb) cb(); return; }
@@ -6476,8 +6487,24 @@ function hbLimpiaSeeds(){
   // PORTADA: mientras cubre la pantalla, lo de abajo no recibe foco ni Tab (a11y);
   // portadaGo() lo libera al tocar Acceder.
   try{ ['s-login','topbar','main','nav'].forEach(function(id){ var el=$(id); if(el) el.setAttribute('inert',''); }); }catch(e){}
-  try{ v3Detect(); }catch(e){}   // ¿el servidor ya tiene el roster real V3? decide login real vs demo
+  try{ arranca(); }catch(e){}   // arranque a prueba de fallos: espera al SDK y decide login real vs demo
 })();
+/* ARRANQUE A PRUEBA DE FALLOS: espera a que el SDK de Supabase esté cargado (mismo
+   origen → normalmente inmediato; con red lenta reintenta ~10 s) y entonces detecta V3 /
+   restaura sesión. Si el SDK NUNCA carga (archivo y CDN de respaldo fallaron), recarga
+   UNA sola vez —lo que antes había que hacer a mano— y si aun así no, deja la portada/
+   login visibles en modo local. El reload solo se dispara si el SDK JS no cargó, no por
+   falta de internet (con el SDK local, sbBoot() ya da true aunque no haya red). */
+function arranca(intentos){
+  intentos = intentos||0;
+  if(sbBoot()){
+    try{ sessionStorage.removeItem('hb_boot_retry'); }catch(e){}
+    try{ v3Detect(); }catch(e){}
+    return;
+  }
+  if(intentos < 40){ setTimeout(function(){ arranca(intentos+1); }, 250); return; }   // esperar el SDK ~10 s
+  try{ if(!sessionStorage.getItem('hb_boot_retry')){ sessionStorage.setItem('hb_boot_retry','1'); location.reload(); return; } }catch(e){}
+}
 /* Detecta si el servidor está en V3 (roster + candados). Si sí: login real y
    auto-restaura sesión. Si no (aún sin correr el SQL, u offline): deja el login
    demo como respaldo para no dejar el sitio inservible durante la transición. */

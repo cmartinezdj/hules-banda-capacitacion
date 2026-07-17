@@ -1857,6 +1857,16 @@ function pubRefreshSeen(){
 /* Invalida el perfil público cacheado de una persona (cuando cambió su perfil en
    el servidor) para que se vuelva a pedir con la foto/datos nuevos. */
 function pubInvalidate(n){ if(DBC.pub) delete DBC.pub[+n]; }
+/* Refresco FORZADO de UNA persona con throttle (15s): al abrir su chat o su
+   perfil, la foto que ves es la MÁS RECIENTE aunque la acabe de cambiar en otro
+   dispositivo (el realtime de perfiles solo les llega a los admins por RLS). */
+var _pubOneT={};
+function pubFresh(n, cb){
+  n=+n; if(!n){ if(cb) cb(); return; }
+  var now=Date.now(), force=(now-(_pubOneT[n]||0))>15000;
+  if(force) _pubOneT[n]=now;
+  pubEnsure([n], cb, force);
+}
 /* Foto de una persona para los avatares de mensajería (la mía o, si la cargó el
    servidor, la de la otra persona). */
 function personFoto(n){ if(+n===S.emp) return profGet(S.emp).foto||''; var p=pubGet(n); return (p&&p.foto)||''; }
@@ -2144,15 +2154,20 @@ function buildNav(){
   // Dashboard HÍBRIDO: además del tablero, los admins tienen todo lo del trabajador
   // (Inicio con recibo + Tu día, noticias, mensajes) MENOS capacitación y educación básica.
   var home=['home','Inicio',ICN.home];
+  // Dashboard general (RRHH/Dirección): SIN tab Inicio aparte — el TABLERO es el
+  // Inicio (pedido de Carlos): tab izquierdo "Inicio" con los focos y todo el hub.
+  var esDashGral = S.admin && S.dash!=='resp';
   var others = S.admin
-    ? [['hr',dashLabel(),ICN.hr],['news','Noticias',ICN.news],['msgs','Mensajes',ICN.msgs],['chat','Asistente',ICN.chat]]
+    ? [['hr',(esDashGral?'Inicio':dashLabel()),(esDashGral?ICN.home:ICN.hr)],['news','Noticias',ICN.news],['msgs','Mensajes',ICN.msgs],['chat','Asistente',ICN.chat]]
     : (S.mando
       ? [['hr','Mi Área',ICN.hr],['msgs','Mensajes',ICN.msgs],['news','Noticias',ICN.news],['rewards','Premios',ICN.rewards],['chat','Asistente',ICN.chat],['clases','Educación',ICN.clases]]
       /* trabajador: 4 + Inicio (IMPAR → el círculo queda PERFECTAMENTE al centro,
          como en el mockup aprobado). Educación vive como cuadro en el Inicio. */
       : [['msgs','Mensajes',ICN.msgs],['news','Noticias',ICN.news],['rewards','Premios',ICN.rewards],['chat','Asistente',ICN.chat]]);
-  // "Inicio" al CENTRO, como botón circular elevado (identidad del app · móvil)
-  var mid=Math.floor(others.length/2); var items=others.slice(0,mid).concat([home]).concat(others.slice(mid));
+  // "Inicio" al CENTRO, como botón circular elevado (identidad del app · móvil).
+  // El dashboard general NO lleva el círculo: su Inicio es el propio tablero.
+  var mid=Math.floor(others.length/2);
+  var items = esDashGral ? others : others.slice(0,mid).concat([home]).concat(others.slice(mid));
   $('nav').innerHTML = items.map(function(it){
     var main=(it[0]==='home')?' class="navmain"':'';
     return '<button id="nav-'+it[0]+'"'+main+' onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
@@ -2166,6 +2181,7 @@ function show(name){
   SCREENS.forEach(function(s){ var el=$('s-'+s); if(el) el.classList.toggle('hide', s!==name); });
   // nav activo (course/quiz/result/pay cuentan como "home")
   var navKey = (name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='dia'||name==='pend') ? 'home' : ((name==='thread'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='wconvs'||name==='perfilpub')?'msgs':((name==='encuestas'||name==='nom35'||name==='perm'||name==='cal'||name==='newspost')?'news':(name==='perfil'?(S.admin?'hr':'home'):(name==='docs'?(S.admin?'hr':'news'):name))));
+  if(navKey==='home' && S && S.admin && S.dash!=='resp') navKey='hr';   // dashboard general: su Inicio es el tablero
   ['home','msgs','rewards','chat','hr','clases','news','buzon'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
   renderTop(name);
   // ANTI-PARPADEO: la animación de entrada y el scroll-al-tope SOLO al cambiar de
@@ -2871,7 +2887,8 @@ function htile(onclick,kind,title,sub,opts){ opts=opts||{};
     (opts.wide?'<span class="note" style="flex:none">›</span>':'')+'</div>';
 }
 function renderHome(){
-  if(S.admin){ renderHomeAdmin(); return; }
+  if(S.admin){ if(S.dash!=='resp'){ renderDash(); return; }   // dashboard general: su Inicio ES el tablero
+    renderHomeAdmin(); return; }
   var total=myCourses().length, done=doneCount();
   var lvl=level(), inLvl=S.points%CFG.points.perLevel, lpct=Math.round(inLvl/CFG.points.perLevel*100);
   var cpct= total? Math.round(done/total*100):0;
@@ -3930,12 +3947,13 @@ function managerDash(role){
   // ----- HUB: cada sección es un cuadro 3D que lleva a su propia página -----
   h+='<div class="sec-t">Tu tablero<span class="ln"></span></div>';
   h+='<div class="tgrid">';
-  h+=htile("mgrGo('hoy')",'dia','Hoy', (cenN?cenN+' acciones para hoy':'Sin pendientes')+' · horas', {cnt:cenN||''});
+  h+=htile("mgrGo('hoy')",'dia','Hoy', (cenN?cenN+' acciones para hoy':'Sin pendientes')+' · horas', {wide:true, cnt:cenN||''});
   h+=htile("mgrGo('deptos')",'deptos','Departamentos', DS?(DS.global+'% global · '+DS.list.length+' deptos'):'Avance por área');
   h+=htile("mgrGo('personas')",'personas','Personas', DS?(DS.reg+' registrados · permisos'):'Equipo, permisos y recibos');
   h+=htile("mgrGo('focos')",'focos','Focos', foco?(foco+' por atender'):'Todo en orden ✓', {cnt:foco||''});
   h+=htile("mgrGo('operacion')",'operacion','Operación', (unansN?unansN+' preguntas · ':'')+'buzón · comedor', {cnt:unansN||''});
   h+=htile('renderDocs()','docs','Documentos', 'Manuales por departamento');
+  h+=htile("renderDia('directorio')",'cal','Directorio', 'A quién llamar en la planta');
   h+='</div>';
   $('s-hr').innerHTML=h; show('hr');
 }
@@ -5477,7 +5495,7 @@ function openPerfilPublico(n, back){
   n=+n; if(!n) return;
   if(n===S.emp){ renderPerfil(); return; }   // yo mismo → mi perfil editable
   _pubBack=back||'renderMsgs()';
-  pubEnsure([n], function(){ if(_screen==='perfilpub') renderPerfilPublico(n); });
+  pubFresh(n, function(){ if(_screen==='perfilpub') renderPerfilPublico(n); });
   renderPerfilPublico(n);
 }
 function renderPerfilPublico(n){
@@ -5911,7 +5929,7 @@ function openConv(conv){
   var isGroup = conv.indexOf('g:')===0;
   var isDirect = conv.indexOf('d:')===0;
   var isLine = /^(r:|c:|j:)/.test(conv);   // líneas con RRHH / Dirección / responsable → mostrar quién responde
-  if(isDirect) pubEnsure([convOther(conv)], function(){ if(_screen==='thread'&&_curConv===conv) openConv(conv); });  // foto + perfil de la otra persona
+  if(isDirect) pubFresh(convOther(conv), function(){ if(_screen==='thread'&&_curConv===conv) openConv(conv); });  // foto FRESCA de la otra persona (por si la cambió)
   var h='';
   // En chats directos, la cabecera (foto + nombre) lleva al PERFIL de la otra persona
   var headTapOpen = isDirect ? (' style="cursor:pointer" onclick="openPerfilPublico('+(+convOther(conv))+',\'reopenThread()\')"') : '';

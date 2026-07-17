@@ -797,7 +797,8 @@ body.a11y .screen .seg button{ font-size:13px !important; }
     <section id="s-clases"  class="screen pad hide"></section>
     <section id="s-news"    class="screen pad hide"></section>
     <section id="s-buzon"   class="screen pad hide"></section>
-    <section id="s-pay"     class="screen pad hide"></section>
+    <section id="s-pend"    class="screen pad hide"></section>
+      <section id="s-pay"     class="screen pad hide"></section>
     <section id="s-msgs"    class="screen pad hide"></section>
     <section id="s-lineas"  class="screen pad hide"></section>
     <section id="s-newchat" class="screen pad hide"></section>
@@ -863,7 +864,7 @@ window.CFG = {
     { min:601, max:800, key:'maquinaria', area:'Maquinaria',       icon:'', accent:'#0e9e8e', accent2:'#3fd6c4',
       greet:'¡Equipo de Maquinaria! Aquí aprendes a operar las máquinas con seguridad: empezando por el Tabulador 7 y 8, y el Banbury.' },
     { min:900, max:919, key:'rrhh',       area:'Recursos Humanos',  icon:'', accent:'#5b6cf0', accent2:'#8b8ff7', admin:true, dash:'rrhh',
-      greet:'Panel de RRHH: avance, focos rojos, capacitación, quejas/reportes, vacaciones y ranking de toda la planta.' },
+      greet:'Panel de RRHH: avance, focos rojos, capacitación, quejas/reportes, vacaciones y puntos de toda la planta.' },
     /* --- Responsables de área (un dashboard por área; misma key/color que su área) --- */
     { min:920, max:929, key:'almacen',    area:'Almacén',           icon:'', accent:'#c4161c', accent2:'#ff5a4e', admin:true, dash:'resp',
       greet:'Panel del Responsable de Almacén: el control, el avance y los reportes de tu área.' },
@@ -938,15 +939,15 @@ window.CFG = {
         { q:'La temperatura y el orden de incorporación:', o:['No importan','Se controlan según la receta','Se inventan','Dan igual'], c:1 },
         { q:'Una mala mezcla:', o:['Mejora la banda','Afecta la calidad y el rendimiento de la banda','No pasa nada','Sube las ventas'], c:1 } ] },
       { id:'prd4', t:'Mantenimiento', dur:'4 min', m:false, ic:'',
-        d:'Cuidar las máquinas: preventivo, checklist diario y detección temprana de fallas.', q:[
+        d:'Cuidar las máquinas: preventivo, lista de revisión diaria y detección temprana de fallas.', q:[
         { q:'El mantenimiento preventivo busca:', o:['Esperar a que falle','Evitar fallas y paros antes de que ocurran','Gastar más','No hacer nada'], c:1 },
-        { q:'El checklist diario de máquinas sirve para:', o:['Perder tiempo','Detectar problemas a tiempo','Decorar','Nada'], c:1 },
+        { q:'La lista de revisión diaria de máquinas sirve para:', o:['Perder tiempo','Detectar problemas a tiempo','Decorar','Nada'], c:1 },
         { q:'Ante un ruido o falla anormal:', o:['Lo ignoras','Lo reportas y se atiende','Le pegas a la máquina','Subes la velocidad'], c:1 } ] },
       { id:'prd5', t:'Manufactura Esbelta (Lean / 5S)', dur:'4 min', m:false, ic:'',
         d:'Eliminar desperdicios y ordenar el flujo de trabajo: Lean, 5S y productividad.', q:[
         { q:'Las 5S buscan:', o:['Desorden','Orden, limpieza y estandarización del área','Más desperdicio','Nada'], c:1 },
         { q:'Un "cuello de botella" es:', o:['Un adorno','La etapa que frena el flujo de producción','Una herramienta','Un premio'], c:1 },
-        { q:'Lean Manufacturing busca:', o:['Más desperdicio','Eliminar desperdicios y mejorar la eficiencia','Más retrabajos','Parar la planta'], c:1 } ] }
+        { q:'La Manufactura Esbelta (Lean) busca:', o:['Más desperdicio','Eliminar desperdicios y mejorar la eficiencia','Más retrabajos','Parar la planta'], c:1 } ] }
     ],
     calidad: [
       { id:'cal1', t:'Inspección Técnica', dur:'5 min', m:true, ic:'',
@@ -1003,7 +1004,7 @@ window.CFG = {
 
   /* --- Catálogo de recompensas (de gratificación rápida a gift card $1,000) --- */
   rewards: [
-    { ic:'', t:'Snack y refresco',                   cost:250 },
+    { ic:'', t:'Botana y refresco',                   cost:250 },
     { ic:'', t:'Recarga telefónica $100',            cost:350 },
     { ic:'', t:'Termo HB de acero',                  cost:500 },
     { ic:'', t:'Gorra Hules Banda',                  cost:800 },
@@ -1378,7 +1379,7 @@ window.CFG = {
           { q:'¿Qué haces con el papel de incapacidad del IMSS?', o:['Lo tiro','Lo entrego a RRHH a tiempo y descanso lo indicado','Lo guardo de recuerdo'], a:1, e:'Entregarlo a tiempo asegura tu pago y tu tranquilidad.' },
           { q:'Venir a trabajar muy enfermo «para no faltar» es…', o:['Muy valiente y correcto','Obligatorio','Mala idea: te dañas tú y arriesgas al equipo'], a:2, e:'Cuidarte también es cuidar la producción: recupérate bien.' } ] },
       { n:6, title:'Aguinaldo, vacaciones y prima',
-        lesson:['El aguinaldo es tu derecho: mínimo 15 días de salario, pagado antes del 20 de diciembre.','Vacaciones por ley: desde tu primer año tienes al menos 12 días pagados, y suben con la antigüedad.','Además, la prima vacacional: un dinero extra (mínimo 25%) para disfrutar tus vacaciones.','Tip: planea tu aguinaldo antes de recibirlo; si no, se va solo en diciembre.'],
+        lesson:['El aguinaldo es tu derecho: mínimo 15 días de salario, pagado antes del 20 de diciembre.','Vacaciones por ley: desde tu primer año tienes al menos 12 días pagados, y suben con la antigüedad.','Además, la prima vacacional: un dinero extra (mínimo 25%) para disfrutar tus vacaciones.','Consejo: planea tu aguinaldo antes de recibirlo; si no, se va solo en diciembre.'],
         quiz:[
           { q:'¿Cuándo se paga el aguinaldo a más tardar?', o:['Antes del 20 de diciembre','El 6 de enero','Cuando sobre'], a:0, e:'Por ley llega antes del 20 de diciembre: mínimo 15 días de salario.' },
           { q:'Desde tu primer año trabajado tienes derecho a…', o:['0 días de vacaciones','Al menos 12 días pagados','2 días'], a:1, e:'La ley marca mínimo 12 días desde el primer año, y van subiendo.' },
@@ -1804,7 +1805,7 @@ function buildLoginHelp(){
   demos.forEach(function(d){ h+='<button class="tryc" onclick="quickLogin(\''+d[0]+'\')">'+d[1]+' <i>'+d[0]+'</i></button>'; });
   row.innerHTML=h;
   var rh=CFG.ranges.map(function(r){ var a=(''+r.min).padStart(3,'0'), b=(''+r.max).padStart(3,'0'); return '<b>'+r.area+'</b> '+a+'–'+b; }).join(' · ');
-  $('loginHint').innerHTML='Rangos de número de empleado:<br>'+rh+'<br><br>Tip: en tu celular usa <b>Compartir → “Agregar a pantalla de inicio”</b> para instalar la app. Funciona sin internet.';
+  $('loginHint').innerHTML='Rangos de número de empleado:<br>'+rh+'<br><br>Consejo: en tu celular usa <b>Compartir → “Agregar a pantalla de inicio”</b> para instalar la app. Funciona sin internet.';
 }
 function quickLogin(id){ $('inEmp').value=id; login(); }
 /* ===== Perfil por empleado (foto · datos · PIN) — por dispositivo (demo); Fase 2: servidor ===== */
@@ -2157,14 +2158,14 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'"'+main+' onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','docs','perfilpub','newspost'];
+var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','docs','perfilpub','newspost','pend'];
 var _prevShown=null;
 function show(name){
   var cambio = (name!==_prevShown);
   _prevShown=name; _screen=name;
   SCREENS.forEach(function(s){ var el=$('s-'+s); if(el) el.classList.toggle('hide', s!==name); });
   // nav activo (course/quiz/result/pay cuentan como "home")
-  var navKey = (name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='dia') ? 'home' : ((name==='thread'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='wconvs'||name==='perfilpub')?'msgs':((name==='encuestas'||name==='nom35'||name==='perm'||name==='cal'||name==='newspost')?'news':(name==='perfil'?(S.admin?'hr':'home'):(name==='docs'?(S.admin?'hr':'news'):name))));
+  var navKey = (name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='dia'||name==='pend') ? 'home' : ((name==='thread'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='wconvs'||name==='perfilpub')?'msgs':((name==='encuestas'||name==='nom35'||name==='perm'||name==='cal'||name==='newspost')?'news':(name==='perfil'?(S.admin?'hr':'home'):(name==='docs'?(S.admin?'hr':'news'):name))));
   ['home','msgs','rewards','chat','hr','clases','news','buzon'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
   renderTop(name);
   // ANTI-PARPADEO: la animación de entrada y el scroll-al-tope SOLO al cambiar de
@@ -2178,6 +2179,7 @@ function show(name){
 function go(name){
   _adminScr=null; _fichaEmp=null;   // salir de sub-pantallas (personal / ficha) al usar el menú
   _mgrPage=null; _respPage=null;    // el tab del tablero siempre regresa al HUB
+  _msgsPage=null; _newsPage=null;   // Mensajes y Noticias también regresan a su hub
   if(name==='home') return renderHome();
   if(name==='rewards') return renderRewards();
   if(name==='chat') return renderChat();
@@ -2187,10 +2189,10 @@ function go(name){
   if(name==='msgs') return renderMsgs();
 }
 function renderTop(name){
-  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='docs'||name==='perfilpub'||name==='newspost');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? (S.admin?'renderMsgs()':'renderLineas()') : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='docs' ? ('go(\''+(S.admin?'hr':'news')+'\')') : name==='newspost' ? 'renderNews()' : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='docs' ? ('go(\''+(S.admin?'hr':'news')+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : 'go(\'home\')';
     left.innerHTML='<button class="back" onclick="'+backTo+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
@@ -2494,6 +2496,7 @@ var DEMO_POLLS=[
 function renderEncuestas(){
   var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Noticias</div><b style="font-size:20px">Encuestas</b><p class="note" style="margin:4px 0 0;max-width:240px">Tu opinión ayuda a mejorar la planta. Responder da puntos.</p></div></div></div>';
   // NOM-035 oficial (Guía III · 72 preguntas) + Encuesta de Permanencia
+  if(!S.admin) h+=nomWorkerCard();   // si RRHH abrió una aplicación NOM, aquí también aparece
   h+=bnrCard("renderNom35()",'NOM-035 · Riesgo psicosocial','Cuestionario oficial STPS · 72 preguntas · anónimo', cover('shield','#c4161c','#5d0a0e'),'');
   h+=bnrCard("renderPerm()",'Encuesta de Permanencia','Qué te haría quedarte en Hules Banda · anónima', cover('people','#0e9e8e','#053b36'),'');
   if(S.admin) h+=permAdminBlock();
@@ -2804,9 +2807,24 @@ function iso3d(shape,c){
   } else if(shape==='gift'){
     s='<path d="M32 16 L54 27 L32 38 L10 27 Z" fill="url(#'+gid+')"/><path d="M10 27 L32 38 L32 58 L10 47 Z" fill="'+c[2]+'"/><path d="M54 27 L32 38 L32 58 L54 47 Z" fill="'+c[1]+'"/>'+
       '<path d="M32 8 L40 12 L32 16 L24 12 Z" fill="#fff" fill-opacity=".9"/><path d="M24 12 L32 16 L32 20 L24 16 Z" fill="#fff" fill-opacity=".55"/><path d="M40 12 L32 16 L32 20 L40 16 Z" fill="#fff" fill-opacity=".75"/>';
-  } else if(shape==='ai'){
-    s='<path d="M32 16 L54 27 L32 38 L10 27 Z" fill="url(#'+gid+')"/><path d="M10 27 L32 38 L32 56 L10 45 Z" fill="'+c[2]+'"/><path d="M54 27 L32 38 L32 56 L54 45 Z" fill="'+c[1]+'"/>'+
-      '<circle cx="24" cy="37" r="2.3" fill="#fff"/><circle cx="33" cy="41" r="2.3" fill="#fff"/><path d="M23 45 C27 49 33 50 37 47" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>';
+  } else if(shape==='ai'){ /* BANDI 3D: llanta grafito con ojos, monóculo y sonrisa (canon) */
+    s='<circle cx="35" cy="34" r="22" fill="'+c[2]+'"/>'+                                  // profundidad (3D)
+      '<circle cx="31" cy="31" r="22" fill="url(#'+gid+')"/>'+                             // llanta
+      [0,30,60,90,120,150,180,210,240,270,300,330].map(function(a){ var r1=19.2,r2=21.6,rad=a*Math.PI/180,x1=31+r1*Math.cos(rad),y1=31+r1*Math.sin(rad),x2=31+r2*Math.cos(rad),y2=31+r2*Math.sin(rad);
+        return '<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="#0b0b0e" stroke-width="2.6" stroke-linecap="round" stroke-opacity=".55"/>'; }).join('')+  // dibujo de la banda
+      '<circle cx="31" cy="31" r="14.5" fill="'+c[1]+'"/>'+                                // costado
+      '<circle cx="31" cy="31" r="14.5" fill="none" stroke="'+c[0]+'" stroke-width="1.2" stroke-opacity=".5"/>'+
+      '<ellipse cx="26" cy="27.5" rx="2.6" ry="3.1" fill="#fff"/><circle cx="26.4" cy="28.2" r="1.5" fill="#0a0a0c"/>'+   // ojo izq
+      '<ellipse cx="36" cy="27.5" rx="2.6" ry="3.1" fill="#fff"/><circle cx="36.4" cy="28.2" r="1.5" fill="#0a0a0c"/>'+   // ojo der
+      '<circle cx="36" cy="27.5" r="4.6" fill="none" stroke="#f4f5f7" stroke-width="1.5"/>'+                              // monóculo
+      '<line x1="39.4" y1="30.6" x2="41.8" y2="35.4" stroke="#f4f5f7" stroke-width="1.3"/>'+
+      '<path d="M25 36 C28 39.6 34 39.6 37 36" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>';   // sonrisa
+  } else if(shape==='bell'){ /* campana (pendientes / notificaciones) */
+    s='<path d="M32 10 C22 10 19 20 19 29 L16 40 L48 40 L45 29 C45 20 42 10 32 10 Z" fill="url(#'+gid+')"/>'+
+      '<path d="M32 10 C22 10 19 20 19 29 L16 40 L32 40 Z" fill="'+c[2]+'" fill-opacity=".45"/>'+
+      '<path d="M16 40 L48 40 L46 44 L18 44 Z" fill="'+c[2]+'"/>'+
+      '<path d="M27 47 C27 51 37 51 37 47 L37 45 L27 45 Z" fill="'+c[1]+'"/>'+
+      '<circle cx="32" cy="8.5" r="2.6" fill="'+c[0]+'"/>';
   } else if(shape==='people'){ /* dos personas (equipo / personas) */
     s='<circle cx="23" cy="21" r="7" fill="'+c[1]+'"/>'+
       '<path d="M11 45 C11 34 35 34 35 45 L35 50 C35 54 11 54 11 50 Z" fill="'+c[2]+'"/>'+
@@ -2834,17 +2852,18 @@ function iso3d(shape,c){
 var ICON3D={
   cap:['cap',['#c4b5fd','#8b5cf6','#5b21b6']], recibo:['doc',['#fca5a5','#e73b2f','#a3141b']],
   news:['news',['#fcd34d','#e0902a','#b06a12']], msg:['stack',['#93c5fd','#3b82f6','#1e40af']],
-  premios:['gift',['#5eead4','#0e9e8e','#066a5f']], ai:['ai',['#fca5a5','#e73b2f','#a3141b']],
+  premios:['gift',['#5eead4','#0e9e8e','#066a5f']], ai:['ai',['#7c7c88','#3a3a42','#17171c']],   /* Bandi = llanta grafito (canon); el glow rojo lo pone el tile */
   edu:['book',['#86efac','#22c55e','#0f6b30']], encuestas:['cube',['#c4b5fd','#8b5cf6','#5b21b6']],
   cal:['cube',['#fcd34d','#e0902a','#b06a12']], docs:['news',['#93c5fd','#3b82f6','#1e40af']],
   dia:['cube',['#5eead4','#0e9e8e','#066a5f']],
   deptos:['stack',['#fcd34d','#e0902a','#b06a12']], personas:['people',['#c4b5fd','#8b5cf6','#5b21b6']],
-  focos:['shield',['#fca5a5','#e73b2f','#a3141b']], operacion:['gear',['#93c5fd','#3b82f6','#1e40af']]
+  focos:['shield',['#fca5a5','#e73b2f','#a3141b']], operacion:['gear',['#93c5fd','#3b82f6','#1e40af']],
+  pend:['bell',['#fcd34d','#e0902a','#b06a12']]
 };
 function ic3(kind){ var p=ICON3D[kind]||ICON3D.msg; return iso3d(p[0],p[1]); }
 /* tile del home: cuadro con ícono 3D + título + subtítulo, lleva a su página */
 function htile(onclick,kind,title,sub,opts){ opts=opts||{};
-  var tc=opts.tc||({cap:'#8b5cf6',recibo:'#e73b2f',news:'#e0902a',msg:'#3b82f6',premios:'#0e9e8e',ai:'#e73b2f',edu:'#22c55e',encuestas:'#8b5cf6',cal:'#e0902a',docs:'#3b82f6',dia:'#0e9e8e',deptos:'#e0902a',personas:'#8b5cf6',focos:'#e73b2f',operacion:'#3b82f6'}[kind]||'var(--accent)');
+  var tc=opts.tc||({cap:'#8b5cf6',recibo:'#e73b2f',news:'#e0902a',msg:'#3b82f6',premios:'#0e9e8e',ai:'#e73b2f',edu:'#22c55e',encuestas:'#8b5cf6',cal:'#e0902a',docs:'#3b82f6',dia:'#0e9e8e',deptos:'#e0902a',personas:'#8b5cf6',focos:'#e73b2f',operacion:'#3b82f6',pend:'#e0902a'}[kind]||'var(--accent)');
   return '<div class="htile'+(opts.wide?' wide':'')+'" role="button" tabindex="0" onkeydown="_kb(event)" style="--tc:'+tc+'" onclick="'+onclick+'">'+
     (opts.cnt?'<span class="cnt">'+opts.cnt+'</span>':'')+
     '<div class="iso">'+ic3(kind)+'</div>'+
@@ -2866,15 +2885,17 @@ function renderHome(){
        '<div><div style="font-size:14px;font-weight:800">Nivel '+lvl+' · '+levelName()+'</div>'+
        '<div class="note" style="margin-top:4px">'+inLvl+' / '+CFG.points.perLevel+' puntos para subir de nivel</div></div>'+
      '</div></div>';
-  h+=coachCard();
-  h+=nomWorkerCard();   // alerta NOM-035 si RRHH abrió una aplicación
   // ---- TODO en cuadros: cada tile lleva a su página (rediseño V3.6) ----
+  // (el "coach" ahora es el cuadro PENDIENTES: centro de notificaciones con "Ir ahora";
+  //  la alerta NOM-035 también vive ahí y en Encuestas)
   var _per=payPeriod(), _signed=signRecord(S.emp,_per.key);
   var unN=0; try{ unN=newsGet().filter(function(n){ return inTarget(n.to,S.emp)&&!hasRead(n); }).length; }catch(e){}
   var unM=0; try{ unM=totalUnread(); }catch(e){}
   var nDoc=0; try{ nDoc=docsGet().length; }catch(e){}
+  var pend=[]; try{ pend=pendList(); }catch(e){}
   h+='<div class="sec-t">Todo tu sistema<span class="ln"></span></div>';
   h+='<div class="tgrid">';
+  h+=htile('renderPend()','pend','Pendientes', pend.length?(pend.length+(pend.length===1?' cosa por hacer':' cosas por hacer')):'Vas al corriente ✓', {wide:true, cnt:pend.length||''});
   h+=htile('renderCourses()','cap','Capacitación', done+' de '+total+' cursos', {cnt:(total-done)>0?(total-done):''});
   h+=htile('renderPay()','recibo','Recibo de nómina', _signed?'Firmado ✓':'Por firmar');
   h+=htile("go('msgs')",'msg','Mensajes', unM?'Tienes nuevos':'Sin nuevos', {cnt:unM||''});
@@ -2906,6 +2927,44 @@ function renderHomeAdmin(){
      '<span style="width:46px;height:46px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--data);background:color-mix(in srgb,var(--data) 13%,transparent)"><span style="width:23px;height:23px;display:block">'+IC2.phone+'</span></span>'+
      '<div style="min-width:0"><b>Directorio interno</b><div class="note" style="margin-top:2px">Extensiones: a quién llamar en la planta.</div></div></div><span class="chipst">Abrir ›</span></div></div>';
   $('s-home').innerHTML=h; show('home');
+}
+/* ===== PENDIENTES (trabajador): centro de notificaciones — todo lo que le falta
+   por hacer, cada cosa con su botón "Ir ahora". Usa las MISMAS condiciones que
+   usaba el coach (NOM, recibo, cursos obligatorios, noticias, encuestas, mensajes)
+   para no contradecirse nunca con el resto de la app. ===== */
+function pendList(){
+  var out=[];
+  try{ var st=nomGet(); if(st.current && !localStorage.getItem(nomDoneKey(st.current.id)))
+    out.push({t:'Cuestionario NOM-035', d:'Anónimo · '+nomTotalQ()+' preguntas · ayuda a mejorar la planta', js:'renderNom()'}); }catch(e){}
+  try{ var per=payPeriod(); if(!signRecord(S.emp,per.key))
+    out.push({t:'Firma tu recibo de nómina', d:per.label, js:'renderPay()'}); }catch(e){}
+  try{ var ob=myCourses().filter(function(c){ return c.m && !statusOf(c.id); });
+    if(ob.length) out.push({t:'Cursos obligatorios', d:ob.length+(ob.length===1?' pendiente':' pendientes')+' · empieza con «'+ob[0].t+'»', js:'renderCourses()'}); }catch(e){}
+  try{ var unN=newsGet().filter(function(n){ return inTarget(n.to,S.emp)&&!hasRead(n); }).length;
+    if(unN) out.push({t:'Noticias sin leer', d:unN+(unN===1?' noticia nueva':' noticias nuevas'), js:"newsGo('pend')"}); }catch(e){}
+  try{ var pollN=pollGet().filter(function(p){ return inTarget(p.to,S.emp) && (p.votes||{})[S.emp]==null; }).length;
+    if(pollN) out.push({t:'Encuestas por responder', d:pollN+(pollN===1?' encuesta':' encuestas')+' · responder da puntos', js:'renderEncuestas()'}); }catch(e){}
+  try{ var unM=totalUnread(); if(unM) out.push({t:'Mensajes sin leer', d:unM+(unM===1?' mensaje nuevo':' mensajes nuevos'), js:"go('msgs')"}); }catch(e){}
+  return out;
+}
+function renderPend(){
+  var pend=[]; try{ pend=pendList(); }catch(e){}
+  var h='';
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Inicio</div><b style="font-size:20px">Pendientes</b>'+
+     '<p class="note" style="margin:4px 0 0;max-width:250px">Lo que te falta por hacer, en un solo lugar. Toca «Ir ahora» y te lleva.</p></div>'+
+     '<span class="chipst'+(pend.length?'':' mut')+'"'+(pend.length?' style="border-color:color-mix(in srgb,var(--accent2) 45%,transparent);color:var(--accent2)"':'')+'>'+pend.length+'</span></div></div>';
+  if(!pend.length){
+    h+='<div class="panel"><div class="line" style="border:none;padding:0"><span style="color:var(--ok);font-weight:700">✓ Vas al corriente</span></div>'+
+       '<p class="note" style="margin-top:4px">No tienes nada pendiente. ¡Sigue así! 👏</p></div>';
+  } else {
+    pend.forEach(function(a){
+      h+='<div class="panel"><div class="line" style="border:none;padding:0;align-items:flex-start;gap:10px">'+
+        '<span style="flex:1;min-width:0"><b style="font-size:14.5px">'+esc(a.t)+'</b><div class="note" style="margin-top:3px">'+esc(a.d)+'</div></span>'+
+        '<span style="display:flex;gap:7px;flex:none;align-items:center">'+speakBtn(a.t+'. '+a.d)+
+        '<button class="btn" style="margin:0;width:auto;padding:9px 14px;font-size:12.5px" onclick="'+a.js+'">Ir ahora</button></span></div></div>';
+    });
+  }
+  $('s-pend').innerHTML=h; show('pend');
 }
 /* "APELLIDOS NOMBRE(S)" -> "PrimerNombre PrimerApellido" (formato de nómina; respeta
    partículas DE/DEL/LA/...: DEL ANGEL GONZALEZ JUAN CARLOS -> Juan Del Angel). */
@@ -3287,8 +3346,8 @@ function paintChat(){
 }
 function quickAsk(btn){ $('chatIn').value=btn.textContent; sendChat(); }
 function setKey(){
-  var k=window.prompt('Conecta la IA real (OpenAI '+CFG.api.model+') para respuestas más completas sobre llantas, hule, fábrica y capacitación .\n\nPega tu API key de OpenAI (sk-...). Se guarda solo en este dispositivo. Déjalo vacío para usar la biblioteca offline (gratis).', HBKEY||'');
-  if(k!==null){ HBKEY=(k||'').trim(); try{ if(HBKEY) localStorage.setItem('hb_key',HBKEY); else localStorage.removeItem('hb_key'); }catch(e){} flash(HBKEY?'IA real conectada':'Modo offline activado'); renderChat(); }
+  var k=window.prompt('Conecta la IA real (OpenAI '+CFG.api.model+') para respuestas más completas sobre llantas, hule, fábrica y capacitación .\n\nPega tu clave API de OpenAI (sk-...). Se guarda solo en este dispositivo. Déjalo vacío para usar la biblioteca local (sin internet, gratis).', HBKEY||'');
+  if(k!==null){ HBKEY=(k||'').trim(); try{ if(HBKEY) localStorage.setItem('hb_key',HBKEY); else localStorage.removeItem('hb_key'); }catch(e){} flash(HBKEY?'IA real conectada':'Modo sin internet activado'); renderChat(); }
 }
 function setModel(){
   var m=window.prompt('Modelo de OpenAI a usar (avanzado).\nEjemplos: gpt-4o-mini , gpt-4o', CFG.api.model);
@@ -3315,7 +3374,7 @@ function kb(t){
   }
   if(best && bs>=3) return best.a;
   var temas=lib.filter(function(e){return e.t;}).slice(0,8).map(function(e){return e.t;});
-  return 'Eso todavía no lo tengo guardado en mi biblioteca offline . Puedo ayudarte con: '+temas.join(' · ')+'.\n\nPregúntame de otra forma, o conéctate () para una respuesta más completa. Recuerda: solo temas de llantas, hule, fábrica y clases básicas.';
+  return 'Eso todavía no lo tengo guardado en mi biblioteca. Puedo ayudarte con: '+temas.join(' · ')+'.\n\nPregúntame de otra forma. Recuerda: solo temas de llantas, hule, fábrica y clases básicas.';
 }
 /* ===== RESPUESTAS CERRADAS + REGISTRO DE PREGUNTAS =====
    Asistente solo responde desde la biblioteca AUTORIZADA (CFG.kb). Cada pregunta
@@ -3578,7 +3637,7 @@ function perAdmin(clave,nombre,admin,mando){
 }
 function perReset(clave){
   if(!confirm('¿Reiniciar el acceso de '+clave+'? Podrá volver a hacer Primer ingreso. IMPORTANTE: además borra su usuario en Supabase → Authentication → Users ('+clave+'@ids.hulesbanda.com.mx) para que su PIN viejo deje de servir.')) return;
-  SB.rpc('hb_admin_reset',{p_clave:clave}).then(function(r){ if(r.data&&r.data.ok){ flash('Acceso reiniciado. Recuerda borrar su usuario en Authentication.'); v3LoadAdminList(); } else flash('No se pudo'+((r.data&&PER_ERR[r.data.error])?': '+PER_ERR[r.data.error]:'')); });
+  SB.rpc('hb_admin_reset',{p_clave:clave}).then(function(r){ if(r.data&&r.data.ok){ flash('Acceso reiniciado. Recuerda borrar su usuario en Supabase (menú Authentication → Users).'); v3LoadAdminList(); } else flash('No se pudo'+((r.data&&PER_ERR[r.data.error])?': '+PER_ERR[r.data.error]:'')); });
 }
 function perBaja(clave,nombre){
   if(!confirm('¿Dar de BAJA a '+nombre+' (clave '+clave+')? Se borra su ID, progreso y perfil. No se puede deshacer.')) return;
@@ -3862,7 +3921,7 @@ function managerDash(role){
      '</div></div>';
   // ----- ALERTA DE SEGURIDAD: banda delgada, simétrica, a todo lo ancho → Focos -----
   if(ALERTS.length){
-    h+='<div class="salert" role="button" tabindex="0" onkeydown="_kb(event)" onclick="mgrGo(\'focos\')">'+
+    h+='<div class="salert" role="button" tabindex="0" onkeydown="_kb(event)" onclick="mgrGo(\'focos-alertas\')">'+
        '<span class="sic">'+IC2.shield+'</span>'+
        '<span style="flex:1;min-width:0"><b>Alertas de seguridad — posible sabotaje</b>'+
        '<div class="note">'+ALERTS.length+' pregunta(s) con intención de daño. Toca para atender.</div></span>'+
@@ -3880,17 +3939,32 @@ function managerDash(role){
   h+='</div>';
   $('s-hr').innerHTML=h; show('hr');
 }
-/* Páginas del hub del tablero: cada sección en su pantalla, con ‹ Tablero */
+/* Páginas del hub del tablero — REGLA (pedido de Carlos): cuadro → click → info,
+   en DOS niveles: sección (hub de cuadros) → tema (cuadro) → la información. */
+var _MGR_PADRE={'hoy-cen':'hoy','hoy-horas':'hoy','deptos-avance':'deptos','deptos-lista':'deptos','deptos-temas':'deptos',
+  'personas-permisos':'personas','personas-recibos':'personas','personas-rank':'personas',
+  'focos-alertas':'focos','focos-rojos':'focos','op-preguntas':'operacion','op-buzon':'operacion','op-comedor':'operacion','op-nom':'operacion'};
+var _MGR_TITULO={hoy:'Hoy',deptos:'Departamentos',personas:'Personas',focos:'Focos',operacion:'Operación'};
 function mgrPage(role){
   var H=CFG.hr, DS=deptStats(), Q=qstats(), ALERTS=(Q.alerts||[]); _HRAL=ALERTS;
-  var h='<button class="back" style="margin-bottom:12px" onclick="mgrBack()">‹ Tablero</button>';
+  var p=_mgrPage, par=_MGR_PADRE[p]||null;
+  var h='<button class="back" style="margin-bottom:12px" onclick="'+(par?('mgrGo(\''+par+'\')'):'mgrBack()')+'">‹ '+(par?_MGR_TITULO[par]:'Tablero')+'</button>';
   function cab(t,sub,chip){
     return '<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Tablero · '+esc(role)+'</div><b style="font-size:20px">'+t+'</b>'+
       (sub?'<div class="note" style="margin-top:3px">'+sub+'</div>':'')+'</div>'+(chip||'<span class="status"><span class="d"></span>En línea</span>')+'</div></div>';
   }
-  if(_mgrPage==='hoy'){
+  if(p==='hoy'){
+    var cenN=0; try{ cenN=centinelaRun().length; }catch(e){}
     h+=cab('Hoy', new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}));
+    h+='<div class="tgrid">';
+    h+=htile("mgrGo('hoy-cen')",'dia','Centinela', cenN?(cenN+' acciones para hoy'):'Sin pendientes ✓', {wide:true, cnt:cenN||''});
+    h+=htile("mgrGo('hoy-horas')",'cal','Horas trabajadas', 'Próximamente · checador');
+    h+='</div>';
+  }
+  else if(p==='hoy-cen'){
     h+=centinelaBlock();
+  }
+  else if(p==='hoy-horas'){
     h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Asistencia</div><b style="font-size:16px">Horas trabajadas</b>'+
        '<div class="note" style="margin-top:3px">Se conectará al reloj checador de la planta para mostrar las horas reales del personal.</div></div><span class="chipst mut">Próximamente</span></div>'+
        '<div class="gaugeWrap">'+
@@ -3900,10 +3974,17 @@ function mgrPage(role){
        '</div></div>';
     if(!V3_ON) h+=horasBlock();
   }
-  else if(_mgrPage==='deptos'){
-
-    h+=cab('Departamentos', DS?'Avance real de cursos por departamento, con su gente registrada.':'Avance por área (datos de ejemplo).',
+  else if(p==='deptos'){
+    var nAreas=CFG.ranges.filter(function(r){return !r.admin;}).length;
+    h+=cab('Departamentos', DS?'Avance real por departamento, con su gente registrada.':'Avance por área (datos de ejemplo).',
            '<span class="chipst">'+(DS?DS.global:H.globalAvg)+'%</span>');
+    h+='<div class="tgrid">';
+    h+=htile("mgrGo('deptos-avance')",'cap','Avance', (DS?DS.global:H.globalAvg)+'% global de la planta', {wide:true});
+    h+=htile("mgrGo('deptos-lista')",'deptos','Por departamento', DS?(DS.list.length+' departamentos'):(nAreas+' áreas'));
+    if(!V3_ON) h+=htile("mgrGo('deptos-temas')",'encuestas','Temas con fallos', 'Datos de ejemplo');
+    h+='</div>';
+  }
+  else if(p==='deptos-avance'){
     if(DS){
       // DATOS REALES: los 23 departamentos con su gente y avance (barra por depto)
       h+='<div class="panel"><div class="hd"><b>Avance por departamento</b><span class="chipst">'+DS.global+'% global · '+DS.reg+' registrados</span></div>'+
@@ -3915,44 +3996,65 @@ function mgrPage(role){
              '<div style="margin-top:5px;height:5px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden"><i style="display:block;height:100%;width:'+x.avg+'%;border-radius:4px;background:'+col+'"></i></div></div>';
          }).join('')+
          '<div class="note" style="margin-top:8px">Personas registradas / plantilla del departamento, y su avance real de cursos.</div></div>';
+    } else {
+      h+='<div class="panel"><div class="hd"><b>Avance por área</b><span class="chipst">'+H.globalAvg+'% global</span></div>'+
+         colChart(H.byArea.map(function(a){ return [a[0], a[1], areaAccent(a[0])]; }))+
+         '<div class="note" style="margin-top:6px">Toca una columna para ver el detalle. Datos de ejemplo.</div></div>';
+    }
+  }
+  else if(p==='deptos-lista'){
+    if(DS){
       h+='<div class="agrid">'+DS.list.map(function(x){
            var k=DEPTO_AREA[x.dep]||'produccion';
            return '<div class="acard" onclick="flash(\''+jsAttr(x.dep)+': '+x.avg+'% · '+x.reg+' de '+x.total+' registrados\')"><span class="ico">'+areaIcon(k)+'</span><span class="an">'+esc(x.dep)+'</span><span class="as">'+x.reg+'/'+x.total+' registrados</span>'+
              '<div style="margin-top:8px">'+semiGauge(x.avg, semColor(semOf(x.avg)))+'</div></div>';
          }).join('')+'</div>';
     } else {
-      h+='<div class="panel"><div class="hd"><b>Avance por área</b><span class="chipst">'+H.globalAvg+'% global</span></div>'+
-         colChart(H.byArea.map(function(a){ return [a[0], a[1], areaAccent(a[0])]; }))+
-         '<div class="note" style="margin-top:6px">Toca una columna para ver el detalle. Datos de ejemplo.</div></div>';
       h+='<div class="agrid">'+H.byArea.map(function(a){
            var k=(CFG.ranges.filter(function(r){return r.area===a[0]&&!r.admin;})[0]||{}).key||'';
            return '<div class="acard" onclick="flash(\''+esc(a[0])+': '+a[1]+'% de avance\')"><span class="ico">'+areaIcon(k)+'</span><span class="an">'+esc(a[0])+'</span><span class="as">avance del área</span>'+
              '<div style="margin-top:8px">'+semiGauge(a[1], areaAccent(a[0]))+'</div></div>';
          }).join('')+'</div>';
-      h+='<div class="panel" style="margin-top:12px"><div class="hd"><b>Temas con más fallos</b><span class="chipst mut">tocar para detalle</span></div>'+
-         heatBars(H.failed,' de fallos')+
-         '<div class="note" style="margin-top:10px">Un tema muy fallado puede indicar que falta capacitación… o que hay un problema en el proceso.</div></div>';
     }
   }
-  else if(_mgrPage==='personas'){
+  else if(p==='deptos-temas'){
+    h+='<div class="panel"><div class="hd"><b>Temas con más fallos</b><span class="chipst mut">Demo</span></div>'+
+       heatBars(H.failed,' de fallos')+
+       '<div class="note" style="margin-top:10px">Un tema muy fallado puede indicar que falta capacitación… o que hay un problema en el proceso.</div></div>';
+  }
+  else if(p==='personas'){
+    var leaveN=0; try{ leaveN=leaveGet().filter(function(r){return r.status==='pendiente';}).length; }catch(e){}
+    var reciN=0; try{ reciN=recibosGet().length; }catch(e){}
     h+=cab('Personas', DS?(DS.reg+' de '+DS.total+' registrados en la app.'):'Equipo, permisos y recibos.');
-    if(V3_ON && S.admin){
-      h+='<div class="panel" style="cursor:pointer" onclick="openPersonal()"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Acceso total</div><b style="font-size:16px">Gestión de personal</b>'+
-         '<div class="note" style="margin-top:3px">Altas de nuevo ingreso, bajas, permisos y reinicio de acceso.</div></div><span class="chipst">Abrir ›</span></div></div>';
-    }
-    if(!V3_ON){
-      h+='<div class="panel"><div class="hd"><b>Ranking de puntos</b></div><div class="note" style="margin:-6px 0 8px">Visible solo para '+esc(role)+'. Los empleados nunca ven el ranking.</div>'+
-         H.top.map(function(e,i){
-           return '<div class="rank"><span class="medal'+(i<3?' m'+(i+1):'')+'">'+(i+1)+'</span><span class="rn">'+esc(e[0])+'</span><span class="tg g" style="flex:none">'+e[1]+' pts</span></div>';
-         }).join('')+'</div>';
-    }
+    h+='<div class="tgrid">';
+    if(V3_ON && S.admin) h+=htile('openPersonal()','personas','Gestión de personal', 'Altas, bajas y accesos', {wide:true});
+    h+=htile("mgrGo('personas-permisos')",'cal','Permisos', leaveN?(leaveN+' por revisar'):'Vacaciones y permisos', {cnt:leaveN||''});
+    h+=htile("mgrGo('personas-recibos')",'recibo','Recibos firmados', reciN?(reciN+' firmados'):'Aún sin firmas');
+    if(!V3_ON) h+=htile("mgrGo('personas-rank')",'premios','Tabla de puntos', 'Solo lo ve '+role);
+    h+='</div>';
+  }
+  else if(p==='personas-permisos'){
     h+=leaveAdminBlock();     // RRHH aprueba vacaciones/permisos
+  }
+  else if(p==='personas-recibos'){
     h+=recibosAdminBlock();   // acceso total: RRHH también ve los recibos de nómina firmados
   }
-  else if(_mgrPage==='focos'){
+  else if(p==='personas-rank'){
+    h+='<div class="panel"><div class="hd"><b>Tabla de puntos</b></div><div class="note" style="margin:-6px 0 8px">Visible solo para '+esc(role)+'. Los empleados nunca ven esta tabla.</div>'+
+       H.top.map(function(e,i){
+         return '<div class="rank"><span class="medal'+(i<3?' m'+(i+1):'')+'">'+(i+1)+'</span><span class="rn">'+esc(e[0])+'</span><span class="tg g" style="flex:none">'+e[1]+' pts</span></div>';
+       }).join('')+'</div>';
+  }
+  else if(p==='focos'){
     var focoN=ALERTS.length+(V3_ON?0:H.redFlags.length);
     h+=cab('Focos', 'Alertas de seguridad y pendientes que piden acción.',
            '<span class="chipst'+(focoN?'':' mut')+'"'+(focoN?' style="border-color:color-mix(in srgb,var(--bad) 40%,transparent);color:var(--bad)"':'')+'>'+focoN+'</span>');
+    h+='<div class="tgrid">';
+    h+=htile("mgrGo('focos-alertas')",'focos','Alertas de sabotaje', ALERTS.length?(ALERTS.length+' por atender'):'Sin alertas ✓', {wide:true, cnt:ALERTS.length||''});
+    if(!V3_ON && H.redFlags.length) h+=htile("mgrGo('focos-rojos')",'operacion','Focos rojos', 'Datos de ejemplo');
+    h+='</div>';
+  }
+  else if(p==='focos-alertas'){
     if(ALERTS.length){
       h+='<div class="panel" style="border-color:color-mix(in srgb,var(--accent2) 38%,transparent);background:rgba(192,57,43,0.08)">'+
          '<div class="line" style="border:none;padding:0 0 6px"><b style="color:#ff6b5e;font-size:14px">Alertas de seguridad — posible sabotaje</b><span class="tg" style="flex:none;border-color:color-mix(in srgb,var(--bad) 45%,transparent);color:#ff6b5e">'+ALERTS.length+'</span></div>'+
@@ -3968,17 +4070,34 @@ function mgrPage(role){
       h+='<div class="panel"><div class="line" style="border:none;padding:0"><span style="color:var(--ok);font-weight:700">✓ Sin alertas de sabotaje</span></div>'+
          '<p class="note" style="margin-top:4px">Si el Asistente detecta una pregunta con intención de daño, aparecerá aquí al instante con clave, área y hora.</p></div>';
     }
-    if(!V3_ON && H.redFlags.length){
-      h+='<div class="panel"><div class="hd"><b>Focos rojos</b><span class="chipst mut">Demo</span></div>'+H.redFlags.map(function(x){
-           return '<div class="line"><span>'+esc(x)+'</span><span class="tg">Atender</span></div>';
-         }).join('')+'</div>';
-    }
   }
-  else { // operacion
+  else if(p==='focos-rojos'){
+    h+='<div class="panel"><div class="hd"><b>Focos rojos</b><span class="chipst mut">Demo</span></div>'+H.redFlags.map(function(x){
+         return '<div class="line"><span>'+esc(x)+'</span><span class="tg">Atender</span></div>';
+       }).join('')+'</div>';
+  }
+  else if(p==='operacion'){
+    var unansN=0; try{ unansN=Object.keys(Q.unans||{}).length; }catch(e){}
+    var buzN=0; try{ buzN=reportsGet().filter(function(r){return r.status==='pendiente';}).length; }catch(e){}
+    var nomSt=null; try{ nomSt=nomGet(); }catch(e){}
     h+=cab('Operación', 'Preguntas del Asistente, buzón, comedor y NOM-035.');
+    h+='<div class="tgrid">';
+    h+=htile("mgrGo('op-preguntas')",'ai','Preguntas del Asistente', unansN?(unansN+' sin responder'):'Al día ✓', {wide:true, cnt:unansN||''});
+    h+=htile("mgrGo('op-buzon')",'docs','Buzón de reportes', buzN?(buzN+' por revisar'):'Sin pendientes', {cnt:buzN||''});
+    h+=htile("mgrGo('op-comedor')",'dia','Comedor', 'Menú de la semana');
+    h+=htile("mgrGo('op-nom')",'encuestas','NOM-035', (nomSt&&nomSt.current)?'Aplicación en curso':'Riesgo psicosocial');
+    h+='</div>';
+  }
+  else if(p==='op-preguntas'){
     h+=bandiFeedBlock();      // preguntas al Asistente + reporte semanal
+  }
+  else if(p==='op-buzon'){
     h+=reportsAdminBlock();   // RRHH revisa quejas/anormalidad/idea de mejora (otorga puntos)
+  }
+  else if(p==='op-comedor'){
     h+=comedorAdminBlock();   // menú del comedor de la semana (lo ve todo el personal en Tu día)
+  }
+  else { // op-nom
     h+=nomAdminBlock();       // NOM-035 (riesgo psicosocial)
   }
   $('s-hr').innerHTML=h; show('hr');
@@ -3989,39 +4108,39 @@ var CEN_SEV={ crit:['Crítico','var(--bad)'], alta:['Alto','var(--warn)'], media
 /* Sugerencias constructivas para días sin pendientes (la tarjeta nunca queda vacía) */
 var CEN_SUG=[
   {sev:'media', icon:'', titulo:'Reconoce al equipo', detalle:'Todo va al corriente. Un aviso de felicitación en Noticias motiva mucho y no cuesta nada.', accion:{label:'Ver noticias', js:'renderNews()'}},
-  {sev:'media', icon:'', titulo:'Lanza una encuesta corta', detalle:'Pregunta al personal cómo se siente esta semana. Toma un minuto y da mucha información.', accion:{label:'Ir a Operación', js:'mgrTab(\'op\')'}},
-  {sev:'media', icon:'', titulo:'Revisa el avance por área', detalle:'Aprovecha el día tranquilo para ver qué área podría necesitar apoyo pronto.', accion:{label:'Ver áreas', js:'mgrTab(\'area\')'}}
+  {sev:'media', icon:'', titulo:'Lanza una encuesta corta', detalle:'Pregunta al personal cómo se siente esta semana. Toma un minuto y da mucha información.', accion:{label:'Ir a Operación', js:'mgrGo(\'operacion\')'}},
+  {sev:'media', icon:'', titulo:'Revisa el avance por área', detalle:'Aprovecha el día tranquilo para ver qué área podría necesitar apoyo pronto.', accion:{label:'Ver áreas', js:'mgrGo(\'deptos-avance\')'}}
 ];
 function centinelaRun(){
   var items=[], now=Date.now();
   // R1 · Sabotaje pendiente → CRÍTICO
   try{ var A=(qstats().alerts||[]);
-    if(A.length){ items.push({sev:'crit', icon:IC2.shield, titulo:'Alerta de sabotaje sin atender', detalle:A.length+' pregunta(s) con intención de dañar la planta. Revísalas y márcalas como vistas.', accion:{label:'Ver alertas', js:'mgrGo(\'focos\')'}}); }
+    if(A.length){ items.push({sev:'crit', icon:IC2.shield, titulo:'Alerta de sabotaje sin atender', detalle:A.length+' pregunta(s) con intención de dañar la planta. Revísalas y márcalas como vistas.', accion:{label:'Ver alertas', js:'mgrGo(\'focos-alertas\')'}}); }
   }catch(e){}
   // R2 · Preguntas del Asistente sin responder
   try{ var U=Object.keys(qstats().unans||{}).length;
-    if(U>0){ items.push({sev:(U>=5?'alta':'media'), icon:IC2.cap, titulo:'Preguntas del Asistente sin respuesta', detalle:U+' pregunta(s) esperan una respuesta autorizada. Revísalas y márcalas como atendidas.', accion:{label:'Revisar preguntas', js:'mgrTab(\'op\')'}}); }
+    if(U>0){ items.push({sev:(U>=5?'alta':'media'), icon:IC2.cap, titulo:'Preguntas del Asistente sin respuesta', detalle:U+' pregunta(s) esperan una respuesta autorizada. Revísalas y márcalas como atendidas.', accion:{label:'Revisar preguntas', js:'mgrGo(\'op-preguntas\')'}}); }
   }catch(e){}
   // R3 · Departamento con avance bajo (<50%) — datos reales si hay roster; demo si no
   try{ var _ds=(typeof deptStats==='function')?deptStats():null;
     if(_ds){ _ds.list.forEach(function(x){
-      if(x.reg>0 && x.avg<50){ items.push({sev:'alta', icon:IC2.gear, titulo:'Avance bajo en '+x.dep, detalle:'El departamento va en '+x.avg+'% de sus cursos ('+x.reg+' registrados). Habla con su responsable.', accion:{label:'Ver departamentos', js:'mgrTab(\'area\')'}}); }
+      if(x.reg>0 && x.avg<50){ items.push({sev:'alta', icon:IC2.gear, titulo:'Avance bajo en '+x.dep, detalle:'El departamento va en '+x.avg+'% de sus cursos ('+x.reg+' registrados). Habla con su responsable.', accion:{label:'Ver departamentos', js:'mgrGo(\'deptos-avance\')'}}); }
     }); }
     else if(!V3_ON){ ((CFG.hr||{}).byArea||[]).forEach(function(a){   // byArea es de EJEMPLO: solo demo
-      if(a[1]<50){ items.push({sev:'alta', icon:IC2.gear, titulo:'Avance bajo en '+a[0], detalle:'El área va en '+a[1]+'% de sus cursos. Habla con su responsable para ponerse al corriente.', accion:{label:'Ver áreas', js:'mgrTab(\'area\')'}}); }
+      if(a[1]<50){ items.push({sev:'alta', icon:IC2.gear, titulo:'Avance bajo en '+a[0], detalle:'El área va en '+a[1]+'% de sus cursos. Habla con su responsable para ponerse al corriente.', accion:{label:'Ver áreas', js:'mgrGo(\'deptos-avance\')'}}); }
     }); }
   }catch(e){}
   // R4 · Tema muy fallado (>35%) — CFG.hr.failed es de EJEMPLO: solo en demo
   try{ if(!V3_ON) ((CFG.hr||{}).failed||[]).forEach(function(x){
-    if(x[1]>35){ items.push({sev:'media', icon:IC2.check, titulo:'Muchos fallos en: '+x[0], detalle:x[1]+'% de fallo en los quizzes. Puede faltar capacitación… o haber un problema en el proceso.', accion:{label:'Ver temas', js:'mgrTab(\'area\')'}}); }
+    if(x[1]>35){ items.push({sev:'media', icon:IC2.check, titulo:'Muchos fallos en: '+x[0], detalle:x[1]+'% de fallo en los quizzes. Puede faltar capacitación… o haber un problema en el proceso.', accion:{label:'Ver temas', js:'mgrGo(\'deptos-temas\')'}}); }
   }); }catch(e){}
   // R5 · Reportes del buzón pendientes
   try{ var R=reportsGet().filter(function(r){return r.status==='pendiente';}).length;
-    if(R>0){ items.push({sev:(R>=5?'alta':'media'), icon:IC2.doc, titulo:'Reportes del buzón sin revisar', detalle:R+' queja(s) o reporte(s) esperan tu revisión. Los válidos dan puntos al trabajador.', accion:{label:'Revisar buzón', js:'mgrTab(\'op\')'}}); }
+    if(R>0){ items.push({sev:(R>=5?'alta':'media'), icon:IC2.doc, titulo:'Reportes del buzón sin revisar', detalle:R+' queja(s) o reporte(s) esperan tu revisión. Los válidos dan puntos al trabajador.', accion:{label:'Revisar buzón', js:'mgrGo(\'op-buzon\')'}}); }
   }catch(e){}
   // R6 · Vacaciones sin revisar más de 3 días
   try{ var V=leaveGet().filter(function(r){return r.status==='pendiente' && (now-r.ts)>3*86400000;}).length;
-    if(V>0){ items.push({sev:'media', icon:IC2.people, titulo:'Solicitudes de permiso detenidas', detalle:V+' solicitud(es) llevan más de 3 días sin respuesta. El trabajador está esperando.', accion:{label:'Revisar solicitudes', js:'mgrTab(\'ppl\')'}}); }
+    if(V>0){ items.push({sev:'media', icon:IC2.people, titulo:'Solicitudes de permiso detenidas', detalle:V+' solicitud(es) llevan más de 3 días sin respuesta. El trabajador está esperando.', accion:{label:'Revisar solicitudes', js:'mgrGo(\'personas-permisos\')'}}); }
   }catch(e){}
   // R7 · Noticia con poca lectura (solo la más reciente que cumpla)
   try{ var nb=null;
@@ -4033,16 +4152,16 @@ function centinelaRun(){
   }catch(e){}
   // R8 · Nadie ha firmado su recibo del periodo
   try{ var pk=payPeriod(), F=recibosGet().filter(function(r){return r.key===pk.key;}).length;
-    if(F===0){ items.push({sev:'media', icon:IC2.lock, titulo:'Nadie ha firmado su recibo', detalle:'Ningún trabajador ha firmado el recibo del periodo '+pk.label+'. Recuérdales en el pizarrón o por aviso.', accion:{label:'Ver firmados', js:'mgrTab(\'ppl\')'}}); }
+    if(F===0){ items.push({sev:'media', icon:IC2.lock, titulo:'Nadie ha firmado su recibo', detalle:'Ningún trabajador ha firmado el recibo del periodo '+pk.label+'. Recuérdales en el pizarrón o por aviso.', accion:{label:'Ver firmados', js:'mgrGo(\'personas-recibos\')'}}); }
   }catch(e){}
   // R9 · NOM-035 abierta
   try{ var st=nomGet();
-    if(st.current){ items.push({sev:'media', icon:IC2.people, titulo:'Aplicación NOM-035 en curso', detalle:'Van '+(st.current.n||0)+' respuestas anónimas. Impulsa la participación y ciérrala cuando termine.', accion:{label:'Ver NOM-035', js:'mgrTab(\'op\')'}}); }
+    if(st.current){ items.push({sev:'media', icon:IC2.people, titulo:'Aplicación NOM-035 en curso', detalle:'Van '+(st.current.n||0)+' respuestas anónimas. Impulsa la participación y ciérrala cuando termine.', accion:{label:'Ver NOM-035', js:'mgrGo(\'op-nom\')'}}); }
   }catch(e){}
   // R10 · Retardos acumulados — HORAS_DEMO es de EJEMPLO: solo en demo (el real
   //       llegará cuando se conecte el reloj checador)
   try{ var T=V3_ON?[]:HORAS_DEMO.filter(function(w){return w.ret>=2;});
-    if(T.length){ items.push({sev:'media', icon:IC2.gear, titulo:'Retardos que se repiten', detalle:T.map(function(w){return '#'+(''+w.emp).padStart(3,'0')+' '+w.area+' ('+w.ret+')';}).join(' · ')+'. Platica con ellos antes de que crezca.', accion:{label:'Ver horarios', js:'mgrTab(\'res\')'}}); }
+    if(T.length){ items.push({sev:'media', icon:IC2.gear, titulo:'Retardos que se repiten', detalle:T.map(function(w){return '#'+(''+w.emp).padStart(3,'0')+' '+w.area+' ('+w.ret+')';}).join(' · ')+'. Platica con ellos antes de que crezca.', accion:{label:'Ver horarios', js:'mgrGo(\'hoy-horas\')'}}); }
   }catch(e){}
   // Orden: crítico → alto → medio, estable según el orden de las reglas
   var rank={crit:0,alta:1,media:2};
@@ -4252,24 +4371,45 @@ function renderNews(){
     h+='</div>';
     $('s-news').innerHTML=h; show('news'); return;
   } else {
-    // Trabajador: 1) encuestas arriba, 2) avisos de RRHH, 3) calendario abajo
-    h+=encuestasEntry();
-    h+='<div class="sec-t">Avisos de Recursos Humanos<span class="ln"></span></div>';
-    h+=dmWorkerBlock();
-    h+=newsInfographicDemo();
+    // HUB de cuadros del trabajador (pedido de Carlos): Pendientes PRIMERO (rectángulo
+    // grande: noticias nuevas + avisos de RRHH), Calendario como caja, Ya leídas y
+    // Documentos como cuadros. Encuestas se quitó de aquí: ya vive en el Inicio.
+    if(_newsPage){ return newsPage_(); }
     var vis = a.filter(function(n){ return inTarget(n.to, S.emp); });
-    // las NUEVAS arriba; las que ya marcaste "leí esto" se guardan en su propio apartado
     var nuevas=vis.filter(function(n){ return !hasRead(n); });
     var leidas=vis.filter(function(n){ return hasRead(n); });
-    h+= nuevas.length? newsCards(nuevas) : (vis.length?'':'');
-    if(!nuevas.length && vis.length) h+='<div class="card"><div class="note">Estás al día: no hay avisos nuevos. ✓</div></div>';
-    if(leidas.length){
-      h+='<div class="sec-t" style="cursor:pointer" onclick="var e=document.getElementById(\'newsLeidas\');var v=e.style.display===\'none\';e.style.display=v?\'\':\'none\';var c=document.getElementById(\'newsLeidasChev\');if(c)c.textContent=v?\'▾\':\'▸\';">Noticias ya leídas · '+leidas.length+' <span id="newsLeidasChev">▸</span><span class="ln"></span></div>'+
-         '<div id="newsLeidas" style="display:none">'+newsCards(leidas)+'</div>';
-    }
-    // Documentos autorizados para esta persona (la RLS del servidor ya filtró la lista)
-    if(docsGet().length) h+=bnrCard("renderDocs()",'Documentos','Manuales y procesos autorizados para ti · '+docsGet().length, cover('cap','#8b5cf6','#3b2a78'),'');
-    h+=calendarBlock();
+    var avisosN=0; try{ avisosN=dmGet().filter(function(d){ return inTarget(d.to,S.emp); }).length; }catch(e){}
+    h+='<div class="tgrid">';
+    h+=htile("newsGo('pend')",'news','Pendientes', nuevas.length?(nuevas.length+(nuevas.length===1?' noticia nueva':' noticias nuevas')+(avisosN?' · avisos de RRHH':'')):'Estás al día ✓', {wide:true, cnt:nuevas.length||''});
+    h+=htile('renderCal()','cal','Calendario', 'Eventos de la planta');
+    h+=htile("newsGo('leidas')",'edu','Ya leídas', leidas.length?(leidas.length+(leidas.length===1?' noticia':' noticias')):'Aún no hay');
+    if(docsGet().length) h+=htile('renderDocs()','docs','Documentos', docsGet().length+' para ti');
+    h+='</div>';
+  }
+  $('s-news').innerHTML=h; show('news');
+}
+/* ===== HUB de Noticias (trabajador): páginas internas ===== */
+var _newsPage=null;   // null = hub · 'pend' | 'leidas'
+function newsGo(p){ _newsPage=p; renderNews(); window.scrollTo(0,0); }
+function newsBack(){ _newsPage=null; renderNews(); window.scrollTo(0,0); }
+function newsPage_(){
+  var a=newsGet(), h='<button class="back" style="margin-bottom:12px" onclick="newsBack()">‹ Noticias</button>';
+  var vis=a.filter(function(n){ return inTarget(n.to, S.emp); });
+  if(_newsPage==='pend'){
+    var nuevas=vis.filter(function(n){ return !hasRead(n); });
+    h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Noticias</div><b style="font-size:20px">Pendientes</b>'+
+       '<p class="note" style="margin:4px 0 0;max-width:250px">Avisos de RRHH y noticias que aún no marcas como leídas.</p></div>'+
+       '<span class="chipst'+(nuevas.length?'':' mut')+'">'+nuevas.length+'</span></div></div>';
+    h+=dmWorkerBlock();
+    if(!V3_ON) h+=newsInfographicDemo();
+    h+='<div class="sec-t">Noticias nuevas<span class="ln"></span></div>';
+    h+= nuevas.length? newsCards(nuevas) : '<div class="card"><div class="note">Estás al día: no hay noticias nuevas. ✓</div></div>';
+  } else { // 'leidas'
+    var leidas=vis.filter(function(n){ return hasRead(n); });
+    h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Noticias</div><b style="font-size:20px">Ya leídas</b>'+
+       '<p class="note" style="margin:4px 0 0">Las noticias que ya marcaste como leídas.</p></div>'+
+       '<span class="chipst'+(leidas.length?'':' mut')+'">'+leidas.length+'</span></div></div>';
+    h+= leidas.length? newsCards(leidas) : '<div class="card"><div class="note">Aún no has leído ninguna noticia.</div></div>';
   }
   $('s-news').innerHTML=h; show('news');
 }
@@ -4415,6 +4555,7 @@ function dmWorkerBlock(){   // el trabajador ve los avisos generales de RRHH den
   var dms=dmGet().filter(function(d){ return inTarget(d.to, S.emp); });
   var h='<div class="sec-t">Mensajes de RRHH<span class="ln"></span></div>';
   if(!dms.length){
+    if(V3_ON) return h+'<div class="card"><div class="note">Sin avisos de RRHH por ahora. ✓</div></div>';   // real: sin ejemplos
     return h+avisoCard('Este sábado 5 de julio no habrá agua en los vestidores de 8 a 11 de la mañana por mantenimiento. Trae tu botella llena. Gracias por tu comprensión.','Ejemplo');
   }
   dms.forEach(function(d){ h+=avisoCard(d.text, buzTime(d.ts)); });
@@ -4746,7 +4887,7 @@ function coachCard(noCurso){
   var a; try{ a=coachNext(); }catch(e){ return ''; }
   if(noCurso && (a.kind==='curso' || a.kind==='repaso' || a.kind==='ok')) return '';  // en Mis cursos, rutaCard ya cubre eso
   return '<div class="panel" style="border:1px solid color-mix(in srgb,var(--accent) 34%,var(--line))">'+
-    '<div class="line" style="border-bottom:none;padding:0"><span class="tg">Tu coach</span>'+speakBtn(a.titulo+'. '+a.detalle)+'</div>'+
+    '<div class="line" style="border-bottom:none;padding:0"><span class="tg">Tu guía</span>'+speakBtn(a.titulo+'. '+a.detalle)+'</div>'+
     '<b style="font-size:16px;display:block;margin:8px 0 2px">'+esc(a.titulo)+'</b>'+
     '<p class="note">'+esc(a.detalle)+'</p>'+
     '<button class="btn" style="margin-top:10px" onclick="'+a.onclick+'">'+a.btnLabel+'</button></div>';
@@ -5377,6 +5518,7 @@ function renderMsgs(){
   try{ var otros=myDirects().map(function(c){ return convOther(c); }); if(otros.length) pubEnsure(otros, function(){ if(_screen==='msgs') renderMsgs(); }); }catch(e){}
   pubRefreshSeen();   // trae fotos/datos nuevos que otros hayan cambiado (throttle 12s)
   if(sbReady() && Date.now()-(window._lastLoadMsgs||0)>4000){ window._lastLoadMsgs=Date.now(); sbLoad('msgs'); }
+  if(_msgsPage) return msgsPage_();   // página interna del hub (chats activos / personal / equipo / planta)
   var h='';
   var sub = S.admin ? (S.dash==='resp' ? 'Tu equipo, tu grupo de área y tus líneas con Dirección y RRHH.' : 'Líneas con la planta, monitoreo, quejas/reportes, vacaciones y recibos — todo en un lugar.')
                     : 'Escribe a RRHH, a Dirección, a tu responsable o a tu grupo. Aquí también van tus quejas y vacaciones.';
@@ -5385,19 +5527,64 @@ function renderMsgs(){
     if(S.dash==='resp') h+=respMsgs();
     else { h+=msgAdminInbox(); }
   } else {
-    // Banners-portada de cada función (más visual, distinto diseño)
-    var lineUn=convUnread(rConv(S.emp))+convUnread(cConv(S.emp))+convUnread(jConv(myGroup(),S.emp));
-    var grpUn=convUnread(gConv(myGroup()));
-    h+=bnrCard("renderLineas()",'Líneas directas','RRHH, Dirección, responsable y compañeros', cover('chat','#0e9e8e','#053b36'), lineUn||'');
-    h+=bnrCard("openConv('"+gConv(myGroup())+"')",'Grupo · '+S.area,'Mensajes de toda tu área', cover('people','#2a7de1','#123a6b'), grpUn||'');
-    // Conversaciones activas
+    // HUB de cuadros (pedido de Carlos): Chats activos PRIMERO (rectángulo grande),
+    // luego Grupo · RRHH · Personal, y Vacaciones/Quejas también como cuadros.
+    var grpUn=convUnread(gConv(myGroup())), rUn=convUnread(rConv(S.emp));
+    var perUn=convUnread(cConv(S.emp))+convUnread(jConv(myGroup(),S.emp));
+    var dir=myDirects(); dir.forEach(function(c){ perUn+=convUnread(c); });
+    var act=myActiveConvs(), totUn=grpUn+rUn+perUn;
+    h+='<div class="tgrid">';
+    h+=htile("msgsGo('activos')",'msg','Chats activos', act.length?(act.length+(act.length===1?' conversación':' conversaciones')):'Aún no tienes chats', {wide:true, cnt:totUn||''});
+    h+=htile("openConv('"+gConv(myGroup())+"')",'personas','Grupo', esc(S.area), {cnt:grpUn||''});
+    h+=htile("openConv('"+rConv(S.emp)+"')",'recibo','RRHH', 'Tu línea privada', {cnt:rUn||''});
+    h+=htile("msgsGo('personal')",'dia','Personal', 'Compañeros y responsable', {cnt:perUn||''});
+    h+=htile('renderVacaciones()','cal','Vacaciones', 'Días y solicitudes');
+    h+=htile('renderQuejas()','docs','Quejas y reportes', 'Ideas que dan puntos');
+    h+='</div>';
+  }
+  $('s-msgs').innerHTML=h; show('msgs');
+}
+/* ===== HUB de Mensajes: páginas internas (misma regla del tablero: cuadro→info) ===== */
+var _msgsPage=null;   // null = hub · 'activos'|'personal' (trabajador) · 'equipo' (mando) · 'planta' (admin)
+function msgsGo(p){ _msgsPage=p; renderMsgs(); window.scrollTo(0,0); }
+function msgsBack(){ _msgsPage=null; renderMsgs(); window.scrollTo(0,0); }
+function myActiveConvs(){   // directos + líneas/grupo CON historial, lo más reciente primero
+  var out=myDirects().slice();
+  [rConv(S.emp),cConv(S.emp),jConv(myGroup(),S.emp),gConv(myGroup())].forEach(function(c){ if(convMsgs(c).length) out.push(c); });
+  out.sort(function(a,b){ var la=convLast(a),lb=convLast(b); return ((lb&&lb.ts)||0)-((la&&la.ts)||0); });
+  return out;
+}
+function msgsPage_(){
+  var h='<button class="back" style="margin-bottom:12px" onclick="msgsBack()">‹ Mensajes</button>';
+  if(_msgsPage==='activos'){
+    h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Mensajes</div><b style="font-size:20px">Chats activos</b>'+
+       '<p class="note" style="margin:4px 0 0">Tus conversaciones, la más reciente primero.</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
+    var act=myActiveConvs();
+    if(!act.length) h+='<div class="card"><div class="note">Aún no tienes chats. Escribe a tu <b>Grupo</b>, a <b>RRHH</b> o abre uno en <b>Personal</b>.</div></div>';
+    act.forEach(function(c){ h+=convRow(c, c.indexOf('d:')===0?empName(convOther(c)):convTitle(c), null); });
+  }
+  else if(_msgsPage==='personal'){
+    h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Mensajes</div><b style="font-size:20px">Personal</b>'+
+       '<p class="note" style="margin:4px 0 0">Compañeros, tu responsable y Dirección. Tus mensajes son privados.</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
+    h+=lineChanCard(null,'Escribir a un compañero','Busca por nombre o número',CHAN_IC.comp,'#8b8ff7','renderNewChat()');
+    h+=lineChanCard(jConv(myGroup(),S.emp),'Responsable de '+S.area,'El jefe de tu área',CHAN_IC.resp,(rangeOf(S.emp)||{}).accent||'#39d6c0');
+    h+=lineChanCard(cConv(S.emp),'Dirección','Escríbele directo a Dirección',CHAN_IC.dir,'#ffd166');
     var dir=myDirects();
-    h+='<div class="sec-t">Conversaciones<span class="ln"></span></div>';
+    h+='<div class="sec-t">Tus chats con compañeros<span class="ln"></span></div>';
     if(dir.length){ dir.forEach(function(c){ h+=convRow(c,empName(convOther(c)),null); }); }
-    else { h+='<div class="card"><div class="note">Aún no tienes conversaciones. Abre una desde <b>Líneas directas</b>.</div></div>'; }
-    // Vacaciones + Quejas (banners)
-    h+=bnrCard("renderVacaciones()",'Vacaciones','Días disponibles y solicitudes', cover('sun','#e0a020','#6b4708'),'');
-    h+=bnrCard("renderQuejas()",'Quejas y reportes','Queja, idea de mejora (da puntos) o anormalidad', cover('mega','#e0564b','#7a1410'),'');
+    else { h+='<div class="card"><div class="note">Aún no tienes chats con compañeros.</div></div>'; }
+  }
+  else if(_msgsPage==='equipo'){   // mando: su gente le escribe por la línea j:
+    h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Mensajes</div><b style="font-size:20px">Tu equipo te escribe</b>'+
+       '<p class="note" style="margin:4px 0 0">Las líneas privadas de tu gente contigo.</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
+    var pre='j:'+myGroup()+':', seen={};
+    msgsGet().forEach(function(m){ if(m.conv.indexOf(pre)===0) seen[m.conv]=1; });
+    var ks=Object.keys(seen);
+    if(!ks.length) h+='<div class="card"><div class="note">Nadie de tu equipo te ha escrito todavía.</div></div>';
+    ks.forEach(function(c){ var emp=c.slice(pre.length); h+=convRow(c,empName(+emp),null); });
+  }
+  else { // 'planta' (admin): monitoreo + todas las líneas de la planta
+    h+=msgPlantaSecciones();
   }
   $('s-msgs').innerHTML=h; show('msgs');
 }
@@ -5534,34 +5721,37 @@ function submitVac(){
 
 /* Bandeja del responsable de área: solo SU equipo (líneas j: de su key) + su grupo + sus líneas con Dirección/RRHH. (El "beeper/llamar" se eliminó: solo mensajería.) */
 function respMsgs(){
-  var h='';
-  h+='<div class="sec-t">Tus líneas directas<span class="ln"></span></div>';
-  h+=lineChanCard(cConv(S.emp),'Dirección','Tu canal con Dirección',CHAN_IC.dir,'#ffd166');
-  h+=lineChanCard(rConv(S.emp),'Recursos Humanos','Tu canal con RRHH',CHAN_IC.rrhh,'#39d6c0');
-  h+='<div class="sec-t">Grupo de '+esc(S.area)+'<span class="ln"></span></div>'+lineChanCard(gConv(myGroup()),'Grupo · '+S.area,'Mensajes de toda tu área',IC2.people,'#2a7de1');
-  h+='<div class="sec-t">Tu equipo te escribe<span class="ln"></span></div>';
-  var pre='j:'+myGroup()+':', seen={};
+  // HUB de cuadros del mando (misma regla: cuadro → info)
+  var pre='j:'+myGroup()+':', seen={}, eqUn=0;
   msgsGet().forEach(function(m){ if(m.conv.indexOf(pre)===0) seen[m.conv]=1; });
-  var ks=Object.keys(seen);
-  if(!ks.length) h+='<div class="card"><div class="note">Nadie de tu equipo te ha escrito todavía.</div></div>';
-  ks.forEach(function(c){ var emp=c.slice(pre.length); h+=convRow(c,empName(+emp),null); });
+  var ks=Object.keys(seen); ks.forEach(function(c){ eqUn+=convUnread(c); });
+  var h='<div class="tgrid">';
+  h+=htile("msgsGo('equipo')",'personas','Tu equipo te escribe', ks.length?(ks.length+(ks.length===1?' conversación':' conversaciones')):'Sin mensajes aún', {wide:true, cnt:eqUn||''});
+  h+=htile("openConv('"+gConv(myGroup())+"')",'msg','Grupo', esc(S.area), {cnt:convUnread(gConv(myGroup()))||''});
+  h+=htile("openConv('"+rConv(S.emp)+"')",'recibo','RRHH', 'Tu línea privada', {cnt:convUnread(rConv(S.emp))||''});
+  h+=htile("openConv('"+cConv(S.emp)+"')",'dia','Dirección', 'Tu línea privada', {cnt:convUnread(cConv(S.emp))||''});
+  h+='</div>';
   return h;
 }
 function msgAdminInbox(){
+  // HUB de cuadros del admin (misma regla: cuadro → info)
+  var n={}; msgsGet().forEach(function(m){ n[m.conv]=1; });
+  var tot=Object.keys(n).length;
+  var h='<div class="tgrid">';
+  h+=htile("msgsGo('planta')",'msg','Chats de la planta', tot?(tot+(tot===1?' conversación':' conversaciones')+' · monitoreo'):'Aún sin mensajes', {wide:true});
+  h+=htile('renderNewChat()','personas','Escribir a un trabajador', 'Chat directo 1 a 1');
+  h+=htile("wcReset();renderWConvs()",'docs','Conversaciones de trabajadores', 'Revisión · solo lectura');
+  h+='</div>';
+  return h;
+}
+/* Página "Chats de la planta" (admin): monitoreo + todas las líneas */
+function msgPlantaSecciones(){
   var msgs=msgsGet(), rc={},cc={},jc={},gc={},dc={};
   msgs.forEach(function(m){ var c=m.conv;
     if(c.indexOf('r:')===0) rc[c]=1; else if(c.indexOf('c:')===0) cc[c]=1; else if(c.indexOf('j:')===0) jc[c]=1;
     else if(c.indexOf('g:')===0) gc[c]=1; else if(c.indexOf('d:')===0) dc[c]=1; });
   var rk=Object.keys(rc), ck=Object.keys(cc), jk=Object.keys(jc), gk=Object.keys(gc), dk=Object.keys(dc);
   var h='';
-  // Escribir directo a cualquier trabajador (chat 1 a 1, como cualquier empleado)
-  h+='<div class="panel" style="cursor:pointer" onclick="renderNewChat()"><div class="hd" style="margin-bottom:0"><div style="display:flex;align-items:center;gap:11px;min-width:0">'+
-     '<span style="width:42px;height:42px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--data);background:color-mix(in srgb,var(--data) 13%,transparent)"><span style="width:22px;height:22px;display:block">'+IC2.people+'</span></span>'+
-     '<div style="min-width:0"><b>Escribir a un trabajador</b><div class="note" style="margin-top:2px">Chat directo con cualquier persona registrada.</div></div></div><span class="chipst">Abrir ›</span></div></div>';
-  // Revisión por persona: TODOS los chats de un trabajador, en solo lectura
-  h+='<div class="panel" style="cursor:pointer" onclick="wcReset();renderWConvs()"><div class="hd" style="margin-bottom:0"><div style="display:flex;align-items:center;gap:11px;min-width:0">'+
-     '<span style="width:42px;height:42px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--warn);background:color-mix(in srgb,var(--warn) 13%,transparent)"><span style="width:22px;height:22px;display:block">'+CHAN_IC.comp+'</span></span>'+
-     '<div style="min-width:0"><b>Conversaciones de trabajadores</b><div class="note" style="margin-top:2px">Elige a una persona y revisa todos sus chats (solo lectura).</div></div></div><span class="chipst">Abrir ›</span></div></div>';
   h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Monitoreo</div><b style="font-size:16px">Mensajes de la planta</b><div class="note" style="margin-top:3px">Puedes leer cualquier conversación de la planta. Los trabajadores no ven que tienes acceso.</div></div><span class="status"><span class="d"></span>En línea</span></div>'+
     '<div class="dotgrid">'+
       dotStat(Math.min(100,rk.length*12), rk.length, 'RRHH','')+

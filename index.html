@@ -185,6 +185,21 @@ button{font-family:var(--font)}
   #portada .deco.c{animation-duration:6s;animation-delay:-1s}
 }
 @media (prefers-reduced-motion: reduce){ #portada{transition:opacity .2s ease} #portada.off{transform:none} }
+/* ===== HUB con panel lateral (V3.7e): cuadros a la izquierda + panel vivo a la
+   derecha (calendario en Noticias, mensaje rápido en Mensajes). El panel solo
+   aparece en escritorio; en móvil mandan los cuadros. ===== */
+.hubwrap{display:block}
+.hubside{display:none}
+/* Mensaje rápido (panel lateral de Mensajes, estilo chat) */
+.qchat .qclist{max-height:340px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;padding:4px 8px;background:rgba(255,255,255,.02)}
+.qchat .qcarea{font-size:9.5px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;padding:9px 4px 4px;border-bottom:1px solid var(--line)}
+.qchat .qcmsgs{height:300px;min-height:0!important;overflow-y:auto;border:1px solid var(--line);border-radius:12px;padding:10px;background:rgba(255,255,255,.02)}
+.qchat .qcsel{display:flex;align-items:center;gap:9px;margin:0 0 8px}
+.qchat .qcsel b{font-size:13.5px}
+.qchat .qcsel .note{display:block;font-size:10.5px;margin-top:1px}
+/* buscador dentro de un chat en monitoreo (solo lectura) */
+.thfind{margin:0 0 10px}
+.thfind input{font-size:13px;padding:10px 12px}
 /* ===== Banda de alerta de seguridad (tablero): delgada, simétrica, a todo lo ancho ===== */
 .salert{display:flex;align-items:center;gap:12px;width:100%;margin:14px 0 2px;padding:12px 16px;border-radius:16px;cursor:pointer;
   background:linear-gradient(90deg,rgba(204,26,31,.17),rgba(204,26,31,.06));
@@ -696,8 +711,16 @@ body.a11y .screen .seg button{ font-size:13px !important; }
   #s-hr>.panel:first-child,#s-msgs>.panel:first-child,#s-news>.panel:first-child,#s-encuestas>.panel:first-child,
   #s-home>.panel:first-child,#s-courses>.panel:first-child,#s-clases>.panel:first-child,#s-quejas>.panel:first-child{column-span:all}
   /* el grid de tiles NO debe entrar al masonry: abarca todo el ancho y usa 3 columnas */
-  #s-home>.tgrid,#s-news>.tgrid,#s-hr>.tgrid,#s-home>.sec-t,#s-news>.sec-t{column-span:all;-webkit-column-span:all}
-  .tgrid{grid-template-columns:repeat(3,1fr)}
+  #s-home>.tgrid,#s-news>.tgrid,#s-hr>.tgrid,#s-msgs>.tgrid,#s-home>.sec-t,#s-news>.sec-t,#s-msgs>.sec-t{column-span:all;-webkit-column-span:all}
+  /* HUB con panel lateral: cuadros izquierda + panel (calendario / mensaje rápido) derecha */
+  #s-news>.hubwrap,#s-msgs>.hubwrap,#s-hr>.hubwrap{column-span:all;-webkit-column-span:all}
+  .hubwrap{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:22px;align-items:start}
+  .hubside{display:block;position:sticky;top:14px}
+  .hide-desk{display:none!important}
+  /* los cuadros LLENAN la pantalla: menos cuadros = cuadros más grandes (auto-fit).
+     minmax 240 para que no desborde la columna izquierda cuando hay panel lateral. */
+  .tgrid{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+  .htile{min-height:152px}
   #s-hr>.seg,#s-hr>.salert{column-span:all;-webkit-column-span:all}
   /* subpáginas del hub: el 1er hijo es el botón «‹ back» — él y la cabecera que
      le sigue cruzan las 2 columnas (si no, el masonry sube paneles ARRIBA del título) */
@@ -1821,6 +1844,9 @@ window.CFG.permanencia = {
 /* ---------- utilidades ---------- */
 function $(id){ return document.getElementById(id); }
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+/* URL de imagen SEGURA para atributos src: solo data:image/... o https, con comillas
+   escapadas. Bloquea inyección por 'img' o 'foto' con onerror= (XSS almacenado). */
+function imgSrc(u){ u=String(u||''); if(!/^(data:image\/|https:\/\/)/i.test(u)) return ''; return u.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function bandi(cls){ return ''; }   /* mascota retirada: la app es corporativa, sin personaje */
 function flash(t){ var f=$('flash'); f.textContent=t; f.classList.add('show'); clearTimeout(f._t); f._t=setTimeout(function(){f.classList.remove('show');},2100); }
 
@@ -1916,7 +1942,7 @@ function profInitials(){ var p=profGet(S.emp); var nm=(p.nombre||'').trim();
   if(nm){ return nm.split(/\s+/).map(function(w){return (w[0]||'');}).slice(0,2).join('').toUpperCase(); }
   return (''+S.emp).padStart(3,'0'); }
 function profAvatar(size,fs){ var p=profGet(S.emp);
-  if(p.foto) return '<img src="'+p.foto+'" alt="foto" style="width:'+size+'px;height:'+size+'px;border-radius:12px;object-fit:cover;flex:none;display:block">';
+  if(p.foto) return '<img src="'+imgSrc(p.foto)+'" alt="foto" style="width:'+size+'px;height:'+size+'px;border-radius:12px;object-fit:cover;flex:none;display:block">';
   return '<span style="width:'+size+'px;height:'+size+'px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:'+fs+'px;color:#fff;background:linear-gradient(150deg,var(--accent),var(--accent2))">'+esc(profInitials())+'</span>'; }
 /* ===== Sesión: monta S y pinta la app (compartido por login demo y login real V3) ===== */
 function startSession(cfg, saved, forceProfile){
@@ -2238,6 +2264,7 @@ function go(name){
   _adminScr=null; _fichaEmp=null;   // salir de sub-pantallas (personal / ficha) al usar el menú
   _mgrPage=null; _respPage=null;    // el tab del tablero siempre regresa al HUB
   _msgsPage=null; _newsPage=null;   // Mensajes y Noticias también regresan a su hub
+  _qcSel=null;                      // el Mensaje rápido vuelve al buscador (no al chat anterior)
   if(name==='home') return renderHome();
   if(name==='rewards') return renderRewards();
   if(name==='chat') return renderChat();
@@ -2922,7 +2949,7 @@ function ic3(kind){ var p=ICON3D[kind]||ICON3D.msg; return iso3d(p[0],p[1]); }
 /* tile del home: cuadro con ícono 3D + título + subtítulo, lleva a su página */
 function htile(onclick,kind,title,sub,opts){ opts=opts||{};
   var tc=opts.tc||({cap:'#8b5cf6',recibo:'#e73b2f',news:'#e0902a',msg:'#3b82f6',premios:'#0e9e8e',ai:'#e73b2f',edu:'#22c55e',encuestas:'#8b5cf6',cal:'#e0902a',docs:'#3b82f6',dia:'#0e9e8e',deptos:'#e0902a',personas:'#8b5cf6',focos:'#e73b2f',operacion:'#3b82f6',pend:'#e0902a'}[kind]||'var(--accent)');
-  return '<div class="htile'+(opts.wide?' wide':'')+'" role="button" tabindex="0" onkeydown="_kb(event)" style="--tc:'+tc+'" onclick="'+onclick+'">'+
+  return '<div class="htile'+(opts.wide?' wide':'')+(opts.cls?' '+opts.cls:'')+'" role="button" tabindex="0" onkeydown="_kb(event)" style="--tc:'+tc+'" onclick="'+onclick+'">'+
     (opts.cnt?'<span class="cnt">'+opts.cnt+'</span>':'')+
     '<div class="iso">'+ic3(kind)+'</div>'+
     '<div style="'+(opts.wide?'flex:1;min-width:0':'')+'"><b>'+esc(title)+'</b>'+(sub?'<div class="note">'+esc(sub)+'</div>':'')+'</div>'+
@@ -3380,14 +3407,14 @@ function _logAlertLocal(text){
 function renderChat(){
   var h='';
   h+='<div class="chatscreen">';
-  h+='<div class="chathead"><div class="t"><b>Asistente</b><span><i class="dotst on"></i>Respuestas autorizadas</span></div></div>';
+  h+='<div class="chathead"><div class="t"><b>Asistente</b><span><i class="dotst on"></i>'+(bandiTotal()?'Acceso total · datos y documentos':'Respuestas autorizadas')+'</span></div></div>';
   h+='<div class="msgs" id="msgs"></div>';
   h+='<div class="chips" id="chips"></div>';
   h+='<div class="composer"><input id="chatIn" placeholder="Escribe tu pregunta…" autocomplete="off"><button class="send" onclick="sendChat()" aria-label="Enviar"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button></div>';
   h+='</div>';
   $('s-chat').innerHTML=h;
   var sugg=(V3_ON && (S.admin||S.mando))
-    ? [(S.admin?'¿Cómo va la planta?':'¿Cómo va mi área?'),'¿Hay alertas pendientes?','¿Qué es la banda de precurado?','¿Por qué renovar?','¿Quién es Bandamatic?']
+    ? [(S.admin?'¿Cómo va la planta?':'¿Cómo va mi área?'),'¿Hay alertas pendientes?'].concat(bandiTotal()?['¿Qué documentos hay?']:[]).concat(['¿Qué es la banda de precurado?','¿Por qué renovar?'])
     : ['¿Qué es la banda de precurado?','¿Llantas de camión por posición?','¿Cómo funciona una llanta?','¿Por qué renovar?','¿Quién es Bandamatic?'];
   $('chips').innerHTML=sugg.map(function(s){return '<button class="chip2" onclick="quickAsk(this)">'+esc(s)+'</button>';}).join('');
   paintChat();
@@ -3398,7 +3425,13 @@ function paintChat(){
   var m=$('msgs'); if(!m) return;
   var h=S.chat.map(function(x){
     if(x.role==='user') return '<div class="m user"><div class="bub">'+esc(x.content)+'</div></div>';
-    return '<div class="m bot">'+bandi('b-sm')+'<div class="bub">'+esc(x.content)+'<div style="margin-top:7px">'+speakBtn(x.content)+'</div></div></div>';
+    var extra='';
+    if(x.docs && x.docs.length){   // acceso total: botones que abren documentos
+      extra='<div style="display:flex;flex-direction:column;gap:6px;margin-top:9px">'+x.docs.map(function(d){
+        return '<button class="btn ghost" style="margin:0;width:auto;padding:9px 11px;font-size:12.5px;text-align:left" onclick="docOpen(\''+jsAttr(d.id)+'\')">'+esc(d.titulo)+(d.depto?' <span class="note">· '+esc(d.depto)+'</span>':'')+'</button>';
+      }).join('')+'</div>';
+    }
+    return '<div class="m bot">'+bandi('b-sm')+'<div class="bub">'+esc(x.content)+extra+'<div style="margin-top:7px">'+speakBtn(x.content)+'</div></div></div>';
   }).join('');
   if(chatBusy) h+='<div class="m bot">'+bandi('b-sm')+'<div class="bub"><div class="typing"><i></i><i></i><i></i></div></div></div>';
   m.innerHTML=h; m.scrollTop=m.scrollHeight;
@@ -3554,12 +3587,45 @@ function apiMessages(){
   while(h.length && h[0].role!=='user') h.shift();
   return h;
 }
+/* ¿Bandi SIN candados? Solo el dashboard general (acceso total) en el sistema REAL
+   (pedido de Carlos): puede responder de documentos privados y de cualquier tema.
+   Trabajadores, mandos y el demo conservan TODOS los candados de siempre. */
+function bandiTotal(){ return !!(V3_ON && S && S.admin && S.dash!=='resp'); }
+/* Búsqueda de DOCUMENTOS para acceso total: encuentra por título/departamento y
+   responde con botones que abren cada documento (liga firmada, RLS del servidor). */
+function docFind(t){
+  var lib=docsGet(); if(!lib||!lib.length) return null;
+  var raw=_norm(t).split(/\s+/).filter(function(w){ return w.length>=3 && !KB_STOP[w]; });
+  var q=raw.map(function(w){ return w.length>4 ? w.replace(/(es|s)$/,'') : w; });
+  if(!q.length) return null;
+  var pideDoc=/(documento|manual|archivo|pdf|proceso|instructivo|formato|reporte)/.test(_norm(t));
+  var hits=[];
+  lib.forEach(function(d){
+    var T=' '+_norm((d.titulo||'')+' '+(d.depto||''))+' ', s=0;
+    q.forEach(function(w){ if(T.indexOf(w)>-1) s++; });
+    if(s>0) hits.push({s:s,d:d});
+  });
+  if(!hits.length){
+    if(!pideDoc) return null;
+    // pidió documentos pero sin término que coincida: enseñar los más recientes
+    var rec=lib.slice().sort(function(a,b){ return (b.ts||0)-(a.ts||0); }).slice(0,4);
+    return { topic:'(Datos) Documentos', docs:rec.map(function(d){ return {id:d.id, titulo:d.titulo, depto:d.depto}; }),
+             answer:'Hay '+lib.length+' documento(s) en el sistema. Los más recientes:' };
+  }
+  hits.sort(function(a,b){ return b.s-a.s; });
+  var fuertes=hits.filter(function(h){ return h.s>=2; });
+  if(!pideDoc && !fuertes.length) return null;   // sin señal clara, que siga el flujo normal
+  var top=(fuertes.length?fuertes:hits).slice(0,4).map(function(h){ return h.d; });
+  return { topic:'(Datos) Documentos', docs:top.map(function(d){ return {id:d.id, titulo:d.titulo, depto:d.depto}; }),
+           answer:(top.length===1?'Encontré este documento. Tócalo para abrirlo:':'Encontré '+top.length+' documentos que pueden servirte. Toca uno para abrirlo:') };
+}
 function sendChat(){
   var inp=$('chatIn'); var t=(inp.value||'').trim(); if(!t||chatBusy) return;
   S.chat.push({role:'user',content:t}); inp.value=''; chatBusy=true; paintChat();
+  var dios=bandiTotal();
   // ANTI-SABOTAJE (máxima prioridad): intención de dañar la planta → Asistente NO responde
-  // y manda foco rojo inmediato a RRHH (silencioso: no le avisa al trabajador que fue reportado).
-  if(maliceCheck(t)){
+  // y manda foco rojo inmediato a RRHH (silencioso). El acceso total no se auto-reporta.
+  if(!dios && maliceCheck(t)){
     logAlert(t);
     setTimeout(function(){ chatBusy=false; S.chat.push({role:'assistant',content:'Ese tipo de preguntas no son bienvenidas en el Asistente. Estoy para ayudarte a aprender y a cuidar la planta, a tus compañeros y tu propio trabajo. Si fue un malentendido, vuelve a preguntar de otra forma.'}); paintChat(); }, 350);
     return;
@@ -3569,17 +3635,23 @@ function sendChat(){
   // con el filtro de inventario (los datos del equipo SÍ son de este rol).
   var dyn=dynFind(t);
   if(dyn){ logQ(dyn.topic,t,true); setTimeout(function(){ chatBusy=false; S.chat.push({role:'assistant',content:dyn.answer}); paintChat(); }, 380); return; }
-  // GUARDRAIL (online y offline): bloquea info sensible / inventario sin permiso / fuera de tema
-  var blk=guard(t);
+  // GUARDRAIL (trabajadores/mandos/demo): bloquea info sensible / inventario / fuera de tema.
+  // El dashboard general (acceso total) NO tiene candados: pregunta lo que sea.
+  var blk=dios?null:guard(t);
   if(blk){ setTimeout(function(){ chatBusy=false; S.chat.push({role:'assistant',content:blk}); paintChat(); }, 350); return; }
-  // RESPUESTAS CERRADAS: solo desde la biblioteca autorizada. Registra frecuencia y no-respondidas.
+  // RESPUESTAS CERRADAS: primero la biblioteca autorizada. Registra frecuencia y no-respondidas.
   setTimeout(function(){
     chatBusy=false;
     var res=kbFind(t);
-    if(res.hit){ logQ(res.topic,t,true); S.chat.push({role:'assistant',content:res.answer}); }
-    else {
+    if(res.hit){ logQ(res.topic,t,true); S.chat.push({role:'assistant',content:res.answer}); paintChat(); return; }
+    // ACCESO TOTAL: si la biblioteca no supo, buscar DOCUMENTOS (privados incluidos; RLS ya validó admin)
+    if(dios){ var df=docFind(t);
+      if(df){ logQ(df.topic,t,true); S.chat.push({role:'assistant',content:df.answer,docs:df.docs}); paintChat(); return; } }
+    {
       logQ(null,t,false);
-      S.chat.push({role:'assistant',content:'Todavía no tengo una respuesta autorizada para eso . Ya la registré para que el equipo la revise y la agregue pronto.\n\nMientras, sí te puedo ayudar con: '+kbTopics().slice(0,6).join(' · ')+'.'});
+      S.chat.push({role:'assistant',content: dios
+        ? 'No encontré eso ni en la biblioteca ni en los documentos del sistema. Ya quedó registrado. Prueba con otras palabras (ej. el nombre del documento o el departamento), o pregúntame por métricas: «¿cómo va la planta?», «¿hay alertas?».'
+        : 'Todavía no tengo una respuesta autorizada para eso . Ya la registré para que el equipo la revise y la agregue pronto.\n\nMientras, sí te puedo ayudar con: '+kbTopics().slice(0,6).join(' · ')+'.'});
     }
     paintChat();
   }, 420);
@@ -3777,7 +3849,7 @@ function teamList(key){
   return list;
 }
 function teamAvatar(m,size,fs){
-  if(m.foto) return '<img src="'+m.foto+'" alt="" style="width:'+size+'px;height:'+size+'px;border-radius:12px;object-fit:cover;flex:none;display:block">';
+  if(m.foto) return '<img src="'+imgSrc(m.foto)+'" alt="" style="width:'+size+'px;height:'+size+'px;border-radius:12px;object-fit:cover;flex:none;display:block">';
   var ini=m.nombre? m.nombre.split(/\s+/).slice(0,2).map(function(x){return (x[0]||'').toUpperCase();}).join('') : (''+m.emp).padStart(3,'0');
   return '<span style="width:'+size+'px;height:'+size+'px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:'+(m.nombre?fs:Math.round(fs*.8))+'px;color:#fff;background:linear-gradient(150deg,var(--accent),var(--accent2))">'+esc(ini)+'</span>';
 }
@@ -4421,14 +4493,16 @@ function renderNews(){
   var a=newsGet(), h='';
   h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">'+(S.admin?'Panel':'Noticias')+'</div><b style="font-size:20px">Noticias y avisos</b><p class="note" style="margin:4px 0 0;max-width:250px">'+(S.admin?'Publica avisos, infografías, eventos y encuestas.':'Calendario, avisos de RRHH y encuestas.')+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
   if(S.admin){
-    // HUB (V3.6): cada cosa es un cuadro que lleva a su página de gestión
+    // HUB (V3.6): cuadros a la IZQUIERDA + calendario vivo a la DERECHA (escritorio)
     var nPub=a.length;
+    h+='<div class="hubwrap"><div class="hubmain">';
     h+='<div class="sec-t">Gestionar<span class="ln"></span></div><div class="tgrid">';
     h+=htile('renderNewsPost()','news','Noticias y avisos', nPub+' publicada(s) · subir/editar');
-    h+=htile('renderCal()','cal','Calendario', 'Eventos de la planta');
+    h+=htile('renderCal()','cal','Calendario', 'Eventos de la planta', {cls:'hide-desk'});
     h+=htile('renderEncuestas()','encuestas','Encuestas', 'Crear y ver resultados');
     h+=htile('renderDocs()','docs','Documentos', 'Manuales por departamento');
-    h+='</div>';
+    h+='</div></div>';
+    h+='<aside class="hubside">'+calendarBlock()+'</aside></div>';
     $('s-news').innerHTML=h; show('news'); return;
   } else {
     // HUB de cuadros del trabajador (pedido de Carlos): Pendientes PRIMERO (rectángulo
@@ -4439,12 +4513,14 @@ function renderNews(){
     var nuevas=vis.filter(function(n){ return !hasRead(n); });
     var leidas=vis.filter(function(n){ return hasRead(n); });
     var avisosN=0; try{ avisosN=dmGet().filter(function(d){ return inTarget(d.to,S.emp); }).length; }catch(e){}
+    h+='<div class="hubwrap"><div class="hubmain">';
     h+='<div class="tgrid">';
     h+=htile("newsGo('pend')",'news','Pendientes', nuevas.length?(nuevas.length+(nuevas.length===1?' noticia nueva':' noticias nuevas')+(avisosN?' · avisos de RRHH':'')):'Estás al día ✓', {wide:true, cnt:nuevas.length||''});
-    h+=htile('renderCal()','cal','Calendario', 'Eventos de la planta');
+    h+=htile('renderCal()','cal','Calendario', 'Eventos de la planta', {cls:'hide-desk'});
     h+=htile("newsGo('leidas')",'edu','Ya leídas', leidas.length?(leidas.length+(leidas.length===1?' noticia':' noticias')):'Aún no hay');
     if(docsGet().length) h+=htile('renderDocs()','docs','Documentos', docsGet().length+' para ti');
-    h+='</div>';
+    h+='</div></div>';
+    h+='<aside class="hubside">'+calendarBlock()+'</aside></div>';
   }
   $('s-news').innerHTML=h; show('news');
 }
@@ -5076,11 +5152,11 @@ function renderPay(){
   if(signed){
     h+='<div class="panel" style="border:1px solid var(--ok)"><div class="hd" style="margin-bottom:6px"><b style="color:var(--ok)">Firmado ✓</b><span class="chipst">enviado a RRHH</span></div>'+
        '<p class="note">Enviaste tu recibo firmado el '+fmtDate(signed.ts)+'. RRHH ya lo recibió.</p>'+
-       (signed.img?'<img src="'+signed.img+'" alt="firma" style="width:100%;max-height:150px;object-fit:contain;margin-top:10px;background:#fff;border-radius:10px;padding:8px;display:block">':'')+'</div>';
+       (signed.img?'<img src="'+imgSrc(signed.img)+'" alt="firma" style="width:100%;max-height:150px;object-fit:contain;margin-top:10px;background:#fff;border-radius:10px;padding:8px;display:block">':'')+'</div>';
   } else if(firma){
     h+='<div class="panel"><div class="hd"><b>Enviar recibo firmado</b><span class="chipst">tu firma</span></div>'+
        '<p class="note" style="margin:0 0 9px">Al enviar, RRHH recibe tu acuse con tu <b>firma predeterminada</b>. Así todos reconocen que es tuya.</p>'+
-       '<img src="'+firma+'" alt="tu firma" style="width:100%;max-height:150px;object-fit:contain;background:#fff;border-radius:10px;padding:8px;display:block">'+
+       '<img src="'+imgSrc(firma)+'" alt="tu firma" style="width:100%;max-height:150px;object-fit:contain;background:#fff;border-radius:10px;padding:8px;display:block">'+
        '<button class="btn" style="margin-top:11px" onclick="signPay()">Enviar recibo firmado a RRHH</button>'+
        '<div style="text-align:center;margin-top:8px"><span class="lnkbtn" onclick="renderPerfil()">Cambiar mi firma en el perfil</span></div></div>';
   } else {
@@ -5103,7 +5179,7 @@ function recibosAdminBlock(){
   var h='<div class="panel"><div class="hd"><div><div class="eyebrow">Nómina</div><b style="font-size:16px">Recibos firmados</b></div><span class="chipst'+(a.length?'':' mut')+'">'+(a.length?a.length+' firmados':'Sin firmas')+'</span></div>';
   if(!a.length) return h+'<div class="note">Aún nadie firma su recibo.</div></div>';
   h+=a.slice(0,20).map(function(r){
-    return '<div class="line"><span><b>#'+(''+r.emp).padStart(3,'0')+'</b> · '+esc(r.area||'')+'<br><span class="note">'+esc(r.period||'')+' · firmado '+fmtDate(r.ts)+'</span></span>'+(r.img?'<img src="'+r.img+'" alt="firma" style="height:34px;background:#fff;border-radius:6px;padding:2px;flex:none">':'')+'</div>';
+    return '<div class="line"><span><b>#'+(''+r.emp).padStart(3,'0')+'</b> · '+esc(r.area||'')+'<br><span class="note">'+esc(r.period||'')+' · firmado '+fmtDate(r.ts)+'</span></span>'+(r.img?'<img src="'+imgSrc(r.img)+'" alt="firma" style="height:34px;background:#fff;border-radius:6px;padding:2px;flex:none">':'')+'</div>';
   }).join('')+'</div>';
   return h;
 }
@@ -5517,8 +5593,8 @@ function chanMeta(conv){
 }
 /* Avatar de una PERSONA: su foto de perfil si existe, si no sus iniciales. */
 function personAvatar(n,size){ size=size||44;
-  var foto=personFoto(n), nm=empName(n);
-  if(foto) return '<img src="'+esc(foto)+'" alt="" style="width:'+size+'px;height:'+size+'px;border-radius:13px;object-fit:cover;flex:none;display:block">';
+  var foto=imgSrc(personFoto(n)), nm=empName(n);
+  if(foto) return '<img src="'+foto+'" alt="" style="width:'+size+'px;height:'+size+'px;border-radius:13px;object-fit:cover;flex:none;display:block">';
   var ini=(nm&&nm.charAt(0)!=='#')?nm.split(/\s+/).slice(0,2).map(function(w){return (w[0]||'').toUpperCase();}).join(''):(''+n).slice(-2);
   return '<span style="width:'+size+'px;height:'+size+'px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:'+Math.round(size*0.34)+'px;color:#fff;background:linear-gradient(150deg,#0e9e8e,#053b36)">'+esc(ini)+'</span>';
 }
@@ -5573,7 +5649,7 @@ function convRow(conv,title,sub){
 var _curConv=null, _pendImg=null;
 function renderMsgs(){
   _pendImg=null;
-  dirLoad();   // nombres reales de remitentes (una sola carga por sesión)
+  dirLoad(function(){ if(_screen==='msgs') qcPaint(); });   // nombres reales; al llegar, pinta el Mensaje rápido
   // fotos de perfil para los avatares de los chats directos (una sola llamada por tanda)
   try{ var otros=myDirects().map(function(c){ return convOther(c); }); if(otros.length) pubEnsure(otros, function(){ if(_screen==='msgs') renderMsgs(); }); }catch(e){}
   pubRefreshSeen();   // trae fotos/datos nuevos que otros hayan cambiado (throttle 12s)
@@ -5583,9 +5659,9 @@ function renderMsgs(){
   var sub = S.admin ? (S.dash==='resp' ? 'Tu equipo, tu grupo de área y tus líneas con Dirección y RRHH.' : 'Líneas con la planta, monitoreo, quejas/reportes, vacaciones y recibos — todo en un lugar.')
                     : 'Escribe a RRHH, a Dirección, a tu responsable o a tu grupo. Aquí también van tus quejas y vacaciones.';
   h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">'+(S.admin?'Panel':'Mensajes')+'</div><b style="font-size:20px">Mensajes</b><p class="note" style="margin:4px 0 0;max-width:240px">'+sub+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
+  var inner='';
   if(S.admin){
-    if(S.dash==='resp') h+=respMsgs();
-    else { h+=msgAdminInbox(); }
+    inner = (S.dash==='resp')? respMsgs() : msgAdminInbox();
   } else {
     // HUB de cuadros (pedido de Carlos): Chats activos PRIMERO (rectángulo grande),
     // luego Grupo · RRHH · Personal, y Vacaciones/Quejas también como cuadros.
@@ -5593,16 +5669,77 @@ function renderMsgs(){
     var perUn=convUnread(cConv(S.emp))+convUnread(jConv(myGroup(),S.emp));
     var dir=myDirects(); dir.forEach(function(c){ perUn+=convUnread(c); });
     var act=myActiveConvs(), totUn=grpUn+rUn+perUn;
-    h+='<div class="tgrid">';
-    h+=htile("msgsGo('activos')",'msg','Chats activos', act.length?(act.length+(act.length===1?' conversación':' conversaciones')):'Aún no tienes chats', {wide:true, cnt:totUn||''});
-    h+=htile("openConv('"+gConv(myGroup())+"')",'personas','Grupo', esc(S.area), {cnt:grpUn||''});
-    h+=htile("openConv('"+rConv(S.emp)+"')",'recibo','RRHH', 'Tu línea privada', {cnt:rUn||''});
-    h+=htile("msgsGo('personal')",'dia','Personal', 'Compañeros y responsable', {cnt:perUn||''});
-    h+=htile('renderVacaciones()','cal','Vacaciones', 'Días y solicitudes');
-    h+=htile('renderQuejas()','docs','Quejas y reportes', 'Ideas que dan puntos');
-    h+='</div>';
+    inner+='<div class="tgrid">';
+    inner+=htile("msgsGo('activos')",'msg','Chats activos', act.length?(act.length+(act.length===1?' conversación':' conversaciones')):'Aún no tienes chats', {wide:true, cnt:totUn||''});
+    inner+=htile("openConv('"+gConv(myGroup())+"')",'personas','Grupo', esc(S.area), {cnt:grpUn||''});
+    inner+=htile("openConv('"+rConv(S.emp)+"')",'recibo','RRHH', 'Tu línea privada', {cnt:rUn||''});
+    inner+=htile("msgsGo('personal')",'dia','Personal', 'Compañeros y responsable', {cnt:perUn||''});
+    inner+=htile('renderVacaciones()','cal','Vacaciones', 'Días y solicitudes');
+    inner+=htile('renderQuejas()','docs','Quejas y reportes', 'Ideas que dan puntos');
+    inner+='</div>';
   }
+  // conservar lo tecleado en el Mensaje rápido ante un re-pintado en vivo (sbRerender)
+  var _qDraft=($('qcIn')||{}).value||'', _qTerm=($('qcSearch')||{}).value||'';
+  var _qFocus=document.activeElement?document.activeElement.id:'';
+  // cuadros a la IZQUIERDA + "Mensaje rápido" a la DERECHA (escritorio, todos los roles)
+  h+='<div class="hubwrap"><div class="hubmain">'+inner+'</div><aside class="hubside">'+qchatBox(_qTerm)+'</aside></div>';
   $('s-msgs').innerHTML=h; show('msgs');
+  var qi=$('qcIn'); if(qi){ qi.onkeydown=function(ev){ if(ev.key==='Enter') qcSend(); }; if(_qDraft) qi.value=_qDraft; }
+  if(_qFocus==='qcIn' && qi) qi.focus();
+  else if(_qFocus==='qcSearch'){ var qs=$('qcSearch'); if(qs){ qs.focus(); qs.setSelectionRange(qs.value.length,qs.value.length); } }
+  var qm=$('qcMsgs'); if(qm) qm.scrollTop=qm.scrollHeight;
+}
+/* ===== MENSAJE RÁPIDO (panel lateral de Mensajes · escritorio · todos los roles):
+   busca a una persona por nombre o número (agrupada por área, con scroll), escríbele
+   y al ENVIAR te lleva directo al chat nuevo en tus Chats activos. ===== */
+var _qcSel=null;
+function qchatBox(term){
+  return '<div class="panel qchat"><div class="hd" style="margin-bottom:9px"><div><div class="eyebrow">Mensaje rápido</div><b style="font-size:16px">Nuevo chat</b></div><span class="chipst">directo</span></div>'+
+    '<div class="search" style="margin:0 0 9px">'+SEARCH_SVG+'<input id="qcSearch" placeholder="Busca por nombre o número…" autocomplete="off" value="'+escA(term||'')+'" oninput="qcPaint()"></div>'+
+    '<div id="qcBody">'+qcBodyHTML()+'</div>'+
+    '<div class="composer" style="position:static;padding:10px 0 0;background:none"><input id="qcIn" placeholder="Escribe tu mensaje…" autocomplete="off"><button class="send" onclick="qcSend()" aria-label="Enviar"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button></div></div>';
+}
+function qcBodyHTML(){
+  var term=(($('qcSearch')||{}).value||'');
+  if(_qcSel){
+    var conv=dConv(S.emp,_qcSel), msgs=convMsgs(conv);
+    var oi=dirInfo(_qcSel)||{}, nom=oi.nombre?niceName(oi.nombre):empName(_qcSel);
+    return '<div class="qcsel"><button class="back" style="padding:5px 10px;flex:none" onclick="_qcSel=null;qcPaint()">‹</button>'+personAvatar(_qcSel,34)+
+      '<span style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(nom)+'</b><span class="note">#'+(''+_qcSel).padStart(3,'0')+(oi.depto?' · '+esc(oi.depto):'')+'</span></span></div>'+
+      '<div class="msgs qcmsgs" id="qcMsgs">'+(msgs.length?threadHTML(msgs,false):'<div class="note" style="text-align:center;padding:16px">Sin mensajes todavía. ¡Escríbele!</div>')+'</div>';
+  }
+  return '<div class="qclist">'+qcListHTML(term)+'</div>';
+}
+function qcListHTML(term){
+  var people=dirPeople();
+  if(!people) return '<div class="note" style="padding:10px">Cargando directorio…</div>';
+  var q=_norm(term||''), digits=(term||'').replace(/\D/g,''), byArea={}, order=[];
+  people.forEach(function(p){
+    if(p.id===S.emp) return;
+    if(term){ var bn=q&&_norm(p.name).indexOf(q)>=0, bi=digits&&(''+p.id).padStart(3,'0').indexOf(digits)>=0; if(!bn&&!bi) return; }
+    var a=p.area||'Otros'; if(!byArea[a]){ byArea[a]=[]; order.push(a); } byArea[a].push(p);
+  });
+  if(!order.length) return '<div class="note" style="padding:10px">'+(term?('Nadie coincide con «'+esc(term)+'».'):'Aún no hay nadie registrado.')+'</div>';
+  var h='';
+  order.forEach(function(a){
+    h+='<div class="qcarea">'+esc(a)+'</div>';
+    byArea[a].forEach(function(p){
+      var init=p.name.split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase();
+      h+='<div class="dirrow" onclick="qcPick('+(+p.id)+')"><span class="ava">'+esc(init)+'</span><span class="t"><b>'+esc(p.name)+'</b><span>'+esc(a)+'</span></span><span class="idtag">#'+(''+p.id).padStart(3,'0')+'</span></div>';
+    });
+  });
+  return h;
+}
+function qcPaint(){ var b=$('qcBody'); if(b) b.innerHTML=qcBodyHTML(); var m=$('qcMsgs'); if(m) m.scrollTop=m.scrollHeight; }
+function qcPick(n){ _qcSel=+n; qcPaint(); var i=$('qcIn'); if(i) i.focus(); try{ pubFresh(n, function(){ if(_screen==='msgs' && _qcSel===+n) qcPaint(); }); }catch(e){} }
+function qcSend(){
+  var i=$('qcIn'), t=i?(i.value||'').trim():''; if(!t) return;
+  if(!_qcSel){ flash('Primero elige a la persona (búscala arriba)'); var s=$('qcSearch'); if(s) s.focus(); return; }
+  var conv=dConv(S.emp,_qcSel);
+  sendMsg(conv, t, null);
+  if(i) i.value='';
+  _qcSel=null;
+  openConv(conv);   // directo al chat recién creado (queda en tus Chats activos)
 }
 /* ===== HUB de Mensajes: páginas internas (misma regla del tablero: cuadro→info) ===== */
 var _msgsPage=null;   // null = hub · 'activos'|'personal' (trabajador) · 'equipo' (mando) · 'planta' (admin)
@@ -5812,13 +5949,8 @@ function msgPlantaSecciones(){
     else if(c.indexOf('g:')===0) gc[c]=1; else if(c.indexOf('d:')===0) dc[c]=1; });
   var rk=Object.keys(rc), ck=Object.keys(cc), jk=Object.keys(jc), gk=Object.keys(gc), dk=Object.keys(dc);
   var h='';
-  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Monitoreo</div><b style="font-size:16px">Mensajes de la planta</b><div class="note" style="margin-top:3px">Puedes leer cualquier conversación de la planta. Los trabajadores no ven que tienes acceso.</div></div><span class="status"><span class="d"></span>En línea</span></div>'+
-    '<div class="dotgrid">'+
-      dotStat(Math.min(100,rk.length*12), rk.length, 'RRHH','')+
-      dotStat(Math.min(100,ck.length*12), ck.length, 'Dirección','')+
-      dotStat(Math.min(100,jk.length*12), jk.length, 'Responsables','')+
-      dotStat(Math.min(100,(gk.length+dk.length)*12), gk.length+dk.length, 'Grupos y chats','')+
-    '</div></div>';
+  // (V3.7e: se quitaron los medidores decorativos de monitoreo — no aportaban nada)
+  h+='<div class="panel"><div class="hd" style="margin-bottom:0"><div><div class="eyebrow">Monitoreo</div><b style="font-size:16px">Mensajes de la planta</b><div class="note" style="margin-top:3px">Puedes leer cualquier conversación. Los trabajadores no ven que tienes acceso.</div></div><span class="status"><span class="d"></span>En línea</span></div></div>';
   h+='<div class="sec-t">Líneas con RRHH<span class="ln"></span></div>';
   if(!rk.length) h+='<div class="card"><div class="note">Nadie ha escrito a RRHH todavía.</div></div>';
   rk.forEach(function(c){ h+=convRow(c,empName(+c.slice(2))+' → RRHH',null); });
@@ -5949,7 +6081,7 @@ function threadHTML(msgs,showSender){
   if(!msgs.length) return '<div class="note" style="text-align:center;padding:22px">Aún no hay mensajes. ¡Escribe el primero!</div>';
   return msgs.map(function(m){
     var mine=m.from===S.emp;
-    var body=(m.img?'<img src="'+m.img+'" style="max-width:200px;border-radius:10px;display:block;'+(m.text?'margin-bottom:6px':'')+'">':'')+(m.text?esc(m.text):'');
+    var _im=imgSrc(m.img); var body=(_im?'<img src="'+_im+'" style="max-width:200px;border-radius:10px;display:block;'+(m.text?'margin-bottom:6px':'')+'">':'')+(m.text?esc(m.text):'');
     var sub=(showSender&&!mine)?senderSub(m.from):'';
     var lbl=(showSender&&!mine)?'<div class="note" style="margin-bottom:2px;font-size:10px;cursor:pointer" onclick="openPerfilPublico('+(+m.from)+',\'reopenThread()\')"><b>'+esc(senderLabel(m.from))+'</b>'+(sub?' <span style="opacity:.65">· '+esc(sub)+'</span>':'')+'</div>':'';
     return '<div class="m '+(mine?'user':'bot')+'"><div class="bub">'+lbl+body+'</div></div>';
@@ -5961,9 +6093,11 @@ function openConv(conv){
   // _viewRO se conserva SOLO en re-pintados en vivo del mismo hilo (pantalla 'thread');
   // al abrir desde cualquier lista se resetea, salvo que venga de openConvRO.
   if(_roNext){ _viewRO=true; _roNext=false; } else if(_screen!=='thread' || _curConv!==conv){ _viewRO=false; }
+  if(_screen!=='thread' || _curConv!==conv) _thQ='';   // al abrir OTRO chat, limpiar el buscador de monitoreo
   // conservar lo que el usuario está escribiendo si esto es un re-pintado en vivo
   var _draft=(_curConv===conv && $('thIn')) ? $('thIn').value : '';
   var _hadFocus=(_curConv===conv && document.activeElement && document.activeElement.id==='thIn');
+  var _findFocus=(_curConv===conv && document.activeElement && document.activeElement.id==='thFind');   // buscador de monitoreo
   _curConv=conv; if(!_viewRO) markConvRead(conv);
   // Es "monitoreo" (solo lectura) cuando el management NO tiene permiso de escribir en esa
   // conversación, o cuando se entró desde el visor de Conversaciones de trabajadores.
@@ -5980,21 +6114,38 @@ function openConv(conv){
   if(isDirect){ var _o=convOther(conv), _oi=dirInfo(_o)||pubGet(_o)||{}; var _od=(_oi.depto||senderSub(_o)||''); headSub='#'+(''+_o).padStart(3,'0')+(_od?' · '+esc(_od):'')+' · ver perfil ›'; }
   else headSub = isMonitor?'Monitoreo · solo lectura':(isGroup?'Grupo de área':'Conversación');
   h+='<div class="chathead"'+headTapOpen+'>'+chanAvatar(conv)+'<div class="t"><b>'+esc(convTitle(conv))+'</b><span>'+headSub+'</span></div><span class="status"><span class="d"></span>En línea</span></div>';
-  if(isMonitor) h+='<div class="panel" style="border-color:color-mix(in srgb,var(--warn) 45%,transparent);padding:11px 14px;margin-bottom:10px"><div class="note" style="color:var(--warn);font-weight:700">Monitoreo · solo lectura. Los trabajadores no ven que tienes acceso.</div></div>';
-  h+='<div class="msgs" id="thMsgs">'+threadHTML(convMsgs(conv), isGroup||S.admin||isLine)+'</div>';
+  // Monitoreo (solo lectura): SIN barra de escribir; en su lugar, un buscador
+  // pequeño para encontrar palabras dentro de la conversación (pedido de Carlos).
+  if(isMonitor) h+='<div class="search thfind">'+SEARCH_SVG+'<input id="thFind" placeholder="Buscar en la conversación…" autocomplete="off" value="'+escA(_thQ||'')+'" oninput="thFilter(this.value)"></div>';
+  h+='<div class="msgs" id="thMsgs">'+threadHTML(isMonitor?thMsgsFiltradas(conv):convMsgs(conv), isGroup||S.admin||isLine)+'</div>';
   if(_pendImg && !isMonitor) h+='<div class="card" style="padding:8px;display:flex;gap:10px;align-items:center"><img src="'+_pendImg+'" style="max-height:70px;border-radius:8px"><span class="note" style="flex:1">Imagen lista para enviar</span><button class="back" style="padding:6px 10px" onclick="_pendImg=null;openConv(_curConv)">Quitar</button></div>';
   if(!isMonitor){
     h+='<div class="composer"><label class="send" style="background:var(--card2);color:var(--txt);cursor:pointer"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg><input type="file" accept="image/*" onchange="msgImgLoad(this)" style="display:none"></label><input id="thIn" placeholder="Escribe un mensaje…" autocomplete="off"><button class="send" onclick="sendFromThread()" aria-label="Enviar"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button></div>';
-  } else {
-    h+='<div class="note" style="text-align:center;padding:12px">Estás observando esta conversación (monitoreo). No puedes escribir aquí.</div>';
   }
+  // (monitoreo: no hay barra de abajo — solo se observa)
   $('s-thread').innerHTML=h; show('thread');
-  var t=$('thMsgs'); if(t) t.scrollTop=t.scrollHeight;
+  var t=$('thMsgs'); if(t && !_thQ) t.scrollTop=t.scrollHeight;
   var ci=$('thIn'); if(ci){ ci.onkeydown=function(ev){ if(ev.key==='Enter') sendFromThread(); };
     if(_draft) ci.value=_draft;                    // no perder lo tecleado en re-pintados en vivo
     if(_hadFocus || !_draft) ci.focus(); }
+  var tf=$('thFind'); if(tf && _findFocus){ tf.focus(); tf.setSelectionRange(tf.value.length,tf.value.length); }   // conservar el foco del buscador de monitoreo
 }
 function reopenThread(){ if(!_curConv){ renderMsgs(); return; } if(_viewRO){ openConvRO(_curConv); } else { openConv(_curConv); } }
+/* Buscador dentro de un chat en MONITOREO (solo lectura): filtra los mensajes por
+   palabra, en vivo. Solo existe donde no se puede escribir (acceso total / visor). */
+var _thQ='';
+function thMsgsFiltradas(conv){
+  var m=convMsgs(conv); if(!_thQ) return m;
+  var q=_norm(_thQ);
+  return m.filter(function(x){ return _norm(x.text||'').indexOf(q)>=0; });
+}
+function thFilter(v){
+  _thQ=v||'';
+  var el=$('thMsgs'); if(!el || !_curConv) return;
+  var m=thMsgsFiltradas(_curConv);
+  el.innerHTML = m.length? threadHTML(m, true) : '<div class="note" style="text-align:center;padding:16px">Ningún mensaje con «'+esc(_thQ)+'».</div>';
+  if(!_thQ) el.scrollTop=el.scrollHeight;
+}
 function sendFromThread(){
   var inp=$('thIn'), t=inp?(inp.value||'').trim():'';
   if(!t && !_pendImg) return;

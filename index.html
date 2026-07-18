@@ -126,30 +126,64 @@ button{font-family:var(--font)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:13px;
   box-shadow:var(--shadow);backdrop-filter:blur(12px)}
 /* ===== TILES (cuadros del home — cada uno lleva a su página) · V3.6 ===== */
-/* ===== PORTADA "Bienvenido" (V3.6 Sesión 9 · pantalla 1 del rediseño aprobado) =====
-   La ven TODOS, SIEMPRE, antes de entrar. 100% CSS (sin assets externos). */
-#portada{position:fixed;inset:0;z-index:400;display:flex;flex-direction:column;overflow:hidden;
-  background:radial-gradient(120% 80% at 100% 0,rgba(204,26,31,.24),transparent 55%),var(--bg);
-  transition:opacity .38s var(--ease-out),transform .38s var(--ease-out)}
+/* ===== PORTADA "Bienvenido" (V3.6 · pantalla 1) — hero ASIMÉTRICO responsive =====
+   La ven TODOS, SIEMPRE, antes de entrar. 100% CSS (sin assets externos).
+   Móvil: una columna (texto abajo, formas arriba-derecha, como el mockup aprobado).
+   Escritorio (≥900px): dos columnas de ancho completo — texto izquierda, escena 3D
+   derecha — para que no se vea una tira móvil perdida en medio de la pantalla. */
+#portada{position:fixed;inset:0;z-index:400;overflow:hidden;
+  background:radial-gradient(120% 85% at 100% 0,rgba(204,26,31,.26),transparent 58%),var(--bg);
+  transition:opacity .4s var(--ease-out),transform .4s var(--ease-out)}
 #portada.off{opacity:0;transform:translateY(-14px);pointer-events:none}
-#portada .pwrap{flex:1;display:flex;flex-direction:column;width:100%;max-width:520px;margin:0 auto;position:relative;
-  padding:max(30px,env(safe-area-inset-top)) 28px max(30px,env(safe-area-inset-bottom))}
-#portada .brand{font-size:13px;font-weight:800;color:var(--accent2);letter-spacing:.08em;position:relative}
-#portada .deco{position:absolute;border-radius:22px;box-shadow:0 14px 30px rgba(204,26,31,.45)}
-#portada .deco.a{width:96px;height:96px;top:17%;right:-16px;transform:rotate(18deg);background:linear-gradient(150deg,var(--accent2),var(--accent))}
-#portada .deco.b{width:52px;height:52px;top:calc(17% + 112px);right:66px;background:#1a1a1e;border:1px solid rgba(255,255,255,.06);box-shadow:0 10px 24px rgba(0,0,0,.5)}
-#portada h1{font-size:clamp(40px,10.5vw,58px);line-height:1.02;font-weight:900;letter-spacing:-.03em;margin:auto 0 0;position:relative}
-#portada .sub{color:var(--mut);font-size:15px;line-height:1.5;margin-top:12px;max-width:250px;position:relative}
-#portada .acc{margin-top:28px;display:flex;align-items:center;justify-content:space-between;position:relative}
+#portada .pwrap{height:100%;display:flex;flex-direction:column;width:100%;max-width:560px;margin:0 auto;position:relative;
+  padding:max(30px,env(safe-area-inset-top)) 28px max(34px,env(safe-area-inset-bottom))}
+#portada .brand{font-size:13px;font-weight:800;color:var(--accent2);letter-spacing:.08em;position:relative;z-index:2}
+#portada .pmain{flex:1;min-height:0;display:flex;flex-direction:column;position:relative}
+#portada .pcopy{margin-top:auto;position:relative;z-index:2}
+#portada h1{font-size:clamp(42px,11vw,60px);line-height:1;font-weight:900;letter-spacing:-.03em;margin:0}
+#portada .sub{color:var(--mut);font-size:15.5px;line-height:1.5;margin-top:14px;max-width:32ch}
+#portada .acc{margin-top:30px;display:flex;align-items:center;gap:20px}
 #portada .dots{display:flex;gap:6px}
 #portada .dots i{width:22px;height:5px;border-radius:9px;background:var(--line)}
 #portada .dots i.on{background:var(--accent);width:30px}
-#portada .fab{width:96px;height:96px;border-radius:50%;border:none;color:#fff;font-family:inherit;cursor:pointer;
+#portada .fab{width:96px;height:96px;border-radius:50%;border:none;color:#fff;font-family:inherit;cursor:pointer;margin-left:auto;flex:none;
   background:radial-gradient(120% 120% at 30% 20%,var(--accent2),var(--accdeep));
   font-size:15px;font-weight:800;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;
   box-shadow:0 16px 36px rgba(204,26,31,.55);transition:transform .16s var(--ease-out)}
 #portada .fab:active{transform:scale(.94)}
+@media (hover:hover){#portada .fab:hover{transform:scale(1.04)}}
 #portada .fab span{font-size:22px;line-height:1}
+#portada .fab:focus-visible{outline:3px solid #fff;outline-offset:3px}
+/* escena de formas 3D (identidad del mockup): móvil = decoración arriba-derecha */
+#portada .pscene{position:absolute;inset:0;pointer-events:none;z-index:1}
+#portada .deco{position:absolute;border-radius:24px;transform:rotate(var(--r,0deg))}
+#portada .deco.a{--r:18deg;width:104px;height:104px;top:15%;right:0;background:linear-gradient(150deg,var(--accent2),var(--accent));box-shadow:0 20px 44px rgba(204,26,31,.5)}
+#portada .deco.b{--r:0deg;width:54px;height:54px;top:calc(15% + 128px);right:24%;background:#17171c;border:1px solid rgba(255,255,255,.07);box-shadow:0 14px 30px rgba(0,0,0,.55)}
+#portada .deco.c{--r:-12deg;width:40px;height:40px;top:10%;right:30%;background:linear-gradient(150deg,var(--accent),var(--accdeep));box-shadow:0 12px 26px rgba(204,26,31,.4);opacity:.92}
+/* ESCRITORIO: dos columnas, ancho completo */
+@media (min-width:900px){
+  #portada .pwrap{max-width:1200px;padding:42px clamp(44px,6vw,104px) 52px}
+  #portada .pmain{display:grid;grid-template-columns:1.02fr .98fr;align-items:center;gap:clamp(36px,5vw,88px)}
+  #portada .pcopy{margin-top:0}
+  #portada h1{font-size:clamp(60px,7vw,96px);letter-spacing:-.035em}
+  #portada .sub{font-size:18px;margin-top:20px;max-width:34ch}
+  #portada .acc{margin-top:42px;gap:26px}
+  #portada .fab{margin-left:0}
+  #portada .pscene{position:relative;inset:auto;height:min(62vh,540px)}
+  #portada .deco{border-radius:34px}
+  /* escritorio: composición limpia de 2 piezas (grande roja + oscura = profundidad),
+     fiel al mockup; la 3ª pieza sólo vive en móvil para no encimarse en la escena angosta */
+  #portada .deco.a{--r:15deg;width:clamp(220px,25vw,290px);height:clamp(220px,25vw,290px);top:17%;right:6%}
+  #portada .deco.b{--r:-8deg;width:124px;height:124px;top:auto;bottom:7%;right:46%;border-radius:30px}
+  #portada .deco.c{display:none}
+}
+/* vida sutil: las formas flotan (joy); se apaga con reduced-motion */
+@keyframes hbFloat{0%,100%{transform:translateY(0) rotate(var(--r,0deg))}50%{transform:translateY(-13px) rotate(var(--r,0deg))}}
+@media (prefers-reduced-motion:no-preference){
+  #portada .deco{animation:hbFloat 7s ease-in-out infinite}
+  #portada .deco.b{animation-duration:8.5s;animation-delay:-2.2s}
+  #portada .deco.c{animation-duration:6s;animation-delay:-1s}
+}
 @media (prefers-reduced-motion: reduce){ #portada{transition:opacity .2s ease} #portada.off{transform:none} }
 /* ===== Banda de alerta de seguridad (tablero): delgada, simétrica, a todo lo ancho ===== */
 .salert{display:flex;align-items:center;gap:12px;width:100%;margin:14px 0 2px;padding:12px 16px;border-radius:16px;cursor:pointer;
@@ -736,12 +770,16 @@ body.a11y .screen .seg button{ font-size:13px !important; }
   <div id="portada" role="dialog" aria-modal="true" aria-label="Bienvenido a Hules Banda">
     <div class="pwrap">
       <div class="brand">HULES BANDA</div>
-      <div class="deco a"></div><div class="deco b"></div>
-      <h1>Bienvenido</h1>
-      <div class="sub">Tu sistema de capacitación, mensajes y trámites. Todo en un lugar.</div>
-      <div class="acc">
-        <div class="dots"><i class="on"></i><i></i><i></i></div>
-        <button class="fab" onclick="portadaGo()" aria-label="Acceder al sistema">Acceder<span>→</span></button>
+      <div class="pmain">
+        <div class="pcopy">
+          <h1>Bienvenido</h1>
+          <div class="sub">Tu sistema de capacitación, mensajes y trámites. Todo en un lugar.</div>
+          <div class="acc">
+            <div class="dots"><i class="on"></i><i></i><i></i></div>
+            <button class="fab" onclick="portadaGo()" aria-label="Acceder al sistema">Acceder<span>→</span></button>
+          </div>
+        </div>
+        <div class="pscene" aria-hidden="true"><span class="deco a"></span><span class="deco b"></span><span class="deco c"></span></div>
       </div>
     </div>
   </div>

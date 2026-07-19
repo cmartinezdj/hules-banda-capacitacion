@@ -1971,6 +1971,7 @@ function startSession(cfg, saved, forceProfile){
   // permiso de notificaciones (para avisar mensajes nuevos con la app en segundo plano)
   try{ if('Notification' in window && Notification.permission==='default') setTimeout(function(){ Notification.requestPermission(); }, 2500); }catch(e){}
   window._forceProfile=!!forceProfile;
+  if(V3_ON) idleArm();   // auto-salir por inactividad en equipos compartidos (solo sesión real)
   if(forceProfile){ renderPerfil(); }
   else if(S.admin) renderDash(); else renderHome();
 }
@@ -2002,8 +2003,44 @@ function login(){
   }
   startSession({ emp:n, key:r.key, area:r.area, icon:r.icon, accent:r.accent, accent2:r.accent2, admin:!!r.admin, dash:(r.dash||null), greet:r.greet }, saved, false);
 }
-function logout(){ try{ localStorage.removeItem('hb_recs'); localStorage.removeItem('hb_recs_who'); }catch(e){}   // no dejar recibos en un equipo compartido
-  try{ if(sbReady()) SB.auth.signOut(); }catch(e){} location.reload(); }
+/* SALIR (equipo compartido — pentest 19-jul): NO basta con signOut()+reload.
+   signOut() de supabase-js borra el token de forma ASÍNCRONA (tras una llamada de
+   red), y el reload síncrono navega antes → el JWT persistía y v3Restore
+   RE-ENTRABA a la sesión anterior SIN PIN. Además localStorage guardaba datos
+   personales (mensajes, perfiles, recibos, reportes) que el siguiente usuario del
+   aparato podía leer. Ahora: (1) borrar el token de Supabase (sb-*-auth-token) y
+   TODAS las llaves hb_* sensibles de forma SÍNCRONA, (2) signOut() best-effort
+   para revocar en el servidor, (3) recargar. */
+function hbWipeLocal(){
+  try{
+    var kill=[];
+    for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i);
+      if(!k) continue;
+      // token de Supabase + todo lo de la app MENOS el candado de intentos y la preferencia de modelo (inocua)
+      if(/^sb-.*-auth-token/.test(k) || (k.indexOf('hb_')===0 && k!=='hb_pinlock' && k!=='hb_model')) kill.push(k);
+    }
+    kill.forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
+  }catch(e){}
+  try{ DBC={}; }catch(e){}
+}
+function logout(){
+  hbWipeLocal();
+  try{ if(sbReady()) SB.auth.signOut({scope:'global'}); }catch(e){}   // revocación en el servidor, best-effort (no bloquea el reload)
+  location.reload();
+}
+/* AUTO-SALIR POR INACTIVIDAD (equipo compartido): tras 5 min sin actividad, cierra
+   la sesión de verdad (logout borra el token + reload). Debe hacer logout REAL, no
+   un overlay cosmético: la sesión persistida se auto-reanudaría al recargar. */
+var IDLE_MS=10*60000, _idleT=null;   // 10 min: cubre un video de capacitación (~4 min) sin cortar la sesión, pero cierra un equipo abandonado
+function idleReset(){ if(!S) return; clearTimeout(_idleT); _idleT=setTimeout(function(){ if(S) logout(); }, IDLE_MS); }
+function idleArm(){
+  if(window._idleArmed) { idleReset(); return; }
+  window._idleArmed=true;
+  ['mousedown','keydown','touchstart','scroll','visibilitychange'].forEach(function(ev){
+    try{ window.addEventListener(ev, idleReset, {passive:true}); }catch(e){ window.addEventListener(ev, idleReset); }
+  });
+  idleReset();
+}
 
 /* ============================================================================
    LOGIN REAL V3 — Primer ingreso / Miembros, con IDs del servidor + PIN + T&C.
@@ -3790,6 +3827,10 @@ function doAlta(){
   var nacRaw=(($('alNac')||{}).value||'').replace(/\D/g,''); var nac=(nacRaw.length===8)?nacRaw:'';
   var mando=!!($('alMando')||{}).checked, admin=!!($('alAdmin')||{}).checked;
   if(!clave||!nombre||!depto){ flash('Escribe al menos clave, nombre y departamento'); return; }
+  // SEGURIDAD (pentest 19-jul): una cuenta con acceso total / responsable SIN fecha
+  // de nacimiento no tendría segundo factor y cualquiera que sepa la clave (pública)
+  // podría registrarla y fijarle el PIN. Para esas cuentas la fecha es OBLIGATORIA.
+  if((admin||mando) && !nac){ flash('Para una cuenta con acceso total o de responsable, la fecha de nacimiento es OBLIGATORIA (es el candado extra al registrarse). Escríbela completa: 8 números.'); var e=$('alNac'); if(e) e.focus(); return; }
   if(!sbReady()){ flash('Sin conexión con el servidor'); return; }
   if(!V3_ON){ flash('El sistema aún no está activo (base de datos)'); return; }
   var ALTA_ERR={ no_autorizado:'Tu cuenta no tiene acceso para dar de alta (solo Dirección/RRHH)', ya_existe:'Esa clave ya existe en el sistema', clave_invalida:'La clave debe ser numérica', faltan_datos:'Faltan nombre o departamento' };
@@ -4794,9 +4835,9 @@ function reportsAdminBlock(){
   a.forEach(function(r){ var ty=RPT[r.type]||{ic:'•',l:r.type,pts:false};
     h+='<div class="card"><div class="line"><span style="display:flex;gap:8px;align-items:center;min-width:0">'+rptIcon(r.type)+'<b>'+esc(ty.l)+'</b></span>'+stTag(r.status)+'</div>'+
        '<p style="margin:7px 0;line-height:1.5">'+esc(r.text)+'</p>'+
-       '<div class="line"><span class="note">Empleado #'+(''+r.emp).padStart(3,'0')+' · '+esc(r.area||'')+' · '+buzTime(r.ts)+'</span>'+speakBtn(ty.l+'. '+r.text)+'</div>'+
+       '<div class="line"><span class="note">Empleado #'+esc((''+r.emp).padStart(3,'0'))+' · '+esc(r.area||'')+' · '+buzTime(r.ts)+'</span>'+speakBtn(ty.l+'. '+r.text)+'</div>'+
        (r.status==='pendiente'
-         ? '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="margin:0;flex:1;padding:11px;font-size:13px" onclick="reviewReport(\''+r.id+'\',true)">✓ '+(ty.pts?'Aceptar (+'+rptPts(r.type)+')':'Atendida')+'</button><button class="btn ghost" style="margin:0;flex:1;padding:11px;font-size:13px" onclick="reviewReport(\''+r.id+'\',false)">✗ No procede</button></div>'
+         ? '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="margin:0;flex:1;padding:11px;font-size:13px" onclick="reviewReport(\''+jsAttr(r.id)+'\',true)">✓ '+(ty.pts?'Aceptar (+'+rptPts(r.type)+')':'Atendida')+'</button><button class="btn ghost" style="margin:0;flex:1;padding:11px;font-size:13px" onclick="reviewReport(\''+jsAttr(r.id)+'\',false)">✗ No procede</button></div>'
          : (r.pts?'<div class="note" style="margin-top:7px">+'+r.pts+' puntos otorgados al empleado.</div>':''))+'</div>'; });
   return h;
 }
@@ -5134,10 +5175,10 @@ function pollsBlock(){
            '<div class="lvlbar"><i style="width:'+pct+'%"></i></div></div>';
       });
       h+='<p class="note" style="margin-top:9px">'+total+' respuesta(s)'+(S.admin?' · '+targetLabel(p.to):'')+'</p>';
-      if(S.admin) h+='<button class="back" style="margin-top:8px;padding:6px 10px" onclick="delPoll(\''+p.id+'\')">Eliminar encuesta</button>';
+      if(S.admin) h+='<button class="back" style="margin-top:8px;padding:6px 10px" onclick="delPoll(\''+jsAttr(p.id)+'\')">Eliminar encuesta</button>';
     } else {
       p.opts.forEach(function(o,j){
-        h+='<div class="opt" onclick="votePoll(\''+p.id+'\','+j+')"><span class="dot"></span><span style="flex:1">'+esc(o)+'</span>'+speakBtn(o)+'</div>';
+        h+='<div class="opt" onclick="votePoll(\''+jsAttr(p.id)+'\','+j+')"><span class="dot"></span><span style="flex:1">'+esc(o)+'</span>'+speakBtn(o)+'</div>';
       });
       h+='<p class="note" style="margin-top:7px">Responde y gana +'+CFG.points.poll+' pts</p>';
     }
@@ -5161,8 +5202,8 @@ function leaveAdminBlock(){
     var lv=LEAVE[r.type]||{l:r.type};
     var st=r.status==='aprobado'?'<span class="tg g">Aprobado</span>':r.status==='rechazado'?'<span class="tg">Rechazado</span>':'';
     var ic='<span style="width:18px;height:18px;display:inline-flex;flex:none;margin-top:2px;color:var(--data)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%">'+(LV_IC[r.type]||AP.cal)+'</svg></span>';
-    h+='<div class="card"><div class="line" style="align-items:flex-start"><span style="display:flex;gap:9px;min-width:0">'+ic+'<span style="min-width:0"><b>#'+(''+r.emp).padStart(3,'0')+'</b> · '+esc(r.area||'')+'<br><span class="note">'+lv.l+' · '+fmtDate(r.from)+' → '+fmtDate(r.to)+' ('+r.days+' días)</span>'+(r.reason?'<br><span class="note">«'+esc(r.reason)+'»</span>':'')+'</span></span><span style="display:flex;gap:6px;align-items:center;flex:none">'+st+speakBtn('Solicitud de '+lv.l+' del empleado '+r.emp+', del '+fmtDate(r.from)+' al '+fmtDate(r.to)+(r.reason?'. Motivo: '+r.reason:''))+'</span></div>'+
-      (r.status==='pendiente'?'<div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="margin:0;flex:1;padding:10px;font-size:13px" onclick="reviewLeave(\''+r.id+'\',true)">✓ Aprobar</button><button class="btn ghost" style="margin:0;flex:1;padding:10px;font-size:13px" onclick="reviewLeave(\''+r.id+'\',false)">✗ Rechazar</button></div>':'')+'</div>';
+    h+='<div class="card"><div class="line" style="align-items:flex-start"><span style="display:flex;gap:9px;min-width:0">'+ic+'<span style="min-width:0"><b>#'+esc((''+r.emp).padStart(3,'0'))+'</b> · '+esc(r.area||'')+'<br><span class="note">'+esc(lv.l)+' · '+esc(fmtDate(r.from))+' → '+esc(fmtDate(r.to))+' ('+esc(''+r.days)+' días)</span>'+(r.reason?'<br><span class="note">«'+esc(r.reason)+'»</span>':'')+'</span></span><span style="display:flex;gap:6px;align-items:center;flex:none">'+st+speakBtn('Solicitud de '+lv.l+' del empleado '+r.emp+', del '+fmtDate(r.from)+' al '+fmtDate(r.to)+(r.reason?'. Motivo: '+r.reason:''))+'</span></div>'+
+      (r.status==='pendiente'?'<div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="margin:0;flex:1;padding:10px;font-size:13px" onclick="reviewLeave(\''+jsAttr(r.id)+'\',true)">✓ Aprobar</button><button class="btn ghost" style="margin:0;flex:1;padding:10px;font-size:13px" onclick="reviewLeave(\''+jsAttr(r.id)+'\',false)">✗ Rechazar</button></div>':'')+'</div>';
   });
   return h;
 }

@@ -726,6 +726,8 @@ body.a11y .screen .seg button{ font-size:13px !important; }
      le sigue cruzan las 2 columnas (si no, el masonry sube paneles ARRIBA del título) */
   #s-hr>.back{column-span:all;-webkit-column-span:all}
   #s-hr>.back+.panel{column-span:all;-webkit-column-span:all}
+  /* recibos de nómina (Sesión 10): la lista y los "por asignar" también van a lo ancho */
+  #s-hr>#recPendBox,#s-hr>#recListBox{column-span:all;-webkit-column-span:all}
   .sec-t{column-span:all}
   /* pantallas de lectura / flujo: una columna cómoda */
   #s-chat,#s-thread,#s-nom,#s-nom35,#s-perm,#s-perfil,#s-course,#s-quiz,#s-result,#s-pay,#s-vac,#s-lineas,#s-newchat{max-width:880px}
@@ -1982,7 +1984,14 @@ function login(){
   if(_prof.pin){
     var pf=$('pinField'), pv=(($('inPin')||{}).value||'').trim();
     if(pf && pf.style.display==='none'){ pf.style.display=''; $('inPin').focus(); flash('Escribe tu PIN de 4 dígitos'); return; }
-    if(pv!==_prof.pin){ flash('PIN incorrecto'); return; }
+    var _plk='demo'+n, _plw=pinlockLeft(_plk);   // mismo candado de intentos que el login real
+    if(_plw>0){ flash('Demasiados intentos. Espera '+(_plw>60?Math.ceil(_plw/60)+' min':_plw+' s')+' e intenta de nuevo.'); return; }
+    if(pv!==_prof.pin){
+      var _plw2=pinlockFail(_plk);
+      flash(_plw2>0?('PIN incorrecto. Bloqueado '+(_plw2>60?Math.ceil(_plw2/60)+' minutos':_plw2+' segundos')+' por seguridad.'):'PIN incorrecto');
+      return;
+    }
+    pinlockClear(_plk);
   }
   var saved=load(n)||{};
   if(!r.admin && !saved.points && !Object.keys(saved.done||{}).length){
@@ -1993,7 +2002,8 @@ function login(){
   }
   startSession({ emp:n, key:r.key, area:r.area, icon:r.icon, accent:r.accent, accent2:r.accent2, admin:!!r.admin, dash:(r.dash||null), greet:r.greet }, saved, false);
 }
-function logout(){ try{ if(sbReady()) SB.auth.signOut(); }catch(e){} location.reload(); }
+function logout(){ try{ localStorage.removeItem('hb_recs'); localStorage.removeItem('hb_recs_who'); }catch(e){}   // no dejar recibos en un equipo compartido
+  try{ if(sbReady()) SB.auth.signOut(); }catch(e){} location.reload(); }
 
 /* ============================================================================
    LOGIN REAL V3 — Primer ingreso / Miembros, con IDs del servidor + PIN + T&C.
@@ -2024,6 +2034,7 @@ function lgMode(m){
   $('lgChoose').style.display = (m==='choose')?'':'none';
   $('lgForm').style.display   = (m==='choose')?'none':'';
   $('lgMsg').innerHTML=''; $('lgMsg').className='hint';
+  clearInterval(_plTimer); _plTimer=null; lgBusy(false);   // al cambiar de modo, apagar el contador del candado
   var pinWrap=$('lgPinWrap'), go=$('lgGo'), clave=$('lgClave'), nacW=$('lgNacWrap'), nacL=$('lgNacLbl');
   if(m==='miembro'){ pinWrap.style.display=''; if(nacW)nacW.style.display='none'; if(nacL)nacL.style.display='none'; go.textContent='Entrar'; go.onclick=lgMiembro; }
   else if(m==='primer'){ pinWrap.style.display='none'; if(nacW)nacW.style.display=''; if(nacL)nacL.style.display=''; go.textContent='Continuar'; go.onclick=lgPrimer; }
@@ -2032,6 +2043,53 @@ function lgMode(m){
 }
 function lgSay(msg,bad){ var m=$('lgMsg'); if(!m) return; m.innerHTML=msg; m.className='hint'+(bad?' lgbad':''); }
 function lgBusy(on){ var g=$('lgGo'); if(g){ g.disabled=on; g.classList.toggle('off',on); } }
+
+/* ===== CANDADO DE INTENTOS DEL PIN (pedido de Carlos, 18-jul-2026) =====
+   3 intentos fallidos con la MISMA clave → 1 minuto bloqueado; si vuelve a
+   fallar → 5 minutos por intento (ese es el tope). Con contador visible.
+   Vive en el dispositivo: frena al curioso casual y a quien teclea PINs al
+   azar en un teléfono ajeno. El freno de red (contra scripts) se activa en
+   Supabase → Authentication → Rate Limits. Entrar bien limpia el contador. */
+var _plTimer=null;
+function _plMap(){ try{ return JSON.parse(localStorage.getItem('hb_pinlock')||'{}')||{}; }catch(e){ return {}; } }
+function _plSave(m){ try{ localStorage.setItem('hb_pinlock', JSON.stringify(m)); }catch(e){} }
+function pinlockLeft(clave){ var r=_plMap()[clave]; if(!r||!r.until) return 0; var s=Math.ceil((r.until-Date.now())/1000); return s>0?s:0; }
+function pinlockFail(clave){
+  var M=_plMap(), r=M[clave]||{f:0,lvl:0};
+  r.f=(r.f||0)+1;
+  if(r.lvl>=1){ r.until=Date.now()+5*60000; r.lvl=2; r.f=0; }      // ya estuvo bloqueada: 5 min por intento (tope)
+  else if(r.f>=3){ r.until=Date.now()+60000; r.lvl=1; r.f=0; }     // 3 fallos seguidos: 1 minuto
+  M[clave]=r; _plSave(M);
+  return pinlockLeft(clave);
+}
+function pinlockClear(clave){ var M=_plMap(); if(M[clave]){ delete M[clave]; _plSave(M); } }
+function pinlockRestan(clave){ var r=_plMap()[clave]; return (r&&r.lvl>=1)? 1 : Math.max(1, 3-((r&&r.f)||0)); }
+function pinlockShow(clave){
+  clearInterval(_plTimer);
+  function paint(){
+    var s=pinlockLeft(clave);
+    if(s<=0){ clearInterval(_plTimer); _plTimer=null; lgBusy(false);
+      lgSay('Ya puedes volver a intentar. Escribe tu clave y tu PIN con calma.'); return; }
+    // Solo deshabilitar el botón si la clave AHORA tecleada es la bloqueada — en un
+    // equipo compartido, otra persona con otra clave debe poder entrar.
+    var cur=claveNorm((($('lgClave')||{}).value||''));
+    lgBusy(cur===clave);
+    lgSay('Demasiados intentos con esta clave. Por seguridad, espera <b>'+Math.floor(s/60)+':'+('0'+(s%60)).slice(-2)+'</b> para volver a intentar.<br>¿Olvidaste tu PIN? Pide en Recursos Humanos que reinicien tu acceso.',true);
+  }
+  paint(); if(pinlockLeft(clave)>0) _plTimer=setInterval(paint,1000);
+}
+/* ¿el error de signIn es de CREDENCIAL (clave/PIN malos) y no de red/servidor?
+   Solo esos cuentan para el candado — un 429/red no debe bloquear a nadie.
+   (supabase-js v2 nunca rechaza la promesa: red/429/5xx llegan como si.error.) */
+function esErrorCredencial(e){
+  if(!e) return false;
+  var st=e.status||0, m=(e.message||'')+' '+(e.code||'');
+  if(st===400 || st===401 || st===422) return true;
+  if(/invalid login|invalid credential|credenciales|email not confirmed/i.test(m)) return true;
+  if(st===429 || st>=500 || st===0) return false;           // rate-limit / servidor / red: NO cuenta
+  if(/fetch|network|timeout|conexi/i.test(m)) return false;
+  return true;   // por defecto, trátalo como credencial (conservador para el candado)
+}
 
 /* PRIMER INGRESO: clave -> confirma quién eres -> T&C -> crea PIN -> registra */
 function lgPrimer(){
@@ -2110,10 +2168,17 @@ function lgMiembro(){
   var clave=claveNorm($('lgClave').value), pin=($('lgPin').value||'').trim();
   if(!clave){ lgSay('Escribe tu número de colaborador.',true); return; }
   if(!/^[0-9]{4}$/.test(pin)){ lgSay('Escribe tu PIN de 4 dígitos.',true); return; }
+  if(pinlockLeft(clave)>0){ pinlockShow(clave); return; }   // clave bloqueada por intentos: contador visible
   lgBusy(true); lgSay('Entrando…');
   SB.auth.signInWithPassword({email:v3email(clave),password:v3pass(clave,pin)}).then(function(si){
     if(si.error){ lgBusy(false);
-      lgSay('Clave o PIN incorrectos. Si es tu primera vez, usa <b>Primer ingreso</b>.',true); return; }
+      if(!esErrorCredencial(si.error)){   // red / rate-limit del servidor / 5xx: NO cuenta para el candado
+        lgSay('No pudimos entrar ahora (problema de conexión o el servidor está ocupado). Espera un momento e intenta de nuevo.',true); return; }
+      if(pinlockFail(clave)>0){ pinlockShow(clave); return; }
+      var _rest=pinlockRestan(clave);
+      lgSay('Clave o PIN incorrectos. Si es tu primera vez, usa <b>Primer ingreso</b>.'+
+            ' <b>Te queda'+(_rest===1?'':'n')+' '+_rest+' intento'+(_rest===1?'':'s')+'.</b>',true); return; }
+    pinlockClear(clave);
     bootV3(false);
   }, function(){ lgBusy(false); lgSay('No hay conexión con el servidor.',true); });
 }
@@ -2769,76 +2834,62 @@ function renderQuejas(){
   $('s-quejas').innerHTML=h; show('quejas');
 }
 
-/* ====================== TU DÍA: comedor / transporte / directorio ======================
-   Ganchos de uso diario. Los datos viven en el KV (los actualiza RRHH y llegan en vivo
-   a todos los celulares): hb_comedor (menú de la semana), hb_transporte (rutas),
-   hb_directorio (extensiones internas). Semillas de ejemplo hasta tener datos reales. */
-var DIA_DIAS=[['lun','Lunes'],['mar','Martes'],['mie','Miércoles'],['jue','Jueves'],['vie','Viernes'],['sab','Sábado']];
-function diaHoyKey(){ return ['dom','lun','mar','mie','jue','vie','sab'][new Date().getDay()]; }
-function comedorGet(){ return kvGet('hb_comedor')||{}; }
-function transporteGet(){ return kvGet('hb_transporte')||[]; }
+/* ====================== DIRECTORIO INTERNO (a quién llamar) ======================
+   Sesión 10 (Carlos, 18-jul-2026): la empresa NO ofrece comedor ni transporte, así
+   que "Tu día" se convirtió en el DIRECTORIO de extensiones. Los datos viven en el
+   KV ('hb_directorio'), los edita SOLO acceso total (candado de servidor en el
+   parche v3_4) y llegan en vivo a todos los celulares. */
 function directorioGet(){ return kvGet('hb_directorio')||[]; }
-var _diaTab='comedor';
-function diaTab(t){ _diaTab=t; renderDia(); }
-function renderDia(t){
-  if(t) _diaTab=t;
-  var T=_diaTab, h='';
-  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Inicio</div><b style="font-size:20px">Tu día</b>'+
-     '<p class="note" style="margin:4px 0 0;max-width:250px">Comedor, transporte y a quién llamar. Lo de todos los días, en un solo lugar.</p></div>'+
+function renderDia(){
+  var h='';
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Inicio</div><b style="font-size:20px">Directorio</b>'+
+     '<p class="note" style="margin:4px 0 0;max-width:250px">A quién llamar en la planta, con su extensión.</p></div>'+
      '<span class="status"><span class="d"></span>En línea</span></div></div>';
-  h+='<div class="seg">'+[['comedor','Comedor'],['transporte','Transporte'],['directorio','Directorio']].map(function(s){
-       return '<button class="'+(T===s[0]?'on':'')+'" onclick="diaTab(\''+s[0]+'\')">'+s[1]+'</button>'; }).join('')+'</div>';
-  if(T==='comedor'){
-    var M=comedorGet(), hoy=diaHoyKey();
-    var hoyMenu=M[hoy]||'';
-    var hoyLbl=(DIA_DIAS.filter(function(d){return d[0]===hoy;})[0]||['','Hoy'])[1];
-    var vozHoy=hoyMenu? ('Menú de hoy '+hoyLbl+': '+hoyMenu) : 'Hoy no hay menú publicado. Pregunta en el comedor.';
-    h+='<div class="panel" style="position:relative"><span style="position:absolute;top:12px;right:12px;z-index:2">'+speakBtn(vozHoy)+'</span>'+
-       '<div class="hd" style="align-items:flex-start;padding-right:46px"><div><div class="eyebrow">Comedor</div><b style="font-size:16px">Menú de hoy'+(hoy!=='dom'?' · '+hoyLbl:'')+'</b></div></div>'+
-       (hoyMenu? '<p style="margin:0;font-size:16px;line-height:1.6;font-weight:700">'+esc(hoyMenu)+'</p>'
-               : '<p class="note" style="margin:0">Hoy no hay menú publicado. Pregunta en el comedor.</p>')+'</div>';
-    h+='<div class="sec-t">La semana<span class="ln"></span></div><div class="panel">'+
-       DIA_DIAS.map(function(d){ var on=d[0]===hoy;
-         return '<div class="line"'+(on?' style="border-left:3px solid var(--data);padding-left:9px"':'')+'><span style="min-width:0"><b'+(on?' style="color:var(--data)"':'')+'>'+d[1]+(on?' · hoy':'')+'</b><br><span class="note">'+esc(M[d[0]]||'Por publicar')+'</span></span>'+speakBtn(d[1]+'. '+(M[d[0]]||'Por publicar'))+'</div>'; }).join('')+
-       '<div class="note" style="margin-top:9px">El menú lo publica RRHH cada semana y se actualiza solo en tu celular.</div></div>';
-  }
-  else if(T==='transporte'){
-    var R=transporteGet();
-    if(!R.length){ h+='<div class="card"><div class="note">Aún no hay rutas publicadas. RRHH las cargará pronto.</div></div>'; }
-    R.forEach(function(r){
-      var voz=r.n+'. '+r.det+'. '+(r.reg||'');
-      h+='<div class="card" style="position:relative"><span style="position:absolute;top:10px;right:10px;z-index:2">'+speakBtn(voz)+'</span>'+
-         '<div class="line" style="border:none;padding:0;padding-right:46px"><span style="display:flex;align-items:center;gap:10px;min-width:0">'+
-         '<span style="width:40px;height:40px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--data);background:color-mix(in srgb,var(--data) 13%,transparent)"><span style="width:21px;height:21px;display:block">'+IC2.bus+'</span></span>'+
-         '<b>'+esc(r.n)+'</b></span></div>'+
-         '<p style="margin:8px 0 0;line-height:1.55;color:var(--mut)">'+esc(r.det)+'</p>'+
-         (r.reg?'<div class="note" style="margin-top:5px">'+esc(r.reg)+'</div>':'')+'</div>';
-    });
-    if(R.length) h+='<div class="note" style="margin-top:10px;text-align:center">Horarios de ejemplo. Si tu ruta cambia, RRHH lo avisa por Noticias.</div>';
-  }
-  else{ // directorio
-    var D=directorioGet();
-    if(!D.length){ h+='<div class="card"><div class="note">Aún no hay directorio publicado.</div></div>'; }
-    else{
-      h+='<div class="panel">'+D.map(function(d){
-        var voz=d.dep+'. '+(d.who?('Con '+d.who+'. '):'')+(d.ext?('Extensión '+d.ext+'.'):'');
-        return '<div class="line"><span style="min-width:0"><b>'+esc(d.dep)+'</b>'+(d.who?'<br><span class="note">'+esc(d.who)+'</span>':'')+'</span>'+
-               '<span style="display:flex;gap:8px;align-items:center;flex:none">'+(d.ext?'<span class="tg g">Ext. '+esc(d.ext)+'</span>':'')+speakBtn(voz)+'</span></div>'; }).join('')+
-        '<div class="note" style="margin-top:9px">Marca la extensión desde cualquier teléfono de la planta. Para emergencias, avisa SIEMPRE primero a tu responsable.</div></div>';
-    }
+  var D=directorioGet();
+  if(!D.length){ h+='<div class="card"><div class="note">Aún no hay directorio publicado. Recursos Humanos lo cargará pronto.</div></div>'; }
+  else{
+    h+='<div class="panel">'+D.map(function(d){
+      var voz=d.dep+'. '+(d.who?('Con '+d.who+'. '):'')+(d.ext?('Extensión '+d.ext+'.'):'');
+      return '<div class="line"><span style="min-width:0"><b>'+esc(d.dep)+'</b>'+(d.who?'<br><span class="note">'+esc(d.who)+'</span>':'')+'</span>'+
+             '<span style="display:flex;gap:8px;align-items:center;flex:none">'+(d.ext?'<span class="tg g">Ext. '+esc(d.ext)+'</span>':'')+speakBtn(voz)+'</span></div>'; }).join('')+
+      '<div class="note" style="margin-top:9px">Marca la extensión desde cualquier teléfono de la planta. Para emergencias, avisa SIEMPRE primero a tu responsable.</div></div>';
   }
   $('s-dia').innerHTML=h; show('dia');
 }
-/* RRHH: editor del menú del comedor (pestaña Operación del tablero) */
-function comedorAdminBlock(){
-  var M=comedorGet();
-  return '<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Comedor</div><b style="font-size:16px">Menú de la semana</b><div class="note" style="margin-top:3px">Lo que escribas aquí lo ve TODO el personal en <b>Inicio → Tu día → Comedor</b>, al momento.</div></div></div>'+
-    DIA_DIAS.map(function(d){ return '<div class="note" style="margin:8px 0 3px">'+d[1]+'</div><input id="cm_'+d[0]+'" class="fin" autocomplete="off" placeholder="Ej. Pollo en salsa verde, arroz, frijoles y agua de jamaica" value="'+esc(M[d[0]]||'')+'">'; }).join('')+
-    '<button class="btn" style="margin-top:12px" onclick="comedorSave()">Publicar menú</button></div>';
+/* ACCESO TOTAL: editor del directorio (pestaña Operación del tablero; mismo
+   espíritu simple del viejo editor del comedor: escribe → Publicar → lo ven todos) */
+function dirRowHTML(r,i){
+  return '<div class="card" style="padding:11px">'+
+    '<input id="dir_dep_'+i+'" class="fin" autocomplete="off" placeholder="Área o servicio (ej. Enfermería / Primeros auxilios)" value="'+escA(r.dep||'')+'">'+
+    '<div style="display:flex;gap:7px;margin-top:7px;align-items:center">'+
+      '<input id="dir_who_'+i+'" class="fin" style="flex:1;min-width:0" autocomplete="off" placeholder="Con quién (opcional)" value="'+escA(r.who||'')+'">'+
+      '<input id="dir_ext_'+i+'" class="fin" style="width:86px;flex:none" inputmode="numeric" autocomplete="off" placeholder="Ext." value="'+escA(r.ext||'')+'">'+
+      '<button class="back" style="flex:none;padding:9px 11px;color:var(--bad)" title="Quitar este renglón" onclick="dirRowDel('+i+')">✕</button></div></div>';
 }
-function comedorSave(){
-  var M={}; DIA_DIAS.forEach(function(d){ M[d[0]]=(($('cm_'+d[0])||{}).value||'').trim().slice(0,120); });
-  kvSet('hb_comedor',M); flash('Menú publicado. Ya lo ve todo el personal.');
+function dirRowsRead(){ (window._dirEdit||[]).forEach(function(r,i){ var d=$('dir_dep_'+i),w=$('dir_who_'+i),e=$('dir_ext_'+i); if(d)r.dep=d.value; if(w)r.who=w.value; if(e)r.ext=e.value; }); }
+function dirRowsPaint(){ var el=$('dirRows'); if(el) el.innerHTML=(window._dirEdit||[]).map(dirRowHTML).join(''); }
+function dirRowAdd(){ dirRowsRead(); window._dirEdit.push({dep:'',who:'',ext:''}); dirRowsPaint(); var n=window._dirEdit.length-1, f=$('dir_dep_'+n); if(f) f.focus(); }
+function dirRowDel(i){ dirRowsRead(); window._dirEdit.splice(i,1); if(!window._dirEdit.length) window._dirEdit.push({dep:'',who:'',ext:''}); dirRowsPaint(); }
+function dirAdminBlock(){
+  // Si el editor YA está montado (re-render en vivo), conservar lo que se está
+  // editando en vez de re-sembrarlo desde el KV (se perderían los cambios).
+  if($('dirRows') && Array.isArray(window._dirEdit)){ dirRowsRead(); }
+  else { var D=directorioGet();
+    window._dirEdit=(D.length?D:[{dep:'',who:'',ext:''}]).map(function(x){ return {dep:x.dep||'',who:x.who||'',ext:x.ext||''}; }); }
+  return '<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Directorio</div><b style="font-size:16px">A quién llamar en la planta</b>'+
+    '<div class="note" style="margin-top:3px">Lo que publiques aquí lo ve TODO el personal en <b>Inicio → Directorio</b>, al momento.</div></div></div>'+
+    '<div id="dirRows">'+window._dirEdit.map(dirRowHTML).join('')+'</div>'+
+    '<div style="display:flex;gap:8px;margin-top:12px">'+
+      '<button class="btn ghost" style="margin:0;flex:1" onclick="dirRowAdd()">+ Agregar renglón</button>'+
+      '<button class="btn" style="margin:0;flex:1" onclick="dirSave()">Publicar directorio</button></div></div>';
+}
+function dirSave(){
+  dirRowsRead();
+  var D=(window._dirEdit||[]).map(function(r){
+    return { dep:(r.dep||'').trim().slice(0,60), who:(r.who||'').trim().slice(0,40), ext:(r.ext||'').replace(/\D/g,'').slice(0,6) };
+  }).filter(function(r){ return r.dep; });
+  kvSet('hb_directorio', D);
+  flash(D.length?'✓ Directorio publicado. Ya lo ve todo el personal.':'✓ Directorio vacío publicado (no se muestra nada al personal).');
 }
 
 /* ===== NOTICIA: infografía demo (no persistida) ===== */
@@ -2974,7 +3025,6 @@ function renderHome(){
   // ---- TODO en cuadros: cada tile lleva a su página (rediseño V3.6) ----
   // (el "coach" ahora es el cuadro PENDIENTES: centro de notificaciones con "Ir ahora";
   //  la alerta NOM-035 también vive ahí y en Encuestas)
-  var _per=payPeriod(), _signed=signRecord(S.emp,_per.key);
   var unN=0; try{ unN=newsGet().filter(function(n){ return inTarget(n.to,S.emp)&&!hasRead(n); }).length; }catch(e){}
   var unM=0; try{ unM=totalUnread(); }catch(e){}
   var nDoc=0; try{ nDoc=docsGet().length; }catch(e){}
@@ -2983,7 +3033,7 @@ function renderHome(){
   h+='<div class="tgrid">';
   h+=htile('renderPend()','pend','Pendientes', pend.length?(pend.length+(pend.length===1?' cosa por hacer':' cosas por hacer')):'Vas al corriente ✓', {wide:true, cnt:pend.length||''});
   h+=htile('renderCourses()','cap','Capacitación', done+' de '+total+' cursos', {cnt:(total-done)>0?(total-done):''});
-  h+=htile('renderPay()','recibo','Recibo de nómina', _signed?'Firmado ✓':'Por firmar');
+  h+=htile('renderPay()','recibo','Recibo de nómina', payTileSub());
   h+=htile("go('msgs')",'msg','Mensajes', unM?'Tienes nuevos':'Sin nuevos', {cnt:unM||''});
   h+=htile('renderNews()','news','Noticias', unN?(unN+' nuevas'):'Al día ✓', {cnt:unN||''});
   h+=htile('renderRewards()','premios','Premios', S.points+' puntos');
@@ -2991,9 +3041,9 @@ function renderHome(){
   h+=htile("go('chat')",'ai','Asistente', 'Pregúntale a Bandi');
   h+=htile('renderClases()','edu','Educación', 'Clases básicas');
   if(nDoc) h+=htile('renderDocs()','docs','Documentos', nDoc+' para ti');
-  // Tu día también es cuadro (V3.6 Sesión 9: todo por botones): comedor/transporte/directorio
-  var _hoyM=(comedorGet()[diaHoyKey()]||'').split(',')[0];
-  h+=htile("renderDia('comedor')",'dia','Tu día', _hoyM?('Hoy: '+_hoyM):'Comedor · transporte · directorio', {wide:true});
+  // Directorio también es cuadro (V3.6 Sesión 9: todo por botones). Sesión 10:
+  // comedor y transporte se retiraron (la empresa no los ofrece).
+  h+=htile('renderDia()','dia','Directorio', 'A quién llamar en la planta', {wide:true});
   h+='</div>';
   // control de uso (lock-down) — demo
   h+=lockCard();
@@ -3009,7 +3059,7 @@ function renderHomeAdmin(){
      '<p class="note" style="margin:4px 0 0;max-width:230px">Tu espacio personal. El tablero de la planta vive en su pestaña.</p></div>'+
      '<span class="status"><span class="d"></span>En línea</span></div></div>';
   // Directorio interno (a quién llamar)
-  h+='<div class="panel" style="cursor:pointer" onclick="renderDia(\'directorio\')"><div class="hd" style="margin-bottom:0"><div style="display:flex;align-items:center;gap:12px;min-width:0">'+
+  h+='<div class="panel" style="cursor:pointer" onclick="renderDia()"><div class="hd" style="margin-bottom:0"><div style="display:flex;align-items:center;gap:12px;min-width:0">'+
      '<span style="width:46px;height:46px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--data);background:color-mix(in srgb,var(--data) 13%,transparent)"><span style="width:23px;height:23px;display:block">'+IC2.phone+'</span></span>'+
      '<div style="min-width:0"><b>Directorio interno</b><div class="note" style="margin-top:2px">Extensiones: a quién llamar en la planta.</div></div></div><span class="chipst">Abrir ›</span></div></div>';
   $('s-home').innerHTML=h; show('home');
@@ -3022,7 +3072,7 @@ function pendList(){
   var out=[];
   try{ var st=nomGet(); if(st.current && !localStorage.getItem(nomDoneKey(st.current.id)))
     out.push({t:'Cuestionario NOM-035', d:'Anónimo · '+nomTotalQ()+' preguntas · ayuda a mejorar la planta', js:'renderNom()'}); }catch(e){}
-  try{ var per=payPeriod(); if(!signRecord(S.emp,per.key))
+  try{ var per=payPeriod(); if(payPend())
     out.push({t:'Firma tu recibo de nómina', d:per.label, js:'renderPay()'}); }catch(e){}
   try{ var ob=myCourses().filter(function(c){ return c.m && !statusOf(c.id); });
     if(ob.length) out.push({t:'Cursos obligatorios', d:ob.length+(ob.length===1?' pendiente':' pendientes')+' · empieza con «'+ob[0].t+'»', js:'renderCourses()'}); }catch(e){}
@@ -4065,9 +4115,9 @@ function managerDash(role){
   h+=htile("mgrGo('deptos')",'deptos','Departamentos', DS?(DS.global+'% global · '+DS.list.length+' deptos'):'Avance por área');
   h+=htile("mgrGo('personas')",'personas','Personas', DS?(DS.reg+' registrados · permisos'):'Equipo, permisos y recibos');
   h+=htile("mgrGo('focos')",'focos','Focos', foco?(foco+' por atender'):'Todo en orden ✓', {cnt:foco||''});
-  h+=htile("mgrGo('operacion')",'operacion','Operación', (unansN?unansN+' preguntas · ':'')+'buzón · comedor', {cnt:unansN||''});
+  h+=htile("mgrGo('operacion')",'operacion','Operación', (unansN?unansN+' preguntas · ':'')+'buzón · directorio', {cnt:unansN||''});
   h+=htile('renderDocs()','docs','Documentos', 'Manuales por departamento');
-  h+=htile("renderDia('directorio')",'cal','Directorio', 'A quién llamar en la planta');
+  h+=htile('renderDia()','cal','Directorio', 'A quién llamar en la planta');
   h+='</div>';
   $('s-hr').innerHTML=h; show('hr');
 }
@@ -4075,7 +4125,7 @@ function managerDash(role){
    en DOS niveles: sección (hub de cuadros) → tema (cuadro) → la información. */
 var _MGR_PADRE={'hoy-cen':'hoy','hoy-horas':'hoy','deptos-avance':'deptos','deptos-lista':'deptos','deptos-temas':'deptos',
   'personas-permisos':'personas','personas-recibos':'personas','personas-rank':'personas',
-  'focos-alertas':'focos','focos-rojos':'focos','op-preguntas':'operacion','op-buzon':'operacion','op-comedor':'operacion','op-nom':'operacion'};
+  'focos-alertas':'focos','focos-rojos':'focos','op-preguntas':'operacion','op-buzon':'operacion','op-directorio':'operacion','op-nom':'operacion'};
 var _MGR_TITULO={hoy:'Hoy',deptos:'Departamentos',personas:'Personas',focos:'Focos',operacion:'Operación'};
 function mgrPage(role){
   var H=CFG.hr, DS=deptStats(), Q=qstats(), ALERTS=(Q.alerts||[]); _HRAL=ALERTS;
@@ -4156,12 +4206,14 @@ function mgrPage(role){
   }
   else if(p==='personas'){
     var leaveN=0; try{ leaveN=leaveGet().filter(function(r){return r.status==='pendiente';}).length; }catch(e){}
-    var reciN=0; try{ reciN=recibosGet().length; }catch(e){}
+    var reciSub='Aún sin firmas';
+    try{ if(recV3()){ var RS2=recResumen(); reciSub=RS2.tot?(RS2.fir+' de '+RS2.tot+' firmados'):'Subir recibos del periodo'; }
+         else { var rN=recibosGet().length; if(rN) reciSub=rN+' firmados'; } }catch(e){}
     h+=cab('Personas', DS?(DS.reg+' de '+DS.total+' registrados en la app.'):'Equipo, permisos y recibos.');
     h+='<div class="tgrid">';
     if(V3_ON && S.admin) h+=htile('openPersonal()','personas','Gestión de personal', 'Altas, bajas y accesos', {wide:true});
     h+=htile("mgrGo('personas-permisos')",'cal','Permisos', leaveN?(leaveN+' por revisar'):'Vacaciones y permisos', {cnt:leaveN||''});
-    h+=htile("mgrGo('personas-recibos')",'recibo','Recibos firmados', reciN?(reciN+' firmados'):'Aún sin firmas');
+    h+=htile("mgrGo('personas-recibos')",'recibo','Recibos de nómina', reciSub);
     if(!V3_ON) h+=htile("mgrGo('personas-rank')",'premios','Tabla de puntos', 'Solo lo ve '+role);
     h+='</div>';
   }
@@ -4212,11 +4264,11 @@ function mgrPage(role){
     var unansN=0; try{ unansN=Object.keys(Q.unans||{}).length; }catch(e){}
     var buzN=0; try{ buzN=reportsGet().filter(function(r){return r.status==='pendiente';}).length; }catch(e){}
     var nomSt=null; try{ nomSt=nomGet(); }catch(e){}
-    h+=cab('Operación', 'Preguntas del Asistente, buzón, comedor y NOM-035.');
+    h+=cab('Operación', 'Preguntas del Asistente, buzón, directorio y NOM-035.');
     h+='<div class="tgrid">';
     h+=htile("mgrGo('op-preguntas')",'ai','Preguntas del Asistente', unansN?(unansN+' sin responder'):'Al día ✓', {wide:true, cnt:unansN||''});
     h+=htile("mgrGo('op-buzon')",'docs','Buzón de reportes', buzN?(buzN+' por revisar'):'Sin pendientes', {cnt:buzN||''});
-    h+=htile("mgrGo('op-comedor')",'dia','Comedor', 'Menú de la semana');
+    h+=htile("mgrGo('op-directorio')",'dia','Directorio', 'Editar extensiones');
     h+=htile("mgrGo('op-nom')",'encuestas','NOM-035', (nomSt&&nomSt.current)?'Aplicación en curso':'Riesgo psicosocial');
     h+='</div>';
   }
@@ -4226,8 +4278,8 @@ function mgrPage(role){
   else if(p==='op-buzon'){
     h+=reportsAdminBlock();   // RRHH revisa quejas/anormalidad/idea de mejora (otorga puntos)
   }
-  else if(p==='op-comedor'){
-    h+=comedorAdminBlock();   // menú del comedor de la semana (lo ve todo el personal en Tu día)
+  else if(p==='op-directorio'){
+    h+=dirAdminBlock();       // directorio de extensiones (lo ve todo el personal en Inicio → Directorio)
   }
   else { // op-nom
     h+=nomAdminBlock();       // NOM-035 (riesgo psicosocial)
@@ -4282,9 +4334,14 @@ function centinelaRun(){
     });
     if(nb){ items.push({sev:'media', icon:IC2.doc, titulo:'Aviso con poca lectura', detalle:'“'+(nb.t||(nb.b||'').slice(0,40))+'” — solo '+(nb.reads||[]).length+' persona(s) han confirmado lectura. Considera reenviarlo o avisar en piso.', accion:{label:'Ver noticias', js:'renderNews()'}}); }
   }catch(e){}
-  // R8 · Nadie ha firmado su recibo del periodo
-  try{ var pk=payPeriod(), F=recibosGet().filter(function(r){return r.key===pk.key;}).length;
-    if(F===0){ items.push({sev:'media', icon:IC2.lock, titulo:'Nadie ha firmado su recibo', detalle:'Ningún trabajador ha firmado el recibo del periodo '+pk.label+'. Recuérdales en el pizarrón o por aviso.', accion:{label:'Ver firmados', js:'mgrGo(\'personas-recibos\')'}}); }
+  // R8 · Recibos del periodo: sin subir (real) o sin ninguna firma
+  try{ var pk=payPeriod();
+    if(recV3()){
+      var RS=recResumen();
+      if(RS.tot===0){ items.push({sev:'media', icon:IC2.lock, titulo:'Recibos del periodo sin subir', detalle:'Aún no subes los recibos del periodo '+pk.label+'. Súbelos para que el personal los firme desde su celular.', accion:{label:'Subir recibos', js:'mgrGo(\'personas-recibos\')'}}); }
+      else if(RS.fir===0){ items.push({sev:'media', icon:IC2.lock, titulo:'Nadie ha firmado su recibo', detalle:'Subiste '+RS.tot+' recibos del periodo '+pk.label+' y nadie ha firmado. Recuérdales en el pizarrón o por aviso.', accion:{label:'Ver recibos', js:'mgrGo(\'personas-recibos\')'}}); }
+    }
+    else if(recibosGet().filter(function(r){return r.key===pk.key;}).length===0){ items.push({sev:'media', icon:IC2.lock, titulo:'Nadie ha firmado su recibo', detalle:'Ningún trabajador ha firmado el recibo del periodo '+pk.label+'. Recuérdales en el pizarrón o por aviso.', accion:{label:'Ver firmados', js:'mgrGo(\'personas-recibos\')'}}); }
   }catch(e){}
   // R9 · NOM-035 abierta
   try{ var st=nomGet();
@@ -4972,9 +5029,9 @@ function coachNext(){
       if(!dn) return {kind:'nom', titulo:'Responde el cuestionario NOM-035', detalle:'Es anónimo y rápido. Nadie sabrá que fuiste tú, y ayuda a que la planta sea un mejor lugar.', btnLabel:'Responder ahora', onclick:'renderNom()'};
     }
   }catch(e){}
-  // P2 · Recibo del periodo sin firmar
+  // P2 · Recibo del periodo sin firmar (en real: solo si RRHH ya lo subió)
   try{ var per=payPeriod();
-    if(!signRecord(S.emp,per.key)) return {kind:'recibo', titulo:'Firma tu recibo de nómina', detalle:'Tu recibo de '+per.label+' ya está listo. Fírmalo con el dedo para avisar a RRHH que lo recibiste.', btnLabel:'Ver y firmar', onclick:'renderPay()'};
+    if(payPend()) return {kind:'recibo', titulo:'Firma tu recibo de nómina', detalle:'Tu recibo de '+per.label+' ya está listo. Fírmalo con el dedo para avisar a RRHH que lo recibiste.', btnLabel:'Ver y firmar', onclick:'renderPay()'};
   }catch(e){}
   // P3 · Curso obligatorio pendiente
   try{ var list=myCourses();
@@ -5134,6 +5191,7 @@ function openPayPdf(){
 function recibosGet(){ return lsGet('hb_recibos'); }
 function signRecord(emp,key){ var a=recibosGet(); for(var i=0;i<a.length;i++){ if(a[i].emp===emp&&a[i].key===key) return a[i]; } return null; }
 function renderPay(){
+  if(recV3()) return renderPayV3();   // sistema real con recibos PDF en el servidor (parche v3_4)
   var per=payPeriod(), p=payData(S.emp), signed=signRecord(S.emp,per.key), h='';
   var ppw=Math.round(p.perc/(p.perc+p.ded)*100), ddw=100-ppw;
   h+='<div class="paytop"><div class="hd" style="margin-bottom:0"><div><div class="eyebrow">'+esc(per.label)+'</div><div class="note" style="margin-top:3px">Neto a pagar · #'+(''+S.emp).padStart(3,'0')+' · '+esc(S.area)+'</div></div><span class="chipst'+(signed?'':' mut')+'">'+(signed?'Firmado ✓':'Por firmar')+'</span></div>'+
@@ -5175,12 +5233,287 @@ function signPay(){
   burst(); flash('¡Recibo enviado a RRHH con tu firma!'); renderPay();
 }
 function recibosAdminBlock(){
+  if(recV3()) return recsAdminBlock();   // sistema real: subir PDFs + ver firmas (parche v3_4)
   var a=recibosGet();
   var h='<div class="panel"><div class="hd"><div><div class="eyebrow">Nómina</div><b style="font-size:16px">Recibos firmados</b></div><span class="chipst'+(a.length?'':' mut')+'">'+(a.length?a.length+' firmados':'Sin firmas')+'</span></div>';
   if(!a.length) return h+'<div class="note">Aún nadie firma su recibo.</div></div>';
   h+=a.slice(0,20).map(function(r){
     return '<div class="line"><span><b>#'+(''+r.emp).padStart(3,'0')+'</b> · '+esc(r.area||'')+'<br><span class="note">'+esc(r.period||'')+' · firmado '+fmtDate(r.ts)+'</span></span>'+(r.img?'<img src="'+imgSrc(r.img)+'" alt="firma" style="height:34px;background:#fff;border-radius:6px;padding:2px;flex:none">':'')+'</div>';
   }).join('')+'</div>';
+  return h;
+}
+
+/* ============================================================================
+   RECIBOS DE NÓMINA REALES (Sesión 10, parche v3_4) — el PDF que imprime nómina,
+   en el sistema. RRHH los sube TODOS de un jalón (el nombre del archivo trae la
+   clave, ej. 0917.pdf; los no reconocidos se asignan a mano). Cada trabajador VE
+   y FIRMA solo el suyo: metadatos en la tabla 'recibos' (RLS dueño/admin), PDF
+   en el bucket privado 'recibos' (liga firmada 1 h), firma por RPC con hora del
+   servidor. Sin el parche v3_4 corrido, todo cae al flujo demo de arriba.
+   ============================================================================ */
+function recsInit(){
+  // Espejo offline SOLO si es del MISMO usuario (en un dispositivo compartido, el
+  // espejo del admin anterior traía los recibos de los 505 — datos personales).
+  try{ if(localStorage.getItem('hb_recs_who')===((S&&S.clave)||'')){
+    var v=JSON.parse(localStorage.getItem('hb_recs')||'null'); if(Array.isArray(v)) DBC.recs=v;
+  } else { localStorage.removeItem('hb_recs'); localStorage.removeItem('hb_recs_who'); } }catch(e){}
+  recsLoad();
+  try{ SB.channel('rt-recibos').on('postgres_changes',{event:'*',schema:'public',table:'recibos'},function(){ recsLoad(); }).subscribe(); }catch(e){}
+}
+var _recsTry=0;
+/* ¿el error es "la tabla recibos aún no existe" (Carlos no ha corrido v3_4)? → no reintentar */
+function _recTablaFalta(e){ return !!(e && (e.code==='42P01' || e.code==='PGRST205' || e.code==='PGRST202' || /does not exist|could not find the table|schema cache/i.test(e.message||''))); }
+function recsLoad(){
+  if(!sbReady()) return;
+  try{ SB.from('recibos').select('data').order('ts',{ascending:true}).then(function(r){
+    if(!r.error && r.data){ _recsTry=0; DBC.recs=r.data.map(function(x){ return x.data; });
+      // Espejo offline: SOLO los recibos propios y SIN la imagen de la firma (evita
+      // filtrar datos de otros en el localStorage y rebasar la cuota con cientos de firmas).
+      try{ var mios=DBC.recs.filter(function(x){ return x && x.clave===((S&&S.clave)||''); }).map(function(x){
+             var c={}; for(var k in x){ if(k!=='firma') c[k]=x[k]; } if(x.firma) c.firma={ts:x.firma.ts}; return c; });
+        localStorage.setItem('hb_recs', JSON.stringify(mios)); localStorage.setItem('hb_recs_who', (S&&S.clave)||''); }catch(e){}
+      sbRerender();
+    } else if(r.error && _recsTry<4 && !_recTablaFalta(r.error)){   // fallo transitorio (red): reintento con espera creciente. Tabla ausente (pre-v3_4) NO reintenta.
+      _recsTry++; setTimeout(recsLoad, Math.min(20000, 2000*_recsTry));
+    }
+  }); }catch(e){}
+}
+function recV3(){ return !!(V3_ON && S && S.clave && Array.isArray(DBC.recs)); }
+function recsGet(){ return DBC.recs||[]; }
+function recsMine(){ var c=S&&S.clave; return recsGet().filter(function(r){ return r && r.clave===c; }).sort(function(a,b){ return (b.ts||0)-(a.ts||0); }); }
+function recFor(key){ var out=null; recsMine().forEach(function(r){ if(r.key===key) out=r; }); return out; }
+function recResumen(){ var pk=payPeriod().key, L=recsGet().filter(function(r){ return r && r.key===pk; });
+  return {tot:L.length, fir:L.filter(function(r){ return r.firma; }).length}; }
+/* ¿el recibo del periodo espera mi firma? (Pendientes / coach, ambos modos) */
+function payPend(){
+  if(recV3()){ var c=recFor(payPeriod().key); return !!(c && !c.firma); }
+  return !signRecord(S.emp,payPeriod().key);
+}
+function payTileSub(){
+  if(recV3()){ var c=recFor(payPeriod().key); return !c?'Aún no llega':(c.firma?'Firmado ✓':'Por firmar'); }
+  return signRecord(S.emp,payPeriod().key)?'Firmado ✓':'Por firmar';
+}
+/* periodo ANTERIOR al actual (para subir recibos atrasados) */
+function periodPrev(){
+  var d=new Date();
+  if(d.getDate()<=15){ var pm=new Date(d.getFullYear(), d.getMonth()-1, 1), mes=pm.toLocaleDateString('es-MX',{month:'long',year:'numeric'});
+    return {label:'16 al fin de '+mes, key:pm.getFullYear()+'-'+(pm.getMonth()+1)+'-B'}; }
+  var mes2=d.toLocaleDateString('es-MX',{month:'long',year:'numeric'});
+  return {label:'1 al 15 de '+mes2, key:d.getFullYear()+'-'+(d.getMonth()+1)+'-A'};
+}
+function _recPerObj(){ return (window._recPer==='prev')? periodPrev() : payPeriod(); }
+/* abrir el PDF con liga firmada (pestaña YA, dentro del gesto — patrón de docOpen) */
+function recOpen(id){
+  var d=null; recsGet().forEach(function(x){ if(x && x.id===id) d=x; });
+  if(!d) return;
+  if(!sbReady()){ flash('Sin conexión: el recibo requiere internet'); return; }
+  var w=window.open('', '_blank');
+  flash('Abriendo recibo…');
+  SB.storage.from('recibos').createSignedUrl(d.path, 3600).then(function(r){
+    if(r.error||!r.data||!r.data.signedUrl){ if(w) w.close(); flash('No se pudo abrir'+((r.error&&r.error.message)?' ('+r.error.message+')':'')+'. ¿Ya corriste el SQL v3_4?'); return; }
+    if(w){ w.location=r.data.signedUrl; } else { location.href=r.data.signedUrl; }
+  }, function(){ if(w) w.close(); flash('Sin conexión: no se pudo abrir el recibo'); });
+}
+/* firmar de recibido: RPC con la firma predeterminada del perfil */
+function recFirmar(id){
+  var firma=(profGet(S.emp)||{}).firma;
+  if(!firma){ flash('Primero guarda tu firma en tu perfil'); renderPerfil(); return; }
+  flash('Enviando tu firma…');
+  SB.rpc('hb_recibo_firmar',{p_id:id,p_img:firma}).then(function(r){
+    var d=r&&r.data;
+    if(r.error||!d||!d.ok){   // flash() usa textContent — NO envolver en esc() (mostraría entidades)
+      var mot=(d&&d.error==='ya_firmado')?'Ese recibo ya estaba firmado.':(((r.error&&r.error.message)||(d&&d.error)||'error')+'. Intenta de nuevo.');
+      flash('⚠ No se pudo firmar: '+mot); if(d&&d.error==='ya_firmado'){ recsLoad(); renderPay(); } return; }
+    (DBC.recs||[]).forEach(function(x){ if(x && x.id===id) x.firma={img:firma, ts:Date.now()}; });   // optimista; recsLoad confirma
+    burst(); flash('¡Recibo firmado! RRHH ya lo ve.');
+    recsLoad(); renderPay();
+  }, function(){ flash('Sin conexión: no se pudo firmar'); });
+}
+/* ---- pantalla del trabajador (modo real) ---- */
+function renderPayV3(){
+  var per=payPeriod(), mine=recsMine(), cur=recFor(per.key);
+  var firmado=!!(cur&&cur.firma), h='';
+  var st=cur?(firmado?'Firmado ✓':'Por firmar'):'Aún no llega';
+  var voz=cur?(firmado?'Tu recibo de '+per.label+' ya está firmado y enviado a Recursos Humanos.'
+                      :'Tu recibo de '+per.label+' ya está listo. Ábrelo para revisarlo y fírmalo de recibido.')
+             :'Tu recibo de '+per.label+' aún no se sube al sistema. Te avisaremos en Pendientes cuando esté listo.';
+  h+='<div class="paytop" style="position:relative"><span style="position:absolute;top:12px;right:12px;z-index:2">'+speakBtn(voz)+'</span>'+
+     '<div class="hd" style="margin-bottom:0;padding-right:40px"><div><div class="eyebrow">'+esc(per.label)+'</div>'+
+     '<div class="note" style="margin-top:3px">Recibo de nómina · #'+esc(S.clave||'')+' · '+esc(S.area||'')+'</div></div></div>'+
+     '<div class="neto" style="font-size:33px">'+st+'</div>'+
+     '<div class="line" style="border:none;padding:0"><span class="note" style="color:rgba(255,255,255,.85);font-weight:700">'+
+     (cur?'Es tu recibo oficial en PDF, tal como lo imprime nómina.':'RRHH lo sube cada quincena. Te aparecerá aquí y en Pendientes.')+'</span></div></div>';
+  if(cur){
+    h+='<div class="pbar" style="cursor:pointer" onclick="recOpen(\''+jsAttr(cur.id)+'\')"><span class="ic">'+IC2.doc+'</span><span class="t" style="flex:1">Ver mi recibo (PDF)</span><span class="note" style="flex:none">Abrir ›</span></div>';
+    var firma=(profGet(S.emp)||{}).firma;
+    if(firmado){
+      h+='<div class="panel" style="border:1px solid var(--ok)"><div class="hd" style="margin-bottom:6px"><b style="color:var(--ok)">Firmado ✓</b><span class="chipst">enviado a RRHH</span></div>'+
+         '<p class="note">Firmaste de recibido el '+fmtDate(cur.firma.ts)+'. RRHH ya lo tiene en su tablero.</p>'+
+         (cur.firma.img?'<img src="'+imgSrc(cur.firma.img)+'" alt="firma" style="width:100%;max-height:150px;object-fit:contain;margin-top:10px;background:#fff;border-radius:10px;padding:8px;display:block">':'')+'</div>';
+    } else if(firma){
+      h+='<div class="panel"><div class="hd"><b>Firmar de recibido</b><span class="chipst">tu firma</span></div>'+
+         '<p class="note" style="margin:0 0 9px">Primero abre y revisa tu recibo. Al firmar, RRHH recibe tu acuse con tu <b>firma predeterminada</b>.</p>'+
+         '<img src="'+imgSrc(firma)+'" alt="tu firma" style="width:100%;max-height:150px;object-fit:contain;background:#fff;border-radius:10px;padding:8px;display:block">'+
+         '<button class="btn" style="margin-top:11px" onclick="recFirmar(\''+jsAttr(cur.id)+'\')">Firmar de recibido</button>'+
+         '<div style="text-align:center;margin-top:8px"><span class="lnkbtn" onclick="renderPerfil()">Cambiar mi firma en el perfil</span></div></div>';
+    } else {
+      h+='<div class="panel" style="border:1px solid var(--warn)"><div class="hd" style="margin-bottom:6px"><b style="color:var(--warn)">Necesitas agregar tu firma predeterminada a tu perfil</b>'+speakBtn('Necesitas agregar tu firma predeterminada a tu perfil. Ve a Perfil, luego Firma, establece tu firma predeterminada y regresa a esta pantalla para firmar tu recibo.')+'</div>'+
+         '<p class="note" style="margin:0 0 4px">Para firmar tu recibo, primero guarda tu firma una sola vez:</p>'+
+         '<div class="note" style="line-height:1.7"><b>1.</b> Ve a <b>Perfil</b> (toca tu nombre arriba)<br><b>2.</b> Entra a <b>Mi firma</b><br><b>3.</b> Dibuja tu firma y toca <b>Guardar firma</b><br><b>4.</b> Regresa a esta pantalla para firmar tu recibo</div>'+
+         '<button class="btn" style="margin-top:11px" onclick="renderPerfil()">Ir a mi perfil a firmar</button></div>';
+    }
+  } else {
+    h+='<div class="card"><div class="note">Tu recibo de este periodo aún no está en el sistema. En cuanto RRHH lo suba, te aparecerá aquí y en <b>Pendientes</b>.</div></div>';
+  }
+  var prev=mine.filter(function(r){ return r.key!==per.key; }).slice(0,12);
+  if(prev.length){
+    h+='<div class="sec-t">Recibos anteriores<span class="ln"></span></div><div class="panel">'+prev.map(function(r){
+      return '<div class="line"><span style="min-width:0"><b>'+esc(r.periodo||r.key)+'</b><br><span class="note">'+(r.firma?('Firmado ✓ '+fmtDate(r.firma.ts)):'Sin firmar')+'</span></span>'+
+             '<button class="back" style="flex:none;padding:7px 11px" onclick="recOpen(\''+jsAttr(r.id)+'\')">Abrir</button></div>'; }).join('')+'</div>';
+  }
+  $('s-pay').innerHTML=h; show('pay');
+}
+/* ---- panel de RRHH (modo real): subida masiva + firmas del periodo ---- */
+/* La clave = el nombre del archivo ES los puros dígitos (0917.pdf, 20968.pdf).
+   Un nombre con texto ('Nomina_2026.pdf') NO se adivina — cae a "por asignar". */
+function recClaveDeNombre(name){
+  var base=(name||'').replace(/\.[a-z0-9]+$/i,'').trim();
+  if(!/^\d{1,5}$/.test(base)) return '';       // el nombre base debe ser SOLO 1-5 dígitos
+  return claveNorm(base);
+}
+function recSubeUno(f, clave, per, cb){
+  if(!/\.pdf$/i.test(f.name||'') && (f.type||'').indexOf('pdf')<0){ cb('no es PDF'); return; }
+  if(f.size>8*1024*1024){ cb('pasa de 8 MB'); return; }
+  var path=per.key+'/'+clave+'-'+Date.now()+'.pdf';
+  // 1º SUBIR el PDF (path único; la policy solo exige admin+bucket, no fila previa).
+  //    Así, si la subida falla, NO hemos tocado la fila anterior (firma/PDF intactos).
+  SB.storage.from('recibos').upload(path, f, {contentType:'application/pdf', upsert:false}).then(function(r2){
+    if(r2.error){ cb(r2.error.message||'no subió al Storage'); return; }
+    // 2º registrar la fila (ON CONFLICT reemplaza y borra la firma anterior).
+    SB.rpc('hb_recibo_alta',{p_clave:clave,p_periodo:per.label,p_key:per.key,p_path:path,p_size:f.size}).then(function(r){
+      var d=r&&r.data;
+      if(r.error){ try{ SB.storage.from('recibos').remove([path]).then(function(){}); }catch(e){} cb(_rpcFaltante(r.error)?'falta correr el SQL v3_4':(r.error.message||'error')); return; }
+      if(!d||!d.ok){ try{ SB.storage.from('recibos').remove([path]).then(function(){}); }catch(e){} cb((d&&d.error)||'error'); return; }
+      if(d.old_path && d.old_path!==path){ try{ SB.storage.from('recibos').remove([d.old_path]).then(function(){}); }catch(e){} }   // reemplazo: borrar el PDF viejo
+      cb(null, d);
+    }, function(){ try{ SB.storage.from('recibos').remove([path]).then(function(){}); }catch(e){} cb('sin conexión'); });
+  }, function(){ cb('sin conexión'); });
+}
+function _recSay(t){ window._recUpMsg=t; var st=$('recUpStatus'); if(st) st.innerHTML=t; }   // persiste el mensaje aunque se repinte
+function recsUpload(){
+  if(!recV3()){ flash('Falta correr el SQL v3_4 en Supabase'); return; }
+  var inp=$('recFiles'), files=(inp&&inp.files)?Array.prototype.slice.call(inp.files):[];
+  if(!files.length){ flash('Elige los PDFs de los recibos'); return; }
+  if(window._recBusy){ flash('Espera: ya hay una subida en curso'); return; }
+  window._recBusy=true;
+  var per=_recPerObj(), ok=0, rep=0, fail=[], dup=[], seen={}, i=0, total=files.length;
+  window._recPend=window._recPend||[];
+  function next(){
+    if(i>=total){
+      window._recBusy=false;
+      _recSay('<b>Listo:</b> '+ok+' subidos'+(rep?(' ('+rep+' reemplazo'+(rep===1?'':'s')+')'):'')+
+          (window._recPend.length?(' · <b style="color:var(--warn)">'+window._recPend.length+' por asignar abajo</b>'):'')+
+          (dup.length?(' · <b style="color:var(--warn)">'+dup.length+' clave(s) repetida(s) en el lote, se ignoraron</b>'):'')+
+          (fail.length?(' · <b style="color:var(--bad)">'+fail.length+' con error</b> ('+esc(fail.slice(0,3).join(', '))+(fail.length>3?'…':'')+')'):''));
+      if(inp) inp.value=''; var fn=$('recFilesName'); if(fn) fn.textContent='';
+      recPendPaint(); recsLoad();
+      return;
+    }
+    var f=files[i]; i++;
+    _recSay('Subiendo '+i+' de '+total+'… <span class="note">('+esc(f.name)+')</span>');
+    var clave=recClaveDeNombre(f.name);
+    if(!clave){ window._recPend.push({f:f, per:per}); next(); return; }
+    if(seen[clave]){ dup.push(f.name); next(); return; }   // dos archivos → misma clave en el mismo lote: no pisar en silencio
+    seen[clave]=1;
+    recSubeUno(f, clave, per, function(err, d){
+      if(err==='no_existe'){ window._recPend.push({f:f, per:per}); }
+      else if(err){ fail.push(f.name+': '+err); }
+      else { ok++; if(d&&d.old_path) rep++; }
+      next();
+    });
+  }
+  next();
+}
+function recPendHTML(){
+  var P=window._recPend||[];
+  if(!P.length) return '';
+  return '<div class="panel" style="border:1px solid var(--warn)"><div class="hd" style="margin-bottom:6px"><b style="color:var(--warn)">Por asignar · '+P.length+'</b><span class="chipst mut">sin clave clara</span></div>'+
+    '<p class="note" style="margin:0 0 8px">De estos archivos no pude leer la clave (o la clave no está en el roster). Escribe el número de colaborador y toca Asignar.</p>'+
+    P.map(function(it,i){ var f=it.f||it;   // (compat: ítems viejos eran el File directo)
+      return '<div class="line" style="gap:8px"><span style="min-width:0;flex:1;font-size:12.5px;word-break:break-all">'+esc(f.name)+'</span>'+
+        '<input id="recAs_'+i+'" class="fin" style="width:92px;flex:none;margin:0" inputmode="numeric" placeholder="Clave" value="'+escA(it.clave||'')+'" oninput="var P=window._recPend||[];if(P['+i+'])P['+i+'].clave=this.value">'+
+        '<button class="back" style="flex:none;padding:7px 10px" onclick="recAsigna('+i+')">Asignar</button></div>';
+    }).join('')+'</div>';
+}
+function recPendPaint(){ var el=$('recPendBox'); if(el) el.innerHTML=recPendHTML(); }
+function recAsigna(i){
+  var P=window._recPend||[], it=P[i]; if(!it) return;
+  var f=it.f||it, per=it.per||_recPerObj();
+  var clave=claveNorm((($('recAs_'+i)||{}).value||it.clave||''));
+  if(!clave){ flash('Escribe la clave del trabajador'); return; }
+  flash('Subiendo '+f.name+'…');
+  recSubeUno(f, clave, per, function(err, d){
+    if(err==='no_existe'){ flash('⚠ La clave '+clave+' no está en el roster. Verifícala.'); return; }
+    if(err){ flash('⚠ No se subió: '+err); return; }   // flash usa textContent; no esc()
+    var idx=P.indexOf(it); if(idx>-1) P.splice(idx,1);   // por referencia: no por el índice viejo (pudo cambiar)
+    recPendPaint(); recsLoad();
+    flash('✓ Recibo asignado a '+clave+(d&&d.nombre?(' · '+niceName(d.nombre)):''));
+  });
+}
+function recListHTML(){
+  var per=_recPerObj(), tot=recsGet().filter(function(r){ return r && r.key===per.key; }).length,
+      fir=recsGet().filter(function(r){ return r && r.key===per.key && r.firma; }).length;
+  var h='<div class="hd"><b>Recibos del periodo</b><span class="chipst'+(tot?'':' mut')+'">'+(tot?(fir+' de '+tot+' firmados'):'Sin recibos')+'</span></div>';
+  if(!tot) return h+'<div class="note">Aún no subes recibos de este periodo.</div>';
+  h+='<input id="recQ" class="fin" placeholder="Buscar por clave o nombre…" autocomplete="off" value="'+escA(window._recQ||'')+'" oninput="window._recQ=this.value;recRowsPaint()" style="margin-bottom:6px">';
+  h+='<div id="recRows">'+recRowsHTML()+'</div>';   // el buscador vive FUERA de recRows: filtrar no destruye el input
+  return h;
+}
+function recRowsHTML(){
+  var per=_recPerObj(), q=((window._recQ||'')+'').toLowerCase().trim();
+  var L=recsGet().filter(function(r){ return r && r.key===per.key; });
+  L.sort(function(a,b){ return ((a.firma?1:0)-(b.firma?1:0)) || (''+(a.clave||'')).localeCompare(''+(b.clave||'')); });
+  if(q) L=L.filter(function(r){ return (((r.clave||'')+' '+(r.nombre||'')).toLowerCase().indexOf(q)>-1); });
+  var top=L.slice(0,60);
+  var h=top.map(function(r){
+    return '<div class="line"><span style="min-width:0"><b>'+esc(r.clave||'')+'</b>'+(r.nombre?(' · '+esc(niceName(r.nombre))):'')+
+      '<br><span class="note">'+(r.firma?('Firmado ✓ '+fmtDate(r.firma.ts)):'Sin firmar')+'</span></span>'+
+      '<span style="flex:none;display:flex;gap:6px">'+
+        '<button class="back" style="padding:7px 10px" onclick="recOpen(\''+jsAttr(r.id)+'\')">PDF</button>'+
+        '<button class="back" style="padding:7px 10px;color:var(--bad)" title="Eliminar" onclick="recDel(\''+jsAttr(r.id)+'\')">✕</button></span></div>';
+  }).join('');
+  if(!top.length) h='<div class="note">Nadie coincide con la búsqueda.</div>';
+  else if(L.length>top.length) h+='<div class="note" style="margin-top:8px">Mostrando 60 de '+L.length+'. Afina la búsqueda para encontrar a alguien.</div>';
+  return h;
+}
+function recRowsPaint(){ var el=$('recRows'); if(el) el.innerHTML=recRowsHTML(); }   // solo re-pinta las filas, no el buscador
+function recListPaint(){ var el=$('recListBox'); if(el) el.innerHTML=recListHTML(); }
+function recDel(id){
+  var d=null; recsGet().forEach(function(x){ if(x && x.id===id) d=x; });
+  if(!d) return;
+  if(!confirm('¿Eliminar el recibo de '+(d.clave||'')+' ('+(d.periodo||'')+')? El trabajador dejará de verlo. No se puede deshacer.')) return;
+  // Borrar PRIMERO la fila (verificando el error); el PDF del Storage solo si la fila se fue.
+  SB.from('recibos').delete().eq('id',id).then(function(r){
+    if(r&&r.error){ flash('⚠ No se pudo eliminar: '+((r.error.message)||'error')); return; }
+    try{ if(d.path) SB.storage.from('recibos').remove([d.path]).then(function(){}); }catch(e){}
+    flash('Recibo eliminado'); recsLoad();
+  }, function(){ flash('Sin conexión: no se pudo eliminar'); });
+}
+function recsAdminBlock(){
+  var cur=payPeriod(), prv=periodPrev(); window._recPer=window._recPer||'cur';
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Nómina</div><b style="font-size:16px">Subir recibos del periodo</b>'+
+    '<div class="note" style="margin-top:3px">Selecciona TODOS los PDFs de un jalón. El nombre del archivo debe traer la clave (ej. <b>0917.pdf</b>); los que no se reconozcan se asignan a mano abajo. Cada trabajador ve y firma SOLO el suyo.</div></div></div>'+
+    '<div class="note" style="margin:2px 0 3px">Periodo</div>'+
+    '<select id="recPer" class="fin" onchange="window._recPer=this.value;recListPaint()">'+
+      '<option value="cur"'+(window._recPer!=='prev'?' selected':'')+'>'+esc(cur.label)+' (actual)</option>'+
+      '<option value="prev"'+(window._recPer==='prev'?' selected':'')+'>'+esc(prv.label)+'</option></select>'+
+    '<div style="margin-top:10px"><label class="btn ghost" style="margin:0;padding:11px;font-size:14px;display:inline-block;cursor:pointer;width:auto">Elegir PDFs (pueden ser cientos)'+
+      '<input id="recFiles" type="file" accept="application/pdf" multiple style="display:none" onchange="var n=(this.files?this.files.length:0);var e=document.getElementById(\'recFilesName\');if(e)e.textContent=n?(n+\' archivo\'+(n===1?\'\':\'s\')+\' listos\'):\'\';"></label> <span id="recFilesName" class="note"></span></div>'+
+    '<button class="btn" style="margin-top:12px" onclick="recsUpload()">Subir recibos</button>'+
+    '<div id="recUpStatus" class="note" style="margin-top:9px">'+(window._recBusy?'':(window._recUpMsg||''))+'</div>'+
+    '<div class="note" style="margin-top:8px">Si un trabajador ya tenía recibo en el periodo, el nuevo PDF lo <b>reemplaza</b> (y deberá firmar otra vez). Máximo 8 MB por PDF.</div></div>';
+  h+='<div id="recPendBox">'+recPendHTML()+'</div>';
+  h+='<div class="panel" id="recListBox">'+recListHTML()+'</div>';
   return h;
 }
 
@@ -6459,7 +6792,11 @@ function _sbRerenderNow(){ try{
   if(!S) return;   // aún en el login: nada que re-pintar
   if(_screen==='msgs') renderMsgs();
   else if(_screen==='thread' && _curConv) openConv(_curConv);
-  else if(_screen==='hr' && typeof renderDash==='function') renderDash();
+  // Tablero (s-hr): NO re-pintar en vivo si el admin escribe, está subiendo recibos
+  // o ya eligió archivos — perdería el formulario del editor de directorio / recibos.
+  else if(_screen==='hr' && typeof renderDash==='function'){
+    if(!_sectionBusy('s-hr') && !window._recBusy && !(($('recFiles')||{}).files||[]).length) renderDash();
+  }
   else if(_screen==='news') renderNews();
   else if(_screen==='home') renderHome();
   else if(_screen==='rewards') renderRewards();
@@ -6493,6 +6830,7 @@ function sbInit(){
   sbLoad('news');
   sbLoad('reports');
   kvInit();
+  if(V3_ON) recsInit();   // recibos de nómina reales (si el parche v3_4 no está corrido, falla en silencio y todo cae al flujo demo)
 }
 function lsArr(k){ try{ return JSON.parse(localStorage.getItem(k)||'[]')||[]; }catch(e){ return []; }
 }
@@ -6502,7 +6840,7 @@ function lsArr(k){ try{ return JSON.parse(localStorage.getItem(k)||'[]')||[]; }c
    preguntas del Asistente (alertas), NOM-035, Permanencia, lectura y minutos
    de estudio. Espejo en localStorage → si no hay internet, la app sigue.
    ============================================================================ */
-var KV_SKIP={hb_msgs:1,hb_news:1,hb_reports:1,hb_pages:1,hb_docs:1,hb_key:1,hb_model:1}; // tabla propia o solo-local
+var KV_SKIP={hb_msgs:1,hb_news:1,hb_reports:1,hb_pages:1,hb_docs:1,hb_key:1,hb_model:1,hb_recs:1,hb_pinlock:1}; // tabla propia o solo-local
 /* Compartidas que alguna vez tuvieron seed demo: JAMÁS subirlas en bulk (kvSeed) —
    solo las escriben sus flujos legítimos (admin publica comedor/aviso/encuesta, y
    hb_qstats solo por RPC v3_3). Evita que un dispositivo viejo re-suba demo al server. */
@@ -6608,6 +6946,15 @@ function hbLimpiaSeeds(){
       if(p2.length!==p.length){ p2.length? pon('hb_polls',p2) : quita('hb_polls'); } }
     var c=lee('hb_comedor');
     if(c && c.lun==='Pollo en salsa verde, arroz, frijoles y agua de jamaica') quita('hb_comedor');
+    // (Sesión 10) comedor/transporte ya no existen en la app y su seed demo se retira;
+    // el directorio demo también (el real lo publica RRHH con el editor nuevo).
+    var tx=lee('hb_transporte');
+    if(Array.isArray(tx) && tx.length && tx.every(function(x){ return x && /^Ruta \d/.test(x.n||''); })) quita('hb_transporte');
+    // Igualdad EXACTA con el seed demo completo (5 renglones) — NO parcial: si RRHH
+    // ya publicó un directorio real (aunque conserve algún renglón del demo), no se toca.
+    var dx=lee('hb_directorio');
+    var SEED_DIR=[{dep:'Recursos Humanos',who:'Dulce',ext:'110'},{dep:'Enfermería / Primeros auxilios',who:'',ext:'115'},{dep:'Caseta de vigilancia',who:'',ext:'101'},{dep:'Mantenimiento',who:'Zeus',ext:'130'},{dep:'Calidad',who:'',ext:'140'}];
+    if(JSON.stringify(dx)===JSON.stringify(SEED_DIR)) quita('hb_directorio');
   }catch(e){}
 }
 (function init(){
@@ -6631,19 +6978,14 @@ function hbLimpiaSeeds(){
   ])); } }catch(e){}
   /* (13-jul-2026: se retiró la siembra demo de hb_events — el calendario ya es
      100% editable desde los dashboards y los eventos reales viven en el servidor) */
-  try{ if(!localStorage.getItem('hb_comedor')){ localStorage.setItem('hb_comedor', JSON.stringify({ lun:'Pollo en salsa verde, arroz, frijoles y agua de jamaica', mar:'Bistec encebollado, sopa de pasta y agua de horchata', mie:'Enchiladas rojas con pollo, frijoles y agua de limón', jue:'Milanesa de res, puré de papa y agua de tamarindo', vie:'Pescado empanizado, ensalada y agua de piña', sab:'Chilaquiles con pollo, frijoles y café de olla' })); } }catch(e){}
-  try{ if(!localStorage.getItem('hb_transporte')){ localStorage.setItem('hb_transporte', JSON.stringify([
-    { n:'Ruta 1 · Centro',      det:'Salida 6:00 a.m. — Central camionera, Mercado, Av. Principal, Planta', reg:'Regreso: 5:15 p.m. desde la caseta' },
-    { n:'Ruta 2 · Oriente',     det:'Salida 6:10 a.m. — Col. Las Flores, Deportivo, Gasolinera, Planta',    reg:'Regreso: 5:15 p.m. desde la caseta' },
-    { n:'Ruta 3 · Turno tarde', det:'Salida 1:30 p.m. — Central camionera, Av. Principal, Planta',          reg:'Regreso: 10:45 p.m. desde la caseta' }
-  ])); } }catch(e){}
+  /* (18-jul-2026 Sesión 10: se retiraron las semillas de hb_comedor y hb_transporte —
+     la empresa no ofrece comedor ni transporte; esas secciones ya no existen.) */
   try{ if(!localStorage.getItem('hb_directorio')){ localStorage.setItem('hb_directorio', JSON.stringify([
     { dep:'Recursos Humanos',               who:'Dulce', ext:'110' },
     { dep:'Enfermería / Primeros auxilios', who:'',      ext:'115' },
     { dep:'Caseta de vigilancia',           who:'',      ext:'101' },
     { dep:'Mantenimiento',                  who:'Zeus',  ext:'130' },
-    { dep:'Calidad',                        who:'',      ext:'140' },
-    { dep:'Comedor',                        who:'',      ext:'120' }
+    { dep:'Calidad',                        who:'',      ext:'140' }
   ])); } }catch(e){}
   try{ if(!localStorage.getItem('hb_polls')){ localStorage.setItem('hb_polls', JSON.stringify([
     { id:'p1', q:'¿Qué tema quieres reforzar primero?', opts:['Seguridad / EPP','Mi máquina','Calidad'], votes:{}, to:{mode:'all'}, ts:Date.now() }

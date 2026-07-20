@@ -2418,7 +2418,7 @@ function show(name){
 function go(name){
   _adminScr=null; _fichaEmp=null;   // salir de sub-pantallas (personal / ficha) al usar el menú
   _mgrPage=null; _respPage=null;    // el tab del tablero siempre regresa al HUB
-  _msgsPage=null; _newsPage=null; _encArea=null;   // Mensajes/Noticias/Encuestas regresan a su hub
+  _msgsPage=null; _newsPage=null; _encArea=null; _partShow=null;   // Mensajes/Noticias/Encuestas regresan a su hub
   _qcSel=null;                      // el Mensaje rápido vuelve al buscador (no al chat anterior)
   if(name==='home') return renderHome();
   if(name==='rewards') return renderRewards();
@@ -2753,7 +2753,7 @@ function renderEncuestas(){
   if(esMando){
     h+='<div class="sec-t" style="margin-top:18px">Avance de tu área · '+esc(S.area)+'<span class="ln"></span></div>';
     h+='<p class="note" style="margin:-4px 0 10px">Resumen anónimo de tu área. No se muestra quién respondió qué.</p>';
-    h+=areaSurveyDash(S.area);
+    h+=areaSurveyDash(S.area, true);   // mando: con umbral de anonimato
   }
   h+='</div>';
   $('s-encuestas').innerHTML=h; show('encuestas');
@@ -2820,14 +2820,16 @@ function areaRectsHTML(){
    con 1-2 respuestas el % revelaría la respuesta individual (el jefe del área
    reconocería a su gente). Sin umbral, "anónimo por área" no sería anónimo. */
 var AREA_MIN=5;
-function areaSurveyDash(area){
+/* umbral=true (mandos): con <AREA_MIN respuestas NO muestra el desglose, para no
+   de-anonimizar áreas chicas. El ACCESO TOTAL (0917) pasa umbral=false: ve todo. */
+function areaSurveyDash(area, umbral){
   var polls=pollGet(), h='', any=false;
   polls.forEach(function(p){
     var votes=p.votes||{}, counts=p.opts.map(function(){return 0;}), tot=0;
     for(var emp in votes){ if(_areaOfEmp(+emp)===area){ var vi=votes[emp]; counts[vi]=(counts[vi]||0)+1; tot++; } }
     if(!tot) return; any=true;
     h+='<div class="card"><div class="line" style="border:none;padding:0 0 4px"><b style="flex:1">'+esc(p.q)+'</b><span class="chipst">'+tot+' resp.</span></div>';
-    if(tot<AREA_MIN){
+    if(umbral && tot<AREA_MIN){
       h+='<p class="note" style="margin-top:6px">Muy pocas respuestas para mostrar el desglose sin romper el anonimato (mínimo '+AREA_MIN+'). Van '+tot+'.</p></div>';
       return;
     }
@@ -2848,20 +2850,87 @@ function renderEncuestasAdmin(){
     } else {
       h+='<button class="back" style="margin-bottom:12px" onclick="encAreaGo()">‹ Áreas</button>';
       h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Encuestas · por área</div><b style="font-size:20px">'+esc(_encArea)+'</b><p class="note" style="margin:4px 0 0">Resumen anónimo de encuestas de esta área.</p></div><span class="chipst">Anónimo</span></div></div>';
-      h+=areaSurveyDash(_encArea);
+      h+=areaSurveyDash(_encArea, false);   // acceso total: ve todo (sin umbral)
+      h+=partArea(_encArea);                // participación de esta área: quién respondió / quién falta
     }
     $('s-encuestas').innerHTML=h; show('encuestas'); return;
   }
-  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Panel</div><b style="font-size:20px">Encuestas</b><p class="note" style="margin:4px 0 0;max-width:260px">Crea encuestas, revisa resultados y el resumen por área.</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
+  // ---------- HUB del ACCESO TOTAL: SOLO VER (no contesta encuestas) ----------
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Panel</div><b style="font-size:20px">Encuestas · resultados</b><p class="note" style="margin:4px 0 0;max-width:270px">Aquí <b>ves</b> resultados y participación. El acceso total no contesta encuestas.</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
   h+='<div class="tgrid">';
-  h+=htile("encAreaGo()",'encuestas','Respuestas por área','Resumen anónimo por área',{wide:true});
+  h+=htile("encAreaGo()",'encuestas','Respuestas por área','Gráfico anónimo + participación por área',{wide:true});
+  h+=htile("crearEncuesta()",'news','Crear encuesta','Publicar una nueva');
+  h+=htile("renderNom35()",'ai','Ver NOM-035','Cuestionario oficial');
   h+='</div>';
-  h+='<div class="sec-t">NOM-035 y Permanencia<span class="ln"></span></div>';
-  h+=bnrCard("renderNom35()",'NOM-035 · Riesgo psicosocial','Cuestionario oficial STPS · anónimo', cover('shield','#c4161c','#5d0a0e'),'');
+  h+='<div class="sec-t">Encuestas normales · resultados y participación<span class="ln"></span></div>';
+  h+=pollAdminResults();
+  h+='<div class="sec-t">NOM-035 y Permanencia (anónimas)<span class="ln"></span></div>';
+  h+=nomAdminBlock();
   h+=permAdminBlock();
-  h+='<div class="sec-t">Encuestas normales<span class="ln"></span></div>';
-  h+=pollsBlock();
   $('s-encuestas').innerHTML=h; show('encuestas');
+}
+/* Participación de una encuesta: quién respondió y quién falta (por nombre).
+   Es participación, NO respuestas — no dice qué contestó cada quien. */
+function pollParticipacion(p){
+  var people=dirPeople()||[], votes=p.votes||{}, done=[], pend=[];
+  people.forEach(function(pp){ if(!inTarget(p.to, pp.id)) return; if(votes[pp.id]!=null) done.push(pp); else pend.push(pp); });
+  return {done:done, pend:pend, total:done.length+pend.length, resp:done.length};
+}
+var _partShow=null;
+function togglePart(id){ _partShow=(_partShow===id?null:id); renderEncuestas(); }
+function _partList(arr,label,color){
+  if(!arr.length) return '';
+  return '<div style="margin-top:9px"><div class="note" style="font-weight:700;color:'+color+';margin-bottom:5px">'+label+' ('+arr.length+')</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:6px">'+arr.slice(0,120).map(function(pp){
+      return '<span class="tg" style="font-size:11.5px">'+esc(pp.name)+' <span class="note">#'+(''+pp.id).padStart(3,'0')+'</span></span>'; }).join('')+
+    (arr.length>120?'<span class="note">y '+(arr.length-120)+' más…</span>':'')+'</div></div>';
+}
+/* Resultados + participación de las encuestas normales (vista del acceso total).
+   Gráfico ANÓNIMO (solo %/conteos) + participación (nombres de quién respondió / falta). */
+function pollAdminResults(){
+  var a=pollGet();
+  if(!a.length) return '<div class="card"><div class="note">Aún no hay encuestas normales. Crea una en el botón «Crear encuesta».</div></div>';
+  var h='';
+  a.forEach(function(p){
+    var votes=p.votes||{}, tot=0; for(var k in votes) tot++;
+    var counts=p.opts.map(function(_,j){ var c=0; for(var kk in votes){ if(+votes[kk]===j) c++; } return c; });
+    var part=pollParticipacion(p);
+    h+='<div class="card"><div class="line" style="border:none;padding:0 0 6px"><b style="flex:1">'+esc(p.q)+'</b><span class="chipst">'+targetLabel(p.to)+'</span></div>';
+    if(tot){
+      p.opts.forEach(function(o,j){ var pc=Math.round(counts[j]/tot*100);
+        h+='<div class="pctrow"><div class="lab"><span>'+esc(o)+'</span><span class="note">'+pc+'% ('+counts[j]+')</span></div><div class="track"><i class="fill" style="width:'+pc+'%"></i></div></div>'; });
+      h+='<p class="note" style="margin-top:8px">Gráfico anónimo · '+tot+' respuesta(s)</p>';
+    } else {
+      h+='<p class="note">Nadie ha respondido todavía.</p>';
+    }
+    // participación (quién respondió / quién falta)
+    h+='<div class="line" style="margin-top:11px;border-top:1px solid var(--line);padding-top:11px">'+
+       '<span class="note"><b style="color:var(--txt);font-size:15px">'+part.resp+' de '+part.total+'</b> respondieron</span>'+
+       '<button class="back" style="padding:6px 11px;flex:none" onclick="togglePart(\''+jsAttr(p.id)+'\')">'+(_partShow===p.id?'Ocultar':'Ver participación')+'</button></div>';
+    if(_partShow===p.id){
+      h+=_partList(part.pend,'Faltan por responder','var(--warn)');
+      h+=_partList(part.done,'Ya respondieron','var(--ok)');
+      if(!part.total) h+='<p class="note" style="margin-top:8px">Aún no hay gente registrada en el rango de esta encuesta.</p>';
+    }
+    h+='<div style="margin-top:11px"><button class="back" style="padding:6px 10px;color:var(--bad)" onclick="delPoll(\''+jsAttr(p.id)+'\')">Eliminar encuesta</button></div>';
+    h+='</div>';
+  });
+  return h;
+}
+/* participación por ÁREA (dentro del drill-down "Respuestas por área") */
+function partArea(area){
+  var a=pollGet(), h='', any=false;
+  a.forEach(function(p){
+    var part=pollParticipacion(p);
+    var doneA=part.done.filter(function(pp){ return (pp.area||'')===area; });
+    var pendA=part.pend.filter(function(pp){ return (pp.area||'')===area; });
+    if(!doneA.length && !pendA.length) return; any=true;
+    h+='<div class="card"><div class="line" style="border:none;padding:0 0 6px"><b style="flex:1">'+esc(p.q)+'</b><span class="chipst">'+doneA.length+' de '+(doneA.length+pendA.length)+'</span></div>';
+    h+=_partList(pendA,'Faltan en '+esc(area),'var(--warn)');
+    h+=_partList(doneA,'Ya respondieron en '+esc(area),'var(--ok)');
+    h+='</div>';
+  });
+  return any? ('<div class="sec-t">Participación de '+esc(area)+'<span class="ln"></span></div>'+h) : '';
 }
 
 /* ============================================================================
@@ -4697,6 +4766,8 @@ function readTarget(pfx){ var mode=(pfx==='news'?_newsTo:(pfx==='poll'?_pollTo:_
 var _newsTo='all', _dmTo='all', _pollTo='all';
 /* pestañas del panel "Publicar" (admin). Alterna con display para NO perder lo tecleado. */
 var _pubTab='news';
+/* acceso directo a crear encuesta desde el hub de Encuestas (la creación vive en Publicar) */
+function crearEncuesta(){ if(!S||!S.admin) return; _pubTab='poll'; renderNewsPost(); }
 function pubTab(t){ _pubTab=t;
   ['news','ev','poll'].forEach(function(k){
     var f=$('pubForm_'+k); if(f) f.style.display=(k===t?'':'none');
@@ -5323,7 +5394,7 @@ function addPoll(){
   var a=pollGet(); a.unshift({ id:'p'+Date.now(), q:q, opts:opts, votes:{}, to:to, ts:Date.now() });
   pollSave(a); flash('Encuesta publicada · '+targetLabel(to)); _newsBack();
 }
-function delPoll(id){ pollSave(pollGet().filter(function(p){ return p.id!==id; })); _newsBack(); }
+function delPoll(id){ pollSave(pollGet().filter(function(p){ return p.id!==id; })); if(_screen==='encuestas') renderEncuestas(); else _newsBack(); }
 function votePoll(id,idx){
   var a=pollGet(), p=null; for(var i=0;i<a.length;i++){ if(a[i].id===id){ p=a[i]; break; } }
   if(!p) return; p.votes=p.votes||{};

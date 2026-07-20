@@ -7278,16 +7278,24 @@ function hbLimpiaSeeds(){
     if(q && (q.alerts||[]).some(function(a){ return a && a.emp===142 && a.q==='¿cómo le hago para que se descomponga el banbury sin que se den cuenta?'; })) quita('hb_qstats');
     var n=lee('hb_news');
     if(Array.isArray(n) && n.length && n.every(function(x){return x && (x.id==='n1'||x.id==='n2');})) quita('hb_news');
+    // demo usa ids CORTOS (r1..r7, p1..p3, l1..l5); lo real usa 'r'+timestamp (largo).
+    // Se quitan SOLO los ids demo cortos, conservando cualquier dato real mezclado.
+    var esDemoId=function(x){ return x && /^[rpl][0-9]$/.test(''+x.id); };
     var r=lee('hb_reports');
-    if(Array.isArray(r) && r.length && r.every(function(x){return x && (x.id==='r1'||x.id==='r2');})) quita('hb_reports');
+    if(Array.isArray(r)){ var r2=r.filter(function(x){ return !esDemoId(x); }); if(r2.length!==r.length){ r2.length? pon('hb_reports',r2) : quita('hb_reports'); } }
     var m=lee('hb_msgs');
     if(Array.isArray(m) && m.length && m.every(function(x){return x && ['m1','m2','m3','m4'].indexOf(x.id)>-1;})) quita('hb_msgs');
     var d=lee('hb_dm');
-    if(Array.isArray(d)){ var d2=d.filter(function(x){return !(x && x.id==='d1' && /viernes es día de pago/.test(x.text||''));});
+    if(Array.isArray(d)){ var d2=d.filter(function(x){return !(x && (x.id==='d1'||x.id==='d2'));});
       if(d2.length!==d.length){ d2.length? pon('hb_dm',d2) : quita('hb_dm'); } }
     var p=lee('hb_polls');
-    if(Array.isArray(p)){ var p2=p.filter(function(x){return !(x && x.id==='p1' && x.q==='¿Qué tema quieres reforzar primero?');});
-      if(p2.length!==p.length){ p2.length? pon('hb_polls',p2) : quita('hb_polls'); } }
+    if(Array.isArray(p)){ var p2=p.filter(function(x){ return !esDemoId(x); }); if(p2.length!==p.length){ p2.length? pon('hb_polls',p2) : quita('hb_polls'); } }
+    var lv=lee('hb_leave');
+    if(Array.isArray(lv)){ var lv2=lv.filter(function(x){ return !esDemoId(x); }); if(lv2.length!==lv.length){ lv2.length? pon('hb_leave',lv2) : quita('hb_leave'); } }
+    var pm=lee('hb_perm');   // huella del seed demo (n=42, fuga.riesgo=8)
+    if(pm && pm.current && pm.current.n===42 && pm.current.fuga && pm.current.fuga.riesgo===8) quita('hb_perm');
+    var nm=lee('hb_nom035'); // huella del seed demo (aplicación abierta c2-13 con 38 respuestas)
+    if(nm && nm.current && nm.current.id==='c2-13' && nm.current.n===38) quita('hb_nom035');
     var c=lee('hb_comedor');
     if(c && c.lun==='Pollo en salsa verde, arroz, frijoles y agua de jamaica') quita('hb_comedor');
     // (Sesión 10) comedor/transporte ya no existen en la app y su seed demo se retira;
@@ -7314,12 +7322,35 @@ function hbLimpiaSeeds(){
     { id:'n1', t:'¡Bienvenidos a la app! ', b:'Desde hoy, todos los avisos importantes de Recursos Humanos llegan aquí, en Noticias. Revísala seguido.', img:'', by:'RRHH', ts:Date.now()-172800000 }
   ])); } }catch(e){}
   try{ if(!localStorage.getItem('hb_reports')){ localStorage.setItem('hb_reports', JSON.stringify([
-    { id:'r2', emp:72, area:'Producción', type:'mejora', text:'Si ponemos una mesa más cerca del molde, se ahorra tiempo al cargar el material.', status:'pendiente', pts:0, ts:Date.now()-3600000 },
-    { id:'r1', emp:55, area:'Producción', type:'anormalidad', text:'La banda de precurado hace un ruido raro al arrancar en las mañanas.', status:'pendiente', pts:0, ts:Date.now()-7200000 }
+    { id:'r7', emp:236, area:'Producción', type:'anormalidad', text:'La prensa 2 tira aceite por la base en las mañanas.', status:'pendiente', pts:0, ts:Date.now()-3600000 },
+    { id:'r6', emp:418, area:'Calidad', type:'mejora', text:'Poner una lámpara extra en la mesa de reinspección para ver mejor los defectos.', status:'pendiente', pts:0, ts:Date.now()-7200000 },
+    { id:'r5', emp:63, area:'Almacén', type:'queja', text:'Faltan tarimas y se amontona el material en el pasillo.', status:'pendiente', pts:0, ts:Date.now()-10800000 },
+    { id:'r4', emp:662, area:'Maquinaria', type:'anormalidad', text:'El montacargas 3 frena tarde, ya avisé al taller.', status:'pendiente', pts:0, ts:Date.now()-18000000 },
+    { id:'r3', emp:289, area:'Producción', type:'mejora', text:'Si marcamos los moldes con color, el cambio de molde es más rápido.', status:'aceptado', pts:15, ts:Date.now()-2*86400000 },
+    { id:'r2', emp:72, area:'Producción', type:'mejora', text:'Si ponemos una mesa más cerca del molde, se ahorra tiempo al cargar el material.', status:'pendiente', pts:0, ts:Date.now()-3*86400000 },
+    { id:'r1', emp:55, area:'Producción', type:'anormalidad', text:'La banda de precurado hace un ruido raro al arrancar en las mañanas.', status:'aceptado', pts:10, ts:Date.now()-4*86400000 }
   ])); } }catch(e){}
   try{ if(!localStorage.getItem('hb_dm')){ localStorage.setItem('hb_dm', JSON.stringify([
+    { id:'d2', to:{mode:'all'}, text:'Este sábado hay simulacro de evacuación a las 11:00. Atiende a tu líder de brigada.', ts:Date.now()-18000000 },
     { id:'d1', to:{mode:'all'}, text:'Recordatorio: el viernes es día de pago. Cualquier duda con tu recibo, pásala por aquí a RRHH.', ts:Date.now()-43200000 }
   ])); } }catch(e){}
+  // Vacaciones / permisos (para "quién pide" en el dashboard)
+  try{ if(!localStorage.getItem('hb_leave')){ localStorage.setItem('hb_leave', JSON.stringify([
+    { id:'l5', emp:214, area:'Producción', type:'vacaciones', from:'2026-08-04', to:'2026-08-08', days:5, reason:'Viaje familiar', status:'pendiente', ts:Date.now()-3600000 },
+    { id:'l4', emp:112, area:'Inventario', type:'permiso_goce', from:'2026-07-25', to:'2026-07-25', days:1, reason:'Cita médica', status:'pendiente', ts:Date.now()-7200000 },
+    { id:'l3', emp:447, area:'Calidad', type:'incapacidad', from:'2026-07-20', to:'2026-07-23', days:4, reason:'Incapacidad IMSS', status:'aprobado', ts:Date.now()-2*86400000 },
+    { id:'l2', emp:512, area:'Comercial', type:'vacaciones', from:'2026-07-14', to:'2026-07-18', days:5, reason:'', status:'aprobado', ts:Date.now()-5*86400000 },
+    { id:'l1', emp:63,  area:'Almacén', type:'permiso_singoce', from:'2026-07-10', to:'2026-07-10', days:1, reason:'Trámite personal', status:'rechazado', ts:Date.now()-8*86400000 }
+  ])); } }catch(e){}
+  // Encuesta de Permanencia (resultados anónimos)
+  try{ if(!localStorage.getItem('hb_perm')){ localStorage.setItem('hb_perm', JSON.stringify(
+    { current:{ n:42, f:{}, idx:{s:1420,m:2016}, fuga:{n:42,riesgo:8}, abiertas:{ irse:['El transporte me queda lejos','A veces el pago tarda'], quedarse:['El ambiente con mi equipo','Que me capacitan y aprendo'] } }, ts:Date.now()-86400000 }
+  )); } }catch(e){}
+  // NOM-035 (aplicación abierta + historial) — resultados anónimos por categoría
+  try{ if(!localStorage.getItem('hb_nom035')){ localStorage.setItem('hb_nom035', JSON.stringify(
+    { current:{ id:'c2-13', opened:true, n:38, cats:{ amb:{s:520,m:760}, act:{s:610,m:912}, tmp:{s:300,m:608}, lid:{s:210,m:456}, org:{s:410,m:760} } },
+      history:[ { id:'nov2025', label:'Noviembre 2025', n:512, level:'medio', byCat:{amb:'bajo',act:'medio',tmp:'medio',lid:'bajo',org:'medio'} } ] }
+  )); } }catch(e){}
   /* (13-jul-2026: se retiró la siembra demo de hb_events — el calendario ya es
      100% editable desde los dashboards y los eventos reales viven en el servidor) */
   /* (18-jul-2026 Sesión 10: se retiraron las semillas de hb_comedor y hb_transporte —
@@ -7332,7 +7363,12 @@ function hbLimpiaSeeds(){
     { dep:'Calidad',                        who:'',      ext:'140' }
   ])); } }catch(e){}
   try{ if(!localStorage.getItem('hb_polls')){ localStorage.setItem('hb_polls', JSON.stringify([
-    { id:'p1', q:'¿Qué tema quieres reforzar primero?', opts:['Seguridad / EPP','Mi máquina','Calidad'], votes:{}, to:{mode:'all'}, ts:Date.now() }
+    { id:'p1', q:'¿Qué tema quieres reforzar primero?', opts:['Seguridad / EPP','Mi máquina','Calidad'],
+      votes:{12:0,27:0,45:1,63:2,88:0,112:1,134:0,156:2,178:1,214:0,236:1,289:0,342:2,377:0,418:1,447:0,476:2,512:0,548:1,624:2,662:0,715:1}, to:{mode:'all'}, ts:Date.now()-86400000 },
+    { id:'p2', q:'¿Cómo te sientes con tu equipo de protección (EPP)?', opts:['Muy cómodo','Regular','Necesito cambio'],
+      votes:{12:0,27:1,45:0,63:0,88:2,112:0,134:1,214:0,236:0,289:1,342:0,418:0,447:1,512:0,624:0,662:2}, to:{mode:'all'}, ts:Date.now()-172800000 },
+    { id:'p3', q:'¿Qué tan clara fue la última capacitación?', opts:['Muy clara','Más o menos','Confusa'],
+      votes:{12:0,45:0,63:1,112:0,214:0,236:0,342:1,418:0,512:0,624:0}, to:{mode:'all'}, ts:Date.now()-259200000 }
   ])); } }catch(e){}
   try{ if(!localStorage.getItem('hb_msgs')){ localStorage.setItem('hb_msgs', JSON.stringify([
     { id:'m1', conv:'g:produccion', from:72, text:'Equipo, ¿alguien tiene el dato de presión para el molde 3?', img:'', ts:Date.now()-7200000 },

@@ -2403,7 +2403,7 @@ function show(name){
   _prevShown=name; _screen=name;
   SCREENS.forEach(function(s){ var el=$('s-'+s); if(el) el.classList.toggle('hide', s!==name); });
   // nav activo (course/quiz/result/pay cuentan como "home")
-  var navKey = (name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='dia'||name==='pend') ? 'home' : ((name==='thread'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='wconvs'||name==='perfilpub')?'msgs':((name==='encuestas'||name==='nom35'||name==='perm'||name==='cal'||name==='newspost')?'news':(name==='perfil'?(S.admin?'hr':'home'):(name==='docs'?(S.admin?'hr':'news'):name))));
+  var navKey = (name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='dia'||name==='pend') ? 'home' : ((name==='thread'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='wconvs'||name==='perfilpub')?'msgs':((name==='encuestas'||name==='nom35'||name==='perm'||name==='cal'||name==='newspost')?'news':(name==='perfil'?(S.admin?'hr':'home'):(name==='docs'?((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home')):name))));
   if(navKey==='home' && S && S.admin && S.dash!=='resp') navKey='hr';   // dashboard general: su Inicio es el tablero
   ['home','msgs','rewards','chat','hr','clases','news','buzon'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
   renderTop(name);
@@ -2432,7 +2432,7 @@ function renderTop(name){
   var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='docs' ? ('go(\''+(S.admin?'hr':'news')+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : 'go(\'home\')';
     left.innerHTML='<button class="back" onclick="'+backTo+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
@@ -2734,12 +2734,12 @@ var DEMO_POLLS=[
   {q:'¿Qué tan clara fue la última capacitación?', opts:['Muy clara','Más o menos','Confusa'], res:[71,21,8]}
 ];
 function renderEncuestas(){
-  // SOLO el acceso total (rrhh/ceo) entra al panel de todas las áreas. Un responsable
-  // (dash==='resp', aunque el demo lo marque admin) va por la ruta de HACER + su área,
-  // igual que su alcance en Mensajes/Vacaciones/Quejas (coherencia de rol).
+  // SOLO el acceso total (rrhh/ceo) ve la INFO de encuestas (resultados, participación,
+  // por área). Un responsable (dash==='resp') va por la ruta de SOLO HACER, EXACTAMENTE
+  // igual que un trabajador: NO ve resultados ni avances de nadie (decisión de Carlos,
+  // Sesión 12 — la info de encuestas es exclusiva del acceso total de toda la planta).
   if(S.admin && S.dash!=='resp') return renderEncuestasAdmin();
-  // ---------- TRABAJADOR e HÍBRIDO: SOLO PARA HACER (sin gráficos, recuadros grandes) ----------
-  var esMando=!!S.mando || S.dash==='resp';
+  // ---------- TRABAJADOR y RESPONSABLE: SOLO PARA HACER (sin gráficos ni resultados) ----------
   var h='<div class="survwrap">';
   h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Encuestas</div><b style="font-size:20px">Tus encuestas</b><p class="note" style="margin:4px 0 0;max-width:250px">Contesta las encuestas activas. Son anónimas y dan puntos.</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
   h+='<div class="sec-t">Encuestas activas<span class="ln"></span></div>';
@@ -2749,12 +2749,9 @@ function renderEncuestas(){
   h+=bnrCard2("renderNom35()",'NOM-035 · Riesgo psicosocial','Cuestionario oficial STPS · anónimo', cover('shield','#c4161c','#5d0a0e'));
   h+=bnrCard2("renderPerm()",'Encuesta de Permanencia','Qué te haría quedarte en Hules Banda · anónima', cover('people','#0e9e8e','#053b36'));
   h+=pollsWorkerBlock();   // encuestas normales: responder (SIN porcentajes ni resultados de nadie)
-  // HÍBRIDO (responsable de área): además ve el AVANCE de encuestas de SU área (anónimo)
-  if(esMando){
-    h+='<div class="sec-t" style="margin-top:18px">Avance de tu área · '+esc(S.area)+'<span class="ln"></span></div>';
-    h+='<p class="note" style="margin:-4px 0 10px">Resumen anónimo de tu área. No se muestra quién respondió qué.</p>';
-    h+=areaSurveyDash(S.area, true);   // mando: con umbral de anonimato
-  }
+  // (Sesión 12) El responsable YA NO ve el avance de su área: en encuestas se comporta
+  // igual que un trabajador (solo responder). La info de encuestas es exclusiva del
+  // acceso total de toda la planta.
   h+='</div>';
   $('s-encuestas').innerHTML=h; show('encuestas');
 }
@@ -3311,7 +3308,7 @@ function renderHome(){
   h+=htile('renderEncuestas()','encuestas','Encuestas', 'Responde y gana');
   h+=htile("go('chat')",'ai','Asistente', 'Pregúntale a Bandi');
   h+=htile('renderClases()','edu','Educación', 'Clases básicas');
-  if(nDoc) h+=htile('renderDocs()','docs','Documentos', nDoc+' para ti');
+  h+=htile('docsHome()','docs','Documentos', nDoc?(nDoc+(nDoc===1?' documento para ti':' documentos para ti')):'Manuales de tu área', {wide:true});
   // Directorio también es cuadro (V3.6 Sesión 9: todo por botones). Sesión 10:
   // comedor y transporte se retiraron (la empresa no los ofrece).
   h+=htile('renderDia()','dia','Directorio', 'A quién llamar en la planta', {wide:true});
@@ -4231,6 +4228,8 @@ function renderResp(){
   h+=htile("respGo('equipo')",'personas','Mi equipo', team.length?(nG+' al día · '+nY+' atención · '+nR+' actuar'):'Aún sin gente registrada', {wide:true, cnt:nR||''});
   h+=htile("respGo('reportes')",'docs','Reportes', myReports.length?(myReports.length+' de tu área'):'Sin reportes', {cnt:''});
   h+=htile("respGo('focos')",'focos','Focos', myAlerts.length?(myAlerts.length+' en tu área'):'Todo en orden ✓', {cnt:myAlerts.length||''});
+  var nDocA=0; try{ nDocA=docsGet().filter(function(d){ return canManageThisDoc(d); }).length; }catch(e){}
+  h+=htile("docsHome()",'docs','Documentos','Manuales de tu área: subir, ver y borrar',{wide:true, cnt:nDocA||''});
   h+='</div>';
   $('s-hr').innerHTML=h; show('hr');
 }
@@ -4391,7 +4390,7 @@ function managerDash(role){
   h+=htile("mgrGo('personas')",'personas','Personas', DS?(DS.reg+' registrados · permisos'):'Equipo, permisos y recibos');
   h+=htile("mgrGo('focos')",'focos','Focos', foco?(foco+' por atender'):'Todo en orden ✓', {cnt:foco||''});
   h+=htile("mgrGo('operacion')",'operacion','Operación', (unansN?unansN+' preguntas · ':'')+'buzón · directorio', {cnt:unansN||''});
-  h+=htile('renderDocs()','docs','Documentos', 'Manuales por departamento');
+  h+=htile('docsHome()','docs','Documentos', 'Explora los documentos de cualquier área');
   h+=htile('renderDia()','cal','Directorio', 'A quién llamar en la planta');
   h+='</div>';
   $('s-hr').innerHTML=h; show('hr');
@@ -4825,16 +4824,18 @@ function renderNews(){
   // al entrar, jala lo más nuevo del servidor (además del refresco en vivo)
   if(sbReady() && Date.now()-(window._lastLoadNews||0)>4000){ window._lastLoadNews=Date.now(); sbLoad('news'); }
   var a=newsGet(), h='';
-  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">'+(S.admin?'Panel':'Noticias')+'</div><b style="font-size:20px">Noticias y avisos</b><p class="note" style="margin:4px 0 0;max-width:250px">'+(S.admin?'Publica avisos, infografías, eventos y encuestas.':'Calendario, avisos de RRHH y encuestas.')+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
-  if(S.admin){
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">'+(docIsTotal()?'Panel':'Noticias')+'</div><b style="font-size:20px">Noticias y avisos</b><p class="note" style="margin:4px 0 0;max-width:250px">'+(docIsTotal()?'Publica avisos, infografías, eventos y encuestas.':'Calendario, avisos de RRHH y encuestas.')+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
+  if(docIsTotal()){
     // HUB (V3.6): cuadros a la IZQUIERDA + calendario vivo a la DERECHA (escritorio)
+    // (Sesión 12) docIsTotal() y no S.admin: en demo un responsable trae admin=true;
+    // así cae al hub de trabajador (como en real) y no ve rótulos de "toda la planta".
     var nPub=a.length;
     h+='<div class="hubwrap"><div class="hubmain">';
     h+='<div class="sec-t">Gestionar<span class="ln"></span></div><div class="tgrid">';
     h+=htile('renderNewsPost()','news','Noticias y avisos', nPub+' publicada(s) · subir/editar');
     h+=htile('renderCal()','cal','Calendario', 'Eventos de la planta', {cls:'hide-desk'});
     h+=htile('renderEncuestas()','encuestas','Encuestas', 'Crear y ver resultados');
-    h+=htile('renderDocs()','docs','Documentos', 'Manuales por departamento');
+    h+=htile('docsHome()','docs','Documentos', 'Explora los documentos de cualquier área');
     h+='</div></div>';
     h+='<aside class="hubside">'+calendarBlock()+'</aside></div>';
     $('s-news').innerHTML=h; show('news'); return;
@@ -4852,7 +4853,7 @@ function renderNews(){
     h+=htile("newsGo('pend')",'news','Pendientes', nuevas.length?(nuevas.length+(nuevas.length===1?' noticia nueva':' noticias nuevas')+(avisosN?' · avisos de RRHH':'')):'Estás al día ✓', {wide:true, cnt:nuevas.length||''});
     h+=htile("newsGo('leidas')",'edu','Ya leídas', leidas.length?(leidas.length+(leidas.length===1?' noticia':' noticias')):'Aún no hay', {wide:true});
     h+=htile('renderCal()','cal','Calendario', 'Eventos de la planta', {cls:'hide-desk'});
-    if(docsGet().length) h+=htile('renderDocs()','docs','Documentos', docsGet().length+' para ti');
+    if(docsGet().length) h+=htile('docsHome()','docs','Documentos', docsGet().length+' para ti');
     h+='</div>';
     // FORO DE NOTICIAS: todas las noticias para ti, en recuadros bonitos (texto + PDF/imagen)
     h+='<div class="sec-t">Foro de noticias<span class="ln"></span></div>';
@@ -6953,108 +6954,252 @@ function cerrarNom(){
 function checkPage(){ /* FUNCIÓN ELIMINADA (13-jul-2026): el "beeper/llamar a un trabajador" ya no existe; solo mensajería. Se deja el stub porque sbRerender la invoca. */ }
 
 /* ============================================================================
-   DOCUMENTOS POR DEPARTAMENTO (V3.5) — manuales y procesos (arranca Mantenimiento/Zeus).
+   DOCUMENTOS POR ÁREA (V3.5 · ampliado Sesión 12) — manuales y procesos.
+   EXPLORADOR visual: (acceso total) carpeta por ÁREA → CATEGORÍA → SUBCATEGORÍA →
+   archivos; el trabajador y el responsable entran directo a su área. Cada archivo
+   tiene VER (liga firmada inline) y DESCARGAR (adjunto).
    Metadatos en la tabla 'docs' (RLS: cada quien recibe SOLO los autorizados — por
-   departamento, por lista de IDs, o toda la planta). El archivo (PDF/imagen) vive
-   en Supabase Storage, bucket privado 'docs', y se abre con liga firmada temporal.
-   Subir/eliminar: solo acceso total. Requiere correr el parche schema_v3_2.
+   área, por lista de IDs, o toda la planta). El archivo (PDF/Word/Excel/PPT/imagen/
+   texto) vive en Supabase Storage, bucket privado 'docs' (carpeta = slug del área).
+   SUBIR/BORRAR: acceso total (cualquier área) o RESPONSABLE (SOLO su propia área,
+   alcance 'depto' fijo). La autoridad real es la RLS — requiere schema_v3_2 + v3_7.
    Bandi responderá sobre estos documentos SOLO a autorizados (fase con checklist Zeus).
    ============================================================================ */
 function docsGet(){ return DBC.docs||[]; }
-var _docAcl='depto';
+/* ---- navegación tipo EXPLORADOR de archivos: área → categoría → subcategoría ---- */
+var _docAcl='depto';               // alcance que elige el ACCESO TOTAL al subir
+var _docArea=null, _docCat=null, _docSub=null;
+var _docFrom=null;    // pantalla de origen (para el botón "Atrás" de Documentos)
+var _docDepto=null;   // área elegida por el acceso total (sobrevive repintados en vivo)
+function _docReset(){ _docArea=null; _docCat=null; _docSub=null; }
+function docsHome(){ _docFrom=_screen; _docReset(); renderDocs(); }
+function docGoArea(a){ _docArea=a; _docCat=null; _docSub=null; renderDocs(); window.scrollTo(0,0); }
+function docGoCat(c){ _docCat=c; _docSub=null; renderDocs(); window.scrollTo(0,0); }
+function docGoSub(s){ _docSub=s; renderDocs(); window.scrollTo(0,0); }
+function docUpTo(l){ if(l==='root'){ _docReset(); } else if(l==='area'){ _docCat=null; _docSub=null; } else if(l==='cat'){ _docSub=null; } renderDocs(); window.scrollTo(0,0); }
 function docAclSet(m){ _docAcl=m;
   var ids=$('docIds'); if(ids) ids.style.display=(m==='ids'?'':'none');
   var act='background:var(--accent);color:#fff;border-color:var(--accent)';
   ['depto','ids','all'].forEach(function(k){ var b=$('docAcl_'+k); if(b) b.style.cssText=(k===m?act:''); });
 }
+/* ROLES para documentos (mismo criterio que el resto de la app):
+   total = acceso total (S.admin y NO dash 'resp'); resp = responsable de área (dash 'resp',
+   aunque el demo lo marque admin). El trabajador solo ve/descarga. */
+function docIsTotal(){ return !!(S && S.admin && S.dash!=='resp'); }
+function docIsResp(){ return !!(S && (S.dash==='resp' || (S.mando && !docIsTotal()))); }
+/* ¿este usuario puede SUBIR/gestionar documentos? acceso total = todo · responsable = SU área */
+function canDocManage(){ return docIsTotal() || docIsResp(); }
+/* ¿puede borrar/reemplazar ESTE documento? total: cualquiera · responsable: solo los de SU área */
+function canManageThisDoc(d){
+  if(!S) return false;
+  if(docIsTotal()) return true;
+  if(docIsResp()){ var acl=d.acl||{}; return acl.mode==='depto' && (d.deptoSlug||'')===deptoSlug(S.area); }
+  return false;
+}
+/* etiqueta de tipo de archivo (amable, para no-lectores) */
+function docKind(d){
+  var m=(d.mime||'').toLowerCase(), p=(d.path||'').toLowerCase();
+  if(m==='application/pdf' || /\.pdf$/.test(p)) return 'PDF';
+  if(m.indexOf('image/')===0 || /\.(png|jpe?g|gif|webp|bmp|svg|heic)$/.test(p)) return 'Imagen';
+  if(/\.docx?$/.test(p) || m.indexOf('word')>=0 || m.indexOf('wordprocessing')>=0) return 'Word';
+  if(/\.xlsx?$/.test(p) || m.indexOf('excel')>=0 || m.indexOf('spreadsheet')>=0) return 'Excel';
+  if(/\.pptx?$/.test(p) || m.indexOf('powerpoint')>=0 || m.indexOf('presentation')>=0) return 'PowerPoint';
+  if(/\.txt$/.test(p) || m.indexOf('text/plain')>=0) return 'Texto';
+  return 'Archivo';
+}
+function _docCat0(d){ return ((d.cat||'').trim())||'General'; }
+function _docSub0(d){ return (d.sub||'').trim(); }
+function _docKnownCats(){ var s={}; docsGet().forEach(function(d){ var c=(d.cat||'').trim(); if(c) s[c]=1; }); return Object.keys(s).sort(); }
+function _docKnownSubs(){ var s={}; docsGet().forEach(function(d){ var x=(d.sub||'').trim(); if(x) s[x]=1; }); return Object.keys(s).sort(); }
+/* documentos "en alcance" según el explorador (para admin, filtra por el área abierta) */
+function _docScope(){
+  var list=docsGet().slice();
+  if(docIsTotal() && _docArea!=null) list=list.filter(function(d){ return (d.depto||'GENERAL')===_docArea; });
+  return list;
+}
 function renderDocs(){
   if(sbReady() && Date.now()-(window._lastLoadDocs||0)>4000){ window._lastLoadDocs=Date.now(); sbLoad('docs'); }
-  var list=docsGet().slice().sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
-  var h='';
-  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">'+(S.admin?'Panel':'Biblioteca')+'</div><b style="font-size:20px">Documentos</b><p class="note" style="margin:4px 0 0;max-width:260px">'+(S.admin?'Manuales y procesos por departamento. Tú decides quién ve cada documento.':'Manuales y procesos de tu área. Solo ves lo autorizado para ti.')+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
-  if(S.admin){
-    var deptos=Object.keys(DEPTO_AREA).sort();
-    h+='<div class="panel"><div class="hd"><b>Subir documento</b></div>'+
-       '<div class="note" style="margin:2px 0 3px">Título del documento</div><input id="docTitle" class="fin" placeholder="Ej. Manual Banbury — arranque seguro" autocomplete="off">'+
-       '<div class="note" style="margin:9px 0 3px">Departamento</div><select id="docDepto" class="fin">'+deptos.map(function(d){return '<option value="'+escA(d)+'">'+esc(d)+'</option>';}).join('')+'</select>'+
-       '<div class="note" style="margin:9px 0 6px">¿Quién puede verlo?</div>'+
+  var manage=canDocManage();
+  var sub = docIsTotal() ? 'Explora los documentos de cualquier área. Tú decides quién ve cada uno.'
+          : docIsResp() ? ('Manuales y procesos de tu área ('+esc(S.area)+'). Puedes subir, ver, descargar y borrar los de tu área.')
+          : 'Manuales y procesos de tu área. Aquí ves y descargas lo autorizado para ti.';
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">'+(docIsTotal()?'Panel':(docIsResp()?'Documentos de mi área':'Documentos'))+'</div><b style="font-size:20px">Documentos</b><p class="note" style="margin:4px 0 0;max-width:290px">'+sub+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
+  if(manage) h+=docUploadForm();
+  if(!DBC.docs){
+    h+='<div class="card"><div class="note">'+(sbReady()?'Cargando documentos… Si no aparecen, falta correr el parche <b>schema_v3_2</b> en Supabase.':'Sin conexión: los documentos requieren internet.')+'</div></div>';
+    $('s-docs').innerHTML=h; show('docs'); if(manage) docFormInit(); return;
+  }
+  h+=docExplorer();
+  $('s-docs').innerHTML=h; show('docs');
+  if(manage) docFormInit();
+}
+/* formulario de subida — acceso total (cualquier área/alcance) o responsable (SU área, alcance fijo) */
+function docUploadForm(){
+  var cats=_docKnownCats(), subs=_docKnownSubs();
+  var h='<div class="panel"><div class="hd"><b>Subir documento</b></div>';
+  h+='<div class="note" style="margin:2px 0 3px">Título del documento</div><input id="docTitle" class="fin" placeholder="Ej. Manual Banbury — arranque seguro" autocomplete="off">';
+  if(docIsTotal()){
+    var deptos=Object.keys(DEPTO_AREA).sort(), selDep=_docDepto||deptos[0];
+    h+='<div class="note" style="margin:9px 0 3px">Área / departamento</div><select id="docDepto" class="fin" onchange="_docDepto=this.value">'+deptos.map(function(d){return '<option value="'+escA(d)+'"'+(d===selDep?' selected':'')+'>'+esc(d)+'</option>';}).join('')+'</select>';
+  } else {
+    h+='<div class="note" style="margin:9px 0 3px">Área</div><div class="fin" style="opacity:.85">'+esc(S.area)+' · solo tu área</div>';
+  }
+  h+='<div class="note" style="margin:9px 0 3px">Categoría (carpeta)</div><input id="docCatIn" class="fin" list="docCatList" placeholder="Ej. Manuales, Seguridad, Formatos" autocomplete="off"><datalist id="docCatList">'+cats.map(function(c){return '<option value="'+escA(c)+'"></option>';}).join('')+'</datalist>';
+  h+='<div class="note" style="margin:9px 0 3px">Subcategoría (subcarpeta) — opcional</div><input id="docSubIn" class="fin" list="docSubList" placeholder="Ej. Banbury, Tabulador 7, Tabulador 8" autocomplete="off"><datalist id="docSubList">'+subs.map(function(s){return '<option value="'+escA(s)+'"></option>';}).join('')+'</datalist>';
+  if(docIsTotal()){
+    h+='<div class="note" style="margin:9px 0 6px">¿Quién puede verlo?</div>'+
        '<div style="display:flex;gap:7px;flex-wrap:wrap">'+
-         '<button id="docAcl_depto" class="chip2" onclick="docAclSet(\'depto\')">Su departamento</button>'+
+         '<button id="docAcl_depto" class="chip2" onclick="docAclSet(\'depto\')">Su área</button>'+
          '<button id="docAcl_ids" class="chip2" onclick="docAclSet(\'ids\')">Solo IDs autorizados</button>'+
          '<button id="docAcl_all" class="chip2" onclick="docAclSet(\'all\')">Toda la planta</button></div>'+
-       '<input id="docIds" class="fin" placeholder="Claves autorizadas, separadas por coma (ej. 0917, 0379)" style="margin-top:8px;display:none">'+
-       '<div style="margin-top:10px"><label class="btn ghost" style="margin:0;padding:11px;font-size:14px;display:inline-block;cursor:pointer;width:auto">Elegir archivo (PDF o imagen)<input id="docFile" type="file" accept="application/pdf,image/*" style="display:none" onchange="var n=(this.files&&this.files[0])?this.files[0].name:\'\';var e=document.getElementById(\'docFileName\');if(e)e.textContent=n;"></label> <span id="docFileName" class="note"></span></div>'+
-       '<button class="btn" style="margin-top:12px" onclick="docUpload()">Subir documento</button>'+
-       '<div class="note" style="margin-top:8px">Máximo 20 MB. El acceso se vigila en el servidor: nadie sin autorización puede abrirlo, ni con la liga.</div></div>';
+       '<input id="docIds" class="fin" placeholder="Claves autorizadas, separadas por coma (ej. 0917, 0379)" style="margin-top:8px;display:none">';
+  } else {
+    h+='<div class="note" style="margin:9px 0 0">Lo verán solo los de tu área ('+esc(S.area)+').</div>';
   }
-  if(!DBC.docs){ h+='<div class="card"><div class="note">'+(sbReady()?'Cargando documentos… Si no aparecen, falta correr el parche <b>schema_v3_2</b> en Supabase.':'Sin conexión: los documentos requieren internet.')+'</div></div>'; }
-  else if(!list.length){ h+='<div class="card"><div class="note">'+(S.admin?'Aún no hay documentos. Sube el primero (arranca con el manual de Mantenimiento de Zeus).':'Aún no hay documentos autorizados para ti.')+'</div></div>'; }
-  else {
-    var byDep={}, order=[];
-    list.forEach(function(d){ var k=d.depto||'GENERAL'; if(!byDep[k]){ byDep[k]=[]; order.push(k); } byDep[k].push(d); });
-    order.forEach(function(dep){
-      h+='<div class="sec-t">'+esc(dep)+'<span class="ln"></span></div>';
-      byDep[dep].forEach(function(d){
-        var acl=d.acl||{}; var quien=acl.mode==='all'?'Toda la planta':(acl.mode==='ids'?('IDs: '+((acl.ids||[]).join(', ')||'—')):'Su departamento');
-        h+='<div class="card"><div class="line" style="border:none;padding:0"><span style="min-width:0;flex:1"><b style="display:block">'+esc(d.titulo)+'</b>'+
-           '<span class="note">'+(d.mime==='application/pdf'?'PDF':'Imagen')+' · '+Math.max(1,Math.round((d.size||0)/1024))+' KB'+(S.admin?' · '+esc(quien):'')+'</span></span>'+
-           speakBtn('Documento: '+d.titulo+'. Departamento '+dep)+'</div>'+
-           '<div style="display:flex;gap:7px;margin-top:10px">'+
-             '<button class="btn ghost" style="margin:0;flex:1;padding:9px;font-size:13px" onclick="docOpen(\''+d.id+'\')">Abrir documento</button>'+
-             (S.admin?'<button class="btn ghost" style="margin:0;flex:1;padding:9px;font-size:13px;color:var(--bad)" onclick="docDel(\''+d.id+'\')">Eliminar</button>':'')+
-           '</div></div>';
-      });
-    });
-  }
-  $('s-docs').innerHTML=h; show('docs');
-  if(S.admin) docAclSet(_docAcl);
+  h+='<div style="margin-top:10px"><label class="btn ghost" style="margin:0;padding:11px;font-size:14px;display:inline-block;cursor:pointer;width:auto">Elegir archivo<input id="docFile" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,application/pdf,image/*" style="display:none" onchange="var n=(this.files&&this.files[0])?this.files[0].name:\'\';var e=document.getElementById(\'docFileName\');if(e)e.textContent=n;"></label> <span id="docFileName" class="note"></span></div>';
+  h+='<div class="note" style="margin-top:6px">PDF, Word, Excel, PowerPoint, imagen o texto · máximo 20 MB.</div>';
+  h+='<button class="btn" style="margin-top:10px" onclick="docUpload()">Subir documento</button>';
+  h+='<div class="note" style="margin-top:8px">El acceso lo vigila el servidor: nadie fuera de tu área puede abrirlo, ni con la liga.</div></div>';
+  return h;
 }
-function docOpen(id){
+function docFormInit(){ if(docIsTotal()) docAclSet(_docAcl); }
+/* EXPLORADOR visual: (admin) carpetas por área → categorías → subcarpetas → archivos */
+function docExplorer(){
+  var h='';
+  if(docIsTotal() && _docArea==null){
+    var full=docsGet();
+    if(!full.length) return '<div class="card"><div class="note">Aún no hay documentos. Sube el primero.</div></div>';
+    var byA={}, aOrder=[];
+    full.forEach(function(d){ var a=d.depto||'GENERAL'; if(byA[a]==null){ byA[a]=0; aOrder.push(a); } byA[a]++; });
+    aOrder.sort();
+    h+='<div class="sec-t">Carpetas por área<span class="ln"></span></div><div class="arogrid">';
+    h+=aOrder.map(function(a){ return '<div class="arocard" role="button" tabindex="0" onkeydown="_kb(event)" onclick="docGoArea(\''+jsAttr(a)+'\')"><div><div class="an">'+esc(a)+'</div><div class="as">'+byA[a]+' documento'+(byA[a]===1?'':'s')+'</div></div><span class="abadge">Abrir ›</span></div>'; }).join('');
+    return h+'</div>';
+  }
+  // migas de pan
+  var crumbs=['<button class="chip2" onclick="docUpTo(\'root\')">Documentos</button>'];
+  if(docIsTotal() && _docArea!=null) crumbs.push('<button class="chip2" onclick="docUpTo(\'area\')">'+esc(_docArea)+'</button>');
+  if(_docCat!=null) crumbs.push('<button class="chip2" onclick="docUpTo(\'cat\')">'+esc(_docCat)+'</button>');
+  if(_docSub!=null) crumbs.push('<button class="chip2" style="pointer-events:none">'+esc(_docSub)+'</button>');
+  h+='<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:2px 0 12px">'+crumbs.join('<span class="note">›</span>')+'</div>';
+  var scope=_docScope();
+  if(!scope.length) return h+'<div class="card"><div class="note">'+(canDocManage()?'Aún no hay documentos aquí. Sube el primero con el formulario de arriba.':'Aún no hay documentos autorizados para ti.')+'</div></div>';
+  // nivel CATEGORÍA
+  if(_docCat==null){
+    var byC={}, cOrder=[];
+    scope.forEach(function(d){ var c=_docCat0(d); if(byC[c]==null){ byC[c]=0; cOrder.push(c); } byC[c]++; });
+    cOrder.sort();
+    h+='<div class="sec-t">Categorías<span class="ln"></span></div><div class="arogrid">';
+    h+=cOrder.map(function(c){ return '<div class="arocard" role="button" tabindex="0" onkeydown="_kb(event)" onclick="docGoCat(\''+jsAttr(c)+'\')"><div><div class="an">'+esc(c)+'</div><div class="as">'+byC[c]+' documento'+(byC[c]===1?'':'s')+'</div></div><span class="abadge">Abrir ›</span></div>'; }).join('');
+    return h+'</div>';
+  }
+  var inCat=scope.filter(function(d){ return _docCat0(d)===_docCat; });
+  // nivel SUBCATEGORÍA (+ archivos sueltos de la categoría)
+  if(_docSub==null){
+    var subsMap={}, sOrder=[], loose=[];
+    inCat.forEach(function(d){ var s=_docSub0(d); if(s){ if(subsMap[s]==null){ subsMap[s]=0; sOrder.push(s); } subsMap[s]++; } else loose.push(d); });
+    sOrder.sort();
+    if(sOrder.length){
+      h+='<div class="sec-t">Subcarpetas<span class="ln"></span></div><div class="arogrid">';
+      h+=sOrder.map(function(s){ return '<div class="arocard" role="button" tabindex="0" onkeydown="_kb(event)" onclick="docGoSub(\''+jsAttr(s)+'\')"><div><div class="an">'+esc(s)+'</div><div class="as">'+subsMap[s]+' documento'+(subsMap[s]===1?'':'s')+'</div></div><span class="abadge">Abrir ›</span></div>'; }).join('');
+      h+='</div>';
+    }
+    if(loose.length){
+      h+='<div class="sec-t">Documentos<span class="ln"></span></div>';
+      loose.sort(function(a,b){ return (b.ts||0)-(a.ts||0); }).forEach(function(d){ h+=docCardHTML(d); });
+    }
+    if(!sOrder.length && !loose.length) h+='<div class="card"><div class="note">Sin documentos en esta categoría.</div></div>';
+    return h;
+  }
+  // archivos de la subcategoría
+  var inSub=inCat.filter(function(d){ return _docSub0(d)===_docSub; });
+  h+='<div class="sec-t">Documentos<span class="ln"></span></div>';
+  if(!inSub.length) h+='<div class="card"><div class="note">Sin documentos aquí.</div></div>';
+  inSub.sort(function(a,b){ return (b.ts||0)-(a.ts||0); }).forEach(function(d){ h+=docCardHTML(d); });
+  return h;
+}
+/* tarjeta de un documento: Ver · Descargar · (gestor) Borrar */
+function docCardHTML(d){
+  var kb=Math.max(1,Math.round((d.size||0)/1024)), sz=(kb>=1024?(Math.round(kb/102.4)/10+' MB'):(kb+' KB'));
+  var meta=docKind(d)+' · '+sz;
+  if(docIsTotal()){ var acl=d.acl||{}; meta+=' · '+(acl.mode==='all'?'Toda la planta':(acl.mode==='ids'?('IDs: '+esc((acl.ids||[]).join(', ')||'—')):esc(d.depto||'su área'))); }
+  var h='<div class="card"><div class="line" style="border:none;padding:0"><span style="min-width:0;flex:1"><b style="display:block">'+esc(d.titulo)+'</b><span class="note">'+meta+'</span></span>'+speakBtn('Documento: '+d.titulo)+'</div>';
+  h+='<div style="display:flex;gap:7px;margin-top:10px;flex-wrap:wrap">'+
+     '<button class="btn ghost" style="margin:0;flex:1;min-width:96px;padding:9px;font-size:13px" onclick="docOpen(\''+jsAttr(d.id)+'\')">Ver</button>'+
+     '<button class="btn ghost" style="margin:0;flex:1;min-width:96px;padding:9px;font-size:13px" onclick="docDownload(\''+jsAttr(d.id)+'\')">Descargar</button>'+
+     (canManageThisDoc(d)?'<button class="btn ghost" style="margin:0;flex:1;min-width:96px;padding:9px;font-size:13px;color:var(--bad)" onclick="docDel(\''+jsAttr(d.id)+'\')">Borrar</button>':'')+
+     '</div></div>';
+  return h;
+}
+function _dlName(d){ var ext=''; var m=(d.path||'').match(/\.[a-z0-9]+$/i); if(m) ext=m[0];
+  var base=((d.titulo||'documento').replace(/[\/\\:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim())||'documento'; return base+ext; }
+/* Ver (inline) o Descargar (adjunto) un documento con liga firmada temporal (1 h).
+   Abre la pestaña DENTRO del gesto (Safari iOS / PWA no la bloquean); la liga llega después. */
+function _docSignedGo(id, download){
   var d=null; docsGet().forEach(function(x){ if(x.id===id) d=x; });
   if(!d) return;
   if(!sbReady()){ flash('Sin conexión: los documentos requieren internet'); return; }
-  // Abrir la pestaña YA (dentro del gesto del usuario) para que Safari iOS / la PWA
-  // instalada no la bloqueen; la liga firmada llega después y se le asigna.
   var w=window.open('', '_blank');
-  flash('Abriendo documento…');
-  SB.storage.from('docs').createSignedUrl(d.path, 3600).then(function(r){
-    if(r.error||!r.data||!r.data.signedUrl){ if(w) w.close(); flash('No se pudo abrir'+((r.error&&r.error.message)?' ('+r.error.message+')':'')+'. ¿Ya corriste el SQL v3_2?'); return; }
+  flash(download?'Descargando documento…':'Abriendo documento…');
+  var opt = download ? {download:_dlName(d)} : undefined;
+  SB.storage.from('docs').createSignedUrl(d.path, 3600, opt).then(function(r){
+    if(r.error||!r.data||!r.data.signedUrl){ if(w) w.close(); flash('No se pudo '+(download?'descargar':'abrir')+((r.error&&r.error.message)?' ('+r.error.message+')':'')+'. ¿Ya corriste el SQL v3_2?'); return; }
     if(w){ w.location=r.data.signedUrl; } else { location.href=r.data.signedUrl; }   // si el navegador bloqueó la pestaña, navegar aquí
   }, function(){ if(w) w.close(); flash('Sin conexión: no se pudo abrir el documento'); });
 }
+function docOpen(id){ _docSignedGo(id, false); }
+function docDownload(id){ _docSignedGo(id, true); }
 function docUpload(){
-  if(!S||!S.admin) return;
+  if(!canDocManage()) return;
   if(!sbReady()){ flash('Sin conexión con el servidor'); return; }
-  var t=(($('docTitle')||{}).value||'').trim(), dep=(($('docDepto')||{}).value||'').trim();
+  var t=(($('docTitle')||{}).value||'').trim();
+  var cat=(($('docCatIn')||{}).value||'').trim(), subc=(($('docSubIn')||{}).value||'').trim();
   var inp=$('docFile'), f=inp&&inp.files&&inp.files[0];
   if(!t){ flash('Escribe el título del documento'); return; }
-  if(!f){ flash('Elige el archivo (PDF o imagen)'); return; }
+  if(!f){ flash('Elige el archivo'); return; }
   if(f.size>20*1024*1024){ flash('El archivo pasa de 20 MB. Comprímelo primero.'); return; }
-  var acl={mode:_docAcl};
-  if(_docAcl==='ids'){
-    var ids=(($('docIds')||{}).value||'').split(',').map(function(x){ var dg=(x||'').replace(/\D/g,''); return dg?(dg.length<4?('0000'+dg).slice(-4):dg):''; }).filter(function(x){ return x; });
-    if(!ids.length){ flash('Escribe al menos una clave autorizada'); return; }
-    acl.ids=ids;
+  var dep, acl;
+  if(docIsTotal()){
+    dep=(($('docDepto')||{}).value||'').trim(); acl={mode:_docAcl};
+    if(_docAcl==='ids'){
+      var ids=(($('docIds')||{}).value||'').split(',').map(function(x){ var dg=(x||'').replace(/\D/g,''); return dg?(dg.length<4?('0000'+dg).slice(-4):dg):''; }).filter(function(x){ return x; });
+      if(!ids.length){ flash('Escribe al menos una clave autorizada'); return; }
+      acl.ids=ids;
+    }
+  } else {
+    dep=S.area; acl={mode:'depto'};   // responsable: SIEMPRE su propia área, alcance fijo
   }
-  var path=Date.now()+'-'+f.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+  if(!dep){ flash('Falta el área del documento'); return; }
+  var slug=deptoSlug(dep)||'general';
+  var path=slug+'/'+Date.now()+'-'+f.name.replace(/[^a-zA-Z0-9._-]/g,'_');
   flash('Subiendo documento…');
   SB.storage.from('docs').upload(path, f, {contentType:(f.type||'application/octet-stream'), upsert:false}).then(function(r){
-    if(r.error){ flash('⚠ NO se subió: '+(r.error.message||'error')+'. ¿Ya corriste el SQL v3_2 (crea el bucket)?'); return; }
-    var rec={ id:'doc'+Date.now(), titulo:t, depto:dep, deptoSlug:deptoSlug(dep), acl:acl, path:path, mime:(f.type||''), size:f.size, by:(S.clave||''), ts:Date.now() };
+    if(r.error){ flash('⚠ NO se subió: '+(r.error.message||'error')+'. ¿Ya corriste el SQL (v3_2 crea el bucket; v3_7 deja subir a los responsables)?'); return; }
+    var rec={ id:'doc'+Date.now(), titulo:t, depto:dep, deptoSlug:slug, cat:cat, sub:subc, acl:acl, path:path, mime:(f.type||''), size:f.size, by:(S.clave||''), ts:Date.now() };
     SB.from('docs').upsert({id:rec.id, data:rec, ts:rec.ts}).then(function(r2){
-      if(r2&&r2.error){ flash('⚠ El archivo subió pero no quedó registrado: '+r2.error.message); return; }
-      burst(); flash('✓ Documento publicado · '+(acl.mode==='all'?'toda la planta':(acl.mode==='ids'?'solo IDs autorizados':dep)));
+      if(r2&&r2.error){ try{ SB.storage.from('docs').remove([path]); }catch(e){} flash('⚠ El archivo no quedó registrado: '+r2.error.message+'. Intenta de nuevo.'); return; }
+      burst(); flash('✓ Documento publicado'+(cat?(' · '+cat):'')+(subc?(' / '+subc):''));
       var ti=$('docTitle'); if(ti) ti.value=''; if(inp) inp.value=''; var fn=$('docFileName'); if(fn) fn.textContent='';
+      _docAcl='depto';   // (Sesión 12) resetear alcance al MÁS restrictivo: NO heredar 'all'/'ids' del doc anterior
+      // ir a la carpeta donde quedó, para verlo de inmediato (como un explorador)
+      if(docIsTotal()) _docArea=dep;
+      _docCat=(cat||'General'); _docSub=(subc||null);
       sbLoad('docs');
+      setTimeout(function(){ if(_screen==='docs') renderDocs(); }, 400);
     });
   });
 }
 function docDel(id){
   var d=null; docsGet().forEach(function(x){ if(x.id===id) d=x; });
   if(!d) return;
-  if(!confirm('¿Eliminar «'+d.titulo+'»? Nadie podrá abrirlo más. No se puede deshacer.')) return;
+  if(!canManageThisDoc(d)){ flash('Solo puedes borrar documentos de tu área'); return; }
+  if(!confirm('¿Borrar «'+d.titulo+'»? Nadie podrá abrirlo más. No se puede deshacer.')) return;
   try{ SB.storage.from('docs').remove([d.path]).then(function(){}); }catch(e){}
-  SB.from('docs').delete().eq('id',id).then(function(){ flash('Documento eliminado'); sbLoad('docs'); });
+  SB.from('docs').delete().eq('id',id).then(function(r){
+    if(r&&r.error){ flash('No se pudo borrar: '+r.error.message); return; }
+    flash('Documento borrado'); sbLoad('docs');
+    setTimeout(function(){ if(_screen==='docs') renderDocs(); }, 300);
+  });
 }
 
 /* ============================================================================
@@ -7158,7 +7303,7 @@ function _sbRerenderNow(){ try{
    vivo le borre lo tecleado en un formulario) */
 function _sectionBusy(secId){
   var a=document.activeElement; if(!a) return false;
-  var tag=(a.tagName||''); if(tag!=='INPUT'&&tag!=='TEXTAREA') return false;
+  var tag=(a.tagName||''); if(tag!=='INPUT'&&tag!=='TEXTAREA'&&tag!=='SELECT') return false;
   var sec=$(secId); return !!(sec && sec.contains(a));
 }
 function sbInit(){

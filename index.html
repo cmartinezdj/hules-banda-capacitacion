@@ -540,6 +540,52 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .bnr .ov span{font-size:12px;color:#e6e8ee;display:block;margin-top:2px}
 .bnr .ov .go{flex:none;font-size:12px;font-weight:800;color:#fff;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);padding:7px 12px;border-radius:30px}
 .bnr .nb{position:absolute;top:10px;right:10px;min-width:20px;height:20px;padding:0 6px;border-radius:11px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+/* ===== ENCUESTAS del trabajador: recuadros GRANDES (Sesión 11, Emil) ===== */
+/* banner grande, presión con ease-out fuerte; llena el ancho cómodo en compu y móvil */
+.bnr.big{min-height:150px;margin-bottom:14px;transition:transform .16s var(--ease-out),box-shadow .2s var(--ease-out)}
+.bnr.big:active{transform:scale(.985)}
+@media (hover:hover){.bnr.big:hover{box-shadow:0 14px 34px rgba(0,0,0,.4)}}
+.bnr.big .ov{padding:18px 18px}
+.bnr.big .ov b{font-size:20px}
+.bnr.big .ov span{font-size:13px;margin-top:4px;max-width:44ch}
+/* tarjeta grande para responder una encuesta normal (sin gráficos) */
+.survq{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:14px;transition:border-color .2s var(--ease-out)}
+.survq .q{font-size:16px;font-weight:800;line-height:1.35;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start}
+.survdone{display:flex;align-items:center;gap:9px;color:var(--ok);font-weight:800;font-size:14px;padding:6px 0 2px}
+/* ===== RESPUESTAS POR ÁREA (dashboard general): rejilla de rectángulos (Emil) ===== */
+.arogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin:6px 0 4px}
+.arocard{position:relative;border:1px solid var(--line);border-radius:16px;padding:16px 15px;background:var(--panel);cursor:pointer;overflow:hidden;
+  min-height:96px;display:flex;flex-direction:column;justify-content:space-between;
+  transition:transform .14s var(--ease-out),border-color .2s var(--ease-out),box-shadow .2s var(--ease-out)}
+.arocard:active{transform:scale(.97)}
+@media (hover:hover){.arocard:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent) 45%,var(--line));box-shadow:0 12px 28px rgba(0,0,0,.32)}}
+.arocard::before{content:'';position:absolute;inset:0;background:radial-gradient(90% 60% at 20% 0,color-mix(in srgb,var(--accent) 13%,transparent),transparent 70%);pointer-events:none}
+.arocard .an{font-size:14.5px;font-weight:800;letter-spacing:-.01em;line-height:1.2;position:relative}
+.arocard .as{font-size:11.5px;color:var(--mut);margin-top:4px;position:relative}
+.arocard .abadge{position:relative;align-self:flex-start;margin-top:9px;font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+/* barras de % anónimo por opción (dashboard de encuestas por área) */
+.pctrow{margin-top:11px}
+.pctrow .lab{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
+.pctrow .track{height:9px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden}
+.pctrow .fill{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .7s var(--ease-out)}
+/* ===== CHATS (Emil): tarjetas centradas, presión con ease-out, aparición escalonada ===== */
+.chatlist{max-width:640px;margin:0 auto}
+.convcard{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px 15px;margin-bottom:11px;cursor:pointer;
+  transition:transform .14s var(--ease-out),border-color .2s var(--ease-out),box-shadow .2s var(--ease-out);
+  opacity:0;transform:translateY(8px);animation:convin .34s var(--ease-out) forwards}
+@keyframes convin{to{opacity:1;transform:translateY(0)}}
+.convcard:nth-child(1){animation-delay:0ms}.convcard:nth-child(2){animation-delay:45ms}.convcard:nth-child(3){animation-delay:90ms}
+.convcard:nth-child(4){animation-delay:135ms}.convcard:nth-child(5){animation-delay:180ms}.convcard:nth-child(n+6){animation-delay:210ms}
+.convcard:active{transform:scale(.98)}
+@media (hover:hover){.convcard:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--line));box-shadow:0 10px 26px rgba(0,0,0,.3)}}
+.convcard .cc-l{flex:1;min-width:0;display:flex;align-items:center;gap:12px}
+.convcard .cc-t{min-width:0;display:flex;flex-direction:column;gap:2px}
+.convcard .cc-t b{font-size:14.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.convcard .cc-t .note{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.convcard .cc-pin{align-self:flex-start;margin-top:2px;font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);border:1px solid var(--line);border-radius:20px;padding:1px 7px}
+.convcard .cc-un{background:var(--accent);color:#fff;flex:none}
+.convcard .cc-go{color:var(--mut);flex:none;font-size:18px}
+@media (prefers-reduced-motion:reduce){.convcard{opacity:1;transform:none;animation:none}}
 /* premios: grid de iconos estilo "carpeta Mac" */
 .rgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px 10px;margin:8px 2px 16px}
 .ricon{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;transition:transform .15s}
@@ -712,6 +758,10 @@ body.a11y .screen .seg button{ font-size:13px !important; }
   #s-home>.panel:first-child,#s-courses>.panel:first-child,#s-clases>.panel:first-child,#s-quejas>.panel:first-child{column-span:all}
   /* el grid de tiles NO debe entrar al masonry: abarca todo el ancho y usa 3 columnas */
   #s-home>.tgrid,#s-news>.tgrid,#s-hr>.tgrid,#s-msgs>.tgrid,#s-home>.sec-t,#s-news>.sec-t,#s-msgs>.sec-t{column-span:all;-webkit-column-span:all}
+  /* encuestas del trabajador NO usan masonry: una sola columna cómoda de recuadros grandes */
+  #s-encuestas{column-count:1}
+  #s-encuestas>.survwrap,#s-encuestas>.sec-t,#s-encuestas>.arogrid,#s-encuestas>.back{column-span:all;-webkit-column-span:all}
+  .survwrap{max-width:720px;margin-left:auto;margin-right:auto}
   /* HUB con panel lateral: cuadros izquierda + panel (calendario / mensaje rápido) derecha */
   #s-news>.hubwrap,#s-msgs>.hubwrap,#s-hr>.hubwrap{column-span:all;-webkit-column-span:all}
   .hubwrap{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:22px;align-items:start}
@@ -728,6 +778,9 @@ body.a11y .screen .seg button{ font-size:13px !important; }
   #s-hr>.back+.panel{column-span:all;-webkit-column-span:all}
   /* recibos de nómina (Sesión 10): la lista y los "por asignar" también van a lo ancho */
   #s-hr>#recPendBox,#s-hr>#recListBox{column-span:all;-webkit-column-span:all}
+  /* sub-páginas de Mensajes (chats activos / personal): a todo el ancho, no masonry */
+  #s-msgs>.back,#s-msgs>.chatlist,#s-msgs>.sec-t{column-span:all;-webkit-column-span:all}
+  #s-msgs>.back+.panel{column-span:all;-webkit-column-span:all}
   .sec-t{column-span:all}
   /* pantallas de lectura / flujo: una columna cómoda */
   #s-chat,#s-thread,#s-nom,#s-nom35,#s-perm,#s-perfil,#s-course,#s-quiz,#s-result,#s-pay,#s-vac,#s-lineas,#s-newchat{max-width:880px}
@@ -2365,7 +2418,7 @@ function show(name){
 function go(name){
   _adminScr=null; _fichaEmp=null;   // salir de sub-pantallas (personal / ficha) al usar el menú
   _mgrPage=null; _respPage=null;    // el tab del tablero siempre regresa al HUB
-  _msgsPage=null; _newsPage=null;   // Mensajes y Noticias también regresan a su hub
+  _msgsPage=null; _newsPage=null; _encArea=null;   // Mensajes/Noticias/Encuestas regresan a su hub
   _qcSel=null;                      // el Mensaje rápido vuelve al buscador (no al chat anterior)
   if(name==='home') return renderHome();
   if(name==='rewards') return renderRewards();
@@ -2681,20 +2734,132 @@ var DEMO_POLLS=[
   {q:'¿Qué tan clara fue la última capacitación?', opts:['Muy clara','Más o menos','Confusa'], res:[71,21,8]}
 ];
 function renderEncuestas(){
-  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Noticias</div><b style="font-size:20px">Encuestas</b><p class="note" style="margin:4px 0 0;max-width:240px">Tu opinión ayuda a mejorar la planta. Responder da puntos.</p></div></div></div>';
-  // NOM-035 oficial (Guía III · 72 preguntas) + Encuesta de Permanencia
-  if(!S.admin) h+=nomWorkerCard();   // si RRHH abrió una aplicación NOM, aquí también aparece
-  h+=bnrCard("renderNom35()",'NOM-035 · Riesgo psicosocial','Cuestionario oficial STPS · 72 preguntas · anónimo', cover('shield','#c4161c','#5d0a0e'),'');
-  h+=bnrCard("renderPerm()",'Encuesta de Permanencia','Qué te haría quedarte en Hules Banda · anónima', cover('people','#0e9e8e','#053b36'),'');
-  if(S.admin) h+=permAdminBlock();
-  // encuestas demo (resultados de ejemplo)
-  DEMO_POLLS.forEach(function(p){
-    var tot=p.res.reduce(function(a,b){return a+b;},0);
-    h+='<div class="card"><div class="line"><b style="flex:1">'+esc(p.q)+'</b>'+speakBtn(p.q)+'</div><span class="note" style="display:block;margin:2px 0 4px">Ejemplo de resultados:</span>';
-    p.opts.forEach(function(o,j){ var pc=Math.round(p.res[j]/tot*100); h+='<div style="margin-top:8px"><div class="line" style="margin-bottom:3px"><span>'+esc(o)+'</span><span class="note">'+pc+'%</span></div><div class="bar"><i style="width:'+pc+'%"></i></div></div>'; });
+  // SOLO el acceso total (rrhh/ceo) entra al panel de todas las áreas. Un responsable
+  // (dash==='resp', aunque el demo lo marque admin) va por la ruta de HACER + su área,
+  // igual que su alcance en Mensajes/Vacaciones/Quejas (coherencia de rol).
+  if(S.admin && S.dash!=='resp') return renderEncuestasAdmin();
+  // ---------- TRABAJADOR e HÍBRIDO: SOLO PARA HACER (sin gráficos, recuadros grandes) ----------
+  var esMando=!!S.mando || S.dash==='resp';
+  var h='<div class="survwrap">';
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Encuestas</div><b style="font-size:20px">Tus encuestas</b><p class="note" style="margin:4px 0 0;max-width:250px">Contesta las encuestas activas. Son anónimas y dan puntos.</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
+  h+='<div class="sec-t">Encuestas activas<span class="ln"></span></div>';
+  // NOM-035 en curso (si RRHH abrió una aplicación) — recuadro grande arriba
+  h+=nomWorkerCard();
+  // Las dos encuestas fijas + las que RRHH publique, todas como recuadros GRANDES para responder
+  h+=bnrCard2("renderNom35()",'NOM-035 · Riesgo psicosocial','Cuestionario oficial STPS · anónimo', cover('shield','#c4161c','#5d0a0e'));
+  h+=bnrCard2("renderPerm()",'Encuesta de Permanencia','Qué te haría quedarte en Hules Banda · anónima', cover('people','#0e9e8e','#053b36'));
+  h+=pollsWorkerBlock();   // encuestas normales: responder (SIN porcentajes ni resultados de nadie)
+  // HÍBRIDO (responsable de área): además ve el AVANCE de encuestas de SU área (anónimo)
+  if(esMando){
+    h+='<div class="sec-t" style="margin-top:18px">Avance de tu área · '+esc(S.area)+'<span class="ln"></span></div>';
+    h+='<p class="note" style="margin:-4px 0 10px">Resumen anónimo de tu área. No se muestra quién respondió qué.</p>';
+    h+=areaSurveyDash(S.area);
+  }
+  h+='</div>';
+  $('s-encuestas').innerHTML=h; show('encuestas');
+}
+/* banner GRANDE para responder una encuesta (sin badge, con "Contestar") */
+function bnrCard2(onclick,title,sub,cov){
+  return '<div class="bnr big" role="button" tabindex="0" onkeydown="_kb(event)" onclick="'+onclick+'"><div class="bg">'+cov+'</div>'+
+    '<div class="ov"><div style="min-width:0"><b>'+esc(title)+'</b><span>'+esc(sub)+'</span></div><span class="go">Contestar ›</span></div></div>';
+}
+/* Encuestas normales del trabajador: SOLO responder. Tras votar: "Respondiste ✓"
+   (nunca porcentajes ni respuestas de otros — el trabajador no ve avances de nadie). */
+function pollsWorkerBlock(){
+  var a=pollGet().filter(function(p){ return inTarget(p.to,S.emp); });
+  if(!a.length) return '';
+  var h='';
+  a.forEach(function(p){
+    var votes=p.votes||{}, myVote=votes[S.emp];
+    h+='<div class="survq"><div class="q">'+esc(p.q)+speakBtn(p.q)+'</div>';
+    if(myVote!=null){
+      h+='<div class="survdone">✓ Ya respondiste. ¡Gracias!</div>';
+    } else {
+      p.opts.forEach(function(o,j){
+        h+='<div class="opt" role="button" tabindex="0" onkeydown="_kb(event)" onclick="votePoll(\''+jsAttr(p.id)+'\','+j+')"><span class="dot"></span><span style="flex:1">'+esc(o)+'</span>'+speakBtn(o)+'</div>';
+      });
+      h+='<p class="note" style="margin-top:7px">Responde y gana +'+CFG.points.poll+' pts</p>';
+    }
     h+='</div>';
   });
-  // encuestas reales (si RRHH publicó)
+  return h;
+}
+
+/* ============================================================================
+   ENCUESTAS · DASHBOARD GENERAL (acceso total): gestión, resultados y el nuevo
+   "Respuestas por área" (rectángulos → resumen ANÓNIMO por área). Nunca muestra
+   quién respondió qué: NOM-035 y Permanencia son anónimas por ley; las encuestas
+   normales se agregan por área (solo conteos, sin nombres).
+   ============================================================================ */
+var _encArea=null;   // null = hub · '__list__' = rejilla de áreas · '<área>' = dashboard de esa área
+function encAreaGo(a){ _encArea=(a===undefined?'__list__':a); renderEncuestas(); window.scrollTo(0,0); }
+function encAreaBack(){ _encArea=null; renderEncuestas(); window.scrollTo(0,0); }
+/* área de un trabajador (por su clave) — para agregar votos por área, anónimo */
+function _areaOfEmp(emp){
+  try{ var pl=dirPeople(); if(pl){ for(var i=0;i<pl.length;i++){ if(pl[i].id===emp) return pl[i].area; } } }catch(e){}
+  try{ var r=rangeOf(emp); if(r) return r.area; }catch(e){}
+  return null;
+}
+function encAreasList(){
+  var set={}; try{ var pl=dirPeople()||[]; pl.forEach(function(p){ if(p.area) set[p.area]=(set[p.area]||0)+1; }); }catch(e){}
+  var arr=Object.keys(set).sort();
+  if(!arr.length){ try{ arr=Object.keys(DEPTO_AREA||{}).sort(); }catch(e){ arr=[]; } }
+  return arr.map(function(a){ return {area:a, n:set[a]||0}; });
+}
+function areaRectsHTML(){
+  var list=encAreasList();
+  if(!list.length) return '<div class="card"><div class="note">Aún no hay áreas con gente registrada.</div></div>';
+  return '<div class="arogrid">'+list.map(function(x){
+    return '<div class="arocard" role="button" tabindex="0" onkeydown="_kb(event)" onclick="encAreaGo(\''+jsAttr(x.area)+'\')">'+
+      '<div><div class="an">'+esc(x.area)+'</div><div class="as">'+(x.n?(x.n+' registrado'+(x.n===1?'':'s')):'encuestas')+'</div></div>'+
+      '<span class="abadge">Ver ›</span></div>';
+  }).join('')+'</div>';
+}
+/* Resumen ANÓNIMO de encuestas de un área (barras de %). Solo conteos por opción.
+   UMBRAL de anonimato: con menos de AREA_MIN respuestas NO se muestra el desglose —
+   con 1-2 respuestas el % revelaría la respuesta individual (el jefe del área
+   reconocería a su gente). Sin umbral, "anónimo por área" no sería anónimo. */
+var AREA_MIN=5;
+function areaSurveyDash(area){
+  var polls=pollGet(), h='', any=false;
+  polls.forEach(function(p){
+    var votes=p.votes||{}, counts=p.opts.map(function(){return 0;}), tot=0;
+    for(var emp in votes){ if(_areaOfEmp(+emp)===area){ var vi=votes[emp]; counts[vi]=(counts[vi]||0)+1; tot++; } }
+    if(!tot) return; any=true;
+    h+='<div class="card"><div class="line" style="border:none;padding:0 0 4px"><b style="flex:1">'+esc(p.q)+'</b><span class="chipst">'+tot+' resp.</span></div>';
+    if(tot<AREA_MIN){
+      h+='<p class="note" style="margin-top:6px">Muy pocas respuestas para mostrar el desglose sin romper el anonimato (mínimo '+AREA_MIN+'). Van '+tot+'.</p></div>';
+      return;
+    }
+    p.opts.forEach(function(o,j){ var pc=tot?Math.round(counts[j]/tot*100):0;
+      h+='<div class="pctrow"><div class="lab"><span>'+esc(o)+'</span><span class="note">'+pc+'%</span></div><div class="track"><i class="fill" style="width:'+pc+'%"></i></div></div>'; });
+    h+='<p class="note" style="margin-top:10px">Anónimo · '+tot+' respuesta(s) de '+esc(area)+'</p></div>';
+  });
+  if(!any) h='<div class="card"><div class="note">Aún no hay respuestas de encuestas normales en esta área. NOM-035 y Permanencia se ven en agregado de planta (son anónimas).</div></div>';
+  return h;
+}
+function renderEncuestasAdmin(){
+  var h='';
+  if(_encArea){
+    if(_encArea==='__list__'){
+      h+='<button class="back" style="margin-bottom:12px" onclick="encAreaBack()">‹ Encuestas</button>';
+      h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Encuestas</div><b style="font-size:20px">Respuestas por área</b><p class="note" style="margin:4px 0 0;max-width:280px">Toca un área para ver el resumen <b>anónimo</b> de sus encuestas. No se muestra quién respondió qué.</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
+      h+=areaRectsHTML();
+    } else {
+      h+='<button class="back" style="margin-bottom:12px" onclick="encAreaGo()">‹ Áreas</button>';
+      h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Encuestas · por área</div><b style="font-size:20px">'+esc(_encArea)+'</b><p class="note" style="margin:4px 0 0">Resumen anónimo de encuestas de esta área.</p></div><span class="chipst">Anónimo</span></div></div>';
+      h+=areaSurveyDash(_encArea);
+    }
+    $('s-encuestas').innerHTML=h; show('encuestas'); return;
+  }
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Panel</div><b style="font-size:20px">Encuestas</b><p class="note" style="margin:4px 0 0;max-width:260px">Crea encuestas, revisa resultados y el resumen por área.</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
+  h+='<div class="tgrid">';
+  h+=htile("encAreaGo()",'encuestas','Respuestas por área','Resumen anónimo por área',{wide:true});
+  h+='</div>';
+  h+='<div class="sec-t">NOM-035 y Permanencia<span class="ln"></span></div>';
+  h+=bnrCard("renderNom35()",'NOM-035 · Riesgo psicosocial','Cuestionario oficial STPS · anónimo', cover('shield','#c4161c','#5d0a0e'),'');
+  h+=permAdminBlock();
+  h+='<div class="sec-t">Encuestas normales<span class="ln"></span></div>';
   h+=pollsBlock();
   $('s-encuestas').innerHTML=h; show('encuestas');
 }
@@ -4614,10 +4779,15 @@ function renderNews(){
     h+='<div class="hubwrap"><div class="hubmain">';
     h+='<div class="tgrid">';
     h+=htile("newsGo('pend')",'news','Pendientes', nuevas.length?(nuevas.length+(nuevas.length===1?' noticia nueva':' noticias nuevas')+(avisosN?' · avisos de RRHH':'')):'Estás al día ✓', {wide:true, cnt:nuevas.length||''});
+    h+=htile("newsGo('leidas')",'edu','Ya leídas', leidas.length?(leidas.length+(leidas.length===1?' noticia':' noticias')):'Aún no hay', {wide:true});
     h+=htile('renderCal()','cal','Calendario', 'Eventos de la planta', {cls:'hide-desk'});
-    h+=htile("newsGo('leidas')",'edu','Ya leídas', leidas.length?(leidas.length+(leidas.length===1?' noticia':' noticias')):'Aún no hay');
     if(docsGet().length) h+=htile('renderDocs()','docs','Documentos', docsGet().length+' para ti');
-    h+='</div></div>';
+    h+='</div>';
+    // FORO DE NOTICIAS: todas las noticias para ti, en recuadros bonitos (texto + PDF/imagen)
+    h+='<div class="sec-t">Foro de noticias<span class="ln"></span></div>';
+    h+= vis.length ? newsCards(vis.slice().sort(function(a,b){ return (b.ts||0)-(a.ts||0); }))
+                   : '<div class="card"><div class="note">Todavía no hay noticias publicadas.</div></div>';
+    h+='</div>';
     h+='<aside class="hubside">'+calendarBlock()+'</aside></div>';
   }
   $('s-news').innerHTML=h; show('news');
@@ -4692,7 +4862,7 @@ function newsCards(vis){
     if(S.admin){
       var ids = reads.length ? reads.map(function(r){ return '#'+(''+r.emp).padStart(3,'0'); }).join(' · ') : '';
       foot='<div class="line" style="margin-top:10px"><span class="note">'+newsTime(n.ts)+' · '+esc(n.by||'RRHH')+'</span>'+
-        '<button class="back" style="padding:6px 10px;flex:none" onclick="delNews(\''+n.id+'\')">Eliminar</button></div>'+
+        '<button class="back" style="padding:6px 10px;flex:none" onclick="delNews(\''+jsAttr(n.id)+'\')">Eliminar</button></div>'+
         '<div style="margin-top:9px;padding:9px 11px;border-radius:10px;background:var(--card2);border:1px solid var(--line)">'+
         '<b style="font-size:12.5px">Leído por '+reads.length+'</b>'+
         '<span class="note" style="display:block;margin-top:3px">'+(ids||'Nadie ha confirmado todavía.')+'</span></div>';
@@ -4700,14 +4870,14 @@ function newsCards(vis){
       foot='<div class="line" style="margin-top:10px;border-bottom:none;padding-bottom:0"><span class="note">'+newsTime(n.ts)+'</span></div>'+
         (hasRead(n)
           ? '<div style="margin-top:10px;padding:10px 12px;border-radius:11px;background:rgba(46,204,113,.12);border:1px solid rgba(46,204,113,.4);color:#43d17a;font-weight:700;font-size:13.5px;text-align:center">✓ Marcaste que lo leíste</div>'
-          : '<button class="btn" style="margin-top:10px;padding:13px;font-size:15px" onclick="markRead(\''+n.id+'\')">Ya leí esto · +'+CFG.points.read+' pts</button>');
+          : '<button class="btn" style="margin-top:10px;padding:13px;font-size:15px" onclick="markRead(\''+jsAttr(n.id)+'\')">Ya leí esto · +'+CFG.points.read+' pts</button>');
     }
     h+='<div class="card" style="position:relative">'+
        '<span style="position:absolute;top:10px;right:10px;z-index:2">'+speakBtn((n.t?n.t+'. ':'')+(n.b||''))+'</span>'+
        (S.admin?'<div style="margin-bottom:6px"><span class="tg">'+targetLabel(n.to)+'</span></div>':'')+
        (n.t?'<b style="font-size:15.5px;display:block;padding-right:46px">'+esc(n.t)+'</b>':'')+
        (n.b?'<p style="margin-top:5px;line-height:1.55;padding-right:'+(n.t?'0':'46px')+'">'+esc(n.b)+'</p>':'')+
-       (n.img?'<img src="'+n.img+'" alt="infografía" style="width:100%;border-radius:10px;margin-top:9px;border:1px solid var(--line)">':'')+
+       (n.img?'<img src="'+imgSrc(n.img)+'" alt="infografía" style="width:100%;border-radius:10px;margin-top:9px;border:1px solid var(--line)">':'')+
        foot+'</div>';
   });
   return h;
@@ -4757,13 +4927,15 @@ function awardPointsTo(emp,pts){
 function reviewReport(id,accept){
   var a=reportsGet(), r=null; for(var i=0;i<a.length;i++){ if(a[i].id===id){ r=a[i]; break; } }
   if(!r||r.status!=='pendiente') return;
+  if(!(S && (S.admin || (S.dash==='resp' && (r.area||'')===S.area)))){ flash('No autorizado'); return; }   // híbrido: solo su área
+  if(r.emp===S.emp){ flash('No puedes aprobar tu propio reporte. Lo revisa otra persona.'); return; }   // nadie se auto-otorga puntos
   if(accept){
     r.status='aceptado';
     if(RPT[r.type]&&RPT[r.type].pts){ var _pp=rptPts(r.type); r.pts=_pp; awardPointsTo(r.emp,_pp);
       flash('Aceptado · +'+_pp+' pts para el empleado #'+(''+r.emp).padStart(3,'0')); }
     else { flash('Queja marcada como atendida'); }
   } else { r.status='rechazado'; flash('Marcado como no procedente'); }
-  reportsSave(a); sbSyncOne('reports', r); renderDash();
+  reportsSave(a); sbSyncOne('reports', r); _adminRerender();
 }
 /* ===== Bloques de "Buzón" ahora repartidos: quejas + vacaciones viven en MENSAJES;
    los avisos generales de RRHH (DM) viven en NOTICIAS. (Consolidación pedida por el dueño.) ===== */
@@ -4822,10 +4994,12 @@ function myReportsBlock(){
        '<div class="line"><span class="note">'+buzTime(r.ts)+'</span><span style="display:flex;gap:6px;align-items:center;flex:none">'+(r.pts?'<span class="tg g">+'+r.pts+' pts</span>':'')+speakBtn(ty.l+'. '+r.text)+'</span></div></div>'; });
   return h;
 }
-function reportsAdminBlock(){
-  var a=reportsGet(), pend=a.filter(function(r){return r.status==='pendiente';});
+function reportsAdminBlock(areaFilter){
+  var a=reportsGet();
+  if(areaFilter) a=a.filter(function(r){ return (r.area||'')===areaFilter; });   // híbrido: solo SU área
+  var pend=a.filter(function(r){return r.status==='pendiente';});
   var cnt={queja:0,anormalidad:0,mejora:0}; a.forEach(function(r){ if(cnt[r.type]!=null) cnt[r.type]++; });
-  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Buzón</div><b style="font-size:16px">Quejas y reportes</b><div class="note" style="margin-top:3px">Si una <b>anormalidad</b> (+'+CFG.points.report+' pts) o una <b>idea de mejora</b> (+'+CFG.points.idea+' pts) es válida, acéptala: se guarda y el trabajador gana sus puntos. Las quejas solo se marcan como atendidas.</div></div><span class="chipst'+(pend.length?'':' mut')+'">'+pend.length+' pendientes</span></div>'+
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Buzón</div><b style="font-size:16px">Quejas y reportes'+(areaFilter?(' · '+esc(areaFilter)):'')+'</b><div class="note" style="margin-top:3px">Si una <b>anormalidad</b> (+'+CFG.points.report+' pts) o una <b>idea de mejora</b> (+'+CFG.points.idea+' pts) es válida, acéptala: se guarda y el trabajador gana sus puntos. Las quejas solo se marcan como atendidas.</div></div><span class="chipst'+(pend.length?'':' mut')+'">'+pend.length+' pendientes</span></div>'+
      '<div class="dotgrid" style="grid-template-columns:repeat(3,1fr)">'+
        dotStat(Math.min(100,cnt.queja*20), cnt.queja, 'Quejas','')+
        dotStat(Math.min(100,cnt.anormalidad*20), cnt.anormalidad, 'Anormalidad','')+
@@ -5153,10 +5327,11 @@ function delPoll(id){ pollSave(pollGet().filter(function(p){ return p.id!==id; }
 function votePoll(id,idx){
   var a=pollGet(), p=null; for(var i=0;i<a.length;i++){ if(a[i].id===id){ p=a[i]; break; } }
   if(!p) return; p.votes=p.votes||{};
-  if(p.votes[S.emp]!=null){ renderNews(); return; }
+  var back=function(){ if(_screen==='encuestas') renderEncuestas(); else renderNews(); };
+  if(p.votes[S.emp]!=null){ back(); return; }
   p.votes[S.emp]=idx; pollSave(a);
   S.points+=CFG.points.poll; save(); renderTop();
-  flash('¡Gracias por responder! +'+CFG.points.poll+' pts'); renderNews();
+  flash('¡Gracias por responder! +'+CFG.points.poll+' pts'); back();
 }
 function pollsBlock(){
   var a=pollGet();
@@ -5192,12 +5367,28 @@ var LEAVE={ vacaciones:{ic:'',l:'Vacaciones'}, permiso_goce:{ic:'',l:'Permiso co
 var _leaveType='vacaciones';
 function leaveGet(){ return lsGet('hb_leave'); }
 function leaveSave(a){ lsSet('hb_leave', a); }
+/* re-pinta la pantalla donde está el admin/mando tras una acción de back-end
+   (Mensajes → queda en Mensajes; Tablero → renderDash) */
+function _adminRerender(){ if(_screen==='msgs'){ renderMsgs(); } else if(typeof renderDash==='function'){ renderDash(); } }
+/* Aprobar / rechazar una solicitud de vacaciones o permiso (acceso total o el
+   responsable de esa área). Estaba SIN definir (bug): aprobar tronaba. */
+function reviewLeave(id,accept){
+  var a=leaveGet(), r=null; for(var i=0;i<a.length;i++){ if(a[i].id===id){ r=a[i]; break; } }
+  if(!r||r.status!=='pendiente') return;
+  if(!(S && (S.admin || (S.dash==='resp' && (r.area||'')===S.area)))){ flash('No autorizado'); return; }   // híbrido: solo su área
+  r.status = accept ? 'aprobado' : 'rechazado';
+  leaveSave(a);   // lsSet→kvSet ya sincroniza hb_leave al servidor
+  flash(accept?'Solicitud aprobada':'Solicitud rechazada');
+  _adminRerender();
+}
 function vacBalance(emp){ return 12; }   // demo: según LFT/antigüedad; en Fase 2 viene de RRHH
-function leaveAdminBlock(){
-  var a=leaveGet(), pend=a.filter(function(r){return r.status==='pendiente';}).length;
+function leaveAdminBlock(areaFilter){
+  var a=leaveGet();
+  if(areaFilter) a=a.filter(function(r){ return (r.area||'')===areaFilter; });   // híbrido: solo SU área
+  var pend=a.filter(function(r){return r.status==='pendiente';}).length;
   var LV_IC={ vacaciones:AP.sun, permiso_goce:AP.cal, permiso_singoce:AP.cal, incapacidad:AP.shield };
-  var h='<div class="panel"><div class="hd"><div><div class="eyebrow">Vacaciones</div><b style="font-size:16px">Solicitudes de vacaciones / permisos</b></div><span class="chipst'+(pend?'':' mut')+'">'+(pend?pend+' pendientes':'Al día')+'</span></div></div>';
-  if(!a.length) return h+'<div class="card"><div class="note">Sin solicitudes.</div></div>';
+  var h='<div class="panel"><div class="hd"><div><div class="eyebrow">Vacaciones</div><b style="font-size:16px">Solicitudes de vacaciones / permisos'+(areaFilter?(' · '+esc(areaFilter)):'')+'</b></div><span class="chipst'+(pend?'':' mut')+'">'+(pend?pend+' pendientes':'Al día')+'</span></div></div>';
+  if(!a.length) return h+'<div class="card"><div class="note">Sin solicitudes'+(areaFilter?' en tu área':'')+'.</div></div>';
   a.slice(0,20).forEach(function(r){
     var lv=LEAVE[r.type]||{l:r.type};
     var st=r.status==='aprobado'?'<span class="tg g">Aprobado</span>':r.status==='rechazado'?'<span class="tg">Rechazado</span>':'';
@@ -6012,13 +6203,13 @@ function renderPerfilPublico(n){
   if(!pubGet(n)) h+='<div class="card"><div class="note" style="text-align:center">Cargando perfil…</div></div>';
   $('s-perfilpub').innerHTML=h; show('perfilpub');
 }
-function convRow(conv,title,sub){
+function convRow(conv,title,sub,pin){
   var last=convLast(conv), un=convUnread(conv);
   var prev = last ? ((last.from===S.emp?'Tú: ':'')+(last.img&&!last.text?'Foto':esc((last.text||'').slice(0,42)))) : (sub||'Sin mensajes todavía');
-  return '<div class="card" style="cursor:pointer" onclick="openConv(\''+jsAttr(conv)+'\')"><div class="line"><span style="flex:1;min-width:0;display:flex;align-items:center;gap:12px">'+
+  return '<div class="convcard" role="button" tabindex="0" onkeydown="_kb(event)" onclick="openConv(\''+jsAttr(conv)+'\')"><span class="cc-l">'+
     chanAvatar(conv)+
-    '<span style="min-width:0"><b>'+esc(title)+'</b><br><span class="note">'+prev+'</span></span></span>'+
-    (un?'<span class="tg" style="background:var(--accent);color:#fff;flex:none">'+un+'</span>':'<span class="note" style="flex:none">›</span>')+'</div></div>';
+    '<span class="cc-t"><b>'+esc(title)+'</b>'+(pin?'<span class="cc-pin">fijo</span>':'')+'<span class="note">'+prev+'</span></span></span>'+
+    (un?'<span class="tg cc-un">'+un+'</span>':'<span class="cc-go">›</span>')+'</div>';
 }
 var _curConv=null, _pendImg=null;
 function renderMsgs(){
@@ -6030,12 +6221,18 @@ function renderMsgs(){
   if(sbReady() && Date.now()-(window._lastLoadMsgs||0)>4000){ window._lastLoadMsgs=Date.now(); sbLoad('msgs'); }
   if(_msgsPage) return msgsPage_();   // página interna del hub (chats activos / personal / equipo / planta)
   var h='';
-  var sub = S.admin ? (S.dash==='resp' ? 'Tu equipo, tu grupo de área y tus líneas con Dirección y RRHH.' : 'Líneas con la planta, monitoreo, quejas/reportes, vacaciones y recibos — todo en un lugar.')
-                    : 'Escribe a RRHH, a Dirección, a tu responsable o a tu grupo. Aquí también van tus quejas y vacaciones.';
-  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">'+(S.admin?'Panel':'Mensajes')+'</div><b style="font-size:20px">Mensajes</b><p class="note" style="margin:4px 0 0;max-width:240px">'+sub+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
+  // Rol de mensajería: 'resp'=híbrido/responsable (hace funciones + ve SU área);
+  // 'total'=acceso total (ve el back-end de TODO); 'trab'=trabajador (solo hace).
+  var rol = (S.dash==='resp') ? 'resp' : ((S.admin) ? 'total' : 'trab');
+  var sub = rol==='total' ? 'Monitoreo de la planta, y el back-end de cada función: quién pide vacaciones, buzón de quejas, conversaciones.'
+          : rol==='resp'  ? 'Tu equipo, tus líneas, y lo de TU área: quién pide vacaciones y las quejas de tu gente.'
+          :                 'Escribe a RRHH, a Dirección, a tu responsable o a tu grupo. Aquí también pides vacaciones y mandas quejas.';
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">'+(rol==='trab'?'Mensajes':'Panel')+'</div><b style="font-size:20px">Mensajes</b><p class="note" style="margin:4px 0 0;max-width:250px">'+sub+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
   var inner='';
-  if(S.admin){
-    inner = (S.dash==='resp')? respMsgs() : msgAdminInbox();
+  if(rol==='total'){
+    inner = msgAdminInbox();
+  } else if(rol==='resp'){
+    inner = respMsgs();
   } else {
     // HUB de cuadros (pedido de Carlos): Chats activos PRIMERO (rectángulo grande),
     // luego Grupo · RRHH · Personal, y Vacaciones/Quejas también como cuadros.
@@ -6129,14 +6326,20 @@ function msgsPage_(){
   var h='<button class="back" style="margin-bottom:12px" onclick="msgsBack()">‹ Mensajes</button>';
   if(_msgsPage==='activos'){
     h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Mensajes</div><b style="font-size:20px">Chats activos</b>'+
-       '<p class="note" style="margin:4px 0 0">Tus conversaciones, la más reciente primero.</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
-    var act=myActiveConvs();
-    if(!act.length) h+='<div class="card"><div class="note">Aún no tienes chats. Escribe a tu <b>Grupo</b>, a <b>RRHH</b> o abre uno en <b>Personal</b>.</div></div>';
-    act.forEach(function(c){ h+=convRow(c, c.indexOf('d:')===0?empName(convOther(c)):convTitle(c), null); });
+       '<p class="note" style="margin:4px 0 0">RRHH y tu grupo siempre arriba; lo demás, lo más reciente primero.</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
+    // FIJOS (siempre, aunque no haya mensajes): RRHH y luego el Grupo. Debajo, el resto por reciente.
+    var rrhh=rConv(S.emp), grupo=gConv(myGroup());
+    var rest=myActiveConvs().filter(function(c){ return c!==rrhh && c!==grupo; });
+    h+='<div class="chatlist">';
+    h+=convRow(rrhh,'Recursos Humanos','Tu línea privada con RRHH',true);
+    h+=convRow(grupo,'Grupo · '+S.area,'El grupo de tu área',true);
+    rest.forEach(function(c){ h+=convRow(c, c.indexOf('d:')===0?empName(convOther(c)):convTitle(c), null); });
+    h+='</div>';
   }
   else if(_msgsPage==='personal'){
     h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Mensajes</div><b style="font-size:20px">Personal</b>'+
        '<p class="note" style="margin:4px 0 0">Compañeros, tu responsable y Dirección. Tus mensajes son privados.</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
+    h+='<div class="chatlist">';
     h+=lineChanCard(null,'Escribir a un compañero','Busca por nombre o número',CHAN_IC.comp,'#8b8ff7','renderNewChat()');
     h+=lineChanCard(jConv(myGroup(),S.emp),'Responsable de '+S.area,'El jefe de tu área',CHAN_IC.resp,(rangeOf(S.emp)||{}).accent||'#39d6c0');
     h+=lineChanCard(cConv(S.emp),'Dirección','Escríbele directo a Dirección',CHAN_IC.dir,'#ffd166');
@@ -6144,6 +6347,7 @@ function msgsPage_(){
     h+='<div class="sec-t">Tus chats con compañeros<span class="ln"></span></div>';
     if(dir.length){ dir.forEach(function(c){ h+=convRow(c,empName(convOther(c)),null); }); }
     else { h+='<div class="card"><div class="note">Aún no tienes chats con compañeros.</div></div>'; }
+    h+='</div>';
   }
   else if(_msgsPage==='equipo'){   // mando: su gente le escribe por la línea j:
     h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Mensajes</div><b style="font-size:20px">Tu equipo te escribe</b>'+
@@ -6153,6 +6357,12 @@ function msgsPage_(){
     var ks=Object.keys(seen);
     if(!ks.length) h+='<div class="card"><div class="note">Nadie de tu equipo te ha escrito todavía.</div></div>';
     ks.forEach(function(c){ var emp=c.slice(pre.length); h+=convRow(c,empName(+emp),null); });
+  }
+  else if(_msgsPage==='vacadm'){   // back-end de VACACIONES (quién pide) · admin=todo, híbrido=su área
+    h+=leaveAdminBlock(S.dash==='resp'?S.area:null);
+  }
+  else if(_msgsPage==='quejadm'){  // back-end de QUEJAS (buzón) · admin=todo, híbrido=su área
+    h+=reportsAdminBlock(S.dash==='resp'?S.area:null);
   }
   else { // 'planta' (admin): monitoreo + todas las líneas de la planta
     h+=msgPlantaSecciones();
@@ -6292,26 +6502,48 @@ function submitVac(){
 
 /* Bandeja del responsable de área: solo SU equipo (líneas j: de su key) + su grupo + sus líneas con Dirección/RRHH. (El "beeper/llamar" se eliminó: solo mensajería.) */
 function respMsgs(){
-  // HUB de cuadros del mando (misma regla: cuadro → info)
+  // HÍBRIDO (responsable): sigue siendo trabajador (HACE funciones) + ve el back-end
+  // de SU área. Mismo hub de cuadros que el trabajador, con dos secciones.
   var pre='j:'+myGroup()+':', seen={}, eqUn=0;
   msgsGet().forEach(function(m){ if(m.conv.indexOf(pre)===0) seen[m.conv]=1; });
   var ks=Object.keys(seen); ks.forEach(function(c){ eqUn+=convUnread(c); });
-  var h='<div class="tgrid">';
+  var vacN=0,quejN=0;
+  try{ vacN=leaveGet().filter(function(r){return r.status==='pendiente'&&(r.area||'')===S.area;}).length; }catch(e){}
+  try{ quejN=reportsGet().filter(function(r){return r.status==='pendiente'&&(r.area||'')===S.area;}).length; }catch(e){}
+  var h='<div class="sec-t">Mensajes<span class="ln"></span></div><div class="tgrid">';
   h+=htile("msgsGo('equipo')",'personas','Tu equipo te escribe', ks.length?(ks.length+(ks.length===1?' conversación':' conversaciones')):'Sin mensajes aún', {wide:true, cnt:eqUn||''});
   h+=htile("openConv('"+gConv(myGroup())+"')",'msg','Grupo', esc(S.area), {cnt:convUnread(gConv(myGroup()))||''});
   h+=htile("openConv('"+rConv(S.emp)+"')",'recibo','RRHH', 'Tu línea privada', {cnt:convUnread(rConv(S.emp))||''});
   h+=htile("openConv('"+cConv(S.emp)+"')",'dia','Dirección', 'Tu línea privada', {cnt:convUnread(cConv(S.emp))||''});
+  h+=htile("msgsGo('personal')",'msg','Personal', 'Escribir a un compañero');
+  h+='</div>';
+  // Back-end de TU ÁREA (solo lectura de tu gente; no de otras áreas)
+  h+='<div class="sec-t">Tu área · '+esc(S.area)+'<span class="ln"></span></div><div class="tgrid">';
+  h+=htile("msgsGo('vacadm')",'cal','Vacaciones de tu área', vacN?(vacN+' por revisar'):'Ver quién pide', {cnt:vacN||''});
+  h+=htile("msgsGo('quejadm')",'docs','Quejas de tu área', quejN?(quejN+' por revisar'):'Ver reportes', {cnt:quejN||''});
+  h+='</div>';
+  // Tú también eres trabajador: tus propias funciones
+  h+='<div class="sec-t">Tus trámites<span class="ln"></span></div><div class="tgrid">';
+  h+=htile('renderVacaciones()','cal','Pedir vacaciones', 'Tu solicitud');
+  h+=htile('renderQuejas()','docs','Mandar queja / reporte', 'Ideas que dan puntos');
   h+='</div>';
   return h;
 }
 function msgAdminInbox(){
-  // HUB de cuadros del admin (misma regla: cuadro → info)
+  // ACCESO TOTAL: mismo hub de cuadros + el back-end de CADA función de la planta.
   var n={}; msgsGet().forEach(function(m){ n[m.conv]=1; });
-  var tot=Object.keys(n).length;
-  var h='<div class="tgrid">';
+  var tot=Object.keys(n).length, vacN=0,quejN=0;
+  try{ vacN=leaveGet().filter(function(r){return r.status==='pendiente';}).length; }catch(e){}
+  try{ quejN=reportsGet().filter(function(r){return r.status==='pendiente';}).length; }catch(e){}
+  var h='<div class="sec-t">Conversaciones<span class="ln"></span></div><div class="tgrid">';
   h+=htile("msgsGo('planta')",'msg','Chats de la planta', tot?(tot+(tot===1?' conversación':' conversaciones')+' · monitoreo'):'Aún sin mensajes', {wide:true});
   h+=htile('renderNewChat()','personas','Escribir a un trabajador', 'Chat directo 1 a 1');
   h+=htile("wcReset();renderWConvs()",'docs','Conversaciones de trabajadores', 'Revisión · solo lectura');
+  h+='</div>';
+  // Back-end de las funciones (quién pide vacaciones, buzón de quejas) — toda la planta
+  h+='<div class="sec-t">Back-end de la planta<span class="ln"></span></div><div class="tgrid">';
+  h+=htile("msgsGo('vacadm')",'cal','Vacaciones', vacN?(vacN+' por revisar'):'Quién pide · aprobar', {cnt:vacN||''});
+  h+=htile("msgsGo('quejadm')",'docs','Quejas y reportes', quejN?(quejN+' por revisar'):'Buzón · atender', {cnt:quejN||''});
   h+='</div>';
   return h;
 }

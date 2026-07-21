@@ -15,8 +15,11 @@
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <title>Hules Banda · Capacitación</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<!-- SIN fuentes externas (Google Fonts): un <link rel=stylesheet> a un CDN BLOQUEA el
+     dibujado; si la red del celular no alcanza fonts.googleapis.com, Safari se queda
+     "cargando y cargando" sin mostrar nada. Usamos la tipografía del sistema (San
+     Francisco en iPhone, Segoe/Roboto en lo demás) — carga al instante y se ve igual
+     de bien. Regla del proyecto: app 100% self-contained, sin CDNs en el <head>. -->
 <style>
 /* =======================================================================
    ESTILOS — tema oscuro 2026, glass, degradados animados, tipografía Inter

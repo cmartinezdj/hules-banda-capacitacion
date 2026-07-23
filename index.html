@@ -939,6 +939,8 @@ body.a11y .screen .seg button{ font-size:13px !important; }
     <section id="s-docs"    class="screen pad hide"></section>
     <section id="s-perfilpub" class="screen pad hide"></section>
     <section id="s-newspost" class="screen pad hide"></section>
+    <section id="s-pedir"   class="screen pad hide"></section>
+    <section id="s-pedidos" class="screen pad hide"></section>
   </main>
 
   <!-- ===================== NAV INFERIOR ===================== -->
@@ -2399,7 +2401,7 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'"'+main+' onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','docs','perfilpub','newspost','pend'];
+var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','docs','perfilpub','newspost','pend','pedir','pedidos'];
 var _prevShown=null;
 function show(name){
   var cambio = (name!==_prevShown);
@@ -2407,6 +2409,8 @@ function show(name){
   SCREENS.forEach(function(s){ var el=$('s-'+s); if(el) el.classList.toggle('hide', s!==name); });
   // nav activo (course/quiz/result/pay cuentan como "home")
   var navKey = (name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='dia'||name==='pend') ? 'home' : ((name==='thread'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='wconvs'||name==='perfilpub')?'msgs':((name==='encuestas'||name==='nom35'||name==='perm'||name==='cal'||name==='newspost')?'news':(name==='perfil'?(S.admin?'hr':'home'):(name==='docs'?((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home')):name))));
+  if(name==='pedir') navKey=(S&&(S.admin||S.mando))?'hr':'home';       // Pedir reparación / Tus reparaciones
+  if(name==='pedidos') navKey='hr';                                     // inbox de Mantenimiento
   if(navKey==='home' && S && S.admin && S.dash!=='resp') navKey='hr';   // dashboard general: su Inicio es el tablero
   ['home','msgs','rewards','chat','hr','clases','news','buzon'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
   renderTop(name);
@@ -2423,6 +2427,7 @@ function go(name){
   _mgrPage=null; _respPage=null;    // el tab del tablero siempre regresa al HUB
   _msgsPage=null; _newsPage=null; _encArea=null; _partShow=null;   // Mensajes/Noticias/Encuestas regresan a su hub
   _qcSel=null;                      // el Mensaje rápido vuelve al buscador (no al chat anterior)
+  _pedTab='act'; _pedAsig=null;     // Pedidos regresa a "Actuales"
   if(name==='home') return renderHome();
   if(name==='rewards') return renderRewards();
   if(name==='chat') return renderChat();
@@ -2432,10 +2437,10 @@ function go(name){
   if(name==='msgs') return renderMsgs();
 }
 function renderTop(name){
-  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? ('go(\'hr\')') : name==='pedir' ? ('go(\''+((S.admin||S.mando)?'hr':'home')+'\')') : 'go(\'home\')';
     left.innerHTML='<button class="back" onclick="'+backTo+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
@@ -3265,12 +3270,13 @@ var ICON3D={
   dia:['cube',['#5eead4','#0e9e8e','#066a5f']],
   deptos:['stack',['#fcd34d','#e0902a','#b06a12']], personas:['people',['#c4b5fd','#8b5cf6','#5b21b6']],
   focos:['shield',['#fca5a5','#e73b2f','#a3141b']], operacion:['gear',['#93c5fd','#3b82f6','#1e40af']],
-  pend:['bell',['#fcd34d','#e0902a','#b06a12']]
+  pend:['bell',['#fcd34d','#e0902a','#b06a12']],
+  rep:['gear',['#fca5a5','#e73b2f','#a3141b']]
 };
 function ic3(kind){ var p=ICON3D[kind]||ICON3D.msg; return iso3d(p[0],p[1]); }
 /* tile del home: cuadro con ícono 3D + título + subtítulo, lleva a su página */
 function htile(onclick,kind,title,sub,opts){ opts=opts||{};
-  var tc=opts.tc||({cap:'#8b5cf6',recibo:'#e73b2f',news:'#e0902a',msg:'#3b82f6',premios:'#0e9e8e',ai:'#e73b2f',edu:'#22c55e',encuestas:'#8b5cf6',cal:'#e0902a',docs:'#3b82f6',dia:'#0e9e8e',deptos:'#e0902a',personas:'#8b5cf6',focos:'#e73b2f',operacion:'#3b82f6',pend:'#e0902a'}[kind]||'var(--accent)');
+  var tc=opts.tc||({cap:'#8b5cf6',recibo:'#e73b2f',news:'#e0902a',msg:'#3b82f6',premios:'#0e9e8e',ai:'#e73b2f',edu:'#22c55e',encuestas:'#8b5cf6',cal:'#e0902a',docs:'#3b82f6',dia:'#0e9e8e',deptos:'#e0902a',personas:'#8b5cf6',focos:'#e73b2f',operacion:'#3b82f6',pend:'#e0902a',rep:'#e73b2f'}[kind]||'var(--accent)');
   return '<div class="htile'+(opts.wide?' wide':'')+(opts.cls?' '+opts.cls:'')+'" role="button" tabindex="0" onkeydown="_kb(event)" style="--tc:'+tc+'" onclick="'+onclick+'">'+
     (opts.cnt?'<span class="cnt">'+opts.cnt+'</span>':'')+
     '<div class="iso">'+ic3(kind)+'</div>'+
@@ -3312,6 +3318,13 @@ function renderHome(){
   h+=htile("go('chat')",'ai','Asistente', 'Pregúntale a Bandi');
   h+=htile('renderClases()','edu','Educación', 'Clases básicas');
   h+=htile('docsHome()','docs','Documentos', nDoc?(nDoc+(nDoc===1?' documento para ti':' documentos para ti')):'Manuales de tu área', {wide:true});
+  // Pedir reparación / Tus reparaciones (V3.11): la Orden de Trabajo digital
+  try{
+    if(pedEsTecnico()){ var _nA=pedAsigMios().filter(function(p){ return ['asignado','reparando'].indexOf(p.estado)>-1; }).length;
+      h+=htile('renderMisRep()','rep','Tus reparaciones', _nA?(_nA+' asignada'+(_nA===1?'':'s')):'Sin asignadas ✓', {wide:true, cnt:_nA||''}); }
+    else { var _nP=pedMios().filter(function(p){ return ['nuevo','asignado','reparando'].indexOf(p.estado)>-1; }).length;
+      h+=htile('renderPedir()','rep','Pedir reparación', _nP?(_nP+' en proceso'):'¿Una máquina falla? Avisa a Mantenimiento', {wide:true, cnt:_nP||''}); }
+  }catch(e){}
   // Directorio también es cuadro (V3.6 Sesión 9: todo por botones). Sesión 10:
   // comedor y transporte se retiraron (la empresa no los ofrece).
   h+=htile('renderDia()','dia','Directorio', 'A quién llamar en la planta', {wide:true});
@@ -3871,6 +3884,9 @@ function dynFind(t){
 /* ¿el RPC no EXISTE aún (v3_3 sin correr)? SOLO códigos/mensajes de función-ausente:
    un 'permission denied' o fallo de red NO debe confundirse con migración pendiente. */
 function _rpcFaltante(e){ return !!(e && (e.code==='PGRST202' || e.code==='42883' || /schema cache|could not find the function/i.test(e.message||''))); }
+/* supabase-js v2 NUNCA rechaza: un fallo de red llega como r.error sin code y con
+   'Failed to fetch'/'Load failed'. Detectarlo para mostrar 'Sin conexión' en español. */
+function _rpcSinRed(e){ return !!(e && !e.code && /failed to fetch|load failed|networkerror|network request failed/i.test(e.message||'')); }
 function qstats(){
   if(V3_ON && DBC.qstats && !(S&&S.admin)) return DBC.qstats;   // mando: vista del servidor (solo su depto)
   try{ return kvGet('hb_qstats')||{freq:{},unans:{}}; }catch(e){ return {freq:{},unans:{}}; }
@@ -4233,6 +4249,13 @@ function renderResp(){
   h+=htile("respGo('focos')",'focos','Focos', myAlerts.length?(myAlerts.length+' en tu área'):'Todo en orden ✓', {cnt:myAlerts.length||''});
   var nDocA=0; try{ nDocA=docsGet().filter(function(d){ return canManageThisDoc(d); }).length; }catch(e){}
   h+=htile("docsHome()",'docs','Documentos','Manuales de tu área: subir, ver y borrar',{wide:true, cnt:nDocA||''});
+  // Pedidos (V3.11): el responsable de MANTENIMIENTO recibe las órdenes de trabajo;
+  // los demás responsables también pueden pedir una reparación.
+  try{
+    if(pedMandoMant()){ var _nvo=pedNuevosN(), _ab=pedAbiertos().length;
+      h+=htile('renderPedidos()','rep','Pedidos', _ab?(_ab+' abiertos'+(_nvo?' · '+_nvo+' nuevos':'')):'Órdenes de trabajo · en vivo', {wide:true, cnt:_nvo||''}); }
+    else h+=htile('renderPedir()','rep','Pedir reparación','Avisa a Mantenimiento');
+  }catch(e){}
   h+='</div>';
   $('s-hr').innerHTML=h; show('hr');
 }
@@ -4393,6 +4416,8 @@ function managerDash(role){
   h+=htile("mgrGo('personas')",'personas','Personas', DS?(DS.reg+' registrados · permisos'):'Equipo, permisos y recibos');
   h+=htile("mgrGo('focos')",'focos','Focos', foco?(foco+' por atender'):'Todo en orden ✓', {cnt:foco||''});
   h+=htile("mgrGo('operacion')",'operacion','Operación', (unansN?unansN+' preguntas · ':'')+'buzón · directorio', {cnt:unansN||''});
+  try{ var _pedN=pedNuevosN();
+    h+=htile('renderPedidos()','rep','Pedidos', pedAbiertos().length?(pedAbiertos().length+' abiertos · mantenimiento'):'Órdenes de trabajo · en vivo', {cnt:_pedN||''}); }catch(e){}
   h+=htile('docsHome()','docs','Documentos', 'Explora los documentos de cualquier área');
   h+=htile('renderDia()','cal','Directorio', 'A quién llamar en la planta');
   h+='</div>';
@@ -5822,6 +5847,567 @@ function recsAdminBlock(){
   h+='<div id="recPendBox">'+recPendHTML()+'</div>';
   h+='<div class="panel" id="recListBox">'+recListHTML()+'</div>';
   return h;
+}
+
+/* ============================================================================
+   PEDIDOS DE MANTENIMIENTO (V3.11) — Orden de Trabajo digital (papelito R-MTT-01)
+   El trabajador pide una reparación (form + PDF réplica del papelito con su
+   firma) → le llega EN VIVO al responsable de MANTENIMIENTO (Zeus), quien
+   asigna al técnico; cada paso queda con hora del SERVIDOR → métricas gratis.
+   Tabla 'pedidos' + bucket 'pedidos' + catálogo 'maquinas' (SQL v3_8).
+   Sin correr v3_8: cae al flujo demo local (patrón recibos).
+   ============================================================================ */
+var PED_LOGO='data:image/png;base64,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';
+var PED_EST={ nuevo:{l:'Nuevo',c:'#e73b2f'}, asignado:{l:'Asignado',c:'#e0902a'}, reparando:{l:'En reparación',c:'#3b82f6'}, terminado:{l:'Terminado',c:'#22c55e'}, revisado:{l:'Revisado ✓',c:'#0e9e8e'}, cancelado:{l:'Cancelado',c:'#6a7080'} };
+var PED_TIPOS=[['mecanico','Mecánico'],['electrico','Eléctrico'],['electronico','Electrónico'],['hidraulico','Hidráulico'],['neumatico','Neumático'],['control','Control']];
+function pedTipoL(t){ for(var i=0;i<PED_TIPOS.length;i++){ if(PED_TIPOS[i][0]===t) return PED_TIPOS[i][1]; } return t||''; }
+function pedEstTag(e){ var x=PED_EST[e]||{l:e,c:'var(--mut)'}; return '<span class="chipst" style="border-color:color-mix(in srgb,'+x.c+' 45%,transparent);color:'+x.c+'">'+esc(x.l)+'</span>'; }
+
+/* ---------- datos ---------- */
+var _pedTry=0;
+function pedV3(){ return !!(V3_ON && S && S.clave && Array.isArray(DBC.peds)); }
+function pedsGet(){ return pedV3()? (DBC.peds||[]) : lsGet('hb_pedidos'); }
+function maqsGet(){ var a=(V3_ON && Array.isArray(DBC.maqs))? DBC.maqs : lsGet('hb_maquinas'); return (a||[]).filter(function(m){ return m && m.nombre; }); }
+function pedsLoad(cb){
+  if(!sbReady()){ if(cb) cb(); return; }
+  try{ SB.from('pedidos').select('data').order('ts',{ascending:true}).then(function(r){
+    if(!r.error && r.data){ _pedTry=0; DBC.peds=r.data.map(function(x){ return x.data; }); pedNotifyCheck(); sbRerender(); if(cb) cb(); }
+    else if(r.error && _pedTry<4 && !_recTablaFalta(r.error)){ _pedTry++; setTimeout(pedsLoad, Math.min(20000, 2000*_pedTry)); if(cb) cb(); }
+    else if(cb) cb();
+  }); }catch(e){ if(cb) cb(); }
+}
+function maqsLoad(){
+  if(!sbReady()) return;
+  try{ SB.from('maquinas').select('data').order('ts',{ascending:true}).then(function(r){
+    if(!r.error && r.data){ DBC.maqs=r.data.map(function(x){ return x.data; }); }
+  }); }catch(e){}
+}
+function pedInit(){
+  if(window._pedInited || !sbReady()) return; window._pedInited=true;
+  pedsLoad(); maqsLoad();
+  try{ SB.channel('rt-pedidos').on('postgres_changes',{event:'*',schema:'public',table:'pedidos'},function(){ pedsLoad(); }).subscribe(); }catch(e){}
+  try{ SB.channel('rt-maquinas').on('postgres_changes',{event:'*',schema:'public',table:'maquinas'},function(){ maqsLoad(); }).subscribe(); }catch(e){}
+}
+
+/* ---------- roles ---------- */
+/* Responsable de MANTENIMIENTO (Zeus). En demo: responsable de Maquinaria (login 980). */
+function pedMandoMant(){
+  if(!S) return false;
+  if(V3_ON) return !!(S.mando && !docIsTotal() && deptoSlug(S.area)==='mantenimiento');
+  return !!(S.dash==='resp' && S.key==='maquinaria');
+}
+/* Trabajador DE mantenimiento (recibe reparaciones asignadas, no pide). Demo: login 700. */
+function pedEsTecnico(){
+  if(!S || S.admin || S.mando || S.dash) return false;
+  if(V3_ON) return deptoSlug(S.area)==='mantenimiento';
+  return S.key==='maquinaria';
+}
+function pedVeInbox(){ return pedMandoMant() || docIsTotal(); }
+function pedMios(){ var me=S?S.emp:-1; return pedsGet().filter(function(p){ return p && p.emp===me; }); }
+function pedAsigMios(){ var me=S?S.emp:-1; return pedsGet().filter(function(p){ return p && p.asig && +p.asig.n===me; }); }
+function pedNuevosN(){ return pedsGet().filter(function(p){ return p && p.estado==='nuevo'; }).length; }
+function pedAbiertos(){ return pedsGet().filter(function(p){ return p && ['nuevo','asignado','reparando'].indexOf(p.estado)>-1; }); }
+
+/* ---------- aviso en vivo (patrón msgNotifyCheck) ---------- */
+function pedNotifyCheck(){
+  try{
+    if(!S){ return; }
+    // (a) responsable de mantenimiento / acceso total: avisa de pedidos NUEVOS
+    if(pedVeInbox()){
+      var arr=pedsGet(), maxPrev=window._pedMaxTs, maxNow=0;
+      arr.forEach(function(p){ if(p && p.tsSol>maxNow) maxNow=p.tsSol; });
+      if(maxPrev===undefined){ window._pedMaxTs=maxNow; }
+      else {
+        var nuevos=arr.filter(function(p){ return p && p.tsSol>maxPrev && p.emp!==S.emp; });
+        window._pedMaxTs=Math.max(maxPrev,maxNow);
+        if(nuevos.length){ var p=nuevos[nuevos.length-1];
+          flash('🔧 Pedido nuevo #'+p.folio+' · '+p.maquina+(p.paroMaquina?' · ⛔ MÁQUINA PARADA':''));
+          try{ if('Notification' in window && Notification.permission==='granted' && document.hidden){
+            new Notification('Hules Banda — Pedido de reparación', { body:('#'+p.folio+' · '+p.maquina+' · '+(p.depto||'')+(p.paroMaquina?' · MÁQUINA PARADA':'')).slice(0,120) }); } }catch(e){}
+        }
+      }
+    } else { window._pedMaxTs=undefined; }
+    // (b) técnico de mantenimiento: avisa cuando LE ASIGNAN una reparación
+    if(pedEsTecnico()){
+      var mias=pedAsigMios(), pv=window._pedMaxAsigTs, mx=0;
+      mias.forEach(function(p){ if(p && p.tsAsig>mx) mx=p.tsAsig; });
+      if(pv===undefined){ window._pedMaxAsigTs=mx; }
+      else {
+        var na=mias.filter(function(p){ return p && p.tsAsig>pv; });
+        window._pedMaxAsigTs=Math.max(pv,mx);
+        if(na.length){ var a=na[na.length-1];
+          flash('🔧 Te asignaron la reparación #'+a.folio+' · '+a.maquina+(a.paroMaquina?' · ⛔ MÁQUINA PARADA':''));
+          try{ if('Notification' in window && Notification.permission==='granted' && document.hidden){
+            new Notification('Hules Banda — Reparación asignada', { body:('#'+a.folio+' · '+a.maquina+(a.paroMaquina?' · MÁQUINA PARADA':'')).slice(0,120) }); } }catch(e){}
+        }
+      }
+    } else { window._pedMaxAsigTs=undefined; }
+  }catch(e){}
+}
+
+/* ---------- PDF: réplica del papelito (canvas → JPEG → PDF mínimo) ---------- */
+var _pedLogoImg=null;
+function _pedLogo(cb){
+  if(_pedLogoImg){ cb(_pedLogoImg); return; }
+  var im=new Image();
+  im.onload=function(){ _pedLogoImg=im; cb(im); };
+  im.onerror=function(){ cb(null); };
+  im.src=PED_LOGO;
+}
+/* PDF de UNA página carta horizontal (792x612 pt) con un JPEG adentro — sin librerías */
+function _pdfDeJpeg(jpegBytes, imgW, imgH){
+  var enc=function(s){ var u=new Uint8Array(s.length); for(var i=0;i<s.length;i++) u[i]=s.charCodeAt(i)&0xff; return u; };
+  var parts=[], offs=[], pos=0;
+  function push(u){ parts.push(u); pos+=u.length; }
+  function pushS(s){ push(enc(s)); }
+  pushS('%PDF-1.4\n');
+  offs[1]=pos; pushS('1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n');
+  offs[2]=pos; pushS('2 0 obj\n<</Type/Pages/Kids[3 0 R]/Count 1>>\nendobj\n');
+  offs[3]=pos; pushS('3 0 obj\n<</Type/Page/Parent 2 0 R/MediaBox[0 0 792 612]/Resources<</XObject<</Im0 4 0 R>>/ProcSet[/PDF/ImageC]>>/Contents 5 0 R>>\nendobj\n');
+  offs[4]=pos; pushS('4 0 obj\n<</Type/XObject/Subtype/Image/Width '+imgW+'/Height '+imgH+'/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length '+jpegBytes.length+'>>\nstream\n');
+  push(jpegBytes); pushS('\nendstream\nendobj\n');
+  var cont='q 792 0 0 612 0 0 cm /Im0 Do Q';
+  offs[5]=pos; pushS('5 0 obj\n<</Length '+cont.length+'>>\nstream\n'+cont+'\nendstream\nendobj\n');
+  var xref=pos, pad=function(n){ return ('0000000000'+n).slice(-10); };
+  pushS('xref\n0 6\n0000000000 65535 f \n'+[1,2,3,4,5].map(function(i){ return pad(offs[i])+' 00000 n \n'; }).join('')+
+        'trailer\n<</Size 6/Root 1 0 R>>\nstartxref\n'+xref+'\n%%EOF');
+  return new Blob(parts, {type:'application/pdf'});
+}
+/* dibuja la Orden de Trabajo (layout del R-MTT-01) y devuelve el Blob PDF */
+function pedPdfBlob(d, firmaImg, cb){
+  _pedLogo(function(logo){
+    try{
+      var W=1584, H=1224, c=document.createElement('canvas'); c.width=W; c.height=H;
+      var x=c.getContext('2d');
+      x.fillStyle='#ffffff'; x.fillRect(0,0,W,H);
+      var M=46, T=M, L=M, R=W-M, ln='#3a3d44';
+      x.strokeStyle=ln; x.lineWidth=2;
+      function txt(s,px,py,size,bold,color,align){ x.fillStyle=color||'#16181d'; x.font=(bold?'700 ':'400 ')+size+'px Helvetica, Arial, sans-serif'; x.textAlign=align||'left'; x.fillText(s,px,py); x.textAlign='left'; }
+      function wrap(s,px,py,maxw,size,lh){ x.font='400 '+size+'px Helvetica, Arial, sans-serif'; x.fillStyle='#16181d';
+        var words=(s||'').split(/\s+/), line='', yy=py;
+        for(var i=0;i<words.length;i++){ var t=line?line+' '+words[i]:words[i];
+          if(x.measureText(t).width>maxw && line){ x.fillText(line,px,yy); line=words[i]; yy+=lh; } else line=t; }
+        if(line) x.fillText(line,px,yy); return yy; }
+      function box(bx,by,bs,checked){ x.strokeRect(bx,by,bs,bs); if(checked){ x.font='700 '+(bs+4)+'px Helvetica'; x.fillStyle='#16181d'; x.fillText('✗', bx+2, by+bs-2); } }
+      // ---- encabezado ----
+      var hH=118;
+      x.strokeRect(L,T,R-L,H-2*M);
+      if(logo){ x.fillStyle='#0b0c11'; x.fillRect(L+12, T+10, 196, hH-20);   // respaldo oscuro: el logo es blanco
+        var lw=170, lh2=lw*(logo.height/logo.width); x.drawImage(logo, L+25, T+14+((hH-28-Math.min(lh2,hH-28))/2), lw, Math.min(lh2,hH-28)); }
+      txt('HULES BANDA, S.A. DE C.V.', W/2, T+52, 34, true, '#16181d', 'center');
+      x.beginPath(); x.moveTo(W/2-260,T+62); x.lineTo(W/2+260,T+62); x.stroke();
+      txt('ORDEN DE TRABAJO', W/2, T+98, 24, true, '#16181d', 'center');
+      // caja de folio (derecha)
+      var fbX=R-300, fbW=284;
+      txt('R-MTT-01', R-16, T+24, 15, false, '#16181d', 'right');
+      txt('Revisión: 4 · Emisión: 2023', R-16, T+42, 13, false, '#5a6070', 'right');
+      x.strokeRect(fbX, T+52, fbW, 56);
+      txt('FOLIO', fbX+fbW/2, T+70, 13, true, '#5a6070', 'center');
+      txt('Nº  '+(d.folio||'—'), fbX+fbW/2, T+98, 26, true, '#c4161c', 'center');
+      // ---- retícula ----
+      var gy=T+hH, labW=330, tipoW=250, colR=R-tipoW;      // columna derecha = Tipo de mantenimiento
+      var rows=[70,70,70,82,82,82,76,76,133,133];          // alturas de renglones (llenan hasta la banda de firmas)
+      var names=['Hora de solicitud','Hora de inicio','Hora de término','Nombre del solicitante','Mantenimiento solicitado','Máquina / Equipo','Requiere paro de máquina','Existencia en almacén','Descripción del mantenimiento','Causa del mantenimiento'];
+      x.beginPath(); x.moveTo(L,gy); x.lineTo(R,gy); x.stroke();
+      var ry=gy;
+      for(var i2=0;i2<rows.length;i2++){ ry+=rows[i2]; x.beginPath(); x.moveTo(L,ry); x.lineTo(i2<rows.length?colR:R,ry); x.stroke(); }
+      var gridBot=ry;
+      x.beginPath(); x.moveTo(L+labW,gy); x.lineTo(L+labW,gridBot); x.stroke();     // línea etiquetas
+      x.beginPath(); x.moveTo(colR,gy); x.lineTo(colR,gridBot); x.stroke();          // línea col. tipo
+      // etiquetas
+      var yy=gy;
+      for(var i3=0;i3<names.length;i3++){ txt(names[i3], L+12, yy+rows[i3]/2+5, 15, true); yy+=rows[i3]; }
+      // valores
+      var fSol=new Date(d.tsSol||Date.now());
+      function f2(n){ return (n<10?'0':'')+n; }
+      var horaS=f2(fSol.getHours())+':'+f2(fSol.getMinutes()), fechaS=f2(fSol.getDate())+'/'+f2(fSol.getMonth()+1)+'/'+fSol.getFullYear();
+      var vx=L+labW+14, midX=L+labW+((colR-L-labW)/2);
+      yy=gy;
+      txt(horaS, vx, yy+30, 17); txt('Fecha solicitud', midX, yy+30, 15, true); txt(fechaS, midX+150, yy+30, 17); yy+=rows[0];
+      txt('—', vx, yy+30, 17); txt('Fecha inicio', midX, yy+30, 15, true); txt('—', midX+150, yy+30, 17); yy+=rows[1];
+      txt('—', vx, yy+30, 17); txt('Fecha término', midX, yy+30, 15, true); txt('—', midX+150, yy+30, 17); yy+=rows[2];
+      txt((d.nombre||'')+'   ·   Nº '+(d.clave||''), vx, yy+32, 17); yy+=rows[3];
+      wrap(d.solicitado||'', vx, yy+32, colR-vx-16, 17, 20); yy+=rows[4];
+      txt(d.maquina||'', vx, yy+32, 17, true); txt('Departamento', midX, yy+32, 15, true); txt(d.depto||'', midX+150, yy+32, 16); yy+=rows[5];
+      // sí/no: paro de máquina · pieza nueva · paro de producción (posiciones fijas, sin encimarse)
+      var cy=yy+rows[6]/2, by=cy-11;
+      txt('Sí', vx, cy+5, 15); box(vx+30, by, 22, !!d.paroMaquina); txt('No', vx+72, cy+5, 15); box(vx+106, by, 22, !d.paroMaquina);
+      txt('Requiere pieza nueva', vx+200, cy+5, 15, true); txt('Sí', vx+400, cy+5, 15); box(vx+428, by, 22, !!d.piezaNueva); txt('No', vx+470, cy+5, 15); box(vx+504, by, 22, !d.piezaNueva);
+      txt('Paro de producción:', vx+590, cy+5, 14, true); txt(d.paroProd?'Sí':'No', vx+770, cy+5, 15, true); yy+=rows[6];
+      cy=yy+rows[7]/2; by=cy-11;
+      txt('Sí', vx, cy+5, 15); box(vx+30, by, 22, false); txt('No', vx+72, cy+5, 15); box(vx+106, by, 22, false);
+      txt('Pieza requerida:', vx+200, cy+5, 15, true); txt((d.pieza||'—').slice(0,40), vx+360, cy+5, 15); yy+=rows[7];
+      wrap(d.descr||'—', vx, yy+32, colR-vx-16, 16, 20); yy+=rows[8];
+      wrap(d.causa||'—', vx, yy+32, colR-vx-16, 16, 20); yy+=rows[9];
+      // ---- columna Tipo de Mantenimiento ----
+      x.save(); x.translate(colR+26, gy+(gridBot-gy)/2); x.rotate(-Math.PI/2);
+      x.font='700 16px Helvetica'; x.fillStyle='#16181d'; x.textAlign='center'; x.fillText('Tipo de Mantenimiento',0,0); x.restore();
+      var tys=[['control','Control'],['electrico','Eléctrico'],['electronico','Electrónico'],['hidraulico','Hidráulico'],['mecanico','Mecánico'],['neumatico','Neumático']];
+      var th=(gridBot-gy)/tys.length;
+      for(var i4=0;i4<tys.length;i4++){ var tyY=gy+th*i4;
+        if(i4) { x.beginPath(); x.moveTo(colR+52,tyY); x.lineTo(R,tyY); x.stroke(); }
+        txt(tys[i4][1], colR+66, tyY+th/2+5, 15);
+        box(R-44, tyY+th/2-12, 24, d.tipo===tys[i4][0]);
+      }
+      x.beginPath(); x.moveTo(colR+52,gy); x.lineTo(colR+52,gridBot); x.stroke();
+      // ---- firmas ----
+      var fy=gridBot, fh=(H-M)-fy;
+      var fw=(R-L)/3;
+      x.beginPath(); x.moveTo(L+fw,fy); x.lineTo(L+fw,H-M); x.stroke();
+      x.beginPath(); x.moveTo(L+2*fw,fy); x.lineTo(L+2*fw,H-M); x.stroke();
+      if(firmaImg){ try{ x.drawImage(firmaImg, L+40, fy+8, Math.min(fw-80,260), Math.min(fh-46,86)); }catch(e){} }
+      txt((d.nombre||''), L+fw/2, fy+fh-38, 14, false, '#16181d', 'center');
+      x.beginPath(); x.moveTo(L+30,fy+fh-30); x.lineTo(L+fw-30,fy+fh-30); x.stroke();
+      x.beginPath(); x.moveTo(L+fw+30,fy+fh-30); x.lineTo(L+2*fw-30,fy+fh-30); x.stroke();
+      x.beginPath(); x.moveTo(L+2*fw+30,fy+fh-30); x.lineTo(R-30,fy+fh-30); x.stroke();
+      txt('Nombre y firma del Solicitante', L+fw/2, fy+fh-12, 12, false, '#5a6070', 'center');
+      txt('Nombre y Firma de Reparación de Mtto.', L+fw+fw/2, fy+fh-12, 12, false, '#5a6070', 'center');
+      txt('Nombre y Firma de Recibido y Revisado', L+2*fw+fw/2, fy+fh-12, 12, false, '#5a6070', 'center');
+      txt('Generado en el Sistema Integral de Hules Banda · '+fechaS+' '+horaS, W/2, H-14, 11, false, '#8a8f9a', 'center');
+      // ---- canvas → JPEG → PDF ----
+      var jpeg=c.toDataURL('image/jpeg',0.86);
+      var b64=jpeg.split(',')[1], bin=atob(b64), u8=new Uint8Array(bin.length);
+      for(var i5=0;i5<bin.length;i5++) u8[i5]=bin.charCodeAt(i5);
+      cb(_pdfDeJpeg(u8,W,H));
+    }catch(e){ cb(null); }
+  });
+}
+
+/* ---------- abrir el PDF (liga firmada, patrón docOpen/recOpen) ---------- */
+function pedOpen(id){
+  var d=null; pedsGet().forEach(function(p){ if(p && p.id===id) d=p; });
+  if(!d || !d.pdf){ flash('Este pedido no tiene PDF'+(pedV3()?'':' (demo)')); return; }
+  if(!sbReady()){ flash('Sin conexión: el PDF requiere internet'); return; }
+  var w=window.open('','_blank');
+  flash('Abriendo orden…');
+  SB.storage.from('pedidos').createSignedUrl(d.pdf, 3600).then(function(r){
+    if(r.error||!r.data||!r.data.signedUrl){ if(w) w.close(); flash('No se pudo abrir'+((r.error&&r.error.message)?' ('+r.error.message+')':'')); return; }
+    if(w){ w.location=r.data.signedUrl; } else { location.href=r.data.signedUrl; }
+  }, function(){ if(w) w.close(); flash('Sin conexión: no se pudo abrir'); });
+}
+
+/* ---------- FORM del trabajador: Pedir reparación ---------- */
+var _pedForm={maq:'',depto:'',tipo:'mecanico',paroM:false,piezaN:false};
+function pedSet(k,v){ _pedForm[k]=v; _pedFormKeep(); renderPedir(); }
+function _pedFormKeep(){ // conservar lo tecleado al re-pintar (chips re-render)
+  var f=_pedForm;
+  ['pedSolic','pedDescr','pedCausa','pedPieza','pedMaqOtra'].forEach(function(id){ var e=$(id); if(e) f['_'+id]=e.value; });
+}
+function _pedFormVal(id){ var e=$(id); return e? e.value : (_pedForm['_'+id]||''); }
+function pedDeptos(){
+  // roster real (V3) + los departamentos que el responsable haya escrito en el catálogo
+  // de máquinas (para que el <select> muestre EXACTO lo que trae la máquina elegida).
+  var set={}, out=[];
+  function add(x){ x=(x||'').trim(); if(x && !set[x]){ set[x]=1; out.push(x); } }
+  if(V3_ON) Object.keys(DEPTO_AREA).forEach(add);
+  maqsGet().forEach(function(m){ add(m.depto); });
+  if(S && S.area) add(S.area);
+  if(_pedForm && _pedForm.depto) add(_pedForm.depto);   // lo seleccionado SIEMPRE aparece
+  return out.sort();
+}
+function renderPedir(){
+  var f=_pedForm, maqs=maqsGet(), firma=(profGet(S.emp)||{}).firma;
+  if(!f.depto) f.depto=S.area||'';
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Mantenimiento</div><b style="font-size:20px">Pedir reparación</b>'+
+    '<div class="note" style="margin-top:3px">Es la Orden de Trabajo de siempre, pero digital: llega al instante a Mantenimiento y tú puedes seguir tu pedido aquí mismo.</div></div>'+
+    '<span style="flex:none">'+speakBtn('Pedir reparación. Si una máquina falla, llena este formulario y le llega al instante a Mantenimiento. Escoge la máquina, di qué necesita y manda tu pedido con tu firma.')+'</span></div>';
+  // máquina + departamento
+  var opciones=''; var porDep={}; maqs.forEach(function(m){ (porDep[m.depto||'Otras']=porDep[m.depto||'Otras']||[]).push(m); });
+  Object.keys(porDep).sort().forEach(function(dep){ opciones+='<optgroup label="'+escA(dep)+'">'+porDep[dep].map(function(m){ return '<option value="'+escA(m.nombre)+'"'+(f.maq===m.nombre?' selected':'')+'>'+esc(m.nombre)+'</option>'; }).join('')+'</optgroup>'; });
+  h+='<div class="note" style="margin:2px 0 3px">¿Qué máquina o equipo?</div>'+
+    '<select class="fin" onchange="var v=this.value; _pedFormKeep(); _pedForm.maq=v; var mm=maqsGet().filter(function(m){return m.nombre===v;})[0]; if(mm&&mm.depto)_pedForm.depto=mm.depto; renderPedir()">'+
+    '<option value=""'+(f.maq?'':' selected')+'>— Escoge la máquina —</option>'+opciones+
+    '<option value="__otra__"'+(f.maq==='__otra__'?' selected':'')+'>Otra máquina…</option></select>';
+  if(f.maq==='__otra__') h+='<input id="pedMaqOtra" class="fin" style="margin-top:8px" maxlength="120" placeholder="Escribe cuál máquina" value="'+escA(f._pedMaqOtra||'')+'">';
+  h+='<div class="note" style="margin:10px 0 3px">Departamento donde está</div>'+
+    '<select class="fin" onchange="_pedFormKeep(); _pedForm.depto=this.value; renderPedir()">'+pedDeptos().map(function(dep){ return '<option value="'+escA(dep)+'"'+(f.depto===dep?' selected':'')+'>'+esc(dep)+'</option>'; }).join('')+'</select>';
+  // qué necesita
+  h+='<div class="note" style="margin:10px 0 3px">¿Qué necesita? (mantenimiento solicitado)</div>'+
+    '<input id="pedSolic" class="fin" maxlength="300" placeholder="Ej. Voltear puntas #1 y #3" value="'+escA(f._pedSolic||'')+'">'+
+    '<div class="note" style="margin:10px 0 3px">Descripción (opcional)</div>'+
+    '<textarea id="pedDescr" class="fin" rows="2" maxlength="600" placeholder="¿Qué está pasando? Ej. Se voltean cardas">'+esc(f._pedDescr||'')+'</textarea>'+
+    '<div class="note" style="margin:10px 0 3px">Causa (opcional)</div>'+
+    '<input id="pedCausa" class="fin" maxlength="300" placeholder="Ej. Por desgaste de trabajo" value="'+escA(f._pedCausa||'')+'">';
+  // máquina parada (grande)
+  h+='<div class="note" style="margin:12px 0 5px">¿La máquina está parada?</div><div style="display:flex;gap:8px">'+
+    '<button class="btn'+(f.paroM?'':' ghost')+'" style="margin:0;flex:1" onclick="pedSet(\'paroM\',true)">⛔ Sí, está parada</button>'+
+    '<button class="btn'+(f.paroM?' ghost':'')+'" style="margin:0;flex:1" onclick="pedSet(\'paroM\',false)">No, sigue trabajando</button></div>';
+  // tipo
+  h+='<div class="note" style="margin:12px 0 5px">Tipo de mantenimiento</div><div style="display:flex;gap:6px;flex-wrap:wrap">'+
+    PED_TIPOS.map(function(t){ return '<button class="btn'+(f.tipo===t[0]?'':' ghost')+'" style="margin:0;padding:9px 12px;font-size:13px;width:auto" onclick="pedSet(\'tipo\',\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
+  // pieza
+  h+='<div class="note" style="margin:12px 0 5px">¿Crees que necesita pieza nueva?</div><div style="display:flex;gap:8px">'+
+    '<button class="btn'+(f.piezaN?'':' ghost')+'" style="margin:0;flex:1" onclick="pedSet(\'piezaN\',true)">Sí</button>'+
+    '<button class="btn'+(f.piezaN?' ghost':'')+'" style="margin:0;flex:1" onclick="pedSet(\'piezaN\',false)">No / no sé</button></div>';
+  if(f.piezaN) h+='<input id="pedPieza" class="fin" style="margin-top:8px" maxlength="200" placeholder="¿Cuál pieza? (si la conoces)" value="'+escA(f._pedPieza||'')+'">';
+  // firma + enviar
+  if(firma){ h+='<div class="note" style="margin:12px 0 4px">Va con tu firma:</div><img src="'+imgSrc(firma)+'" alt="firma" style="height:52px;background:#fff;border-radius:8px;padding:4px">'; }
+  else { h+='<div class="card" style="margin-top:12px"><b>Falta tu firma</b><div class="note" style="margin-top:3px">El pedido va firmado por ti (como el papelito). Dibújala una sola vez en tu Perfil.</div>'+
+    '<button class="btn ghost" style="margin-top:8px" onclick="renderPerfil()">Ir a mi Perfil</button></div>'; }
+  h+='<button class="btn" style="margin-top:14px" '+(firma?'':'disabled ')+'onclick="pedSubmit()">Mandar pedido a Mantenimiento</button>'+
+    '<div id="pedStatus" class="note" style="margin-top:8px"></div></div>';
+  // mis pedidos
+  var mios=pedMios().slice().sort(function(a,b){ return (b.tsSol||0)-(a.tsSol||0); });
+  h+='<div class="sec-t">Mis pedidos<span class="ln"></span></div>';
+  if(!mios.length) h+='<div class="card"><div class="note">Aquí verás tus pedidos y en qué van.</div></div>';
+  mios.slice(0,12).forEach(function(p){ h+=pedCardMini(p); });
+  $('s-pedir').innerHTML=h; show('pedir');
+}
+function pedCardMini(p){
+  var pasos=[['tsSol','Solicitado'],['tsAsig','Asignado'+(p.asig?' a '+niceName(p.asig.nombre||''):'')],['tsIni','En reparación'],['tsFin','Terminado']];
+  var tl=pasos.map(function(s){ var ok=!!p[s[0]]; return '<span style="display:flex;align-items:center;gap:7px"><span style="width:9px;height:9px;border-radius:50%;flex:none;background:'+(ok?'var(--ok)':'color-mix(in srgb,var(--mut) 35%,transparent)')+'"></span><span class="note"'+(ok?' style="color:var(--tx)"':'')+'>'+esc(s[1])+(ok?' · '+buzTime(p[s[0]]):'')+'</span></span>'; }).join('');
+  if(p.estado==='cancelado') tl='<span class="note">Cancelado'+(p.nota?' · '+esc(p.nota):'')+'</span>';
+  return '<div class="card"><div class="line"><b>#'+p.folio+' · '+esc(p.maquina||'')+'</b>'+pedEstTag(p.estado)+'</div>'+
+    (p.paroMaquina?'<div class="note" style="color:var(--bad);margin-top:2px">⛔ Máquina parada</div>':'')+
+    '<div style="display:flex;flex-direction:column;gap:5px;margin-top:8px">'+tl+'</div>'+
+    '<div class="line" style="margin-top:8px"><span class="note">'+esc((p.solicitado||'').slice(0,70))+'</span>'+
+    (p.pdf?'<button class="btn ghost" style="margin:0;padding:7px 12px;font-size:12px;width:auto" onclick="pedOpen(\''+jsAttr(p.id)+'\')">Ver orden</button>':'')+'</div></div>';
+}
+function pedSubmit(){
+  if(window._pedBusy){ flash('Espera: se está mandando tu pedido'); return; }
+  _pedFormKeep();
+  var f=_pedForm, maq=f.maq==='__otra__'? (_pedFormVal('pedMaqOtra')||'').trim() : f.maq;
+  var sol=(_pedFormVal('pedSolic')||'').trim();
+  if(!maq){ flash('Escoge la máquina'); return; }
+  if(!sol){ flash('Di qué necesita la máquina'); return; }
+  var firma=(profGet(S.emp)||{}).firma;
+  if(!firma){ flash('Primero dibuja tu firma en tu Perfil'); return; }
+  var datos={ depto:f.depto||S.area||'', maquina:maq, solicitado:sol,
+    descr:(_pedFormVal('pedDescr')||'').trim(), causa:(_pedFormVal('pedCausa')||'').trim(),
+    tipo:f.tipo, paroMaquina:!!f.paroM, paroProd:false, piezaNueva:!!f.piezaN,
+    pieza:f.piezaN?(_pedFormVal('pedPieza')||'').trim():'' };
+  var st=$('pedStatus'); if(st) st.textContent='Mandando pedido…';
+  // ---- DEMO (#demo): local. En modo REAL SIEMPRE va al servidor (aunque DBC.peds
+  //      aún no cargue): un pedido en localStorage jamás llegaría a Zeus. ----
+  if(!V3_ON){
+    var a=lsGet('hb_pedidos'), folio=30000+a.length+1;
+    var rec={ id:'pd'+Date.now(), folio:folio, emp:S.emp, clave:S.clave||(''+S.emp), nombre:S.nombre||('Nº '+S.emp), deptoReal:S.area,
+      estado:'nuevo', tsSol:Date.now(), demo:(location.hash==='#demo') };
+    for(var k in datos) rec[k]=datos[k];
+    a.unshift(rec); lsSet('hb_pedidos',a);
+    _pedFormReset(); flash('✓ Pedido #'+folio+' enviado a Mantenimiento'); renderPedir(); return;
+  }
+  if(!sbReady()){ if(st) st.textContent=''; flash('Sin conexión: necesitas internet para mandar tu pedido'); return; }
+  // ---- REAL: RPC alta (folio del servidor) → PDF → subir → adjuntar ----
+  window._pedBusy=true;
+  SB.rpc('hb_pedido_alta',{p:datos}).then(function(r){
+    var d=r&&r.data;
+    if(r.error||!d||!d.ok){ window._pedBusy=false; if(st) st.textContent='';
+      flash(r.error ? (_rpcFaltante(r.error)?'La función se está activando, intenta en un momento' : _rpcSinRed(r.error)?'Sin conexión: no se pudo mandar' : (r.error.message||'No se pudo mandar'))
+                    : ((d&&d.error)==='limite' ? 'Ya mandaste varios pedidos seguidos; espera un poco o avisa a Mantenimiento en persona' : ((d&&d.error)||'No se pudo mandar'))); return; }
+    var folio=d.folio, pid=d.id;
+    var fin=function(msg){ window._pedBusy=false; _pedFormReset(); flash(msg); pedsLoad(function(){ if(_screen==='pedir' && !pedEsTecnico()) renderPedir(); }); };
+    var fimg=new Image();
+    fimg.onload=function(){ _pedGenSube(pid,folio,datos,fimg,fin); };
+    fimg.onerror=function(){ _pedGenSube(pid,folio,datos,null,fin); };
+    fimg.src=firma;
+  }, function(){ window._pedBusy=false; if(st) st.textContent=''; flash('Sin conexión: no se pudo mandar'); });
+}
+function _pedGenSube(pid,folio,datos,fimg,fin){
+  var d={}; for(var k in datos) d[k]=datos[k];
+  d.folio=folio; d.clave=S.clave; d.nombre=S.nombre||''; d.tsSol=Date.now();
+  pedPdfBlob(d, fimg, function(blob){
+    if(!blob){ fin('✓ Pedido #'+folio+' enviado (la orden en PDF no se generó)'); return; }
+    var path=S.clave+'/pd-'+folio+'.pdf';
+    SB.storage.from('pedidos').upload(path, blob, {contentType:'application/pdf', upsert:false}).then(function(r2){
+      if(r2.error){ fin('✓ Pedido #'+folio+' enviado (la orden en PDF no se pudo subir)'); return; }
+      SB.rpc('hb_pedido_pdf',{p_id:pid,p_path:path}).then(function(r3){
+        var d3=r3&&r3.data;
+        if(r3.error||!d3||!d3.ok){ fin('✓ Pedido #'+folio+' enviado (la orden en PDF no se pudo adjuntar)'); return; }
+        fin('✓ Pedido #'+folio+' enviado a Mantenimiento');
+      }, function(){ fin('✓ Pedido #'+folio+' enviado (la orden en PDF no se adjuntó)'); });
+    }, function(){ fin('✓ Pedido #'+folio+' enviado (sin conexión para el PDF)'); });
+  });
+}
+function _pedFormReset(){ _pedForm={maq:'',depto:'',tipo:'mecanico',paroM:false,piezaN:false}; }
+
+/* ---------- TUS REPARACIONES (técnico de mantenimiento) ---------- */
+function renderMisRep(){
+  var mias=pedAsigMios(), act=mias.filter(function(p){ return ['asignado','reparando'].indexOf(p.estado)>-1; }).sort(function(a,b){ return (b.paroMaquina?1:0)-(a.paroMaquina?1:0) || (a.tsAsig||0)-(b.tsAsig||0); });
+  var hist=mias.filter(function(p){ return ['terminado','revisado'].indexOf(p.estado)>-1; }).sort(function(a,b){ return (b.tsFin||0)-(a.tsFin||0); });
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Mantenimiento</div><b style="font-size:20px">Tus reparaciones</b>'+
+    '<div class="note" style="margin-top:3px">Lo que tu responsable te asignó. Marca cuando empieces y cuando termines: así queda tu registro.</div></div>'+
+    '<span class="chipst'+(act.length?'':' mut')+'">'+act.length+'</span></div></div>';
+  if(!act.length) h+='<div class="card"><div class="note">Sin reparaciones asignadas. ✓</div></div>';
+  act.forEach(function(p){
+    h+='<div class="card"><div class="line"><b>#'+p.folio+' · '+esc(p.maquina||'')+'</b>'+pedEstTag(p.estado)+'</div>'+
+      (p.paroMaquina?'<div class="note" style="color:var(--bad);margin-top:2px">⛔ Máquina parada — primero</div>':'')+
+      '<p style="margin:6px 0 0;line-height:1.5;color:var(--mut)">'+esc(p.solicitado||'')+(p.descr?' — '+esc(p.descr):'')+'</p>'+
+      '<div class="note" style="margin-top:4px">'+esc(p.depto||'')+' · pidió '+esc(niceName(p.nombre||''))+' · '+buzTime(p.tsSol)+'</div>'+
+      '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'+
+      (p.estado==='asignado'?'<button class="btn" style="margin:0;flex:1" onclick="pedEstado(\''+jsAttr(p.id)+'\',\'reparando\')">▶ Empiezo la reparación</button>':'')+
+      (p.estado==='reparando'?'<button class="btn" style="margin:0;flex:1" onclick="pedTerminar(\''+jsAttr(p.id)+'\')">✓ Ya quedó</button>':'')+
+      (p.pdf?'<button class="btn ghost" style="margin:0;width:auto;padding:11px 14px" onclick="pedOpen(\''+jsAttr(p.id)+'\')">Ver orden</button>':'')+
+      '</div></div>';
+  });
+  h+='<div class="sec-t">Tu historial · '+hist.length+'<span class="ln"></span></div>';
+  if(!hist.length) h+='<div class="card"><div class="note">Aquí queda el registro de todas las reparaciones que hagas.</div></div>';
+  hist.slice(0,15).forEach(function(p){
+    var dur=(p.tsFin&&p.tsIni)? Math.max(1,Math.round((p.tsFin-p.tsIni)/60000)) : null;
+    h+='<div class="card"><div class="line"><b>#'+p.folio+' · '+esc(p.maquina||'')+'</b>'+pedEstTag(p.estado)+'</div>'+
+      '<div class="note" style="margin-top:4px">'+buzTime(p.tsFin||p.tsSol)+(dur?' · duró '+(dur>=60? Math.round(dur/60*10)/10+' h':dur+' min'):'')+(p.nota?' · '+esc(p.nota):'')+'</div></div>';
+  });
+  $('s-pedir').innerHTML=h; show('pedir');
+}
+function pedTerminar(id){
+  var nota=prompt('¿Qué se hizo? (opcional)'); if(nota===null) return;   // Cancelar en el prompt = no terminar
+  pedEstado(id,'terminado',nota||'');
+}
+
+/* ---------- PEDIDOS (inbox del responsable de Mantenimiento / acceso total) ---------- */
+var _pedTab='act', _pedAsig=null;
+function pedGo(t){ _pedTab=t; _pedAsig=null; renderPedidos(); window.scrollTo(0,0); }
+function pedTeam(){
+  if(!V3_ON) return [{n:700,nombre:'PEREZ LOPEZ JUAN'},{n:662,nombre:'GOMEZ RIOS LUIS'},{n:640,nombre:'RUIZ MATA PEDRO'}];
+  if(pedMandoMant()) return (DBC.equipo||[]).map(function(e){ return {n:e.n,nombre:e.nombre,registrado:e.registrado}; });
+  return (DBC.equipo||[]).filter(function(e){ return deptoSlug(e.depto||'')==='mantenimiento'; }).map(function(e){ return {n:e.n,nombre:e.nombre,registrado:e.registrado}; });
+}
+function renderPedidos(){
+  var todos=pedsGet(), act=pedAbiertos(), nuevos=pedNuevosN();
+  act=act.slice().sort(function(a,b){ return (b.paroMaquina?1:0)-(a.paroMaquina?1:0) || (a.estado==='nuevo'?-1:0)-(b.estado==='nuevo'?-1:0) || (b.tsSol||0)-(a.tsSol||0); });
+  var hist=todos.filter(function(p){ return ['terminado','revisado','cancelado'].indexOf(p.estado)>-1; }).sort(function(a,b){ return (b.tsFin||b.tsCan||b.tsSol||0)-(a.tsFin||a.tsCan||a.tsSol||0); });
+  var paros=act.filter(function(p){ return p.paroMaquina; }).length;
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Mantenimiento</div><b style="font-size:20px">Pedidos de reparación</b>'+
+    '<div class="note" style="margin-top:3px">Las órdenes de trabajo de toda la planta, en vivo. Ya no se pierde ningún papelito.</div></div>'+
+    '<span class="chipst'+(nuevos?'':' mut')+'"'+(nuevos?' style="border-color:color-mix(in srgb,var(--bad) 40%,transparent);color:var(--bad)"':'')+'>'+nuevos+' nuevo'+(nuevos===1?'':'s')+'</span></div>'+
+    '<div class="gaugeWrap">'+
+      '<div class="statile"><div class="n"'+(paros?' style="color:var(--bad)"':'')+'>'+paros+'</div><div class="l">Máquina parada</div></div>'+
+      '<div class="statile"><div class="n">'+act.length+'</div><div class="l">Abiertos</div></div>'+
+      '<div class="statile"><div class="n">'+hist.filter(function(p){return p.estado!=='cancelado';}).length+'</div><div class="l">Resueltos</div></div>'+
+    '</div></div>';
+  h+='<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">'+
+    [['act','Actuales'],['hist','Historial'],['maq','Máquinas']].map(function(t){ return '<button class="btn'+(_pedTab===t[0]?'':' ghost')+'" style="margin:0;padding:9px 14px;font-size:13px;width:auto" onclick="pedGo(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
+  if(_pedTab==='act'){
+    if(!act.length) h+='<div class="card"><div class="note">Sin pedidos abiertos. Todo en orden ✓</div></div>';
+    act.forEach(function(p){ h+=pedCardAdmin(p); });
+  }
+  else if(_pedTab==='hist'){
+    // mini-métricas (el Excel de Zeus se llena solo)
+    var done=hist.filter(function(p){ return p.tsFin; });
+    var repMin=done.length? Math.round(done.reduce(function(s,p){ return s+Math.max(0,(p.tsFin-(p.tsIni||p.tsFin)));},0)/done.length/60000) : 0;
+    var respMin=(function(){ var a=hist.concat(act).filter(function(p){ return p.tsAsig; }); return a.length? Math.round(a.reduce(function(s,p){ return s+Math.max(0,(p.tsAsig-p.tsSol));},0)/a.length/60000) : 0; })();
+    function fmin(m){ return m>=60? (Math.round(m/60*10)/10)+' h' : m+' min'; }
+    h+='<div class="panel"><div class="gaugeWrap">'+
+      '<div class="statile"><div class="n">'+done.length+'</div><div class="l">Reparaciones</div></div>'+
+      '<div class="statile"><div class="n">'+(done.length?fmin(repMin):'—')+'</div><div class="l">Prom. reparación</div></div>'+
+      '<div class="statile"><div class="n">'+(respMin?fmin(respMin):'—')+'</div><div class="l">Prom. respuesta</div></div>'+
+    '</div><div class="note" style="margin-top:6px">Estos números se calculan solos con las horas reales de cada pedido.</div></div>';
+    if(!hist.length) h+='<div class="card"><div class="note">Aún no hay pedidos cerrados.</div></div>';
+    hist.slice(0,30).forEach(function(p){ h+=pedCardAdmin(p,true); });
+  }
+  else { h+=pedMaqBlock(); }
+  $('s-pedidos').innerHTML=h; show('pedidos');
+}
+function pedCardAdmin(p, cerrado){
+  var quien=esc(niceName(p.nombre||''))+' · Nº '+esc(p.clave||(''+p.emp));
+  var h='<div class="card'+((p.paroMaquina&&!cerrado)?'" style="border-color:color-mix(in srgb,var(--bad) 45%,transparent)':'')+'">'+
+    '<div class="line"><b>#'+p.folio+' · '+esc(p.maquina||'')+'</b>'+pedEstTag(p.estado)+'</div>'+
+    (p.paroMaquina?'<div class="note" style="color:var(--bad);margin-top:2px">⛔ Máquina parada'+(cerrado?'':' — atender primero')+'</div>':'')+
+    '<p style="margin:6px 0 0;line-height:1.5;color:var(--mut)">'+esc(p.solicitado||'')+(p.descr?' — '+esc(p.descr):'')+'</p>'+
+    '<div class="note" style="margin-top:5px">'+esc(p.depto||'')+' · '+pedTipoL(p.tipo)+(p.piezaNueva?' · pieza: '+esc(p.pieza||'por definir'):'')+'</div>'+
+    '<div class="note" style="margin-top:2px">Pidió: '+quien+' · '+buzTime(p.tsSol)+(p.asig?' · Asignado a: <b>'+esc(niceName(p.asig.nombre||''))+'</b>':'')+(p.nota?' · '+esc(p.nota):'')+'</div>';
+  var btns='';
+  if(!cerrado){
+    if(_pedAsig===p.id){
+      var team=pedTeam();
+      h+='<div class="note" style="margin:10px 0 4px"><b>¿Quién va?</b></div><div style="display:flex;flex-direction:column;gap:6px">'+
+        (team.length? team.map(function(t){ return '<button class="btn ghost" style="margin:0;text-align:left" onclick="pedAsignar(\''+jsAttr(p.id)+'\','+(+t.n)+')">'+esc(niceName(t.nombre||('Nº '+t.n)))+' · Nº '+t.n+(t.registrado===false?' <span class="note">(sin registrar)</span>':'')+'</button>'; }).join('') : '<div class="note">Tu equipo aparecerá aquí cuando se registre en la app.</div>')+
+        '</div><button class="btn ghost" style="margin-top:8px;width:auto;padding:8px 14px" onclick="_pedAsig=null;renderPedidos()">Cancelar</button>';
+    } else {
+      if(p.estado==='nuevo'||p.estado==='asignado') btns+='<button class="btn" style="margin:0;width:auto;padding:10px 14px" onclick="_pedAsig=\''+jsAttr(p.id)+'\';renderPedidos()">'+(p.asig?'Reasignar':'Asignar técnico')+'</button>';
+      if(p.estado==='reparando'||p.estado==='asignado') btns+='<button class="btn ghost" style="margin:0;width:auto;padding:10px 14px" onclick="pedTerminar(\''+jsAttr(p.id)+'\')">✓ Terminado</button>';
+      if(p.estado==='terminado') btns+='<button class="btn" style="margin:0;width:auto;padding:10px 14px" onclick="pedEstado(\''+jsAttr(p.id)+'\',\'revisado\')">✓ Revisado</button>';
+      if(['nuevo','asignado','reparando'].indexOf(p.estado)>-1) btns+='<button class="btn ghost" style="margin:0;width:auto;padding:10px 14px" onclick="pedCancelar(\''+jsAttr(p.id)+'\')">Cancelar</button>';
+    }
+  }
+  if(p.pdf) btns+='<button class="btn ghost" style="margin:0;width:auto;padding:10px 14px" onclick="pedOpen(\''+jsAttr(p.id)+'\')">Ver orden (PDF)</button>';
+  if(btns) h+='<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'+btns+'</div>';
+  return h+'</div>';
+}
+function pedCancelar(id){
+  var p=pedsGet().filter(function(x){ return x && x.id===id; })[0]||{};
+  if(!confirm('¿Cancelar el pedido #'+(p.folio||'')+'? No se puede reabrir.')) return;
+  var nota=prompt('¿Por qué se cancela? (opcional)'); if(nota===null) return;   // Cancelar en el prompt = no cancelar
+  pedEstado(id,'cancelado',nota||'');
+}
+function pedAsignar(id, n){
+  _pedAsig=null;
+  if(!V3_ON){ // demo local
+    var a=lsGet('hb_pedidos'), t=pedTeam().filter(function(x){ return +x.n===+n; })[0]||{n:n,nombre:'Nº '+n};
+    a.forEach(function(p){ if(p && p.id===id){ p.estado='asignado'; p.tsAsig=Date.now(); p.asig={n:+n,nombre:t.nombre,clave:''+n}; } });
+    lsSet('hb_pedidos',a); flash('✓ Asignado a '+niceName(t.nombre||('Nº '+n))); _pedRerender(); return;
+  }
+  if(!sbReady()){ flash('Sin conexión: no se pudo asignar'); return; }
+  SB.rpc('hb_pedido_asignar',{p_id:id,p_n:+n}).then(function(r){
+    var d=r&&r.data;
+    if(r.error||!d||!d.ok){ flash((d&&d.error==='estado')?'Ese pedido ya no se puede asignar':(_rpcSinRed(r.error)?'Sin conexión: no se pudo asignar':(_rpcFaltante(r.error)?'La función se está activando, intenta en un momento':'No se pudo asignar'))); pedsLoad(_pedRerender); return; }
+    flash('✓ Asignado a '+niceName(d.nombre||'')); pedsLoad(_pedRerender);
+  }, function(){ flash('Sin conexión: no se pudo asignar'); });
+}
+function pedEstado(id, estado, nota){
+  if(!V3_ON){ // demo local
+    var a=lsGet('hb_pedidos'), now=Date.now();
+    a.forEach(function(p){ if(p && p.id===id){
+      p.estado=estado;
+      if(estado==='reparando'){ p.tsIni=now; }
+      if(estado==='terminado'){ p.tsFin=now; if(!p.tsIni)p.tsIni=now; if(nota)p.nota=nota; }
+      if(estado==='revisado'){ p.tsRev=now; }
+      if(estado==='cancelado'){ p.tsCan=now; if(nota)p.nota=nota; }
+    } });
+    lsSet('hb_pedidos',a); flash('✓ Listo'); _pedRerender(); return;
+  }
+  if(!sbReady()){ flash('Sin conexión'); return; }
+  SB.rpc('hb_pedido_estado',{p_id:id,p_estado:estado,p_nota:nota||null}).then(function(r){
+    var d=r&&r.data;
+    if(r.error||!d||!d.ok){ flash((d&&d.error==='estado')?'Ese paso ya no aplica (se refrescó)':(_rpcSinRed(r.error)?'Sin conexión':(_rpcFaltante(r.error)?'La función se está activando, intenta en un momento':'No se pudo'))); pedsLoad(_pedRerender); return; }
+    flash('✓ Listo'); pedsLoad(_pedRerender);
+  }, function(){ flash('Sin conexión'); });
+}
+function _pedRerender(){ if(_screen==='pedidos') renderPedidos(); else if(_screen==='pedir'){ if(pedEsTecnico()) renderMisRep(); else renderPedir(); } }
+
+/* ---------- catálogo de MÁQUINAS (lo administra el responsable de mant.) ---------- */
+function pedMaqBlock(){
+  var maqs=maqsGet();
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><b style="font-size:16px">Catálogo de máquinas</b>'+
+    '<div class="note" style="margin-top:3px">Es el desplegable que ve el trabajador al pedir una reparación. Tenlo al día: así las métricas salen por máquina.</div></div></div>'+
+    '<div id="maqRows">'+
+    maqs.map(function(m,i){ return _maqRow(m,i); }).join('')+
+    '</div><button class="btn ghost" style="margin-top:10px;width:auto;padding:9px 14px" onclick="maqAdd()">+ Agregar máquina</button>'+
+    '<button class="btn" style="margin-top:10px" onclick="maqSave()">Guardar catálogo</button>'+
+    '<div class="note" style="margin-top:8px">Para quitar una, deja su nombre vacío y guarda.</div></div>';
+  return h;
+}
+function _maqRow(m,i){
+  return '<div class="maqrow" style="display:flex;gap:6px;margin-top:8px">'+
+    '<input class="fin maq-n" style="flex:1.4;margin:0" maxlength="120" placeholder="Máquina (ej. Banbury 1)" value="'+escA(m.nombre||'')+'" data-id="'+escA(m.id||'')+'">'+
+    '<input class="fin maq-d" style="flex:1;margin:0" maxlength="80" placeholder="Departamento" value="'+escA(m.depto||'')+'"></div>';
+}
+function maqAdd(){
+  var box=$('maqRows'); if(!box) return;
+  var div=document.createElement('div'); div.innerHTML=_maqRow({nombre:'',depto:(S&&S.area)||''},99);
+  box.appendChild(div.firstChild);
+}
+function maqSave(){
+  var box=$('maqRows'); if(!box) return;
+  var rows=box.querySelectorAll('.maqrow'), out=[];
+  rows.forEach?rows.forEach(harvest):Array.prototype.forEach.call(rows,harvest);
+  function harvest(r){
+    var n=(r.querySelector('.maq-n')||{}).value||'', d=(r.querySelector('.maq-d')||{}).value||'', id=(r.querySelector('.maq-n')||{getAttribute:function(){return '';}}).getAttribute('data-id')||'';
+    n=n.trim(); d=d.trim();
+    if(n){ var row={ id: id||('mq'+Date.now()+Math.floor(Math.random()*1000)), nombre:n.slice(0,120), depto:d.slice(0,80) }; if(location.hash==='#demo') row.demo=true; out.push(row); }
+  }
+  if(!V3_ON){ lsSet('hb_maquinas', out); flash('✓ Catálogo guardado'); renderPedidos(); return; }
+  if(!pedV3()){ flash('La función se está activando, intenta en un momento'); return; }
+  if(!sbReady()){ flash('Sin conexión'); return; }
+  var prev=maqsGet(), prevIds={}, outIds={};
+  prev.forEach(function(m){ if(m.id) prevIds[m.id]=1; });
+  out.forEach(function(m){ outIds[m.id]=1; });
+  var borrar=Object.keys(prevIds).filter(function(id){ return !outIds[id]; });
+  var filas=out.map(function(m){ return { id:m.id, data:m, ts:Date.now() }; });
+  var fin=function(err){ if(err){ flash('No se pudo guardar'+(err.message?' ('+err.message+')':'')); return; } DBC.maqs=out; flash('✓ Catálogo guardado'); maqsLoad(); renderPedidos(); };
+  var next=function(){ if(!borrar.length){ fin(); return; } SB.from('maquinas').delete().in('id',borrar).then(function(r){ fin(r.error); }, function(){ fin({message:'sin conexión'}); }); };
+  if(filas.length){ SB.from('maquinas').upsert(filas).then(function(r){ if(r.error){ fin(r.error); return; } next(); }, function(){ fin({message:'sin conexión'}); }); }
+  else next();
 }
 
 /* ===== #7 HORARIOS Y HORAS TRABAJADAS (tablero RRHH) · datos de ejemplo =====
@@ -7300,6 +7886,12 @@ function _sbRerenderNow(){ try{
   else if(_screen==='cal'){ if(!_sectionBusy('s-cal')) renderCal(); }
   else if(_screen==='wconvs') renderWConvs();
   else if(_screen==='docs'){ if(!_sectionBusy('s-docs') && !(($('docFile')||{}).files||[]).length) renderDocs(); }
+  // Pedidos (inbox de mantenimiento): en vivo, pero sin pisar la nota/búsqueda a media
+  // captura NI el editor del catálogo de máquinas (sus filas viven solo en el DOM).
+  else if(_screen==='pedidos'){ if(!_sectionBusy('s-pedidos') && !_pedAsig && _pedTab!=='maq') renderPedidos(); }
+  // s-pedir: el técnico (Tus reparaciones) SÍ se repinta en vivo (no tiene formulario, solo
+  // botones) para que vea al instante lo que Zeus le asigna; el formulario del trabajador NO.
+  else if(_screen==='pedir'){ if(typeof pedEsTecnico==='function' && pedEsTecnico()) renderMisRep(); }
   if(typeof updateMsgBadge==='function') updateMsgBadge();
 }catch(e){} }
 /* ¿el usuario está escribiendo dentro de esta sección? (evita que un repintado en
@@ -7323,6 +7915,7 @@ function sbInit(){
   sbLoad('reports');
   kvInit();
   if(V3_ON) recsInit();   // recibos de nómina reales (si el parche v3_4 no está corrido, falla en silencio y todo cae al flujo demo)
+  if(V3_ON) pedInit();    // pedidos de mantenimiento (v3_8); sin el parche cae al flujo demo local
 }
 function lsArr(k){ try{ return JSON.parse(localStorage.getItem(k)||'[]')||[]; }catch(e){ return []; }
 }
@@ -7332,7 +7925,7 @@ function lsArr(k){ try{ return JSON.parse(localStorage.getItem(k)||'[]')||[]; }c
    preguntas del Asistente (alertas), NOM-035, Permanencia, lectura y minutos
    de estudio. Espejo en localStorage → si no hay internet, la app sigue.
    ============================================================================ */
-var KV_SKIP={hb_msgs:1,hb_news:1,hb_reports:1,hb_pages:1,hb_docs:1,hb_key:1,hb_model:1,hb_recs:1,hb_pinlock:1}; // tabla propia o solo-local
+var KV_SKIP={hb_msgs:1,hb_news:1,hb_reports:1,hb_pages:1,hb_docs:1,hb_key:1,hb_model:1,hb_recs:1,hb_pinlock:1,hb_pedidos:1,hb_maquinas:1}; // tabla propia o solo-local
 /* Compartidas que alguna vez tuvieron seed demo: JAMÁS subirlas en bulk (kvSeed) —
    solo las escriben sus flujos legítimos (admin publica comedor/aviso/encuesta, y
    hb_qstats solo por RPC v3_3). Evita que un dispositivo viejo re-suba demo al server. */
@@ -7455,6 +8048,15 @@ function hbLimpiaSeeds(){
     var dx=lee('hb_directorio');
     var SEED_DIR=[{dep:'Recursos Humanos',who:'Dulce',ext:'110'},{dep:'Enfermería / Primeros auxilios',who:'',ext:'115'},{dep:'Caseta de vigilancia',who:'',ext:'101'},{dep:'Mantenimiento',who:'Zeus',ext:'130'},{dep:'Calidad',who:'',ext:'140'}];
     if(JSON.stringify(dx)===JSON.stringify(SEED_DIR)) quita('hb_directorio');
+    // (V3.11) pedidos de mantenimiento + catálogo demo: se retiran las semillas (ids
+    // cortos pd1..pd9 / mq1..mq9) Y lo CREADO jugando en #demo (marcado demo:true).
+    // Lo real vive en las tablas 'pedidos'/'maquinas' del servidor — no se toca.
+    var esDemoPed=function(x){ return x && (/^pd[0-9]$/.test(''+x.id) || x.demo===true); };
+    var pd=lee('hb_pedidos');
+    if(Array.isArray(pd)){ var pd2=pd.filter(function(x){ return !esDemoPed(x); }); if(pd2.length!==pd.length){ pd2.length? pon('hb_pedidos',pd2) : quita('hb_pedidos'); } }
+    var esDemoMaq=function(x){ return x && (/^mq[0-9]$/.test(''+x.id) || x.demo===true); };
+    var mq=lee('hb_maquinas');
+    if(Array.isArray(mq)){ var mq2=mq.filter(function(x){ return !esDemoMaq(x); }); if(mq2.length!==mq.length){ mq2.length? pon('hb_maquinas',mq2) : quita('hb_maquinas'); } }
   }catch(e){}
 }
 (function init(){
@@ -7517,6 +8119,20 @@ function hbLimpiaSeeds(){
       votes:{12:0,27:1,45:0,63:0,88:2,112:0,134:1,214:0,236:0,289:1,342:0,418:0,447:1,512:0,624:0,662:2}, to:{mode:'all'}, ts:Date.now()-172800000 },
     { id:'p3', q:'¿Qué tan clara fue la última capacitación?', opts:['Muy clara','Más o menos','Confusa'],
       votes:{12:0,45:0,63:1,112:0,214:0,236:0,342:1,418:0,512:0,624:0}, to:{mode:'all'}, ts:Date.now()-259200000 }
+  ])); } }catch(e){}
+  // Pedidos de mantenimiento + catálogo de máquinas (V3.11) — solo #demo
+  try{ if(!localStorage.getItem('hb_maquinas')){ localStorage.setItem('hb_maquinas', JSON.stringify([
+    { id:'mq1', nombre:'Banbury 1', depto:'Producción' }, { id:'mq2', nombre:'Banbury 2', depto:'Producción' },
+    { id:'mq3', nombre:'Tabulador 7', depto:'Producción' }, { id:'mq4', nombre:'Tabulador 8', depto:'Producción' },
+    { id:'mq5', nombre:'Raspadora 2', depto:'Producción' }, { id:'mq6', nombre:'Prensa 4', depto:'Producción' },
+    { id:'mq7', nombre:'Autoclave 2', depto:'Producción' }, { id:'mq8', nombre:'Montacargas 3', depto:'Almacén' },
+    { id:'mq9', nombre:'Compresor 1', depto:'Maquinaria' }
+  ])); } }catch(e){}
+  try{ if(!localStorage.getItem('hb_pedidos')){ localStorage.setItem('hb_pedidos', JSON.stringify([
+    { id:'pd1', folio:30004, emp:236, clave:'0236', nombre:'HERNANDEZ GOMEZ MARIO', deptoReal:'Producción', depto:'Producción', maquina:'Banbury 1', solicitado:'No cierra la compuerta de descarga', descr:'Se queda abierta a medias y tira mezcla', causa:'', tipo:'mecanico', paroMaquina:true, paroProd:false, piezaNueva:false, pieza:'', estado:'nuevo', tsSol:Date.now()-1800000 },
+    { id:'pd2', folio:30003, emp:63, clave:'0063', nombre:'JUAREZ PEREZ ROSA', deptoReal:'Almacén', depto:'Almacén', maquina:'Montacargas 3', solicitado:'Frena tarde, revisar balatas', descr:'', causa:'Desgaste', tipo:'mecanico', paroMaquina:false, paroProd:false, piezaNueva:true, pieza:'Balatas', estado:'asignado', tsSol:Date.now()-7200000, tsAsig:Date.now()-5400000, asig:{n:700,clave:'0700',nombre:'PEREZ LOPEZ JUAN'} },
+    { id:'pd3', folio:30002, emp:289, clave:'0289', nombre:'SOTO DIAZ PEDRO', deptoReal:'Producción', depto:'Producción', maquina:'Tabulador 7', solicitado:'Voltear puntas #1 y #3', descr:'Se voltean cardas', causa:'Por desgaste de trabajo', tipo:'mecanico', paroMaquina:false, paroProd:false, piezaNueva:false, pieza:'', estado:'reparando', tsSol:Date.now()-86400000, tsAsig:Date.now()-82800000, tsIni:Date.now()-3600000, asig:{n:700,clave:'0700',nombre:'PEREZ LOPEZ JUAN'} },
+    { id:'pd4', folio:30001, emp:112, clave:'0112', nombre:'RAMOS VEGA LUISA', deptoReal:'Calidad', depto:'Calidad', maquina:'Prensa 4', solicitado:'Fuga de aceite en la base', descr:'', causa:'Empaque vencido', tipo:'hidraulico', paroMaquina:false, paroProd:false, piezaNueva:true, pieza:'Empaque', estado:'terminado', tsSol:Date.now()-3*86400000, tsAsig:Date.now()-3*86400000+3600000, tsIni:Date.now()-3*86400000+7200000, tsFin:Date.now()-3*86400000+13500000, asig:{n:662,clave:'0662',nombre:'GOMEZ RIOS LUIS'}, nota:'Se cambió el empaque' }
   ])); } }catch(e){}
   try{ if(!localStorage.getItem('hb_msgs')){ localStorage.setItem('hb_msgs', JSON.stringify([
     { id:'m1', conv:'g:produccion', from:72, text:'Equipo, ¿alguien tiene el dato de presión para el molde 3?', img:'', ts:Date.now()-7200000 },

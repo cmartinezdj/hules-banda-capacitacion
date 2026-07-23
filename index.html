@@ -2643,91 +2643,245 @@ var MESES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','di
 var MESL=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 function calendarBlock(){
   var d=new Date(), y=d.getFullYear(), m=d.getMonth(), today=d.getDate();
-  var evs=evGet();   // SOLO eventos reales (los demo hardcodeados se retiraron: ya todo se edita en el calendario)
-  var byDay={}; evs.forEach(function(e){ var p=(e.d||'').split('-'); if(+p[0]===y && (+p[1]-1)===m) byDay[+p[2]]=(byDay[+p[2]]||[]).concat(e); });
+  var evs=evVisibles();   // lo que este usuario puede ver: personales + su área + general
+  var byDay={}; evs.forEach(function(e){ var p=(e.fecha||'').split('-'); if(+p[0]===y && (+p[1]-1)===m) byDay[+p[2]]=(byDay[+p[2]]||[]).concat(e); });
   var first=new Date(y,m,1).getDay(), dim=new Date(y,m+1,0).getDate();
   var h='<div class="cal"><div class="cah"><b>'+MESL[m]+' '+y+'</b></div><div class="calg">';
   ['D','L','M','M','J','V','S'].forEach(function(w){ h+='<div class="wd">'+w+'</div>'; });
   for(var i=0;i<first;i++) h+='<div class="dc mut"></div>';
   for(var dd=1;dd<=dim;dd++){ var cls='dc'+(dd===today?' today':(byDay[dd]?' has':'')); h+='<div class="'+cls+'">'+dd+(byDay[dd]?'<span class="ev"></span>':'')+'</div>'; }
   h+='</div>';
-  var up=evs.filter(function(e){ var p=(e.d||'').split('-'); var ed=new Date(+p[0],+p[1]-1,+p[2]); return ed>=new Date(y,m,today); })
-           .sort(function(a,b){ return a.d<b.d?-1:1; }).slice(0,5);
-  if(up.length){ h+='<div style="margin-top:14px">'; up.forEach(function(e){ var p=e.d.split('-'); h+='<div class="evrow"><span class="dt"><span class="d">'+(+p[2])+'</span><span class="m">'+MESES[+p[1]-1]+'</span></span><span class="et"><b>'+esc(e.t)+'</b><span>'+fmtDate(e.d)+'</span></span>'+speakBtn(e.t+'. '+fmtDate(e.d))+'</div>'; }); h+='</div>'; }
+  var up=evs.filter(function(e){ var p=(e.fecha||'').split('-'); var ed=new Date(+p[0],+p[1]-1,+p[2]); return ed>=new Date(y,m,today); })
+           .sort(function(a,b){ return (a.fecha||'')<(b.fecha||'')?-1:1; }).slice(0,5);
+  if(up.length){ h+='<div style="margin-top:14px">'; up.forEach(function(e){ var p=(e.fecha||'').split('-'); h+='<div class="evrow"><span class="dt"><span class="d">'+(+p[2])+'</span><span class="m">'+MESES[+p[1]-1]+'</span></span><span class="et"><b>'+esc(e.titulo||'')+'</b><span>'+fmtDate(e.fecha)+'</span></span>'+speakBtn((e.titulo||'')+'. '+fmtDate(e.fecha))+'</div>'; }); h+='</div>'; }
   h+='<button class="btn ghost w" style="margin-top:12px" onclick="openCal()">'+(S&&S.admin?'Abrir calendario · editar eventos ›':'Ver calendario completo ›')+'</button>';
   return h+'</div>';
 }
-/* ===== PANTALLA CALENDARIO — pantalla propia; los dashboards AGREGAN / MODIFICAN /
-   QUITAN cualquier evento. Vive en la kv compartida 'hb_events': kvSet la sube al
-   servidor y el canal realtime la repinta en TODAS las cuentas al instante. ===== */
-var _calOff=0, _evEdit=null;
-function openCal(){ _calOff=0; _evEdit=null; renderCal(); }   // entra siempre al mes actual, sin edición pendiente
+/* ===== CALENDARIO de 3 CAPAS (V3.12) — Personal · Mi área · General =====
+   Tabla por-fila 'eventos' (RLS). La cuadrícula es la misma; el toggle cambia
+   la capa (como cambiar de calendario). Personal con INVITACIONES estilo Google
+   Calendar (aceptar/rechazar; al aceptar aparece en el de ambos). Los eventos de
+   ÁREA los publica el responsable; los GENERALES, acceso total/RRHH. Sin correr
+   v3_9 cae a demo local ('hb_eventos'). Reemplaza al viejo 'hb_events' (deuda kv). ===== */
+var _calOff=0, _evEdit=null, _calLayer=null, _calDay=null, _evInv=[], _evTry=0;
+function evV3(){ return !!(V3_ON && S && Array.isArray(DBC.eventos)); }
+function evGet(){ return evV3()? (DBC.eventos||[]) : lsGet('hb_eventos'); }
+function evLoad(cb){
+  if(!sbReady()){ if(cb)cb(); return; }
+  try{ SB.from('eventos').select('data').order('ts',{ascending:true}).then(function(r){
+    if(!r.error && r.data){ _evTry=0; DBC.eventos=r.data.map(function(x){return x.data;}); evNotifyCheck(); sbRerender(); if(cb)cb(); }
+    else if(r.error && _evTry<4 && !_recTablaFalta(r.error)){ _evTry++; setTimeout(evLoad, Math.min(20000,2000*_evTry)); if(cb)cb(); }
+    else if(cb)cb();
+  }); }catch(e){ if(cb)cb(); }
+}
+function evInit(){
+  if(window._evInited || !sbReady()) return; window._evInited=true;
+  evLoad();
+  try{ SB.channel('rt-eventos').on('postgres_changes',{event:'*',schema:'public',table:'eventos'},function(){ evLoad(); }).subscribe(); }catch(e){}
+}
+/* invitaciones pendientes para MÍ (para el puntito y el aviso) */
+function evInvitPend(){ var me=S?S.emp:-1; return evGet().filter(function(e){ return e && e.scope==='personal' && (e.invites||[]).some(function(i){ return +i.n===me && i.status==='pendiente'; }); }); }
+function evNotifyCheck(){
+  try{ if(!S) return;
+    var ids=evInvitPend().map(function(e){return e.id;}).sort().join(','), prev=window._evInvPrev;
+    if(prev===undefined){ window._evInvPrev=ids; return; }
+    if(ids!==prev){ var nid=ids.split(',').filter(function(x){ return x && prev.indexOf(x)<0; })[0];
+      if(nid){ var e=evGet().filter(function(x){return x.id===nid;})[0]; if(e) flash('📅 Te invitaron: '+e.titulo); } }
+    window._evInvPrev=ids;
+  }catch(e){}
+}
+
+/* ---------- roles / capas ---------- */
+function calDash(){ return !!(S && (S.admin||S.mando||S.dash)); }
+function calLayers(){ var L=[['personal','Personal']]; if(S&&S.area) L.push(['area','Mi área']); L.push(['general','General']); return L; }
+function calCanCreate(layer){
+  if(layer==='personal') return calDash();                                   // dashboard: crea personales
+  if(layer==='area')     return !!(S && (S.admin||S.mando||S.dash) && S.area); // resp/admin (el servidor valida el área)
+  if(layer==='general')  return docIsTotal();                                // acceso total / RRHH (NO un responsable con admin=true del demo)
+  return false;
+}
+function evForLayer(layer){
+  var me=S?S.emp:-1, mySlug=deptoSlug(S?S.area:'');
+  return evGet().filter(function(e){
+    if(!e) return false;
+    if(layer==='personal') return e.scope==='personal' && (e.owner===me || (e.invites||[]).some(function(i){return +i.n===me;}));
+    if(layer==='area')     return e.scope==='area' && (e.area===mySlug || (S&&S.admin));
+    if(layer==='general')  return e.scope==='general';
+    return false;
+  });
+}
+/* todos los eventos visibles (para el mini-calendario de Noticias y avisos) */
+function evVisibles(){ return evForLayer('personal').concat(evForLayer('area')).concat(evForLayer('general')); }
+
+/* ---------- navegación pantalla ---------- */
+function openCal(){ _calOff=0; _evEdit=null; _calDay=null; _calLayer=null; _evInv=[]; renderCal(); }
 function calNav(d){ _calOff+=d; renderCal(); }
-function calEdit(id){ _evEdit=id; renderCal(); var t=$('calTitle'); if(t) t.focus(); }
-function calDel(id){
-  if(!S||!S.admin){ flash('Solo los tableros de administración editan el calendario'); return; }
-  var e=null; evGet().forEach(function(x){ if(x.id===id) e=x; });
-  if(!confirm('¿Quitar el evento'+(e?' «'+e.t+'»':'')+' del calendario de toda la planta?')) return;
-  lsSet('hb_events', evGet().filter(function(x){ return x.id!==id; }));
-  if(_evEdit===id) _evEdit=null;
-  flash('Evento quitado'); renderCal();
-}
-function calSave(){
-  if(!S||!S.admin){ flash('Solo los tableros de administración editan el calendario'); return; }   // defensa (el servidor también lo exige)
-  var t=(($('calTitle')||{}).value||'').trim(), d=(($('calDate')||{}).value||'').trim();
-  if(!t||!d){ flash('Escribe el evento y elige la fecha'); return; }
-  var a=evGet().slice();
-  if(_evEdit){
-    if(!a.some(function(e){ return e.id===_evEdit; })){   // otro tablero lo borró mientras editabas
-      flash('Ese evento ya fue quitado por otro tablero. Lo agrego como nuevo.'); _evEdit=null;
-      a.push({ id:'e'+Date.now(), t:t, d:d, ts:Date.now() });
-    } else {
-      a=a.map(function(e){ return e.id===_evEdit?{id:e.id,t:t,d:d,ts:Date.now()}:e; }); _evEdit=null;
-      flash('✓ Evento actualizado en todas las cuentas');
-    }
+function calLayerGo(l){ _calLayer=l; _evEdit=null; _calDay=null; _evInv=[]; renderCal(); window.scrollTo(0,0); }
+function calEdit(id){ _evEdit=id; var e=evGet().filter(function(x){return x.id===id;})[0]; if(e){ _calLayer=e.scope; _evInv=(e.invites||[]).map(function(i){return {n:+i.n,nombre:i.nombre};}); } renderCal(); var t=$('evTitle2'); if(t) t.focus(); }
+
+function evEstadoTag(st){ var m={aceptado:['Aceptó','var(--ok)'],rechazado:['No irá','var(--bad)'],pendiente:['Pendiente','var(--mut)']}[st]||['',''];
+  return m[0]?'<span class="chipst" style="border-color:color-mix(in srgb,'+m[1]+' 45%,transparent);color:'+m[1]+'">'+m[0]+'</span>':''; }
+
+function evRow(e){
+  var me=S?S.emp:-1, p=(e.fecha||'').split('-');
+  var soyDueno=(e.owner===me), soyInv=(e.invites||[]).some(function(i){return +i.n===me;});
+  var puedeGestion = (e.scope==='personal') ? soyDueno : calCanCreate(e.scope);
+  var sub=fmtDate(e.fecha)+(e.hora?' · '+e.hora:'')+(e.lugar?' · '+esc(e.lugar):'');
+  var h='<div class="card"><div class="evrow" style="margin:0"><span class="dt"><span class="d">'+(+p[2]||'')+'</span><span class="m">'+(MESES[(+p[1]-1)]||'')+'</span></span>'+
+    '<span class="et"><b>'+esc(e.titulo||'')+'</b><span>'+sub+'</span></span>'+speakBtn((e.titulo||'')+'. '+sub)+'</div>';
+  if(e.nota) h+='<p class="note" style="margin:8px 0 0;line-height:1.5">'+esc(e.nota)+'</p>';
+  if(e.scope==='personal' && e.owner!==me) h+='<div class="note" style="margin-top:4px">Invita: '+esc(niceName(e.ownerNombre||''))+'</div>';
+  // invitado (no dueño): aceptar / rechazar
+  if(e.scope==='personal' && soyInv && !soyDueno){
+    var mi=(e.invites||[]).filter(function(i){return +i.n===me;})[0]||{};
+    h+='<div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">'+
+      '<button class="btn'+(mi.status==='aceptado'?'':' ghost')+'" style="margin:0;flex:1" onclick="evRespond(\''+jsAttr(e.id)+'\',\'aceptado\')">✓ Voy</button>'+
+      '<button class="btn'+(mi.status==='rechazado'?'':' ghost')+'" style="margin:0;flex:1" onclick="evRespond(\''+jsAttr(e.id)+'\',\'rechazado\')">No puedo</button></div>';
   }
-  else { a.push({ id:'e'+Date.now(), t:t, d:d, ts:Date.now() }); flash('✓ Evento agregado al calendario'); }
-  lsSet('hb_events', a);
-  renderCal();
+  // dueño de personal: lista de invitados con su estado
+  if(e.scope==='personal' && soyDueno && (e.invites||[]).length){
+    h+='<div class="note" style="margin-top:9px">Invitados:</div><div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">'+
+      (e.invites||[]).map(function(i){ return '<div class="line" style="border:none;padding:0"><span class="note">'+esc(niceName(i.nombre||('Nº '+i.n)))+'</span>'+evEstadoTag(i.status)+'</div>'; }).join('')+'</div>';
+  }
+  if(puedeGestion) h+='<div style="display:flex;gap:7px;margin-top:10px"><button class="btn ghost" style="margin:0;flex:1;padding:8px;font-size:12.5px" onclick="calEdit(\''+jsAttr(e.id)+'\')">Modificar</button><button class="btn ghost" style="margin:0;flex:1;padding:8px;font-size:12.5px;color:var(--bad)" onclick="evDel(\''+jsAttr(e.id)+'\')">Quitar</button></div>';
+  return h+'</div>';
 }
-function calRow(e){
-  var p=(e.d||'').split('-');
-  return '<div class="card"><div class="evrow" style="margin:0"><span class="dt"><span class="d">'+(+p[2])+'</span><span class="m">'+MESES[(+p[1]-1)]+'</span></span>'+
-    '<span class="et"><b>'+esc(e.t)+'</b><span>'+fmtDate(e.d)+'</span></span>'+speakBtn(e.t+'. '+fmtDate(e.d))+'</div>'+
-    (S.admin?'<div style="display:flex;gap:7px;margin-top:9px"><button class="btn ghost" style="margin:0;flex:1;padding:8px;font-size:12.5px" onclick="calEdit(\''+e.id+'\')">Modificar</button><button class="btn ghost" style="margin:0;flex:1;padding:8px;font-size:12.5px;color:var(--bad)" onclick="calDel(\''+e.id+'\')">Quitar</button></div>':'')+'</div>';
-}
+
 function renderCal(){
+  if(sbReady() && Date.now()-(window._lastLoadEv||0)>4000){ window._lastLoadEv=Date.now(); evLoad(); }
+  var layers=calLayers();
+  if(!_calLayer || !layers.some(function(l){return l[0]===_calLayer;})) _calLayer = calDash()? 'personal' : (S&&S.area?'area':'general');
   var base=new Date(); base.setDate(1); base.setMonth(base.getMonth()+_calOff);
   var y=base.getFullYear(), m=base.getMonth();
   var now=new Date(), ty=now.getFullYear(), tm=now.getMonth(), td=now.getDate();
-  var evs=evGet().slice().sort(function(a,b){ return a.d<b.d?-1:1; });
-  var byDay={}; evs.forEach(function(e){ var p=(e.d||'').split('-'); if(+p[0]===y&&(+p[1]-1)===m) byDay[+p[2]]=(byDay[+p[2]]||[]).concat(e); });
+  var evs=evForLayer(_calLayer).slice().sort(function(a,b){ return (a.fecha||'')<(b.fecha||'')?-1:1; });
+  var byDay={}; evs.forEach(function(e){ var p=(e.fecha||'').split('-'); if(+p[0]===y&&(+p[1]-1)===m) byDay[+p[2]]=(byDay[+p[2]]||[]).concat(e); });
   var first=new Date(y,m,1).getDay(), dim=new Date(y,m+1,0).getDate();
-  var h='';
-  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Noticias</div><b style="font-size:20px">Calendario</b><p class="note" style="margin:4px 0 0;max-width:250px">'+(S.admin?'Agrega, modifica o quita eventos a tu gusto. Se actualiza al instante en todas las cuentas.':'Los eventos importantes de la planta.')+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
+  var pendN=evInvitPend().length;
+  var subT={personal:'Tus eventos y tus invitaciones.',area:'Los eventos de tu área ('+esc(S?S.area:'')+').',general:'Los eventos de toda la planta.'}[_calLayer];
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Calendario</div><b style="font-size:20px">Calendario</b><p class="note" style="margin:4px 0 0;max-width:260px">'+subT+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
+  // toggle de capas
+  h+='<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">'+layers.map(function(l){
+    var badge=(l[0]==='personal'&&pendN)?' <span class="cnt" style="position:static;margin-left:5px">'+pendN+'</span>':'';
+    return '<button class="btn'+(_calLayer===l[0]?'':' ghost')+'" style="margin:0;padding:9px 14px;font-size:13px;width:auto" onclick="calLayerGo(\''+l[0]+'\')">'+l[1]+badge+'</button>';
+  }).join('')+'</div>';
+  // cuadrícula (estática)
   h+='<div class="panel"><div class="line" style="border:none;padding:0 0 8px"><button class="back" style="padding:6px 12px" onclick="calNav(-1)" aria-label="Mes anterior">‹</button><b style="flex:1;text-align:center;font-size:15px">'+MESL[m]+' '+y+'</b><button class="back" style="padding:6px 12px" onclick="calNav(1)" aria-label="Mes siguiente">›</button></div>'+
      '<div class="cal" style="padding:0;border:none;background:transparent"><div class="calg">';
   ['D','L','M','M','J','V','S'].forEach(function(w){ h+='<div class="wd">'+w+'</div>'; });
   for(var i=0;i<first;i++) h+='<div class="dc mut"></div>';
   for(var dd=1;dd<=dim;dd++){ var cls='dc'+((dd===td&&y===ty&&m===tm)?' today':(byDay[dd]?' has':'')); h+='<div class="'+cls+'">'+dd+(byDay[dd]?'<span class="ev"></span>':'')+'</div>'; }
   h+='</div></div></div>';
-  if(S.admin){
-    var ed=null; if(_evEdit){ evs.forEach(function(e){ if(e.id===_evEdit) ed=e; }); if(!ed) _evEdit=null; }
-    h+='<div class="panel"><div class="hd"><b>'+(ed?'Modificar evento':'Agregar evento')+'</b>'+(ed?'<button class="back" style="padding:6px 10px" onclick="_evEdit=null;renderCal()">Cancelar</button>':'')+'</div>'+
-       '<input id="calTitle" class="fin" placeholder="Evento (ej. Día de pago, junta de seguridad)" autocomplete="off" value="'+(ed?escA(ed.t):'')+'" style="margin:0 0 8px">'+
-       '<input id="calDate" class="fin" type="date" value="'+(ed?escA(ed.d):'')+'">'+
-       '<button class="btn" style="margin-top:10px" onclick="calSave()">'+(ed?'Guardar cambios':'Agregar al calendario')+'</button></div>';
-  }
-  var monthEvs=evs.filter(function(e){ var p=(e.d||'').split('-'); return +p[0]===y&&(+p[1]-1)===m; });
-  h+='<div class="sec-t">Eventos de '+MESL[m]+'<span class="ln"></span></div>';
-  if(!monthEvs.length) h+='<div class="card"><div class="note">Sin eventos este mes.</div></div>';
-  monthEvs.forEach(function(e){ h+=calRow(e); });
+  // formulario (si puede crear en esta capa)
+  if(calCanCreate(_calLayer)) h+=evForm();
+  else if(_calLayer==='general') h+='<div class="note" style="margin:0 2px 10px">Los eventos generales los publica Recursos Humanos / Dirección.</div>';
+  else if(_calLayer==='area' && !calDash()) h+='<div class="note" style="margin:0 2px 10px">Los eventos de tu área los publica tu responsable.</div>';
+  // eventos del mes + próximos
+  var monthEvs=evs.filter(function(e){ var p=(e.fecha||'').split('-'); return +p[0]===y&&(+p[1]-1)===m; });
+  h+='<div class="sec-t">'+({personal:'Personal',area:'De tu área',general:'De la planta'}[_calLayer])+' · '+MESL[m]+'<span class="ln"></span></div>';
+  if(!monthEvs.length) h+='<div class="card"><div class="note">Sin eventos este mes en esta vista.</div></div>';
+  monthEvs.forEach(function(e){ h+=evRow(e); });
   var todayIso=ty+'-'+('0'+(tm+1)).slice(-2)+'-'+('0'+td).slice(-2);
-  var futuros=evs.filter(function(e){ return (e.d||'')>=todayIso; });
-  h+='<div class="sec-t">Todos los próximos<span class="ln"></span></div>';
-  if(!futuros.length) h+='<div class="card"><div class="note">No hay eventos próximos. '+(S.admin?'Agrega el primero arriba.':'')+'</div></div>';
-  futuros.forEach(function(e){ h+=calRow(e); });
+  var futuros=evs.filter(function(e){ return (e.fecha||'')>=todayIso; });
+  h+='<div class="sec-t">Próximos<span class="ln"></span></div>';
+  if(!futuros.length) h+='<div class="card"><div class="note">No hay próximos eventos aquí.</div></div>';
+  futuros.forEach(function(e){ h+=evRow(e); });
   $('s-cal').innerHTML=h; show('cal');
+  var t=$('evTitle2'); if(_evEdit && t) t.focus();
+}
+
+/* ¿el usuario está redactando un evento? (evita que un repintado en vivo le borre
+   el título/fecha/nota a medio escribir; los chips de invitados viven en _evInv y sí sobreviven) */
+function _evComposing(){
+  if(_evEdit) return true;
+  var ids=['evTitle2','evLugar2','evNota2','evInvSearch'];
+  for(var i=0;i<ids.length;i++){ var e=$(ids[i]); if(e && (e.value||'').trim()) return true; }
+  var d=$('evDate2'); if(d && d.value) return true;
+  return false;
+}
+/* ---------- formulario de crear/editar ---------- */
+function evForm(){
+  var ed=null; if(_evEdit){ evGet().forEach(function(e){ if(e.id===_evEdit) ed=e; }); if(!ed) _evEdit=null; }
+  var esPersonal=(_calLayer==='personal');
+  var titLbl={personal:'Nuevo evento personal',area:'Nuevo evento de tu área',general:'Nuevo evento general'}[_calLayer];
+  var h='<div class="panel"><div class="hd"><b>'+(ed?'Modificar evento':titLbl)+'</b>'+(ed?'<button class="back" style="padding:6px 10px" onclick="_evEdit=null;_evInv=[];renderCal()">Cancelar</button>':'')+'</div>'+
+    '<input id="evTitle2" class="fin" placeholder="'+(esPersonal?'Ej. Reunión con César':'Ej. Junta de seguridad, día de pago')+'" autocomplete="off" value="'+escA(ed?ed.titulo:'')+'" style="margin:0 0 8px">'+
+    '<div style="display:flex;gap:8px"><input id="evDate2" class="fin" type="date" value="'+escA(ed?ed.fecha:'')+'" style="flex:1"><input id="evHora2" class="fin" type="time" value="'+escA(ed?ed.hora:'')+'" style="flex:1"></div>'+
+    '<input id="evLugar2" class="fin" style="margin-top:8px" maxlength="140" placeholder="Lugar (opcional)" value="'+escA(ed?ed.lugar:'')+'">'+
+    '<textarea id="evNota2" class="fin" style="margin-top:8px" rows="2" maxlength="400" placeholder="Nota (opcional)">'+esc(ed?ed.nota:'')+'</textarea>';
+  // invitaciones (solo personal, y solo al CREAR o si eres dueño)
+  if(esPersonal){
+    h+='<div class="note" style="margin:12px 0 5px">Invitar a (opcional)</div>';
+    h+='<div id="evInvChips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">'+_evInvChips()+'</div>';
+    h+='<input id="evInvSearch" class="fin" placeholder="Escribe un nombre o número…" autocomplete="off" oninput="_evInvPaint()">';
+    h+='<div id="evInvList" style="margin-top:6px"></div>';
+  }
+  h+='<button class="btn" style="margin-top:12px" onclick="evSave()">'+(ed?'Guardar cambios':'Agregar al calendario')+'</button></div>';
+  return h;
+}
+function _evInvChips(){ return _evInv.map(function(p){ return '<span class="chip2" style="pointer-events:auto">'+esc(niceName(p.nombre||('Nº '+p.n)))+' <b style="cursor:pointer;color:var(--bad)" onclick="_evInvDel('+(+p.n)+')">✕</b></span>'; }).join('') || '<span class="note">Nadie aún</span>'; }
+function _evInvDel(n){ _evInv=_evInv.filter(function(p){return +p.n!==+n;}); var c=$('evInvChips'); if(c) c.innerHTML=_evInvChips(); }
+function _evInvPaint(){
+  var term=(($('evInvSearch')||{}).value||''), box=$('evInvList'); if(!box) return;
+  if(!term.trim()){ box.innerHTML=''; return; }
+  var q=_norm(term), digits=term.replace(/\D/g,''), me=S?S.emp:-1, added={};
+  _evInv.forEach(function(p){ added[+p.n]=1; });
+  var hits=dirPeople().filter(function(p){ return +p.id!==me && !added[+p.id] && (_norm(p.name).indexOf(q)>=0 || (''+p.id).padStart(3,'0').indexOf(digits)>=0); }).slice(0,8);
+  box.innerHTML = hits.length? hits.map(function(p){ return '<button class="btn ghost" style="margin:0 0 6px;text-align:left;width:100%" onclick="_evInvAdd('+(+p.id)+')">'+esc(niceName(p.name||('Nº '+p.id)))+' · Nº '+p.id+'</button>'; }).join('') : '<div class="note">Sin coincidencias</div>';
+}
+function _evInvAdd(n){ var p=dirPeople().filter(function(x){return +x.id===+n;})[0]; if(!p) return;
+  _evInv.push({n:+n,nombre:p.name}); var c=$('evInvChips'); if(c) c.innerHTML=_evInvChips();
+  var s=$('evInvSearch'); if(s){ s.value=''; } var l=$('evInvList'); if(l) l.innerHTML=''; }
+
+function evSave(){
+  var t=(($('evTitle2')||{}).value||'').trim(), d=(($('evDate2')||{}).value||'').trim();
+  if(!t){ flash('Escribe el evento'); return; }
+  if(!d){ flash('Elige la fecha'); return; }
+  var datos={ scope:_calLayer, titulo:t, fecha:d, hora:(($('evHora2')||{}).value||'').trim(),
+    lugar:(($('evLugar2')||{}).value||'').trim(), nota:(($('evNota2')||{}).value||'').trim() };
+  if(_calLayer==='personal') datos.invites=_evInv.map(function(p){return +p.n;});
+  // ---- DEMO ----
+  if(!V3_ON){
+    var a=lsGet('hb_eventos'), me=S.emp;
+    if(_evEdit){ a=a.map(function(e){ return e.id===_evEdit? Object.assign({},e,{titulo:t,fecha:d,hora:datos.hora,lugar:datos.lugar,nota:datos.nota,ts:Date.now()}) : e; }); flash('✓ Evento actualizado'); }
+    else { var inv=(_calLayer==='personal'? _evInv.map(function(p){return {n:+p.n,clave:''+p.n,nombre:p.nombre,status:'pendiente'};}):[]);
+      a.push({ id:'ev'+Date.now(), scope:_calLayer, owner:me, ownerClave:S.clave||(''+me), ownerNombre:S.nombre||('Nº '+me),
+        area:(_calLayer==='area'?deptoSlug(S.area):''), titulo:t, fecha:d, hora:datos.hora, lugar:datos.lugar, nota:datos.nota, invites:inv, ts:Date.now(), demo:(location.hash==='#demo') });
+      flash('✓ Evento agregado'); }
+    lsSet('hb_eventos',a); _evEdit=null; _evInv=[]; renderCal(); return;
+  }
+  if(!sbReady()){ flash('Sin conexión'); return; }
+  var rpc=_evEdit? SB.rpc('hb_evento_editar',{p_id:_evEdit,p:datos}) : SB.rpc('hb_evento_alta',{p:datos});
+  rpc.then(function(r){ var x=r&&r.data;
+    if(r.error||!x||!x.ok){ flash(r.error?(_rpcFaltante(r.error)?'La función se está activando, intenta en un momento':(_rpcSinRed(r.error)?'Sin conexión':'No se pudo guardar')):((x&&x.error==='no_permiso')?'No puedes publicar en esta vista':'No se pudo guardar')); return; }
+    var eid=_evEdit||(x.id), esPersonal=(_calLayer==='personal');
+    _evEdit=null; var inv=_evInv.slice(); _evInv=[];
+    var done=function(){ flash('✓ Guardado'); evLoad(function(){ if(_screen==='cal') renderCal(); }); };
+    // Sincronizar invitados (crear o editar). hb_evento_invitar es idempotente y
+    // CONSERVA el status de quien ya había respondido; solo los nuevos quedan 'pendiente'.
+    if(esPersonal && inv.length && eid){ SB.rpc('hb_evento_invitar',{p_id:eid,p_ns:inv.map(function(p){return +p.n;})}).then(done, done); }
+    else done();
+  }, function(){ flash('Sin conexión: no se pudo guardar'); });
+}
+function evDel(id){
+  var e=evGet().filter(function(x){return x.id===id;})[0]||{};
+  if(!confirm('¿Quitar «'+(e.titulo||'')+'» del calendario?')) return;
+  if(!V3_ON){ lsSet('hb_eventos', lsGet('hb_eventos').filter(function(x){return x.id!==id;})); if(_evEdit===id)_evEdit=null; flash('Evento quitado'); renderCal(); return; }
+  if(!sbReady()){ flash('Sin conexión'); return; }
+  SB.rpc('hb_evento_borrar',{p_id:id}).then(function(r){ var x=r&&r.data;
+    if(r.error||!x||!x.ok){ flash((x&&x.error==='no_permiso')?'No puedes quitar este evento':'No se pudo quitar'); return; }
+    if(_evEdit===id)_evEdit=null; flash('Evento quitado'); evLoad(function(){ if(_screen==='cal') renderCal(); });
+  }, function(){ flash('Sin conexión'); });
+}
+function evRespond(id, resp){
+  if(!V3_ON){ var a=lsGet('hb_eventos'), me=S.emp;
+    a.forEach(function(e){ if(e.id===id && e.invites) e.invites.forEach(function(i){ if(+i.n===me) i.status=resp; }); });
+    lsSet('hb_eventos',a); flash(resp==='aceptado'?'✓ Confirmado':'Anotado'); renderCal(); return; }
+  if(!sbReady()){ flash('Sin conexión'); return; }
+  SB.rpc('hb_evento_responder',{p_id:id,p_resp:resp}).then(function(r){ var x=r&&r.data;
+    if(r.error||!x||!x.ok){ flash('No se pudo responder'); return; }
+    flash(resp==='aceptado'?'✓ Confirmado':'Anotado'); evLoad(function(){ if(_screen==='cal') renderCal(); });
+  }, function(){ flash('Sin conexión'); });
 }
 
 /* ===== ENCUESTAS (bloque de entrada + pantalla con todas) ===== */
@@ -4249,6 +4403,7 @@ function renderResp(){
   h+=htile("respGo('focos')",'focos','Focos', myAlerts.length?(myAlerts.length+' en tu área'):'Todo en orden ✓', {cnt:myAlerts.length||''});
   var nDocA=0; try{ nDocA=docsGet().filter(function(d){ return canManageThisDoc(d); }).length; }catch(e){}
   h+=htile("docsHome()",'docs','Documentos','Manuales de tu área: subir, ver y borrar',{wide:true, cnt:nDocA||''});
+  try{ var _pi=evInvitPend().length; h+=htile('openCal()','cal','Calendario', _pi?(_pi+' invitación'+(_pi===1?'':'es')+' pendiente'+(_pi===1?'':'s')):'Personal · tu área · general', {cnt:_pi||''}); }catch(e){}
   // Pedidos (V3.11): el responsable de MANTENIMIENTO recibe las órdenes de trabajo;
   // los demás responsables también pueden pedir una reparación.
   try{
@@ -4419,7 +4574,8 @@ function managerDash(role){
   try{ var _pedN=pedNuevosN();
     h+=htile('renderPedidos()','rep','Pedidos', pedAbiertos().length?(pedAbiertos().length+' abiertos · mantenimiento'):'Órdenes de trabajo · en vivo', {cnt:_pedN||''}); }catch(e){}
   h+=htile('docsHome()','docs','Documentos', 'Explora los documentos de cualquier área');
-  h+=htile('renderDia()','cal','Directorio', 'A quién llamar en la planta');
+  try{ var _pi=evInvitPend().length; h+=htile('openCal()','cal','Calendario', _pi?(_pi+' invitación'+(_pi===1?'':'es')+' pendiente'+(_pi===1?'':'s')):'Personal · áreas · general', {cnt:_pi||''}); }catch(e){}
+  h+=htile('renderDia()','dia','Directorio', 'A quién llamar en la planta');
   h+='</div>';
   $('s-hr').innerHTML=h; show('hr');
 }
@@ -4861,7 +5017,7 @@ function renderNews(){
     h+='<div class="hubwrap"><div class="hubmain">';
     h+='<div class="sec-t">Gestionar<span class="ln"></span></div><div class="tgrid">';
     h+=htile('renderNewsPost()','news','Noticias y avisos', nPub+' publicada(s) · subir/editar');
-    h+=htile('renderCal()','cal','Calendario', 'Eventos de la planta', {cls:'hide-desk'});
+    h+=htile('openCal()','cal','Calendario', 'Personal · tu área · general', {cls:'hide-desk'});
     h+=htile('renderEncuestas()','encuestas','Encuestas', 'Crear y ver resultados');
     h+=htile('docsHome()','docs','Documentos', 'Explora los documentos de cualquier área');
     h+='</div></div>';
@@ -4880,7 +5036,7 @@ function renderNews(){
     h+='<div class="tgrid">';
     h+=htile("newsGo('pend')",'news','Pendientes', nuevas.length?(nuevas.length+(nuevas.length===1?' noticia nueva':' noticias nuevas')+(avisosN?' · avisos de RRHH':'')):'Estás al día ✓', {wide:true, cnt:nuevas.length||''});
     h+=htile("newsGo('leidas')",'edu','Ya leídas', leidas.length?(leidas.length+(leidas.length===1?' noticia':' noticias')):'Aún no hay', {wide:true});
-    h+=htile('renderCal()','cal','Calendario', 'Eventos de la planta', {cls:'hide-desk'});
+    h+=htile('openCal()','cal','Calendario', 'Personal · tu área · general', {cls:'hide-desk'});
     if(docsGet().length) h+=htile('docsHome()','docs','Documentos', docsGet().length+' para ti');
     h+='</div>';
     // FORO DE NOTICIAS: todas las noticias para ti, en recuadros bonitos (texto + PDF/imagen)
@@ -5401,13 +5557,16 @@ function coachCard(noCurso){
     '<button class="btn" style="margin-top:10px" onclick="'+a.onclick+'">'+a.btnLabel+'</button></div>';
 }
 
-/* ===== #3 CALENDARIO DE EVENTOS (RRHH → todos) · hb_events ===== */
-function evGet(){ return lsGet('hb_events'); }
+/* ===== Alta rápida de evento GENERAL desde el publicador de Noticias (V3.12) ===== */
 function addEvent(){
   var t=(($('evTitle')||{}).value||'').trim(), d=(($('evDate')||{}).value||'').trim();
   if(!t||!d){ flash('Escribe el evento y la fecha'); return; }
-  var a=evGet(); a.push({ id:'e'+Date.now(), t:t, d:d, ts:Date.now() }); lsSet('hb_events', a);
-  flash('Evento agregado'); _newsBack();
+  if(!V3_ON){ var a=lsGet('hb_eventos'); a.push({ id:'ev'+Date.now(), scope:'general', owner:S.emp, ownerClave:S.clave||(''+S.emp), ownerNombre:S.nombre||('Nº '+S.emp), area:'', titulo:t, fecha:d, hora:'', lugar:'', nota:'', invites:[], ts:Date.now(), demo:(location.hash==='#demo') }); lsSet('hb_eventos',a); flash('✓ Evento agregado'); _newsBack(); return; }
+  if(!sbReady()){ flash('Sin conexión'); return; }
+  SB.rpc('hb_evento_alta',{p:{scope:'general',titulo:t,fecha:d,hora:'',lugar:'',nota:''}}).then(function(r){ var x=r&&r.data;
+    if(r.error||!x||!x.ok){ flash(r.error?(_rpcFaltante(r.error)?'La función se está activando, intenta en un momento':'No se pudo'):'No se pudo'); return; }
+    flash('✓ Evento agregado'); evLoad(); _newsBack();
+  }, function(){ flash('Sin conexión'); });
 }
 /* (delEvent/eventsBlock eliminados 15-jul-2026: eran código muerto; quitar/editar
    eventos ahora vive en la pantalla Calendario — calDel/calSave/renderCal) */
@@ -7554,13 +7713,63 @@ function checkPage(){ /* FUNCIÓN ELIMINADA (13-jul-2026): el "beeper/llamar a u
    alcance 'depto' fijo). La autoridad real es la RLS — requiere schema_v3_2 + v3_7.
    Bandi responderá sobre estos documentos SOLO a autorizados (fase con checklist Zeus).
    ============================================================================ */
+/* ===== BITÁCORA DE DOCUMENTOS (V3.12) — quién abrió qué, cuándo =====
+   Tabla por-fila 'docviews' (RLS: acceso total = todo · responsable = su área).
+   Cada apertura se registra en el SERVIDOR (identidad + hora reales). El acceso
+   total lo ve por departamento; el responsable, solo su área. Sin v3_9, no hay
+   bitácora (silencioso). ===== */
+var _docBita=false, _dvDept=null;
+function dvGet(){ return DBC.dv||[]; }
+function dvLoad(cb){
+  if(!sbReady()){ if(cb)cb(); return; }
+  try{ SB.from('docviews').select('data').order('ts',{ascending:false}).then(function(r){
+    if(!r.error && r.data){ DBC.dv=r.data.map(function(x){return x.data;}); if(_screen==='docs' && _docBita) renderDocs(); }
+    if(cb)cb();
+  }); }catch(e){ if(cb)cb(); }
+}
+/* registrar que ESTE usuario abrió un documento (servidor deriva doc real + identidad) */
+function dvLog(id){
+  if(!(V3_ON && sbReady())) return;   // en demo no hay bitácora real
+  try{ SB.rpc('hb_doc_visto',{p_docid:id}).then(function(){},function(){}); }catch(e){}
+}
+function dvTime(ts){ try{ var d=new Date(ts); return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' · '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
+function docBitaGo(v){ _docBita=v; _dvDept=null; if(v) dvLoad(); renderDocs(); window.scrollTo(0,0); }
+function dvDeptGo(d){ _dvDept=d; renderDocs(); window.scrollTo(0,0); }
+function _dvRow(v){
+  return '<div class="card"><div class="line" style="border:none;padding:0"><span style="min-width:0;flex:1"><b style="display:block">'+esc(v.nombre||'(documento)')+'</b>'+
+    '<span class="note">'+esc(niceName(v.viewerNombre||''))+' · Nº '+esc(v.clave||(''+v.viewer))+' · '+dvTime(v.ts)+'</span></span></div></div>';
+}
+function renderBita(){
+  var h='';
+  var mgr=docIsTotal();
+  // acceso total: por DEPARTAMENTO → toca uno → sus vistas
+  if(mgr && _dvDept==null){
+    var byD={}, order=[];
+    dvGet().forEach(function(v){ var d=v.depto||'(sin área)'; if(byD[d]==null){ byD[d]=0; order.push(d); } byD[d]++; });
+    order.sort();
+    if(!order.length) return '<div class="card"><div class="note">Aún nadie ha abierto documentos. Aquí aparecerá quién entra a cada uno.</div></div>';
+    h+='<div class="sec-t">Vistas por área<span class="ln"></span></div><div class="arogrid">';
+    h+=order.map(function(d){ return '<div class="arocard" role="button" tabindex="0" onkeydown="_kb(event)" onclick="dvDeptGo(\''+jsAttr(d)+'\')"><div><div class="an">'+esc(d)+'</div><div class="as">'+byD[d]+' vista'+(byD[d]===1?'':'s')+'</div></div><span class="abadge">Ver ›</span></div>'; }).join('');
+    return h+'</div>';
+  }
+  var list=dvGet().slice();
+  if(mgr && _dvDept!=null){
+    h+='<div style="display:flex;gap:6px;align-items:center;margin:2px 0 12px"><button class="chip2" onclick="dvDeptGo(null)">Bitácora</button><span class="note">›</span><button class="chip2" style="pointer-events:none">'+esc(_dvDept)+'</button></div>';
+    list=list.filter(function(v){ return (v.depto||'(sin área)')===_dvDept; });
+  } else {
+    h+='<div class="note" style="margin:0 2px 10px">Quién ha abierto los documentos de tu área ('+esc(S?S.area:'')+'), con nombre, número y hora.</div>';
+  }
+  if(!list.length) return h+'<div class="card"><div class="note">Sin vistas registradas todavía.</div></div>';
+  list.slice(0,200).forEach(function(v){ h+=_dvRow(v); });
+  return h;
+}
 function docsGet(){ return DBC.docs||[]; }
 /* ---- navegación tipo EXPLORADOR de archivos: área → categoría → subcategoría ---- */
 var _docAcl='depto';               // alcance que elige el ACCESO TOTAL al subir
 var _docArea=null, _docCat=null, _docSub=null;
 var _docFrom=null;    // pantalla de origen (para el botón "Atrás" de Documentos)
 var _docDepto=null;   // área elegida por el acceso total (sobrevive repintados en vivo)
-function _docReset(){ _docArea=null; _docCat=null; _docSub=null; }
+function _docReset(){ _docArea=null; _docCat=null; _docSub=null; _docBita=false; _dvDept=null; }
 function docsHome(){ _docFrom=_screen; _docReset(); renderDocs(); }
 function docGoArea(a){ _docArea=a; _docCat=null; _docSub=null; renderDocs(); window.scrollTo(0,0); }
 function docGoCat(c){ _docCat=c; _docSub=null; renderDocs(); window.scrollTo(0,0); }
@@ -7613,6 +7822,11 @@ function renderDocs(){
           : docIsResp() ? ('Manuales y procesos de tu área ('+esc(S.area)+'). Puedes subir, ver, descargar y borrar los de tu área.')
           : 'Manuales y procesos de tu área. Aquí ves y descargas lo autorizado para ti.';
   var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">'+(docIsTotal()?'Panel':(docIsResp()?'Documentos de mi área':'Documentos'))+'</div><b style="font-size:20px">Documentos</b><p class="note" style="margin:4px 0 0;max-width:290px">'+sub+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
+  // Toggle Documentos / Bitácora (solo quien gestiona: responsable de su área o acceso total)
+  if(manage) h+='<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">'+
+    '<button class="btn'+(_docBita?' ghost':'')+'" style="margin:0;padding:9px 14px;font-size:13px;width:auto" onclick="docBitaGo(false)">Documentos</button>'+
+    '<button class="btn'+(_docBita?'':' ghost')+'" style="margin:0;padding:9px 14px;font-size:13px;width:auto" onclick="docBitaGo(true)">Bitácora · quién vio qué</button></div>';
+  if(manage && _docBita){ h+=renderBita(); $('s-docs').innerHTML=h; show('docs'); return; }
   if(manage) h+=docUploadForm();
   if(!DBC.docs){
     h+='<div class="card"><div class="note">'+(sbReady()?'Cargando documentos… Si no aparecen, falta correr el parche <b>schema_v3_2</b> en Supabase.':'Sin conexión: los documentos requieren internet.')+'</div></div>';
@@ -7713,9 +7927,10 @@ function docCardHTML(d){
   var meta=docKind(d)+' · '+sz;
   if(docIsTotal()){ var acl=d.acl||{}; meta+=' · '+(acl.mode==='all'?'Toda la planta':(acl.mode==='ids'?('IDs: '+esc((acl.ids||[]).join(', ')||'—')):esc(d.depto||'su área'))); }
   var h='<div class="card"><div class="line" style="border:none;padding:0"><span style="min-width:0;flex:1"><b style="display:block">'+esc(d.titulo)+'</b><span class="note">'+meta+'</span></span>'+speakBtn('Documento: '+d.titulo)+'</div>';
+  // El TRABAJADOR solo VE (sin Descargar ni gestionar). El responsable/acceso total sí descarga.
   h+='<div style="display:flex;gap:7px;margin-top:10px;flex-wrap:wrap">'+
      '<button class="btn ghost" style="margin:0;flex:1;min-width:96px;padding:9px;font-size:13px" onclick="docOpen(\''+jsAttr(d.id)+'\')">Ver</button>'+
-     '<button class="btn ghost" style="margin:0;flex:1;min-width:96px;padding:9px;font-size:13px" onclick="docDownload(\''+jsAttr(d.id)+'\')">Descargar</button>'+
+     (canDocManage()?'<button class="btn ghost" style="margin:0;flex:1;min-width:96px;padding:9px;font-size:13px" onclick="docDownload(\''+jsAttr(d.id)+'\')">Descargar</button>':'')+
      (canManageThisDoc(d)?'<button class="btn ghost" style="margin:0;flex:1;min-width:96px;padding:9px;font-size:13px;color:var(--bad)" onclick="docDel(\''+jsAttr(d.id)+'\')">Borrar</button>':'')+
      '</div></div>';
   return h;
@@ -7730,6 +7945,7 @@ function _docSignedGo(id, download){
   if(!sbReady()){ flash('Sin conexión: los documentos requieren internet'); return; }
   var w=window.open('', '_blank');
   flash(download?'Descargando documento…':'Abriendo documento…');
+  dvLog(id);   // BITÁCORA: registra en el servidor quién abrió este documento y cuándo
   var opt = download ? {download:_dlName(d)} : undefined;
   SB.storage.from('docs').createSignedUrl(d.path, 3600, opt).then(function(r){
     if(r.error||!r.data||!r.data.signedUrl){ if(w) w.close(); flash('No se pudo '+(download?'descargar':'abrir')+((r.error&&r.error.message)?' ('+r.error.message+')':'')+'. ¿Ya corriste el SQL v3_2?'); return; }
@@ -7883,7 +8099,7 @@ function _sbRerenderNow(){ try{
   else if(_screen==='dia') renderDia();
   // Calendario/Documentos: NO re-pintar en vivo si el admin está escribiendo o ya
   // eligió un archivo (perdería lo tecleado / el archivo). El repintado llega al salir/guardar.
-  else if(_screen==='cal'){ if(!_sectionBusy('s-cal')) renderCal(); }
+  else if(_screen==='cal'){ if(!_sectionBusy('s-cal') && !_evComposing()) renderCal(); }
   else if(_screen==='wconvs') renderWConvs();
   else if(_screen==='docs'){ if(!_sectionBusy('s-docs') && !(($('docFile')||{}).files||[]).length) renderDocs(); }
   // Pedidos (inbox de mantenimiento): en vivo, pero sin pisar la nota/búsqueda a media
@@ -7916,6 +8132,7 @@ function sbInit(){
   kvInit();
   if(V3_ON) recsInit();   // recibos de nómina reales (si el parche v3_4 no está corrido, falla en silencio y todo cae al flujo demo)
   if(V3_ON) pedInit();    // pedidos de mantenimiento (v3_8); sin el parche cae al flujo demo local
+  if(V3_ON) evInit();     // calendarios de 3 capas (v3_9); sin el parche cae a demo local
 }
 function lsArr(k){ try{ return JSON.parse(localStorage.getItem(k)||'[]')||[]; }catch(e){ return []; }
 }
@@ -7925,7 +8142,7 @@ function lsArr(k){ try{ return JSON.parse(localStorage.getItem(k)||'[]')||[]; }c
    preguntas del Asistente (alertas), NOM-035, Permanencia, lectura y minutos
    de estudio. Espejo en localStorage → si no hay internet, la app sigue.
    ============================================================================ */
-var KV_SKIP={hb_msgs:1,hb_news:1,hb_reports:1,hb_pages:1,hb_docs:1,hb_key:1,hb_model:1,hb_recs:1,hb_pinlock:1,hb_pedidos:1,hb_maquinas:1}; // tabla propia o solo-local
+var KV_SKIP={hb_msgs:1,hb_news:1,hb_reports:1,hb_pages:1,hb_docs:1,hb_key:1,hb_model:1,hb_recs:1,hb_pinlock:1,hb_pedidos:1,hb_maquinas:1,hb_eventos:1}; // tabla propia o solo-local
 /* Compartidas que alguna vez tuvieron seed demo: JAMÁS subirlas en bulk (kvSeed) —
    solo las escriben sus flujos legítimos (admin publica comedor/aviso/encuesta, y
    hb_qstats solo por RPC v3_3). Evita que un dispositivo viejo re-suba demo al server. */
@@ -8057,6 +8274,10 @@ function hbLimpiaSeeds(){
     var esDemoMaq=function(x){ return x && (/^mq[0-9]$/.test(''+x.id) || x.demo===true); };
     var mq=lee('hb_maquinas');
     if(Array.isArray(mq)){ var mq2=mq.filter(function(x){ return !esDemoMaq(x); }); if(mq2.length!==mq.length){ mq2.length? pon('hb_maquinas',mq2) : quita('hb_maquinas'); } }
+    // (V3.12) eventos demo del calendario (ids ev1..evN o demo:true); lo real vive en la tabla 'eventos'
+    quita('hb_events');   // calendario viejo (kv compartida) — ya migrado a 'eventos'
+    var ev=lee('hb_eventos');
+    if(Array.isArray(ev)){ var ev2=ev.filter(function(x){ return !(x && (/^ev[0-9]+$/.test(''+x.id) || x.demo===true)); }); if(ev2.length!==ev.length){ ev2.length? pon('hb_eventos',ev2) : quita('hb_eventos'); } }
   }catch(e){}
 }
 (function init(){
@@ -8133,6 +8354,14 @@ function hbLimpiaSeeds(){
     { id:'pd2', folio:30003, emp:63, clave:'0063', nombre:'JUAREZ PEREZ ROSA', deptoReal:'Almacén', depto:'Almacén', maquina:'Montacargas 3', solicitado:'Frena tarde, revisar balatas', descr:'', causa:'Desgaste', tipo:'mecanico', paroMaquina:false, paroProd:false, piezaNueva:true, pieza:'Balatas', estado:'asignado', tsSol:Date.now()-7200000, tsAsig:Date.now()-5400000, asig:{n:700,clave:'0700',nombre:'PEREZ LOPEZ JUAN'} },
     { id:'pd3', folio:30002, emp:289, clave:'0289', nombre:'SOTO DIAZ PEDRO', deptoReal:'Producción', depto:'Producción', maquina:'Tabulador 7', solicitado:'Voltear puntas #1 y #3', descr:'Se voltean cardas', causa:'Por desgaste de trabajo', tipo:'mecanico', paroMaquina:false, paroProd:false, piezaNueva:false, pieza:'', estado:'reparando', tsSol:Date.now()-86400000, tsAsig:Date.now()-82800000, tsIni:Date.now()-3600000, asig:{n:700,clave:'0700',nombre:'PEREZ LOPEZ JUAN'} },
     { id:'pd4', folio:30001, emp:112, clave:'0112', nombre:'RAMOS VEGA LUISA', deptoReal:'Calidad', depto:'Calidad', maquina:'Prensa 4', solicitado:'Fuga de aceite en la base', descr:'', causa:'Empaque vencido', tipo:'hidraulico', paroMaquina:false, paroProd:false, piezaNueva:true, pieza:'Empaque', estado:'terminado', tsSol:Date.now()-3*86400000, tsAsig:Date.now()-3*86400000+3600000, tsIni:Date.now()-3*86400000+7200000, tsFin:Date.now()-3*86400000+13500000, asig:{n:662,clave:'0662',nombre:'GOMEZ RIOS LUIS'}, nota:'Se cambió el empaque' }
+  ])); } }catch(e){}
+  // Calendario 3 capas (V3.12) — eventos demo (general, de área, y una invitación personal)
+  try{ if(!localStorage.getItem('hb_eventos')){ var _hoy=new Date(), _f=function(dd){ var x=new Date(_hoy.getFullYear(),_hoy.getMonth(),_hoy.getDate()+dd); return x.getFullYear()+'-'+('0'+(x.getMonth()+1)).slice(-2)+'-'+('0'+x.getDate()).slice(-2); };
+    localStorage.setItem('hb_eventos', JSON.stringify([
+    { id:'ev1', scope:'general', owner:901, ownerClave:'0901', ownerNombre:'RRHH', area:'', titulo:'Día de pago', fecha:_f(3), hora:'', lugar:'', nota:'Revisa tu recibo en la app.', invites:[], ts:Date.now()-86400000, demo:true },
+    { id:'ev2', scope:'general', owner:901, ownerClave:'0901', ownerNombre:'RRHH', area:'', titulo:'Simulacro de evacuación', fecha:_f(6), hora:'11:00', lugar:'Toda la planta', nota:'Atiende a tu líder de brigada.', invites:[], ts:Date.now()-43200000, demo:true },
+    { id:'ev3', scope:'area', owner:980, ownerClave:'0980', ownerNombre:'RESP MAQUINARIA', area:'maquinaria', titulo:'Mantenimiento preventivo Banbury 1', fecha:_f(2), hora:'07:00', lugar:'Producción', nota:'', invites:[], ts:Date.now()-3600000, demo:true },
+    { id:'ev4', scope:'personal', owner:990, ownerClave:'0990', ownerNombre:'DIRECCION', area:'', titulo:'Reunión con Dirección', fecha:_f(1), hora:'10:00', lugar:'Oficina', nota:'Traer avance del mes.', invites:[{n:250,clave:'0250',nombre:'OPERATIVO DEMO',status:'pendiente'}], ts:Date.now()-1800000, demo:true }
   ])); } }catch(e){}
   try{ if(!localStorage.getItem('hb_msgs')){ localStorage.setItem('hb_msgs', JSON.stringify([
     { id:'m1', conv:'g:produccion', from:72, text:'Equipo, ¿alguien tiene el dato de presión para el molde 3?', img:'', ts:Date.now()-7200000 },

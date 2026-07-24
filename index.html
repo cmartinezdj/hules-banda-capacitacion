@@ -566,6 +566,25 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .arocard .an{font-size:14.5px;font-weight:800;letter-spacing:-.01em;line-height:1.2;position:relative}
 .arocard .as{font-size:11.5px;color:var(--mut);margin-top:4px;position:relative}
 .arocard .abadge{position:relative;align-self:flex-start;margin-top:9px;font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+/* ===== Documentos: cuadrícula de íconos con miniatura (estilo Finder) ===== */
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:12px;margin:6px 0 4px}
+.dcard{position:relative;border:1px solid var(--line);border-radius:14px;background:var(--panel);cursor:pointer;padding:8px 8px 9px;text-align:center;transition:transform .13s var(--ease-out),border-color .2s var(--ease-out)}
+.dcard:active{transform:scale(.97)}
+@media (hover:hover){.dcard:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent) 45%,var(--line));box-shadow:0 12px 28px rgba(0,0,0,.32)}}
+.dthumb{position:relative;height:84px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.05);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+.dthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.dbadge{width:46px;height:58px;border-radius:7px;position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16)}
+.dbadge:before{content:'';position:absolute;top:0;right:0;width:14px;height:14px;border-radius:0 7px 0 8px;background:var(--panel);border-left:1px solid rgba(255,255,255,.16);border-bottom:1px solid rgba(255,255,255,.16)}
+.dbadge b{font-size:9.5px;font-weight:900;letter-spacing:.4px;padding:2px 6px;border-radius:5px;color:#fff}
+.dname{font-size:12.5px;font-weight:700;line-height:1.25;margin-top:7px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;min-height:2.5em}
+.dmeta{font-size:10.5px;color:var(--mut);margin-top:3px;line-height:1.3}
+.dspk{position:absolute;top:4px;left:4px;z-index:2}
+.dspk .speak{transform:scale(.82);transform-origin:top left}
+.dmore{position:absolute;top:4px;right:4px;z-index:2;width:26px;height:26px;border-radius:8px;border:1px solid var(--line);background:rgba(6,6,7,.72);color:var(--txt);font-weight:900;cursor:pointer;line-height:1;font-size:15px;padding:0}
+.dmenu{position:absolute;top:32px;right:4px;z-index:5;background:#17171a;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;min-width:118px;overflow:hidden}
+.dmenu button{background:none;border:none;color:var(--txt);font-size:12.5px;font-weight:700;padding:9px 12px;text-align:left;cursor:pointer;border-bottom:1px solid var(--line)}
+.dmenu button:last-child{border-bottom:none}
+.dmenu button:active{background:rgba(255,255,255,.06)}
 /* barras de % anónimo por opción (dashboard de encuestas por área) */
 .pctrow{margin-top:11px}
 .pctrow .lab{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
@@ -7835,6 +7854,7 @@ function renderDocs(){
   h+=docExplorer();
   $('s-docs').innerHTML=h; show('docs');
   if(manage) docFormInit();
+  docThumbsFetch();   /* miniaturas de imagen en lote (cacheadas; no toca la bitácora) */
 }
 /* formulario de subida — acceso total (cualquier área/alcance) o responsable (SU área, alcance fijo) */
 function docUploadForm(){
@@ -7908,8 +7928,9 @@ function docExplorer(){
       h+='</div>';
     }
     if(loose.length){
-      h+='<div class="sec-t">Documentos<span class="ln"></span></div>';
+      h+='<div class="sec-t">Documentos<span class="ln"></span></div><div class="dgrid">';
       loose.sort(function(a,b){ return (b.ts||0)-(a.ts||0); }).forEach(function(d){ h+=docCardHTML(d); });
+      h+='</div>';
     }
     if(!sOrder.length && !loose.length) h+='<div class="card"><div class="note">Sin documentos en esta categoría.</div></div>';
     return h;
@@ -7918,22 +7939,74 @@ function docExplorer(){
   var inSub=inCat.filter(function(d){ return _docSub0(d)===_docSub; });
   h+='<div class="sec-t">Documentos<span class="ln"></span></div>';
   if(!inSub.length) h+='<div class="card"><div class="note">Sin documentos aquí.</div></div>';
-  inSub.sort(function(a,b){ return (b.ts||0)-(a.ts||0); }).forEach(function(d){ h+=docCardHTML(d); });
+  else{
+    h+='<div class="dgrid">';
+    inSub.sort(function(a,b){ return (b.ts||0)-(a.ts||0); }).forEach(function(d){ h+=docCardHTML(d); });
+    h+='</div>';
+  }
   return h;
 }
-/* tarjeta de un documento: Ver · Descargar · (gestor) Borrar */
+/* ===== Documento como ÍCONO con miniatura (estilo Finder) =====
+   Tocar el ícono = Ver (misma liga firmada + bitácora de siempre).
+   ⋯ = Descargar / Borrar según rol. El TRABAJADOR solo VE (sin ⋯). */
+var _docMenuId=null;            /* id del doc con el menú ⋯ abierto */
+var _docThumbs={};              /* id -> liga firmada de la miniatura (solo imágenes) */
+var _docThumbExp=0;             /* caducidad del lote de ligas (50 min) */
+function _docTypeColor(k){ return k==='PDF'?'#e73b2f':k==='Word'?'#2a7de1':k==='Excel'?'#22c55e':k==='PowerPoint'?'#ff8a3d':k==='Imagen'?'#8a63d2':'#6b7280'; }
+function _docIsImg(d){ return docKind(d)==='Imagen'; }
 function docCardHTML(d){
+  var kind=docKind(d);
   var kb=Math.max(1,Math.round((d.size||0)/1024)), sz=(kb>=1024?(Math.round(kb/102.4)/10+' MB'):(kb+' KB'));
-  var meta=docKind(d)+' · '+sz;
-  if(docIsTotal()){ var acl=d.acl||{}; meta+=' · '+(acl.mode==='all'?'Toda la planta':(acl.mode==='ids'?('IDs: '+esc((acl.ids||[]).join(', ')||'—')):esc(d.depto||'su área'))); }
-  var h='<div class="card"><div class="line" style="border:none;padding:0"><span style="min-width:0;flex:1"><b style="display:block">'+esc(d.titulo)+'</b><span class="note">'+meta+'</span></span>'+speakBtn('Documento: '+d.titulo)+'</div>';
-  // El TRABAJADOR solo VE (sin Descargar ni gestionar). El responsable/acceso total sí descarga.
-  h+='<div style="display:flex;gap:7px;margin-top:10px;flex-wrap:wrap">'+
-     '<button class="btn ghost" style="margin:0;flex:1;min-width:96px;padding:9px;font-size:13px" onclick="docOpen(\''+jsAttr(d.id)+'\')">Ver</button>'+
-     (canDocManage()?'<button class="btn ghost" style="margin:0;flex:1;min-width:96px;padding:9px;font-size:13px" onclick="docDownload(\''+jsAttr(d.id)+'\')">Descargar</button>':'')+
-     (canManageThisDoc(d)?'<button class="btn ghost" style="margin:0;flex:1;min-width:96px;padding:9px;font-size:13px;color:var(--bad)" onclick="docDel(\''+jsAttr(d.id)+'\')">Borrar</button>':'')+
-     '</div></div>';
-  return h;
+  var meta=esc(kind)+' · '+sz;
+  if(docIsTotal()){ var acl=d.acl||{}; meta+='<br>'+(acl.mode==='all'?'Toda la planta':(acl.mode==='ids'?('IDs: '+esc((acl.ids||[]).join(', ')||'—')):esc(d.depto||'su área'))); }
+  var lbl = kind==='PowerPoint'?'PPT':(kind==='Imagen'?'IMG':(kind==='Texto'?'TXT':(kind==='Archivo'?'DOC':kind.toUpperCase())));
+  var badge='<span class="dbadge"><b style="background:'+_docTypeColor(kind)+'">'+lbl+'</b></span>';
+  var cached=_docThumbs[d.id];
+  var inner=(_docIsImg(d)&&cached)?('<img src="'+imgSrc(cached)+'" alt="">'):badge;
+  var h='<div class="dcard" role="button" tabindex="0" onkeydown="_kb(event)" onclick="docOpen(\''+jsAttr(d.id)+'\')" aria-label="Ver documento: '+escA(d.titulo)+'">';
+  h+='<span class="dspk">'+speakBtn('Documento: '+d.titulo)+'</span>';
+  if(canDocManage()) h+='<button class="dmore" onclick="event.stopPropagation();docMenu(\''+jsAttr(d.id)+'\')" aria-label="Más acciones">⋯</button>';
+  h+='<span class="dthumb"'+(_docIsImg(d)?(' data-dth="'+escA(d.id)+'"'):'')+'>'+inner+'</span>';
+  h+='<div class="dname">'+esc(d.titulo)+'</div><div class="dmeta">'+meta+'</div>';
+  if(_docMenuId===d.id && canDocManage()){
+    h+='<div class="dmenu" onclick="event.stopPropagation()">'+
+       '<button onclick="docMenu(null);docOpen(\''+jsAttr(d.id)+'\')">Ver</button>'+
+       '<button onclick="docMenu(null);docDownload(\''+jsAttr(d.id)+'\')">Descargar</button>'+
+       (canManageThisDoc(d)?'<button style="color:var(--bad)" onclick="docMenu(null);docDel(\''+jsAttr(d.id)+'\')">Borrar</button>':'')+
+       '</div>';
+  }
+  return h+'</div>';
+}
+function docMenu(id){ _docMenuId=(_docMenuId===id?null:id); if(_screen==='docs') renderDocs(); }
+/* Pide en LOTE las ligas firmadas de las miniaturas de imagen visibles (1 sola llamada),
+   las cachea 50 min y las pinta sin re-render. NO registra bitácora (eso es solo al abrir). */
+function docThumbsFetch(){
+  if(!sbReady() || !V3_ON) return;
+  if(Date.now()>_docThumbExp) _docThumbs={};
+  var nodes=document.querySelectorAll('#s-docs [data-dth]');
+  if(!nodes.length) return;
+  var need=[], byPath={};
+  nodes.forEach(function(n){
+    var id=n.getAttribute('data-dth'), d=null;
+    docsGet().forEach(function(x){ if(x.id===id) d=x; });
+    if(!d||!d.path) return;
+    if(_docThumbs[id]){ n.innerHTML='<img src="'+imgSrc(_docThumbs[id])+'" alt="">'; return; }
+    if(byPath[d.path]==null){ byPath[d.path]=[]; need.push(d.path); }
+    byPath[d.path].push({n:n,id:id});
+  });
+  if(!need.length) return;
+  SB.storage.from('docs').createSignedUrls(need, 3600).then(function(r){
+    if(r.error||!r.data) return;
+    _docThumbExp=Date.now()+50*60*1000;
+    r.data.forEach(function(row){
+      var u=row&&(row.signedUrl||row.signedURL);
+      if(!u||row.error) return;
+      (byPath[row.path]||[]).forEach(function(t){
+        _docThumbs[t.id]=u;
+        t.n.innerHTML='<img src="'+imgSrc(u)+'" alt="">';
+      });
+    });
+  }, function(){});
 }
 function _dlName(d){ var ext=''; var m=(d.path||'').match(/\.[a-z0-9]+$/i); if(m) ext=m[0];
   var base=((d.titulo||'documento').replace(/[\/\\:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim())||'documento'; return base+ext; }

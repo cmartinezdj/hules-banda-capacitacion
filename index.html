@@ -7880,7 +7880,7 @@ function docUploadForm(){
     h+='<div class="note" style="margin:9px 0 0">Lo verán solo los de tu área ('+esc(S.area)+').</div>';
   }
   h+='<div style="margin-top:10px"><label class="btn ghost" style="margin:0;padding:11px;font-size:14px;display:inline-block;cursor:pointer;width:auto">Elegir archivo<input id="docFile" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,application/pdf,image/*" style="display:none" onchange="var n=(this.files&&this.files[0])?this.files[0].name:\'\';var e=document.getElementById(\'docFileName\');if(e)e.textContent=n;"></label> <span id="docFileName" class="note"></span></div>';
-  h+='<div class="note" style="margin-top:6px">PDF, Word, Excel, PowerPoint, imagen o texto · máximo 20 MB.</div>';
+  h+='<div class="note" style="margin-top:6px">PDF, Word, Excel, PowerPoint, imagen o texto · máximo 100 MB.</div>';
   h+='<button class="btn" style="margin-top:10px" onclick="docUpload()">Subir documento</button>';
   h+='<div class="note" style="margin-top:8px">El acceso lo vigila el servidor: nadie fuera de tu área puede abrirlo, ni con la liga.</div></div>';
   return h;
@@ -8035,7 +8035,7 @@ function docUpload(){
   var inp=$('docFile'), f=inp&&inp.files&&inp.files[0];
   if(!t){ flash('Escribe el título del documento'); return; }
   if(!f){ flash('Elige el archivo'); return; }
-  if(f.size>20*1024*1024){ flash('El archivo pasa de 20 MB. Comprímelo primero.'); return; }
+  if(f.size>100*1024*1024){ flash('El archivo pasa de 100 MB. Comprímelo primero.'); return; }
   var dep, acl;
   if(docIsTotal()){
     dep=(($('docDepto')||{}).value||'').trim(); acl={mode:_docAcl};

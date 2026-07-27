@@ -899,7 +899,7 @@ body.a11y .screen .seg button{ font-size:13px !important; }
       <div class="field"><input id="lgClave" inputmode="numeric" autocomplete="off" placeholder="Número de colaborador (clave)" maxlength="6"></div>
       <div class="field" id="lgNacWrap" style="display:none"><input id="lgNac" inputmode="numeric" autocomplete="off" placeholder="__/__/____" maxlength="10" oninput="nacMask(this)" style="text-align:center;letter-spacing:2px;font-variant-numeric:tabular-nums"></div>
       <div id="lgNacLbl" class="note" style="display:none;margin:-2px 0 8px;text-align:left">Tu fecha de nacimiento: día, mes y año — <b>en el orden que quieras</b> (24/07/1968 o 07/24/1968). Es para confirmar que eres tú.</div>
-      <div class="field" id="lgPinWrap" style="display:none"><input id="lgPin" inputmode="numeric" type="password" autocomplete="off" placeholder="PIN de 4 dígitos" maxlength="4"></div>
+      <div class="field" id="lgPinWrap" style="display:none"><input id="lgPin" inputmode="numeric" type="password" autocomplete="off" placeholder="PIN de 6 dígitos" maxlength="6"></div>
       <button class="btn" id="lgGo">Continuar</button>
       <button class="lnkbtn" style="display:block;margin:12px auto 0" onclick="lgMode('choose')">‹ Regresar</button>
       <div class="hint" id="lgMsg" style="margin-top:14px"></div>
@@ -907,7 +907,7 @@ body.a11y .screen .seg button{ font-size:13px !important; }
     <!-- demo (oculto; se conserva por si se necesita reactivar) -->
     <div id="lgDemo" style="display:none">
       <div class="field"><input id="inEmp" inputmode="numeric" autocomplete="off" placeholder="Número de colaborador" maxlength="6"></div>
-      <div class="field" id="pinField" style="display:none"><input id="inPin" inputmode="numeric" type="password" autocomplete="off" placeholder="PIN de 4 dígitos" maxlength="4"></div>
+      <div class="field" id="pinField" style="display:none"><input id="inPin" inputmode="numeric" type="password" autocomplete="off" placeholder="PIN" maxlength="6"></div>
       <button class="btn" onclick="login()">Entrar</button>
       <div class="try" id="tryRow"><b>Probar como…</b></div>
       <div class="hint" id="loginHint"></div>
@@ -2061,7 +2061,7 @@ function login(){
   var _prof=profGet(n);
   if(_prof.pin){
     var pf=$('pinField'), pv=(($('inPin')||{}).value||'').trim();
-    if(pf && pf.style.display==='none'){ pf.style.display=''; $('inPin').focus(); flash('Escribe tu PIN de 4 dígitos'); return; }
+    if(pf && pf.style.display==='none'){ pf.style.display=''; $('inPin').focus(); flash('Escribe tu PIN'); return; }
     var _plk='demo'+n, _plw=pinlockLeft(_plk);   // mismo candado de intentos que el login real
     if(_plw>0){ flash('Demasiados intentos. Espera '+(_plw>60?Math.ceil(_plw/60)+' min':_plw+' s')+' e intenta de nuevo.'); return; }
     if(pv!==_prof.pin){
@@ -2251,9 +2251,9 @@ function nacMask(el){
 function lgCrearPin(clave, nombre, depto, nac){
   var h='<button class="btn" id="lgGo">Crear mi cuenta</button>';
   $('lgForm').innerHTML=
-    '<div style="margin-bottom:12px;font-size:14px;line-height:1.5">Hola, <b>'+esc(nombre||'')+'</b>'+(depto?' <span class="note">('+esc(depto)+')</span>':'')+'.<br>Crea tu <b>PIN de 4 dígitos</b>. Lo usarás para entrar a partir de ahora — no lo olvides ni lo compartas.</div>'+
-    '<div class="field"><input id="lgPin" inputmode="numeric" type="password" autocomplete="off" placeholder="PIN nuevo (4 dígitos)" maxlength="4"></div>'+
-    '<div class="field"><input id="lgPin2" inputmode="numeric" type="password" autocomplete="off" placeholder="Repite tu PIN" maxlength="4"></div>'+
+    '<div style="margin-bottom:12px;font-size:14px;line-height:1.5">Hola, <b>'+esc(nombre||'')+'</b>'+(depto?' <span class="note">('+esc(depto)+')</span>':'')+'.<br>Crea tu <b>PIN de 6 dígitos</b>. Lo usarás para entrar a partir de ahora — no lo olvides ni lo compartas.</div>'+
+    '<div class="field"><input id="lgPin" inputmode="numeric" type="password" autocomplete="off" placeholder="PIN nuevo (6 dígitos)" maxlength="6"></div>'+
+    '<div class="field"><input id="lgPin2" inputmode="numeric" type="password" autocomplete="off" placeholder="Repite tu PIN" maxlength="6"></div>'+
     h+'<button class="lnkbtn" style="display:block;margin:12px auto 0" onclick="resetLoginUI()">‹ Cancelar</button>'+
     '<div class="hint" id="lgMsg" style="margin-top:14px"></div>';
   $('lgGo').onclick=function(){ lgRegistrar(clave, nac); };
@@ -2261,7 +2261,7 @@ function lgCrearPin(clave, nombre, depto, nac){
 }
 function lgRegistrar(clave, nac){
   var pin=($('lgPin').value||'').trim(), pin2=($('lgPin2').value||'').trim();
-  if(!/^[0-9]{4}$/.test(pin)){ lgSay('El PIN debe ser de 4 números.',true); return; }
+  if(!/^[0-9]{6}$/.test(pin)){ lgSay('El PIN debe ser de 6 números.',true); return; }
   if(pin!==pin2){ lgSay('Los dos PIN no son iguales. Vuelve a escribirlos.',true); return; }
   lgBusy(true); lgSay('Creando tu cuenta…');
   var email=v3email(clave), pass=v3pass(clave,pin);
@@ -2290,7 +2290,7 @@ function lgMiembro(){
   if(!V3_ON){ lgSay('El sistema se está activando (la base de datos aún no está lista). Espera un momento e intenta otra vez.',true); v3Detect(); return; }
   var clave=claveNorm($('lgClave').value), pin=($('lgPin').value||'').trim();
   if(!clave){ lgSay('Escribe tu número de colaborador.',true); return; }
-  if(!/^[0-9]{4}$/.test(pin)){ lgSay('Escribe tu PIN de 4 dígitos.',true); return; }
+  if(!/^[0-9]{4,6}$/.test(pin)){ lgSay('Escribe tu PIN.',true); return; }
   if(pinlockLeft(clave)>0){ pinlockShow(clave); return; }   // clave bloqueada por intentos: contador visible
   lgBusy(true); lgSay('Entrando…');
   SB.auth.signInWithPassword({email:v3email(clave),password:v3pass(clave,pin)}).then(function(si){
@@ -2338,7 +2338,7 @@ function v3Restore(){
 function showTyc(onAccept){
   var TYC=
    '<p><b>1. Qué es esto.</b> Sistema interno de Hules Banda para tu capacitación, información laboral, recibos, avisos, mensajes y trámites. Solo para colaboradores.</p>'+
-   '<p><b>2. Tu cuenta es personal.</b> Tu clave y tu PIN de 4 dígitos son personales e intransferibles. No los prestes. Todo lo hecho con tu cuenta se considera hecho por ti. Si crees que alguien conoce tu PIN, cámbialo en tu perfil.</p>'+
+   '<p><b>2. Tu cuenta es personal.</b> Tu clave y tu PIN de 6 dígitos son personales e intransferibles. No los prestes. Todo lo hecho con tu cuenta se considera hecho por ti. Si crees que alguien conoce tu PIN, cámbialo en tu perfil.</p>'+
    '<p><b>3. Información de la empresa.</b> Todo el contenido (cursos, videos, materiales, procesos, datos) es <b>propiedad de Hules Banda</b> y es confidencial. No lo copies, compartas ni saques de la empresa. Prohibido tomar pantallazos del contenido interno.</p>'+
    '<p><b>4. Protección de tus datos.</b> Cuidamos tu información. Tus datos personales se guardan de forma segura; <b>cada quien ve únicamente su propia información</b>. Los usamos solo para fines laborales, de capacitación, nómina y seguridad, conforme a la Ley Federal de Protección de Datos Personales. Puedes actualizar tus datos de contacto cuando quieras.</p>'+
    '<p><b>5. Uso correcto.</b> Úsalo con respeto. No lo uses para dañar procesos, equipo o personas, ni intentes ver información que no te corresponde. El mal uso puede tener consecuencias laborales.</p>'+
@@ -6781,15 +6781,15 @@ function renderPerfil(){
   if(v3){
     h+='<div class="panel"><div class="hd"><b>Mi PIN</b><span class="chipst">Activado ✓</span></div>'+
        '<p class="note" style="margin:0 0 9px">Tu PIN es tu contraseña para entrar. Es secreto: no lo compartas. Para cambiarlo, escribe uno nuevo.</p>'+
-       '<div class="note" style="margin:2px 0 3px">PIN nuevo (4 números)</div><input id="pinNew" class="fin" type="password" inputmode="numeric" maxlength="4" placeholder="····">'+
-       '<div class="note" style="margin:9px 0 3px">Repite el PIN nuevo</div><input id="pinNew2" class="fin" type="password" inputmode="numeric" maxlength="4" placeholder="····">'+
+       '<div class="note" style="margin:2px 0 3px">PIN nuevo (6 números)</div><input id="pinNew" class="fin" type="password" inputmode="numeric" maxlength="6" placeholder="······">'+
+       '<div class="note" style="margin:9px 0 3px">Repite el PIN nuevo</div><input id="pinNew2" class="fin" type="password" inputmode="numeric" maxlength="6" placeholder="······">'+
        '<button class="btn" style="margin-top:12px" onclick="savePinV3()">Cambiar mi PIN</button></div>';
   } else {
     h+='<div class="panel"><div class="hd"><b>Mi PIN de entrada</b><span class="chipst'+(p.pin?'':' mut')+'">'+(p.pin?'Activado':'Sin PIN')+'</span></div>'+
-       '<p class="note" style="margin:0 0 9px">'+(p.pin?'Para cambiarlo, escribe tu PIN actual y el nuevo.':'Crea un PIN de 4 números. Te lo pedirá al entrar con tu número de colaborador.')+'</p>'+
-       (p.pin?'<div class="note" style="margin-bottom:3px">PIN actual</div><input id="pinOld" class="fin" type="password" inputmode="numeric" maxlength="4" placeholder="····">':'')+
-       '<div class="note" style="margin:9px 0 3px">PIN nuevo (4 números)</div><input id="pinNew" class="fin" type="password" inputmode="numeric" maxlength="4" placeholder="····">'+
-       '<div class="note" style="margin:9px 0 3px">Repite el PIN nuevo</div><input id="pinNew2" class="fin" type="password" inputmode="numeric" maxlength="4" placeholder="····">'+
+       '<p class="note" style="margin:0 0 9px">'+(p.pin?'Para cambiarlo, escribe tu PIN actual y el nuevo.':'Crea un PIN de 6 números. Te lo pedirá al entrar con tu número de colaborador.')+'</p>'+
+       (p.pin?'<div class="note" style="margin-bottom:3px">PIN actual</div><input id="pinOld" class="fin" type="password" inputmode="numeric" maxlength="6" placeholder="······">':'')+
+       '<div class="note" style="margin:9px 0 3px">PIN nuevo (6 números)</div><input id="pinNew" class="fin" type="password" inputmode="numeric" maxlength="6" placeholder="······">'+
+       '<div class="note" style="margin:9px 0 3px">Repite el PIN nuevo</div><input id="pinNew2" class="fin" type="password" inputmode="numeric" maxlength="6" placeholder="······">'+
        '<button class="btn" style="margin-top:12px" onclick="savePin()">'+(p.pin?'Cambiar mi PIN':'Crear mi PIN')+'</button>'+
        (p.pin?'<button class="lnkbtn" style="display:block;margin:10px auto 0" onclick="delPin()">Quitar mi PIN</button>':'')+'</div>';
   }
@@ -6846,7 +6846,7 @@ function savePin(){
   var p=profGet(S.emp);
   var o=(($('pinOld')||{}).value||'').trim(), n1=(($('pinNew')||{}).value||'').trim(), n2=(($('pinNew2')||{}).value||'').trim();
   if(p.pin && o!==p.pin){ flash('Tu PIN actual no coincide'); return; }
-  if(!/^\d{4}$/.test(n1)){ flash('El PIN debe ser de 4 números'); return; }
+  if(!/^\d{6}$/.test(n1)){ flash('El PIN debe ser de 6 números'); return; }
   if(n1!==n2){ flash('Los PIN nuevos no coinciden'); return; }
   p.pin=n1; profSave(S.emp,p); burst(); flash('PIN guardado. Te lo pedirá al entrar.'); renderPerfil();
 }
@@ -6866,8 +6866,8 @@ function savePerfilV3(){
 function val(id,max){ return (($(id)||{}).value||'').trim().slice(0,max||120); }
 /* V3: cambiar PIN = cambia la contraseña de Auth y el PIN guardado en el servidor */
 function savePinV3(){
-  var n1=val('pinNew',4), n2=val('pinNew2',4);
-  if(!/^\d{4}$/.test(n1)){ flash('El PIN debe ser de 4 números'); return; }
+  var n1=val('pinNew',6), n2=val('pinNew2',6);
+  if(!/^\d{6}$/.test(n1)){ flash('El PIN debe ser de 6 números'); return; }
   if(n1!==n2){ flash('Los PIN nuevos no coinciden'); return; }
   if(!sbReady()){ flash('Sin conexión: intenta más tarde'); return; }
   SB.auth.updateUser({password:v3pass(S.clave,n1)}).then(function(u){

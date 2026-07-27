@@ -7747,6 +7747,56 @@ function checkPage(){ /* FUNCIÓN ELIMINADA (13-jul-2026): el "beeper/llamar a u
    total lo ve por departamento; el responsable, solo su área. Sin v3_9, no hay
    bitácora (silencioso). ===== */
 var _docBita=false, _dvDept=null;
+/* ===== GRUPO FINANCIERO (costos/precios/finanzas) — lista blanca DURA del servidor.
+   `_finOn` = estoy en la lista (lo dice el SERVIDOR, no el cliente). El candado real
+   vive en hb_ve_doc/hb_puede_gestionar_doc + policies de Storage (v3_13): aquí solo
+   pintamos u ocultamos la UI. Ni un acceso total fuera de la lista ve estos docs. */
+var _finOn=false, _finList=null, _docFin=false, _finLoaded=false;
+function finEsDueno(){ return !!(S && S.clave==='0917'); }          // solo 0917 edita la lista
+function finLoad(cb){
+  if(!sbReady() || !V3_ON){ if(cb) cb(); return; }
+  SB.rpc('hb_fin_lista').then(function(r){
+    _finLoaded=true;
+    var d=r&&r.data;
+    if(!r.error && d && d.ok){ _finList=d.lista||[]; _finOn=true; }
+    else { _finList=[]; _finOn=false; }                              // no_autorizado o falta v3_13
+    if(cb) cb(); else if(_screen==='docs') renderDocs();
+  }, function(){ _finLoaded=true; if(cb) cb(); });
+}
+function docFinGo(v){ _docFin=v; _docBita=false; if(v) finLoad(); renderDocs(); window.scrollTo(0,0); }
+function finAdd(){
+  var v=(($('finClave')||{}).value||'').trim();
+  if(!v){ flash('Escribe la clave (número de colaborador)'); return; }
+  SB.rpc('hb_fin_add',{p_clave:v}).then(function(r){
+    var d=r&&r.data;
+    if(r.error || !d || !d.ok){ flash('No se pudo agregar: '+((d&&d.error==='no_existe')?'esa clave no existe en el roster':((d&&d.error)||(r.error&&r.error.message)||'intenta de nuevo'))); return; }
+    flash('✓ '+d.clave+' agregado al grupo financiero'); finLoad();
+  }, function(){ flash('Sin conexión'); });
+}
+function finDel(clave){
+  if(!confirm('¿Quitar a '+clave+' del grupo financiero? Dejará de ver los documentos de costos.')) return;
+  SB.rpc('hb_fin_del',{p_clave:clave}).then(function(r){
+    var d=r&&r.data;
+    if(r.error || !d || d.ok===false){ flash('No se pudo quitar: '+((d&&d.error==='no_te_quites')?'no puedes quitarte a ti mismo':((d&&d.error)||'intenta de nuevo'))); return; }
+    flash('Quitado del grupo financiero'); finLoad();
+  }, function(){ flash('Sin conexión'); });
+}
+function renderFinPanel(){
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Acceso restringido</div><b style="font-size:18px">Grupo financiero</b>'+
+    '<p class="note" style="margin:4px 0 0;max-width:320px">Quien esté en esta lista ve los documentos de <b>costos, precios y finanzas</b>. Nadie más — ni las otras cuentas de acceso total.</p></div></div>';
+  if(!_finList){ return h+'<div class="note">Cargando…</div></div>'; }
+  h+='<div class="note" style="margin:6px 0 3px">Agregar por clave</div>'+
+     '<div style="display:flex;gap:7px"><input id="finClave" class="fin" style="flex:1" inputmode="numeric" placeholder="Ej. 0379" autocomplete="off">'+
+     '<button class="btn" style="margin:0;width:auto;padding:11px 16px" onclick="finAdd()">Agregar</button></div>';
+  h+='<div class="sec-t" style="margin-top:14px">En el grupo · '+_finList.length+'<span class="ln"></span></div>';
+  if(!_finList.length) h+='<div class="note">Nadie todavía.</div>';
+  _finList.forEach(function(p){
+    h+='<div class="line"><span style="min-width:0;flex:1"><b style="display:block">'+esc(p.nombre||p.clave)+'</b><span class="note">'+esc(p.clave)+(p.depto?' · '+esc(p.depto):'')+'</span></span>'+
+       (p.clave==='0917'?'<span class="chipst">Tú</span>':'<button class="btn ghost" style="margin:0;width:auto;padding:7px 12px;font-size:12.5px;color:var(--bad)" onclick="finDel(\''+jsAttr(p.clave)+'\')">Quitar</button>')+'</div>';
+  });
+  h+='<div class="note" style="margin-top:10px">El servidor es quien manda: aunque alguien tenga la liga del archivo, si no está en esta lista no se abre.</div></div>';
+  return h;
+}
 function dvGet(){ return DBC.dv||[]; }
 function dvLoad(cb){
   if(!sbReady()){ if(cb)cb(); return; }
@@ -7761,7 +7811,7 @@ function dvLog(id){
   try{ SB.rpc('hb_doc_visto',{p_docid:id}).then(function(){},function(){}); }catch(e){}
 }
 function dvTime(ts){ try{ var d=new Date(ts); return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' · '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
-function docBitaGo(v){ _docBita=v; _dvDept=null; if(v) dvLoad(); renderDocs(); window.scrollTo(0,0); }
+function docBitaGo(v){ _docBita=v; _docFin=false; _dvDept=null; if(v) dvLoad(); renderDocs(); window.scrollTo(0,0); }
 function dvDeptGo(d){ _dvDept=d; renderDocs(); window.scrollTo(0,0); }
 function _dvRow(v){
   return '<div class="card"><div class="line" style="border:none;padding:0"><span style="min-width:0;flex:1"><b style="display:block">'+esc(v.nombre||'(documento)')+'</b>'+
@@ -7797,16 +7847,20 @@ var _docAcl='depto';               // alcance que elige el ACCESO TOTAL al subir
 var _docArea=null, _docCat=null, _docSub=null;
 var _docFrom=null;    // pantalla de origen (para el botón "Atrás" de Documentos)
 var _docDepto=null;   // área elegida por el acceso total (sobrevive repintados en vivo)
-function _docReset(){ _docArea=null; _docCat=null; _docSub=null; _docBita=false; _dvDept=null; }
+function _docReset(){ _docArea=null; _docCat=null; _docSub=null; _docBita=false; _docFin=false; _dvDept=null; }
 function docsHome(){ _docFrom=_screen; _docReset(); renderDocs(); }
 function docGoArea(a){ _docArea=a; _docCat=null; _docSub=null; renderDocs(); window.scrollTo(0,0); }
 function docGoCat(c){ _docCat=c; _docSub=null; renderDocs(); window.scrollTo(0,0); }
 function docGoSub(s){ _docSub=s; renderDocs(); window.scrollTo(0,0); }
 function docUpTo(l){ if(l==='root'){ _docReset(); } else if(l==='area'){ _docCat=null; _docSub=null; } else if(l==='cat'){ _docSub=null; } renderDocs(); window.scrollTo(0,0); }
-function docAclSet(m){ _docAcl=m;
+function docAclSet(m){
+  if(m==='financiero' && !_finOn){ flash('No estás en el grupo financiero'); return; }   // el servidor lo re-valida igual
+  _docAcl=m;
   var ids=$('docIds'); if(ids) ids.style.display=(m==='ids'?'':'none');
+  var fn=$('docFinNote'); if(fn) fn.style.display=(m==='financiero'?'':'none');
   var act='background:var(--accent);color:#fff;border-color:var(--accent)';
-  ['depto','ids','all'].forEach(function(k){ var b=$('docAcl_'+k); if(b) b.style.cssText=(k===m?act:''); });
+  var actFin='background:var(--warn);color:#161616;border-color:var(--warn)';
+  ['depto','ids','all','financiero'].forEach(function(k){ var b=$('docAcl_'+k); if(b) b.style.cssText=(k===m?(k==='financiero'?actFin:act):''); });
 }
 /* ROLES para documentos (mismo criterio que el resto de la app):
    total = acceso total (S.admin y NO dash 'resp'); resp = responsable de área (dash 'resp',
@@ -7850,10 +7904,14 @@ function renderDocs(){
           : docIsResp() ? ('Manuales y procesos de tu área ('+esc(S.area)+'). Puedes subir, ver, descargar y borrar los de tu área.')
           : 'Manuales y procesos de tu área. Aquí ves y descargas lo autorizado para ti.';
   var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">'+(docIsTotal()?'Panel':(docIsResp()?'Documentos de mi área':'Documentos'))+'</div><b style="font-size:20px">Documentos</b><p class="note" style="margin:4px 0 0;max-width:290px">'+sub+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
-  // Toggle Documentos / Bitácora (solo quien gestiona: responsable de su área o acceso total)
+  if(V3_ON && !_finLoaded) finLoad(function(){ if(_screen==='docs') renderDocs(); });   // ¿estoy en el grupo financiero? lo dice el servidor
+  // Toggle Documentos / Bitácora (+ Grupo financiero solo para la 0917)
   if(manage) h+='<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">'+
-    '<button class="btn'+(_docBita?' ghost':'')+'" style="margin:0;padding:9px 14px;font-size:13px;width:auto" onclick="docBitaGo(false)">Documentos</button>'+
-    '<button class="btn'+(_docBita?'':' ghost')+'" style="margin:0;padding:9px 14px;font-size:13px;width:auto" onclick="docBitaGo(true)">Bitácora · quién vio qué</button></div>';
+    '<button class="btn'+((_docBita||_docFin)?' ghost':'')+'" style="margin:0;padding:9px 14px;font-size:13px;width:auto" onclick="docBitaGo(false)">Documentos</button>'+
+    '<button class="btn'+(_docBita?'':' ghost')+'" style="margin:0;padding:9px 14px;font-size:13px;width:auto" onclick="docBitaGo(true)">Bitácora · quién vio qué</button>'+
+    (finEsDueno()?'<button class="btn'+(_docFin?'':' ghost')+'" style="margin:0;padding:9px 14px;font-size:13px;width:auto" onclick="docFinGo(true)">Grupo financiero</button>':'')+
+    '</div>';
+  if(manage && _docFin && finEsDueno()){ h+=renderFinPanel(); $('s-docs').innerHTML=h; show('docs'); return; }
   if(manage && _docBita){ h+=renderBita(); $('s-docs').innerHTML=h; show('docs'); return; }
   if(manage) h+=docUploadForm();
   if(!DBC.docs){
@@ -7883,8 +7941,12 @@ function docUploadForm(){
        '<div style="display:flex;gap:7px;flex-wrap:wrap">'+
          '<button id="docAcl_depto" class="chip2" onclick="docAclSet(\'depto\')">Su área</button>'+
          '<button id="docAcl_ids" class="chip2" onclick="docAclSet(\'ids\')">Solo IDs autorizados</button>'+
-         '<button id="docAcl_all" class="chip2" onclick="docAclSet(\'all\')">Toda la planta</button></div>'+
-       '<input id="docIds" class="fin" placeholder="Claves autorizadas, separadas por coma (ej. 0917, 0379)" style="margin-top:8px;display:none">';
+         '<button id="docAcl_all" class="chip2" onclick="docAclSet(\'all\')">Toda la planta</button>'+
+         /* FINANCIERO: solo aparece si el SERVIDOR dice que estoy en la lista blanca */
+         (_finOn?'<button id="docAcl_financiero" class="chip2" onclick="docAclSet(\'financiero\')" style="border-color:color-mix(in srgb,var(--warn) 45%,var(--line))">💰 Financiero</button>':'')+
+       '</div>'+
+       '<input id="docIds" class="fin" placeholder="Claves autorizadas, separadas por coma (ej. 0917, 0379)" style="margin-top:8px;display:none">'+
+       (_finOn?'<div class="note" id="docFinNote" style="margin-top:7px;display:none">Costos, precios y finanzas: <b>solo el grupo financiero</b> lo verá (ni las otras cuentas de acceso total). Se guarda en la carpeta <b>financiero</b>.</div>':'');
   } else {
     h+='<div class="note" style="margin:9px 0 0">Lo verán solo los de tu área ('+esc(S.area)+').</div>';
   }
@@ -7967,7 +8029,9 @@ function docCardHTML(d){
   var kind=docKind(d);
   var kb=Math.max(1,Math.round((d.size||0)/1024)), sz=(kb>=1024?(Math.round(kb/102.4)/10+' MB'):(kb+' KB'));
   var meta=esc(kind)+' · '+sz;
-  if(docIsTotal()){ var acl=d.acl||{}; meta+='<br>'+(acl.mode==='all'?'Toda la planta':(acl.mode==='ids'?('IDs: '+esc((acl.ids||[]).join(', ')||'—')):esc(d.depto||'su área'))); }
+  var _acl=d.acl||{};
+  if(_acl.mode==='financiero') meta+='<br><b style="color:var(--warn)">💰 Financiero</b>';
+  else if(docIsTotal()){ meta+='<br>'+(_acl.mode==='all'?'Toda la planta':(_acl.mode==='ids'?('IDs: '+esc((_acl.ids||[]).join(', ')||'—')):esc(d.depto||'su área'))); }
   var lbl = kind==='PowerPoint'?'PPT':(kind==='Imagen'?'IMG':(kind==='Texto'?'TXT':(kind==='Archivo'?'DOC':kind.toUpperCase())));
   var badge='<span class="dbadge"><b style="background:'+_docTypeColor(kind)+'">'+lbl+'</b></span>';
   var cached=_docThumbs[d.id];
@@ -8058,7 +8122,12 @@ function docUpload(){
   }
   if(!dep){ flash('Falta el área del documento'); return; }
   var slug=deptoSlug(dep)||'general';
-  var path=slug+'/'+Date.now()+'-'+f.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+  /* FINANCIERO (v3_13): vive en su propia carpeta 'financiero/'. El servidor EXIGE que
+     el path empiece ahí (hb_puede_gestionar_doc) y que quien sube esté en la lista blanca;
+     las policies de Storage además impiden que alguien fuera de la lista borre o
+     sustituya esos archivos. El slug del área se conserva para organizar/mostrar. */
+  var folder=(acl.mode==='financiero')?'financiero':slug;
+  var path=folder+'/'+Date.now()+'-'+f.name.replace(/[^a-zA-Z0-9._-]/g,'_');
   flash('Subiendo documento…');
   SB.storage.from('docs').upload(path, f, {contentType:(f.type||'application/octet-stream'), upsert:false}).then(function(r){
     if(r.error){ flash('⚠ NO se subió: '+(r.error.message||'error')+'. ¿Ya corriste el SQL (v3_2 crea el bucket; v3_7 deja subir a los responsables)?'); return; }

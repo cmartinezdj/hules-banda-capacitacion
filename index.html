@@ -578,6 +578,10 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .dbadge b{font-size:9.5px;font-weight:900;letter-spacing:.4px;padding:2px 6px;border-radius:5px;color:#fff}
 .dname{font-size:12.5px;font-weight:700;line-height:1.25;margin-top:7px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;min-height:2.5em}
 .dmeta{font-size:10.5px;color:var(--mut);margin-top:3px;line-height:1.3}
+/* etiqueta del ÁREA sobre la miniatura (para saber de dónde viene el documento) */
+.darea{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.82));
+  color:#fff;font-size:9px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;padding:9px 4px 3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dspk{position:absolute;top:4px;left:4px;z-index:2}
 .dspk .speak{transform:scale(.82);transform-origin:top left}
 .dmore{position:absolute;top:4px;right:4px;z-index:2;width:26px;height:26px;border-radius:8px;border:1px solid var(--line);background:rgba(6,6,7,.72);color:var(--txt);font-weight:900;cursor:pointer;line-height:1;font-size:15px;padding:0}
@@ -7752,6 +7756,7 @@ var _docBita=false, _dvDept=null;
    vive en hb_ve_doc/hb_puede_gestionar_doc + policies de Storage (v3_13): aquí solo
    pintamos u ocultamos la UI. Ni un acceso total fuera de la lista ve estos docs. */
 var _finOn=false, _finList=null, _docFin=false, _finLoaded=false;
+var _docShr=false;   /* estoy viendo la carpeta "Documentos compartidos" (permiso especial) */
 function finEsDueno(){ return !!(S && S.clave==='0917'); }          // solo 0917 edita la lista
 function finLoad(cb){
   if(!sbReady() || !V3_ON){ if(cb) cb(); return; }
@@ -7847,7 +7852,7 @@ var _docAcl='depto';               // alcance que elige el ACCESO TOTAL al subir
 var _docArea=null, _docCat=null, _docSub=null;
 var _docFrom=null;    // pantalla de origen (para el botón "Atrás" de Documentos)
 var _docDepto=null;   // área elegida por el acceso total (sobrevive repintados en vivo)
-function _docReset(){ _docArea=null; _docCat=null; _docSub=null; _docBita=false; _docFin=false; _dvDept=null; }
+function _docReset(){ _docArea=null; _docCat=null; _docSub=null; _docBita=false; _docFin=false; _docShr=false; _dvDept=null; }
 function docsHome(){ _docFrom=_screen; _docReset(); renderDocs(); }
 function docGoArea(a){ _docArea=a; _docCat=null; _docSub=null; renderDocs(); window.scrollTo(0,0); }
 function docGoCat(c){ _docCat=c; _docSub=null; renderDocs(); window.scrollTo(0,0); }
@@ -7891,10 +7896,22 @@ function _docCat0(d){ return ((d.cat||'').trim())||'General'; }
 function _docSub0(d){ return (d.sub||'').trim(); }
 function _docKnownCats(){ var s={}; docsGet().forEach(function(d){ var c=(d.cat||'').trim(); if(c) s[c]=1; }); return Object.keys(s).sort(); }
 function _docKnownSubs(){ var s={}; docsGet().forEach(function(d){ var x=(d.sub||'').trim(); if(x) s[x]=1; }); return Object.keys(s).sort(); }
+/* ===== COMPARTIDOS CONMIGO (permiso especial, v3_14) =====
+   Un documento es "compartido" si me invitaron por mi clave (acl.extra) y NO es de
+   mi área. Se aparta en su propia carpeta para no revolverlo con lo mío. */
+function _docEsCompartido(d){
+  if(!S || !S.clave) return false;
+  var ex=(d.acl||{}).extra||[];
+  if(ex.indexOf(S.clave)<0) return false;
+  return (d.deptoSlug||deptoSlug(d.depto||'')) !== deptoSlug(S.area||'');
+}
+function _docCompartidos(){ return docsGet().filter(_docEsCompartido); }
+function docShrGo(v){ _docShr=v; _docCat=null; _docSub=null; renderDocs(); window.scrollTo(0,0); }
 /* documentos "en alcance" según el explorador (para admin, filtra por el área abierta) */
 function _docScope(){
   var list=docsGet().slice();
   if(docIsTotal() && _docArea!=null) list=list.filter(function(d){ return (d.depto||'GENERAL')===_docArea; });
+  else if(!docIsTotal()) list=list.filter(function(d){ return !_docEsCompartido(d); });   // los compartidos van en su carpeta
   return list;
 }
 function renderDocs(){
@@ -7950,6 +7967,12 @@ function docUploadForm(){
   } else {
     h+='<div class="note" style="margin:9px 0 0">Lo verán solo los de tu área ('+esc(S.area)+').</div>';
   }
+  /* PERMISO ESPECIAL (v3_14): compartir ESTE documento con personas de otras áreas.
+     El documento sigue siendo de mi área; a los invitados les aparece en
+     "Documentos compartidos" (solo VER: no lo pueden borrar ni reemplazar). */
+  h+='<div class="note" style="margin:11px 0 3px">Permiso especial — <b>opcional</b></div>'+
+     '<input id="docExtra" class="fin" placeholder="Claves de quien más lo verá (ej. 0887, 0917)" autocomplete="off" inputmode="numeric">'+
+     '<div class="note" style="margin-top:5px">Déjalo vacío si solo es para tu área. Quien pongas aquí lo verá en su carpeta <b>Documentos compartidos</b> — solo para consultar.</div>';
   h+='<div style="margin-top:10px"><label class="btn ghost" style="margin:0;padding:11px;font-size:14px;display:inline-block;cursor:pointer;width:auto">Elegir archivo<input id="docFile" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,application/pdf,image/*" style="display:none" onchange="var n=(this.files&&this.files[0])?this.files[0].name:\'\';var e=document.getElementById(\'docFileName\');if(e)e.textContent=n;"></label> <span id="docFileName" class="note"></span></div>';
   h+='<div class="note" style="margin-top:6px">PDF, Word, Excel, PowerPoint, imagen o texto · máximo 100 MB.</div>';
   h+='<button class="btn" style="margin-top:10px" onclick="docUpload()">Subir documento</button>';
@@ -7960,6 +7983,19 @@ function docFormInit(){ if(docIsTotal()) docAclSet(_docAcl); }
 /* EXPLORADOR visual: (admin) carpetas por área → categorías → subcarpetas → archivos */
 function docExplorer(){
   var h='';
+  /* CARPETA "Documentos compartidos" (permiso especial, v3_14): lo que otras áreas
+     me compartieron por mi clave. Solo consulta; vive aparte de lo de mi área. */
+  if(_docShr && !docIsTotal()){
+    var shr=_docCompartidos();
+    h+='<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:2px 0 12px">'+
+       '<button class="chip2" onclick="docShrGo(false)">‹ Documentos</button>'+
+       '<span class="note">›</span><button class="chip2" style="pointer-events:none">Documentos compartidos</button></div>';
+    h+='<div class="sec-t">Compartidos conmigo · '+shr.length+'<span class="ln"></span></div>';
+    if(!shr.length) return h+'<div class="card"><div class="note">Nadie te ha compartido documentos todavía.</div></div>';
+    h+='<div class="dgrid">';
+    shr.sort(function(a,b){ return (b.ts||0)-(a.ts||0); }).forEach(function(d){ h+=docCardHTML(d); });
+    return h+'</div>';
+  }
   if(docIsTotal() && _docArea==null){
     var full=docsGet();
     if(!full.length) return '<div class="card"><div class="note">Aún no hay documentos. Sube el primero.</div></div>';
@@ -7977,7 +8013,13 @@ function docExplorer(){
   if(_docSub!=null) crumbs.push('<button class="chip2" style="pointer-events:none">'+esc(_docSub)+'</button>');
   h+='<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:2px 0 12px">'+crumbs.join('<span class="note">›</span>')+'</div>';
   var scope=_docScope();
-  if(!scope.length) return h+'<div class="card"><div class="note">'+(canDocManage()?'Aún no hay documentos aquí. Sube el primero con el formulario de arriba.':'Aún no hay documentos autorizados para ti.')+'</div></div>';
+  // carpeta de COMPARTIDOS CONMIGO (permiso especial): se ofrece en el primer nivel
+  var _shrN=(!docIsTotal() && _docCat==null)?_docCompartidos().length:0;
+  var _shrCard=_shrN?('<div class="arocard" role="button" tabindex="0" onkeydown="_kb(event)" onclick="docShrGo(true)" style="border-color:color-mix(in srgb,var(--accent) 45%,var(--line))"><div><div class="an">Documentos compartidos</div><div class="as">'+_shrN+' de otras áreas</div></div><span class="abadge">Abrir ›</span></div>'):'';
+  if(!scope.length){
+    if(_shrCard) return h+'<div class="sec-t">Carpetas<span class="ln"></span></div><div class="arogrid">'+_shrCard+'</div>';
+    return h+'<div class="card"><div class="note">'+(canDocManage()?'Aún no hay documentos aquí. Sube el primero con el formulario de arriba.':'Aún no hay documentos autorizados para ti.')+'</div></div>';
+  }
   // nivel CATEGORÍA
   if(_docCat==null){
     var byC={}, cOrder=[];
@@ -7985,7 +8027,7 @@ function docExplorer(){
     cOrder.sort();
     h+='<div class="sec-t">Categorías<span class="ln"></span></div><div class="arogrid">';
     h+=cOrder.map(function(c){ return '<div class="arocard" role="button" tabindex="0" onkeydown="_kb(event)" onclick="docGoCat(\''+jsAttr(c)+'\')"><div><div class="an">'+esc(c)+'</div><div class="as">'+byC[c]+' documento'+(byC[c]===1?'':'s')+'</div></div><span class="abadge">Abrir ›</span></div>'; }).join('');
-    return h+'</div>';
+    return h+_shrCard+'</div>';
   }
   var inCat=scope.filter(function(d){ return _docCat0(d)===_docCat; });
   // nivel SUBCATEGORÍA (+ archivos sueltos de la categoría)
@@ -8029,9 +8071,12 @@ function docCardHTML(d){
   var kind=docKind(d);
   var kb=Math.max(1,Math.round((d.size||0)/1024)), sz=(kb>=1024?(Math.round(kb/102.4)/10+' MB'):(kb+' KB'));
   var meta=esc(kind)+' · '+sz;
-  var _acl=d.acl||{};
+  var _acl=d.acl||{}, _shared=_docEsCompartido(d), _nEx=(_acl.extra||[]).length;
   if(_acl.mode==='financiero') meta+='<br><b style="color:var(--warn)">💰 Financiero</b>';
+  else if(_shared) meta+='<br><b style="color:var(--accent2)">'+esc(d.depto||'otra área')+'</b>';
   else if(docIsTotal()){ meta+='<br>'+(_acl.mode==='all'?'Toda la planta':(_acl.mode==='ids'?('IDs: '+esc((_acl.ids||[]).join(', ')||'—')):esc(d.depto||'su área'))); }
+  // al dueño le avisamos que este documento lo compartió con alguien más
+  if(!_shared && _nEx && canDocManage()) meta+='<br>Compartido con '+_nEx+' persona'+(_nEx===1?'':'s');
   var lbl = kind==='PowerPoint'?'PPT':(kind==='Imagen'?'IMG':(kind==='Texto'?'TXT':(kind==='Archivo'?'DOC':kind.toUpperCase())));
   var badge='<span class="dbadge"><b style="background:'+_docTypeColor(kind)+'">'+lbl+'</b></span>';
   var cached=_docThumbs[d.id];
@@ -8039,7 +8084,10 @@ function docCardHTML(d){
   var h='<div class="dcard" role="button" tabindex="0" onkeydown="_kb(event)" onclick="docOpen(\''+jsAttr(d.id)+'\')" aria-label="Ver documento: '+escA(d.titulo)+'">';
   h+='<span class="dspk">'+speakBtn('Documento: '+d.titulo)+'</span>';
   if(canDocManage()) h+='<button class="dmore" onclick="event.stopPropagation();docMenu(\''+jsAttr(d.id)+'\')" aria-label="Más acciones">⋯</button>';
-  h+='<span class="dthumb"'+(_docIsImg(d)?(' data-dth="'+escA(d.id)+'"'):'')+'>'+inner+'</span>';
+  // el ÁREA se ve SOBRE la miniatura (antes de abrir): imprescindible en los compartidos
+  var areaLbl=(_shared||docIsTotal())?(d.depto||''):'';
+  h+='<span class="dthumb"'+(_docIsImg(d)?(' data-dth="'+escA(d.id)+'"'):'')+'>'+inner+
+     (areaLbl?('<span class="darea">'+esc(areaLbl)+'</span>'):'')+'</span>';
   h+='<div class="dname">'+esc(d.titulo)+'</div><div class="dmeta">'+meta+'</div>';
   if(_docMenuId===d.id && canDocManage()){
     h+='<div class="dmenu" onclick="event.stopPropagation()">'+
@@ -8120,6 +8168,14 @@ function docUpload(){
   } else {
     dep=S.area; acl={mode:'depto'};   // responsable: SIEMPRE su propia área, alcance fijo
   }
+  /* PERMISO ESPECIAL (v3_14): claves invitadas a VER este documento (de cualquier área).
+     El servidor lo re-valida en hb_ve_doc; gestionar sigue siendo solo del área dueña.
+     No aplica a financiero (esa llave es únicamente la lista blanca de v3_13). */
+  if(acl.mode!=='financiero'){
+    var ex=(($('docExtra')||{}).value||'').split(',').map(function(x){ var dg=(x||'').replace(/\D/g,''); return dg?(dg.length<4?('0000'+dg).slice(-4):dg):''; }).filter(function(x){ return x; });
+    ex=ex.filter(function(v,i){ return ex.indexOf(v)===i; });      // sin repetidos
+    if(ex.length) acl.extra=ex;
+  }
   if(!dep){ flash('Falta el área del documento'); return; }
   var slug=deptoSlug(dep)||'general';
   /* FINANCIERO (v3_13): vive en su propia carpeta 'financiero/'. El servidor EXIGE que
@@ -8136,6 +8192,7 @@ function docUpload(){
       if(r2&&r2.error){ try{ SB.storage.from('docs').remove([path]); }catch(e){} flash('⚠ El archivo no quedó registrado: '+r2.error.message+'. Intenta de nuevo.'); return; }
       burst(); flash('✓ Documento publicado'+(cat?(' · '+cat):'')+(subc?(' / '+subc):''));
       var ti=$('docTitle'); if(ti) ti.value=''; if(inp) inp.value=''; var fn=$('docFileName'); if(fn) fn.textContent='';
+      var exi=$('docExtra'); if(exi) exi.value='';   // no heredar invitados en la siguiente subida
       _docAcl='depto';   // (Sesión 12) resetear alcance al MÁS restrictivo: NO heredar 'all'/'ids' del doc anterior
       // ir a la carpeta donde quedó, para verlo de inmediato (como un explorador)
       if(docIsTotal()) _docArea=dep;

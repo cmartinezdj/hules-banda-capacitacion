@@ -4615,7 +4615,7 @@ function managerDash(role){
    en DOS niveles: sección (hub de cuadros) → tema (cuadro) → la información. */
 var _MGR_PADRE={'hoy-cen':'hoy','hoy-horas':'hoy','deptos-avance':'deptos','deptos-lista':'deptos','deptos-temas':'deptos',
   'personas-permisos':'personas','personas-recibos':'personas','personas-rank':'personas',
-  'focos-alertas':'focos','focos-rojos':'focos','op-preguntas':'operacion','op-buzon':'operacion','op-directorio':'operacion','op-nom':'operacion'};
+  'focos-alertas':'focos','focos-rojos':'focos','op-preguntas':'operacion','op-buzon':'operacion','op-directorio':'operacion','op-nom':'operacion','op-errores':'operacion'};
 var _MGR_TITULO={hoy:'Hoy',deptos:'Departamentos',personas:'Personas',focos:'Focos',operacion:'Operación'};
 function mgrPage(role){
   var H=CFG.hr, DS=deptStats(), Q=qstats(), ALERTS=(Q.alerts||[]); _HRAL=ALERTS;
@@ -4760,7 +4760,11 @@ function mgrPage(role){
     h+=htile("mgrGo('op-buzon')",'docs','Buzón de reportes', buzN?(buzN+' por revisar'):'Sin pendientes', {cnt:buzN||''});
     h+=htile("mgrGo('op-directorio')",'dia','Directorio', 'Editar extensiones');
     h+=htile("mgrGo('op-nom')",'encuestas','NOM-035', (nomSt&&nomSt.current)?'Aplicación en curso':'Riesgo psicosocial');
+    if(docIsTotal()) h+=htile("mgrGo('op-errores')",'shield','Fallas de la app', _errN?(_errN+' por revisar'):'Todo en orden ✓', {cnt:_errN||''});
     h+='</div>';
+  }
+  else if(p==='op-errores'){
+    h+=erroresBlock();        // fallas que la app reportó sola (v3_15)
   }
   else if(p==='op-preguntas'){
     h+=bandiFeedBlock();      // preguntas al Asistente + reporte semanal
@@ -8235,6 +8239,76 @@ function sbBoot(){
 }
 sbBoot();
 function sbReady(){ return !!(SB_ON && SB); }
+
+/* ===== REPORTADOR DE ERRORES (v3_15) — nuestro, sin Sentry ni scripts externos =====
+   Antes estábamos CIEGOS: si a un trabajador se le trababa la app en la planta,
+   nadie se enteraba. Esto avisa solo, al servidor de la empresa.
+   Privacidad: NO manda contenido de mensajes, documentos ni datos personales;
+   solo qué falló, en qué pantalla, con qué rol y cuándo. La identidad la estampa
+   el SERVIDOR (hb_error_log), no el cliente, así nadie puede suplantar a otro.
+   Blindajes: nunca truena por sí mismo, no se repite, y se calla si no hay red. */
+var _errVistos = {}, _errCount = 0, _errN = 0, _errList = null, _errLoaded = false;
+/* Carga las fallas reportadas (solo acceso total las puede leer: RLS er_select) */
+function errLoad(cb){
+  if(!sbReady() || !V3_ON || !docIsTotal()){ if(cb) cb(); return; }
+  SB.from('errores').select('data').order('ts',{ascending:false}).limit(120).then(function(r){
+    _errLoaded = true;
+    if(!r.error && r.data){ _errList = r.data.map(function(x){ return x.data; }); _errN = _errList.length; }
+    else { _errList = []; _errN = 0; }                 // sin v3_15 corrido: no rompe nada
+    if(cb) cb(); else if(_screen==='hr') mgrPage(S.dash==='resp'?'Responsable':'Acceso total');
+  }, function(){ _errLoaded = true; if(cb) cb(); });
+}
+function erroresBlock(){
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Diagnóstico</div><b style="font-size:20px">Fallas de la app</b>'+
+    '<p class="note" style="margin:4px 0 0;max-width:330px">La app avisa sola cuando algo truena en el celular de alguien. No guarda mensajes ni datos personales: solo qué falló y en qué pantalla.</p></div></div>';
+  if(_errList===null){ errLoad(); return h+'<div class="card"><div class="note">Cargando…</div></div>'; }
+  if(!_errList.length) return h+'<div class="card"><div class="note">Sin fallas registradas. Todo en orden ✓</div></div>';
+  h+='<div class="sec-t">Últimas '+_errList.length+'<span class="ln"></span></div>';
+  _errList.forEach(function(e){
+    var veces=+(e.veces||1);
+    h+='<div class="card"><div class="line" style="border:none;padding:0"><span style="min-width:0;flex:1">'+
+       '<b style="display:block;font-size:13.5px;line-height:1.3">'+esc(e.msg||'(sin mensaje)')+'</b>'+
+       '<span class="note">Pantalla: <b>'+esc(e.screen||'—')+'</b> · '+esc(e.rol||'')+(e.clave?(' · #'+esc(e.clave)):'')+(e.depto?(' · '+esc(e.depto)):'')+'</span>'+
+       '<span class="note" style="display:block">'+fechaHora(e.ts)+'</span></span>'+
+       (veces>1?'<span class="chipst" style="border-color:color-mix(in srgb,var(--bad) 45%,transparent);color:var(--bad)">'+veces+' veces</span>':'')+
+       '</div></div>';
+  });
+  h+='<div class="note" style="margin-top:10px">Si ves una falla repetida, mándamela y la reparo.</div></div>';
+  return h;
+}
+function fechaHora(ts){ try{ return new Date(+ts).toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
+function errLog(msg, src, linea, stack){
+  try{
+    if(_errCount >= 12) return;                       // tope por sesión: no inundar
+    msg = String(msg || '').slice(0, 300);
+    if(!msg) return;
+    var pantalla = (typeof _screen === 'string' ? _screen : '');
+    var huella = msg + '|' + pantalla;
+    if(_errVistos[huella]) return;                    // el mismo error una sola vez
+    _errVistos[huella] = 1; _errCount++;
+    if(!sbReady()) return;                            // sin conexión: ni modo, se pierde
+    SB.rpc('hb_error_log', {p:{
+      msg:   msg,
+      src:   String(src || '').slice(0, 200),
+      linea: String(linea || ''),
+      stack: String(stack || '').slice(0, 900),
+      screen: pantalla,
+      ua:    String(navigator.userAgent || '').slice(0, 200),
+      ver:   (typeof V3_ON !== 'undefined' && V3_ON) ? 'v3' : 'demo'
+    }}).then(function(){}, function(){});             // si falla el reporte, silencio
+  }catch(e){}                                          // JAMÁS puede tronar el reportador
+}
+try{
+  window.addEventListener('error', function(ev){
+    try{ errLog(ev && ev.message, ev && ev.filename, ev && ev.lineno,
+                (ev && ev.error && ev.error.stack) || ''); }catch(e){}
+  });
+  window.addEventListener('unhandledrejection', function(ev){
+    try{ var r = ev && ev.reason;
+         errLog('Promesa sin manejar: ' + ((r && r.message) || r), '', '',
+                (r && r.stack) || ''); }catch(e){}
+  });
+}catch(e){}
 function sbLoad(tbl, cb){
   if(!sbReady()){ if(cb) cb(); return; }
   try{ SB.from(tbl).select('data').order('ts',{ascending:true}).then(function(r){

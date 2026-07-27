@@ -2048,7 +2048,7 @@ function startSession(cfg, saved, forceProfile){
   // permiso de notificaciones (para avisar mensajes nuevos con la app en segundo plano)
   try{ if('Notification' in window && Notification.permission==='default') setTimeout(function(){ Notification.requestPermission(); }, 2500); }catch(e){}
   window._forceProfile=!!forceProfile;
-  if(V3_ON) idleArm();   // auto-salir por inactividad en equipos compartidos (solo sesión real)
+  if(V3_ON) idleArm();   // solo auto-sale si el dispositivo está marcado como compartido; en celular personal la sesión queda pegada
   if(forceProfile){ renderPerfil(); }
   else if(S.admin) renderDash(); else renderHome();
 }
@@ -2093,8 +2093,10 @@ function hbWipeLocal(){
     var kill=[];
     for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i);
       if(!k) continue;
-      // token de Supabase + todo lo de la app MENOS el candado de intentos y la preferencia de modelo (inocua)
-      if(/^sb-.*-auth-token/.test(k) || (k.indexOf('hb_')===0 && k!=='hb_pinlock' && k!=='hb_model')) kill.push(k);
+      // token de Supabase + todo lo de la app MENOS: el candado de intentos, la preferencia de
+      // modelo (inocua) y la marca de "dispositivo compartido" (debe sobrevivir al logout para
+      // que una tableta de área siga comportándose como compartida con el siguiente usuario).
+      if(/^sb-.*-auth-token/.test(k) || (k.indexOf('hb_')===0 && k!=='hb_pinlock' && k!=='hb_model' && k!=='hb_shared_device')) kill.push(k);
     }
     kill.forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
   }catch(e){}
@@ -2105,12 +2107,19 @@ function logout(){
   try{ if(sbReady()) SB.auth.signOut({scope:'global'}); }catch(e){}   // revocación en el servidor, best-effort (no bloquea el reload)
   location.reload();
 }
-/* AUTO-SALIR POR INACTIVIDAD (equipo compartido): tras 5 min sin actividad, cierra
-   la sesión de verdad (logout borra el token + reload). Debe hacer logout REAL, no
-   un overlay cosmético: la sesión persistida se auto-reanudaría al recargar. */
-var IDLE_MS=10*60000, _idleT=null;   // 10 min: cubre un video de capacitación (~4 min) sin cortar la sesión, pero cierra un equipo abandonado
+/* SESIÓN PEGADA vs AUTO-SALIR POR INACTIVIDAD.
+   - Celular PERSONAL (hoy, el 99%): la sesión se queda iniciada hasta que la persona
+     dé "Salir" (como WhatsApp). NO se arma el auto-logout. Es lo que pidió Carlos.
+   - Dispositivo COMPARTIDO (futuro: tableta por área): se marca con
+     hbSharedDevice(true) UNA vez en esa tableta; entonces SÍ se auto-sale por
+     inactividad (logout REAL: borra token + reload; un overlay se auto-reanudaría).
+   La marca vive en hb_shared_device y sobrevive al logout (ver hbWipeLocal). */
+var IDLE_MS=10*60000, _idleT=null;   // 10 min: cubre un video de capacitación (~4 min) sin cortar la sesión
+function hbSharedDevice(on){ try{ if(on){ localStorage.setItem('hb_shared_device','1'); } else { localStorage.removeItem('hb_shared_device'); } }catch(e){} location.reload(); }
+function _esCompartido(){ try{ return localStorage.getItem('hb_shared_device')==='1'; }catch(e){ return false; } }
 function idleReset(){ if(!S) return; clearTimeout(_idleT); _idleT=setTimeout(function(){ if(S) logout(); }, IDLE_MS); }
 function idleArm(){
+  if(!_esCompartido()) return;   // celular personal: sesión pegada, sin auto-logout
   if(window._idleArmed) { idleReset(); return; }
   window._idleArmed=true;
   ['mousedown','keydown','touchstart','scroll','visibilitychange'].forEach(function(ev){

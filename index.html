@@ -661,14 +661,25 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .nav button{flex:1;max-width:80px;position:relative;background:none;border:none;color:rgba(255,255,255,.72);font-size:9px;font-weight:700;cursor:pointer;
   display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;border-radius:14px;transition:.18s var(--ease-out)}
 .nav button .ni{width:20px;height:20px}
-/* Puntito AZUL de mensaje recibido (todas las cuentas) — vive en el menú, junto a "Mensajes" */
-.nbadge{position:absolute;top:2px;right:8px;min-width:15px;height:15px;padding:0 4px;border-radius:9px;background:#2a7de1;color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 8px rgba(42,125,225,.9)}
+/* Puntito AZUL de mensaje recibido (todas las cuentas) — vive en el menú, junto a "Mensajes".
+   Se ancla al CENTRO del botón (no al borde derecho): así muerde siempre la esquina
+   superior derecha del ícono, sin importar cuán ancho quede el botón en cada teléfono.
+   Antes usaba right:8px y quedaba ~20px flotando en el vacío. */
+.nbadge{position:absolute;top:1px;left:calc(50% + 2px);min-width:16px;height:16px;padding:1px 4px 0;border-radius:999px;
+  background:#2a7de1;color:#fff;font-size:9.5px;font-weight:800;display:grid;place-items:center;line-height:1;
+  font-variant-numeric:tabular-nums;box-shadow:0 0 8px rgba(42,125,225,.9)}
 .nav button.on{color:#fff}
 /* Inicio central: círculo blanco elevado con la casita roja (identidad) */
+/* OJO: sin justify-content:center + padding:0 el contenido se pega ARRIBA del círculo
+   (medido en iPhone: 6px de hueco arriba contra 18.5px abajo = 12.5px descentrado).
+   El line-height:1 del rótulo hace que su caja abrace las letras, así el centro
+   geométrico coincide con el óptico. */
 .nav button.navmain{flex:none;width:60px;height:60px;border-radius:50%;margin-top:-24px;
-  background:radial-gradient(120% 120% at 30% 20%,#fff,#ffe3e0);color:var(--accent);font-size:9px;gap:1px;
+  padding:0;justify-content:center;
+  background:radial-gradient(120% 120% at 30% 20%,#fff,#ffe3e0);color:var(--accent);font-size:9px;gap:2px;
   box-shadow:0 10px 22px rgba(0,0,0,.4),0 0 0 5px color-mix(in srgb,var(--accent) 55%,transparent)}
-.nav button.navmain .ni{width:24px;height:24px;stroke-width:2.3}
+.nav button.navmain .ni{width:24px;height:24px;stroke-width:2.3;flex:none}
+.nav button.navmain span{line-height:1}
 .nav button.navmain.on{color:var(--accent)}
 .nav button.navmain:active{transform:scale(.93)}
 .nav button.on .ni{filter:drop-shadow(0 4px 8px color-mix(in srgb,var(--accent) 50%,transparent))}

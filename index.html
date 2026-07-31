@@ -566,6 +566,31 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .arocard .an{font-size:14.5px;font-weight:800;letter-spacing:-.01em;line-height:1.2;position:relative}
 .arocard .as{font-size:11.5px;color:var(--mut);margin-top:4px;position:relative}
 .arocard .abadge{position:relative;align-self:flex-start;margin-top:9px;font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+/* ===== Documentos: BUSCADOR (todas las cuentas) ===== */
+.dsearch{position:relative;display:block}
+.dsearch .dsi{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;opacity:.65;pointer-events:none;line-height:1}
+.dsearch .dsq{padding-left:41px;padding-right:44px}
+.dsearch .dsq::-webkit-search-cancel-button{display:none}   /* usamos nuestra ✕, más grande para el dedo */
+.dsearch .dsx{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:var(--mut);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+@media (hover:hover){.dsearch .dsx:hover{background:var(--card2);color:var(--txt)}}
+.dsearch .dsx:active{background:var(--card2)}
+/* RESULTADOS de búsqueda = renglones de ancho completo, NO la cuadrícula de íconos:
+   en un buscador lo que la persona necesita leer es el TÍTULO COMPLETO (los de HB
+   son largos: "MP-LPF-21 Rev 4 · Método para realizar pruebas de tensión y…"), y en
+   una tarjeta angosta se corta a la mitad. */
+.dreslist{display:flex;flex-direction:column;gap:10px;margin:6px 0 4px}
+.dres{position:relative;display:flex;gap:12px;align-items:flex-start;padding:12px 12px 12px 12px;border:1px solid var(--line);border-radius:14px;background:var(--panel);cursor:pointer;text-align:left;transition:transform .13s var(--ease-out),border-color .2s var(--ease-out)}
+.dres:active{transform:scale(.99)}
+@media (hover:hover){.dres:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}}
+.dres .dresi{flex:0 0 46px;height:56px;border-radius:9px;overflow:hidden;background:rgba(255,255,255,.05);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+.dres .dresi img{width:100%;height:100%;object-fit:cover}
+.dres .dresi b{font-size:10px;font-weight:900;letter-spacing:.5px;color:#fff;padding:2px 5px;border-radius:5px}
+.dres .dresb{flex:1;min-width:0;padding-right:58px}
+.dres .dresn{font-size:14px;font-weight:800;line-height:1.35;word-break:break-word}
+.dres .dresm{font-size:12px;color:var(--mut);margin-top:4px;line-height:1.4}
+.dres .dresa{position:absolute;top:8px;right:8px;display:flex;gap:2px;align-items:center}
+.dres .dresa .speak{position:static;width:30px;height:30px}
+.dres .dmore{position:static;width:30px;height:30px}
 /* ===== Documentos: cuadrícula de íconos con miniatura (estilo Finder) ===== */
 .dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:12px;margin:6px 0 4px}
 .dcard{position:relative;border:1px solid var(--line);border-radius:14px;background:var(--panel);cursor:pointer;padding:8px 8px 9px;text-align:center;transition:transform .13s var(--ease-out),border-color .2s var(--ease-out)}
@@ -7872,7 +7897,7 @@ var _docAcl='depto';               // alcance que elige el ACCESO TOTAL al subir
 var _docArea=null, _docCat=null, _docSub=null;
 var _docFrom=null;    // pantalla de origen (para el botón "Atrás" de Documentos)
 var _docDepto=null;   // área elegida por el acceso total (sobrevive repintados en vivo)
-function _docReset(){ _docArea=null; _docCat=null; _docSub=null; _docBita=false; _docFin=false; _docShr=false; _dvDept=null; }
+function _docReset(){ _docArea=null; _docCat=null; _docSub=null; _docBita=false; _docFin=false; _docShr=false; _dvDept=null; _docQ=''; _docQMax=60; }
 function docsHome(){ _docFrom=_screen; _docReset(); renderDocs(); }
 function docGoArea(a){ _docArea=a; _docCat=null; _docSub=null; renderDocs(); window.scrollTo(0,0); }
 function docGoCat(c){ _docCat=c; _docSub=null; renderDocs(); window.scrollTo(0,0); }
@@ -7934,6 +7959,141 @@ function _docScope(){
   else if(!docIsTotal()) list=list.filter(function(d){ return !_docEsCompartido(d); });   // los compartidos van en su carpeta
   return list;
 }
+/* ============================================================================
+   BUSCADOR DE DOCUMENTOS (V3.16) — para TODAS las cuentas: trabajador, mando y
+   acceso total. Busca por PALABRAS sueltas en el título (que trae el código tipo
+   MP-LPF-21), la carpeta, la subcarpeta y el área.
+
+   · Sin acentos y sin mayúsculas: quien escribe "metodo tension" encuentra
+     "Método para realizar pruebas de tensión…". La gente de planta no teclea
+     acentos, y sin esto el buscador no les serviría.
+   · Varias palabras = TODAS tienen que aparecer (no importa el orden).
+   · Busca en TODO lo autorizado para ti, sin importar en qué carpeta estés
+     parado: es un buscador, no un filtro de la carpeta abierta.
+   · La autoridad sigue siendo del servidor: solo se puede buscar dentro de lo
+     que la RLS ya te entregó (hb_ve_doc). No abre ni una puerta nueva.
+   ============================================================================ */
+var _docQ='';                 /* lo que escribió la persona */
+var _docQMax=60;              /* cuántos resultados se pintan (con botón "Ver más") */
+function _docBuscando(){ return _docTokens(_docQ).length>0; }
+function _docTokens(q){
+  var t=_norm(q).split(/\s+/).filter(function(x){ return x.length>=2; });
+  return t.slice(0,6);        // más de 6 palabras no aporta y sí cuesta
+}
+/* El "pajar" de un documento (todo lo que tiene sentido buscar), en un caché
+   APARTE — no dentro del documento: la lista se guarda en el celular tal cual, y
+   meterle campos de adorno la engorda de más. La llave trae el ts, así que si el
+   documento cambia el caché se invalida solo. */
+var _docPajarC={};
+function _docPajar(d){
+  var k=d.id+'|'+(d.ts||0);
+  if(_docPajarC[k]==null) _docPajarC[k]=_norm([d.titulo, d.cat, d.sub, d.depto, docKind(d)].join(' '));
+  return _docPajarC[k];
+}
+function docBuscaHits(){
+  var toks=_docTokens(_docQ);
+  if(!toks.length) return [];
+  var hits=[];
+  docsGet().forEach(function(d){
+    var hay=_docPajar(d);
+    if(!toks.every(function(t){ return hay.indexOf(t)>=0; })) return;
+    /* orden: primero los que coinciden en el TÍTULO (lo que la gente busca de
+       verdad), luego el resto; dentro de cada grupo, lo más nuevo arriba. */
+    var tit=_norm(d.titulo||'');
+    hits.push({d:d, r:(toks.every(function(t){ return tit.indexOf(t)>=0; })?0:1)});
+  });
+  hits.sort(function(a,b){ return (a.r-b.r) || ((b.d.ts||0)-(a.d.ts||0)); });
+  return hits.map(function(x){ return x.d; });
+}
+/* Se re-pinta SOLO el cuerpo, nunca la caja: si repintáramos todo, el teclado
+   del celular se cierra y se pierde el cursor a media palabra. */
+var _docQT=null;
+function docBuscaInput(v){
+  _docQ=v; _docQMax=60;
+  clearTimeout(_docQT);
+  _docQT=setTimeout(docBuscaPinta, 160);
+}
+function docBuscaPinta(){
+  var body=$('docBody'); if(!body) return;
+  var manage=canDocManage();
+  body.innerHTML = _docBuscando() ? docBuscaResultados()
+                 : ((manage?docUploadForm():'')+docExplorer());
+  var x=$('docQx'); if(x) x.style.display=(_docQ?'':'none');
+  if(!_docBuscando() && manage) docFormInit();
+  docThumbsFetch();
+}
+function docBuscaLimpia(){
+  _docQ=''; _docQMax=60;
+  var i=$('docQ'); if(i){ i.value=''; try{ i.focus(); }catch(e){} }
+  docBuscaPinta();
+}
+function docBuscaMas(){ _docQMax+=60; docBuscaPinta(); }
+function docBuscaBox(){
+  return '<div class="dsearch">'+
+    '<span class="dsi" aria-hidden="true">🔎</span>'+
+    '<input id="docQ" class="fin dsq" type="search" inputmode="search" enterkeyhint="search" '+
+      'autocomplete="off" autocorrect="off" spellcheck="false" '+
+      'placeholder="Buscar documento…" aria-label="Buscar documento por palabras" '+
+      'value="'+escA(_docQ)+'" oninput="docBuscaInput(this.value)">'+
+    '<button id="docQx" class="dsx" onclick="docBuscaLimpia()" aria-label="Borrar la búsqueda"'+
+      (_docQ?'':' style="display:none"')+'>✕</button>'+
+    '</div>'+
+    '<div class="note" style="margin:6px 4px 12px">Escribe el <b>código</b> (MP-LPF-21), el <b>nombre</b> o la <b>carpeta</b>. No importan los acentos ni las mayúsculas.</div>';
+}
+/* UN RESULTADO = un renglón de ancho completo con el TÍTULO COMPLETO y la carpeta
+   donde vive. Mismo comportamiento que la tarjeta: tocar = Ver (liga firmada +
+   bitácora), 🔊 para escucharlo, ⋯ para Descargar/Borrar según el rol. */
+function docResRowHTML(d){
+  var kind=docKind(d);
+  var kb=Math.max(1,Math.round((d.size||0)/1024)), sz=(kb>=1024?(Math.round(kb/102.4)/10+' MB'):(kb+' KB'));
+  var lbl = kind==='PowerPoint'?'PPT':(kind==='Imagen'?'IMG':(kind==='Texto'?'TXT':(kind==='Archivo'?'DOC':kind.toUpperCase())));
+  /* la carpeta donde vive: el área solo se nombra cuando NO es la propia (acceso
+     total o documento compartido); al trabajador su área no le dice nada nuevo */
+  var ruta=[(docIsTotal()||_docEsCompartido(d))?(d.depto||''):'', _docCat0(d), _docSub0(d)]
+           .filter(function(x){ return !!x; }).join(' › ');
+  var _acl=d.acl||{}, extras='';
+  if(_acl.mode==='financiero') extras='<br><b style="color:var(--warn)">💰 Financiero</b>';
+  else if(_acl.mode==='all') extras='<br>Toda la planta';
+  else if(_acl.mode==='ids' && docIsTotal()) extras='<br>IDs: '+esc((_acl.ids||[]).join(', ')||'—');
+  else if(_docEsCompartido(d)) extras='<br><b style="color:var(--accent2)">Compartido contigo</b>';
+  var cached=_docThumbs[d.id];
+  var icono=(_docIsImg(d)&&cached)?('<img src="'+imgSrc(cached)+'" alt="">')
+           :('<b style="background:'+_docTypeColor(kind)+'">'+lbl+'</b>');
+  var h='<div class="dres" role="button" tabindex="0" onkeydown="_kb(event)" onclick="docOpen(\''+jsAttr(d.id)+'\')" aria-label="Ver documento: '+escA(d.titulo)+'">';
+  h+='<span class="dresi"'+(_docIsImg(d)?(' data-dth="'+escA(d.id)+'"'):'')+'>'+icono+'</span>';
+  h+='<div class="dresb"><div class="dresn">'+esc(d.titulo)+'</div>'+
+     '<div class="dresm">'+esc(kind)+' · '+sz+(ruta?(' · '+esc(ruta)):'')+extras+'</div></div>';
+  h+='<span class="dresa">'+speakBtn('Documento: '+d.titulo)+
+     (canDocManage()?'<button class="dmore" onclick="event.stopPropagation();docMenu(\''+jsAttr(d.id)+'\')" aria-label="Más acciones">⋯</button>':'')+
+     '</span>';
+  if(_docMenuId===d.id && canDocManage()){
+    h+='<div class="dmenu" onclick="event.stopPropagation()">'+
+       '<button onclick="docMenu(null);docOpen(\''+jsAttr(d.id)+'\')">Ver</button>'+
+       '<button onclick="docMenu(null);docDownload(\''+jsAttr(d.id)+'\')">Descargar</button>'+
+       (canManageThisDoc(d)?'<button style="color:var(--bad)" onclick="docMenu(null);docDel(\''+jsAttr(d.id)+'\')">Borrar</button>':'')+
+       '</div>';
+  }
+  return h+'</div>';
+}
+function docBuscaResultados(){
+  var hits=docBuscaHits(), h='';
+  var q=esc(_docQ.trim());
+  if(!hits.length){
+    return '<div class="card"><div class="note">No encontré ningún documento con <b>'+q+'</b>.<br><br>'+
+           'Prueba con menos palabras, o con el código del documento (por ejemplo <b>MP-LPF-21</b>).'+
+           (docIsTotal()?'':'<br><br>Recuerda que aquí solo aparece lo autorizado para ti.')+'</div></div>';
+  }
+  var ver=hits.slice(0, _docQMax);
+  h+='<div class="sec-t">'+hits.length+' resultado'+(hits.length===1?'':'s')+' para "'+q+'"<span class="ln"></span></div>';
+  h+='<div class="dreslist">';
+  ver.forEach(function(d){ h+=docResRowHTML(d); });
+  h+='</div>';
+  if(hits.length>ver.length){
+    h+='<button class="btn ghost" style="margin:14px 0 0" onclick="docBuscaMas()">Ver más ('+
+       (hits.length-ver.length)+' faltan)</button>';
+  }
+  return h;
+}
 function renderDocs(){
   if(sbReady() && Date.now()-(window._lastLoadDocs||0)>4000){ window._lastLoadDocs=Date.now(); sbLoad('docs'); }
   var manage=canDocManage();
@@ -7950,14 +8110,21 @@ function renderDocs(){
     '</div>';
   if(manage && _docFin && finEsDueno()){ h+=renderFinPanel(); $('s-docs').innerHTML=h; show('docs'); return; }
   if(manage && _docBita){ h+=renderBita(); $('s-docs').innerHTML=h; show('docs'); return; }
-  if(manage) h+=docUploadForm();
   if(!DBC.docs){
+    if(manage) h+=docUploadForm();
     h+='<div class="card"><div class="note">'+(sbReady()?'Cargando documentos… Si no aparecen, falta correr el parche <b>schema_v3_2</b> en Supabase.':'Sin conexión: los documentos requieren internet.')+'</div></div>';
     $('s-docs').innerHTML=h; show('docs'); if(manage) docFormInit(); return;
   }
-  h+=docExplorer();
+  /* BUSCADOR arriba y SIEMPRE en el mismo lugar (todas las cuentas). Debajo, un
+     solo cajón `docBody` con: el formulario de subir + el explorador, o los
+     resultados de la búsqueda. Se repinta ese cajón, nunca la caja de búsqueda,
+     para no cerrarle el teclado a media palabra. Mientras se busca, el formulario
+     de subir se esconde: así los resultados salen pegados a la caja y no 600 px
+     más abajo. */
+  h+=docBuscaBox();
+  h+='<div id="docBody">'+(_docBuscando()?docBuscaResultados():((manage?docUploadForm():'')+docExplorer()))+'</div>';
   $('s-docs').innerHTML=h; show('docs');
-  if(manage) docFormInit();
+  if(manage && !_docBuscando()) docFormInit();
   docThumbsFetch();   /* miniaturas de imagen en lote (cacheadas; no toca la bitácora) */
 }
 /* formulario de subida — acceso total (cualquier área/alcance) o responsable (SU área, alcance fijo) */

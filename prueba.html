@@ -36,7 +36,13 @@
 </div>
 
 <div class="card">
-  <p class="t">3 · Tu conexión y tu aparato</p>
+  <p class="t">3 · ¿Arranca la app en tu aparato?</p>
+  <div class="v esp" id="app">Esperando el paso 2…</div>
+  <div id="detalle" style="font-size:12px;color:#9aa0ae;margin-top:8px;white-space:pre-wrap;word-break:break-word"></div>
+</div>
+
+<div class="card">
+  <p class="t">4 · Tu conexión y tu aparato</p>
   <div class="v" id="info" style="font-size:13px;font-weight:600"></div>
 </div>
 
@@ -110,7 +116,83 @@
     r.className='v mal';
     r.innerHTML='✗ FALLÓ: '+(e&&e.message?e.message:e)+
       '<br><span style="font-size:13px;font-weight:600">Se cortó en '+Math.round(leidos/1024)+' KB de 867 KB.</span>';
-  });
+  }).then(pruebaLaApp);
+
+  /* PASO 3 — LA PRUEBA QUE IMPORTA
+     Si el archivo baja bien pero la app "se queda cargando", la falla está en el
+     código, no en la red. Así que aquí se abre la app DE VERDAD en un marco
+     escondido (mismo dominio, así se puede leer lo que pasa adentro) y se reporta:
+       · si alcanzó a dibujar la portada,
+       · el error exacto de JavaScript si truena, con archivo y renglón.
+     El enganche del cazador de errores se hace por sondeo cada 5 ms justo después
+     de pedir la página, para alcanzar a ponerlo ANTES de que corran sus scripts. */
+  function pruebaLaApp(){
+    var caja=document.getElementById('app'), det=document.getElementById('detalle');
+    caja.className='v esp'; caja.textContent='Abriendo la app… (15 s)';
+    var fallas=[], enganchado=false, ifr=document.createElement('iframe');
+    ifr.setAttribute('title','prueba');
+    ifr.style.cssText='position:absolute;left:-9999px;top:0;width:390px;height:700px;border:0';
+
+    function engancha(){
+      try{
+        var w=ifr.contentWindow;
+        if(!w || enganchado) return;
+        enganchado=true;
+        w.onerror=function(m,f,l,c){
+          fallas.push('✗ '+m+'\n   en '+String(f||'').split('/').pop()+' renglón '+l+(c?(' col '+c):''));
+          return false;
+        };
+        w.addEventListener('unhandledrejection', function(ev){
+          var z=ev.reason;
+          fallas.push('✗ promesa sin atender: '+((z&&z.message)||z));
+        });
+      }catch(e){}
+    }
+
+    document.body.appendChild(ifr);
+    ifr.src='index.html?diagnostico=1';
+    var sondeo=setInterval(engancha, 5);
+
+    setTimeout(function(){
+      clearInterval(sondeo);
+      var d=[];
+      try{
+        var w=ifr.contentWindow, doc=ifr.contentDocument;
+        var portada=doc && doc.querySelector('#s-login, .login, section');
+        var visible=false;
+        try{
+          var el=doc.querySelector('#s-login');
+          visible = !!(el && el.getBoundingClientRect().height>50);
+        }catch(e){}
+        var pintado=false;
+        try{ pintado = !!(doc && doc.body && doc.body.getBoundingClientRect().height>200); }catch(e){}
+
+        d.push('estado del documento: '+(doc?doc.readyState:'?'));
+        d.push('se dibujó algo: '+(pintado?'SÍ':'NO'));
+        d.push('login visible: '+(visible?'SÍ':'NO'));
+        d.push('SDK de Supabase: '+((w&&typeof w.supabase!=='undefined')?'cargó':'NO cargó'));
+        d.push('conexión al servidor: '+((w&&w.SB)?'lista':'no'));
+        d.push('modo real (V3): '+((w&&typeof w.V3_ON!=='undefined')?String(w.V3_ON):'la app no llegó ahí'));
+
+        if(fallas.length){
+          caja.className='v mal';
+          caja.innerHTML='✗ LA APP TRUENA EN TU APARATO';
+          d.unshift(fallas.join('\n'));
+        } else if(pintado && visible){
+          caja.className='v ok';
+          caja.innerHTML='✓ La app SÍ arranca aquí';
+        } else {
+          caja.className='v mal';
+          caja.innerHTML='✗ La app NO alcanzó a dibujarse (sin error de JavaScript)';
+        }
+      }catch(e){
+        caja.className='v mal';
+        caja.innerHTML='✗ No pude revisar adentro: '+(e&&e.message?e.message:e);
+      }
+      det.textContent=d.join('\n');
+      try{ ifr.remove(); }catch(e){}
+    }, 15000);
+  }
 })();
 </script>
 </body></html>

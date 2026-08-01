@@ -46,6 +46,13 @@
   <div class="v" id="info" style="font-size:13px;font-weight:600"></div>
 </div>
 
+<div class="card">
+  <p class="t">5 · El motor de la app (supabase.min.js)</p>
+  <div class="v esp" id="sdk">Probando…</div>
+</div>
+
+<button onclick="location.href='index.html?desdeprueba='+Date.now()" style="background:#22c55e">ABRIR LA APP DE VERDAD →</button>
+<p class="chico" style="margin-top:6px">Al tocar el botón verde: si ves <b>"Bienvenido"</b>, todo jaló. Si se queda cargando, fíjate si la pantalla es <b>BLANCA</b> o <b>NEGRA</b> y díselo a Carlos — ese único dato parte el problema en dos.</p>
 <button onclick="location.reload()">Volver a probar</button>
 <p class="chico">Cuando termine, <b>mándale esta pantalla completa a Carlos</b> (captura de pantalla). Con estos números se sabe exactamente qué está fallando.</p>
 
@@ -116,7 +123,31 @@
     r.className='v mal';
     r.innerHTML='✗ FALLÓ: '+(e&&e.message?e.message:e)+
       '<br><span style="font-size:13px;font-weight:600">Se cortó en '+Math.round(leidos/1024)+' KB de 867 KB.</span>';
-  }).then(pruebaLaApp);
+  }).then(pruebaLaApp).then(pruebaElSDK);
+
+  /* PASO 5 — el ÚNICO archivo que puede sostener la barrita de Safari girando
+     para siempre es supabase.min.js (es el único script externo del arranque).
+     La auditoría descartó todo lo demás. Aquí se baja aparte, medido. */
+  function pruebaElSDK(){
+    var caja=document.getElementById('sdk'), t0=Date.now();
+    var reloj=setTimeout(function(){
+      caja.className='v mal';
+      caja.innerHTML='✗ SE ATORÓ — más de 25 s sin terminar.<br><span style="font-size:13px;font-weight:600">ESTE archivo es el que deja la barrita girando.</span>';
+    }, 25000);
+    fetch('supabase.min.js?prueba='+Date.now(), {cache:'no-store'}).then(function(r){
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.text();
+    }).then(function(t){
+      clearTimeout(reloj);
+      var s=((Date.now()-t0)/1000).toFixed(1);
+      caja.className='v ok';
+      caja.innerHTML='✓ Bajó completo — '+Math.round(t.length/1024)+' KB en '+s+' s';
+    }).catch(function(e){
+      clearTimeout(reloj);
+      caja.className='v mal';
+      caja.innerHTML='✗ FALLÓ: '+(e&&e.message?e.message:e);
+    });
+  }
 
   /* PASO 3 — LA PRUEBA QUE IMPORTA
      Si el archivo baja bien pero la app "se queda cargando", la falla está en el

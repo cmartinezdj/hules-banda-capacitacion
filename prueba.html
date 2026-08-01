@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prueba de conexión · Hules Banda</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;padding:22px;background:#0b0c11;color:#eef0f6;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;line-height:1.5}
+  h1{font-size:21px;margin:0 0 4px}
+  .sub{color:#9aa0ae;font-size:14px;margin:0 0 20px}
+  .card{background:#14161d;border:1px solid #262a36;border-radius:14px;padding:16px;margin-bottom:12px}
+  .t{font-size:13px;color:#9aa0ae;margin:0 0 6px;text-transform:uppercase;letter-spacing:1.2px;font-weight:800}
+  .v{font-size:17px;font-weight:800;word-break:break-word}
+  .ok{color:#22c55e} .mal{color:#ef4444} .esp{color:#f59e0b}
+  .barra{height:12px;background:#262a36;border-radius:99px;overflow:hidden;margin:10px 0 6px}
+  .barra i{display:block;height:100%;width:0;background:#e73b2f;transition:width .2s}
+  button{width:100%;padding:15px;font-size:16px;font-weight:800;color:#fff;background:#e73b2f;
+         border:0;border-radius:13px;margin-top:6px;font-family:inherit}
+  .chico{font-size:12px;color:#6b7280;margin-top:14px}
+  code{background:#0b0c11;padding:2px 5px;border-radius:5px;font-size:12px}
+</style></head><body>
+
+<h1>Prueba de conexión</h1>
+<p class="sub">Esta página pesa 3 KB. Si la estás viendo, llegaste al servidor de Hules Banda.</p>
+
+<div class="card">
+  <p class="t">1 · Llegaste al servidor</p>
+  <div class="v ok">✓ SÍ — esta página cargó</div>
+</div>
+
+<div class="card">
+  <p class="t">2 · Bajando la app completa</p>
+  <div class="barra"><i id="b"></i></div>
+  <div class="v esp" id="r">Empezando…</div>
+</div>
+
+<div class="card">
+  <p class="t">3 · Tu conexión y tu aparato</p>
+  <div class="v" id="info" style="font-size:13px;font-weight:600"></div>
+</div>
+
+<button onclick="location.reload()">Volver a probar</button>
+<p class="chico">Cuando termine, <b>mándale esta pantalla completa a Carlos</b> (captura de pantalla). Con estos números se sabe exactamente qué está fallando.</p>
+
+<script>
+(function(){
+  var b=document.getElementById('b'), r=document.getElementById('r'), info=document.getElementById('info');
+
+  /* Lo que se puede saber del aparato SIN pedir ningún permiso ni dato personal */
+  var c=navigator.connection||navigator.mozConnection||navigator.webkitConnection||{};
+  var lineas=[];
+  if(c.effectiveType) lineas.push('Tipo de red: <b>'+c.effectiveType+'</b>');
+  if(c.downlink)      lineas.push('Velocidad estimada: <b>'+c.downlink+' Mbps</b>');
+  if(c.rtt)           lineas.push('Retardo: <b>'+c.rtt+' ms</b>');
+  if(typeof c.saveData!=='undefined') lineas.push('Ahorro de datos: <b>'+(c.saveData?'PRENDIDO ⚠':'apagado')+'</b>');
+  lineas.push('Aparato: <b>'+navigator.userAgent.slice(0,110)+'</b>');
+  lineas.push('Hora: <b>'+new Date().toLocaleString()+'</b>');
+  if(!c.effectiveType) lineas.unshift('<i>(Safari no dice la velocidad; los demás datos sí sirven)</i>');
+  info.innerHTML=lineas.join('<br>');
+
+  /* Bajar el archivo real de la app, midiendo, para ver si se completa o se atora */
+  /* El navegador cuenta el archivo YA DESCOMPRIMIDO (867 KB), aunque por el cable
+     viajen ~312 KB comprimidos. El porcentaje se mide contra los 867 KB para que
+     la barra sea honesta. */
+  var t0=Date.now(), leidos=0, TOTAL=867*1024, ultimo=t0, atorado=null;
+
+  function pinta(){
+    var pct=Math.min(100, Math.round(leidos*100/TOTAL));
+    b.style.width=pct+'%';
+    var s=(Date.now()-t0)/1000;
+    r.innerHTML=pct+'% · '+Math.round(leidos/1024)+' KB en '+s.toFixed(1)+' s'+
+      (s>1?(' · '+Math.round((leidos/1024)/s)+' KB/s'):'');
+  }
+
+  /* Vigilante: si pasan 20 s sin que llegue un solo byte nuevo, se declara atorado.
+     Ése es justo el síntoma de "loading y loading". */
+  atorado=setInterval(function(){
+    if(Date.now()-ultimo>20000){
+      clearInterval(atorado);
+      r.className='v mal';
+      r.innerHTML='✗ SE ATORÓ en '+Math.round(leidos/1024)+' KB de 867 KB'+
+                  '<br><span style="font-size:13px;font-weight:600">Dejó de llegar información. ESTE es el problema.</span>';
+    }
+  }, 2000);
+
+  fetch('index.html?prueba='+Date.now(), {cache:'no-store'}).then(function(res){
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    if(!res.body){                       /* navegador viejo: sin medición por pedazos */
+      return res.text().then(function(t){ leidos=t.length; return null; });
+    }
+    var lector=res.body.getReader();
+    return (function leer(){
+      return lector.read().then(function(x){
+        if(x.done) return null;
+        leidos+=x.value.length; ultimo=Date.now(); pinta();
+        return leer();
+      });
+    })();
+  }).then(function(){
+    clearInterval(atorado);
+    var s=(Date.now()-t0)/1000;
+    b.style.width='100%';
+    r.className='v ok';
+    r.innerHTML='✓ COMPLETO — '+Math.round(leidos/1024)+' KB en '+s.toFixed(1)+' s'+
+      '<br><span style="font-size:13px;font-weight:600">'+
+      (s<5?'La app debería abrirte bien.':'Tardó '+s.toFixed(0)+' s: por eso se siente que no carga.')+'</span>';
+  }).catch(function(e){
+    clearInterval(atorado);
+    r.className='v mal';
+    r.innerHTML='✗ FALLÓ: '+(e&&e.message?e.message:e)+
+      '<br><span style="font-size:13px;font-weight:600">Se cortó en '+Math.round(leidos/1024)+' KB de 867 KB.</span>';
+  });
+})();
+</script>
+</body></html>

@@ -8853,11 +8853,41 @@ function hbLimpiaSeeds(){
     var b=new Blob([JSON.stringify(mani)],{type:'application/manifest+json'});
     var l=document.createElement('link'); l.rel='manifest'; l.href=URL.createObjectURL(b); document.head.appendChild(l);
   }catch(e){}
+  try{ setTimeout(swRegistra, 2500); }catch(e){}   // memoria en el aparato — tarde, para no estorbar el arranque
   // PORTADA: mientras cubre la pantalla, lo de abajo no recibe foco ni Tab (a11y);
   // portadaGo() lo libera al tocar Acceder.
   try{ ['s-login','topbar','main','nav'].forEach(function(id){ var el=$(id); if(el) el.setAttribute('inert',''); }); }catch(e){}
   try{ arranca(); }catch(e){}   // arranque a prueba de fallos: espera al SDK y decide login real vs demo
 })();
+/* ===== MEMORIA DE LA APP EN EL APARATO (sw.js) =====
+   La app se baja UNA vez y después abre desde el propio teléfono aunque la señal
+   esté fatal (la lección del rancho: con señal débil, 312 KB se cortan a medias).
+   sw.js sirve la copia guardada AL INSTANTE y por detrás revisa si hay versión
+   nueva (compara el ETag del servidor): nadie se queda pegado en una versión
+   vieja, que es la falla clásica de esto y desplegamos casi a diario.
+   · Solo cachea el armazón ('/' e index.html) y los estáticos del mismo origen.
+   · NUNCA cachea Supabase (ni un dato de nadie), ni videos, ni prueba.html
+     (el diagnóstico DEBE venir siempre de la red).
+   · updateViaCache:'none' → el propio sw.js se revalida en cada visita, así el
+     botón de emergencia (MODO_APAGADO en sw.js) llega rápido a todos.
+   · Si no hay soporte (navegador viejo, webview raro), no pasa NADA: la app
+     sigue funcionando como siempre, solo sin memoria. */
+function swRegistra(){
+  try{
+    if(!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.register('sw.js', {updateViaCache:'none'}).catch(function(){});
+    navigator.serviceWorker.addEventListener('message', function(ev){
+      try{
+        if(!ev.data || ev.data.hb!=='nueva-version') return;
+        // La versión nueva YA quedó guardada; esto solo decide cuándo se ve.
+        // Sin sesión (portada/login) recargamos de una vez; a media tarea NO
+        // interrumpimos: la verá en cuanto vuelva a abrir.
+        if(!S){ location.reload(); }
+        else{ flash('✨ Hay una versión nueva de la app. La verás al volver a entrar.'); }
+      }catch(e){}
+    });
+  }catch(e){}
+}
 /* ARRANQUE A PRUEBA DE FALLOS: espera a que el SDK de Supabase esté cargado (mismo
    origen → normalmente inmediato; con red lenta reintenta ~10 s) y entonces detecta V3 /
    restaura sesión. Si el SDK NUNCA carga (archivo y CDN de respaldo fallaron), recarga

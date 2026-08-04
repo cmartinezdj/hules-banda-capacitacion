@@ -3150,6 +3150,12 @@ function citaFormHTML(){
   h+='<div id="citaChips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">'+_citaChips()+'</div>';
   h+='<div class="search" style="margin:0 0 8px">'+SEARCH_SVG+'<input id="citaQ" placeholder="Busca por nombre o número…" autocomplete="off" autocorrect="off" spellcheck="false" oninput="_citaPaint()"></div>';
   h+='<div id="citaList" class="citalist">'+_citaListHTML('')+'</div>';
+  /* Por qué a veces salen poquitos: el directorio del servidor (hb_directorio) solo
+     trae a quien YA hizo su primer ingreso — `roster where uid is not null`. Sin esta
+     nota, quien abra el módulo hoy va a pensar que está roto. Se esconde sola cuando
+     ya haya bastante gente dentro. */
+  var _hay=(dirPeople()||[]).length;
+  if(_hay && _hay<40) h+='<p class="note" style="margin:7px 2px 0">Aquí aparece quien <b>ya entró al sistema</b> por primera vez. La lista crece sola conforme tus compañeros se registran.</p>';
   h+='<div class="note" style="margin:14px 0 5px"><b style="color:var(--txt)">2 · ¿De qué se trata?</b></div>';
   h+='<input id="citaMotivo" class="fin" maxlength="140" autocomplete="off" placeholder="Motivo de la reunión" style="margin:0">';
   h+='<div class="note" style="margin:14px 0 5px"><b style="color:var(--txt)">3 · ¿Qué día y a qué hora?</b></div>';

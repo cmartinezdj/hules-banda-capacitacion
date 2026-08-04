@@ -2853,6 +2853,11 @@ function renderCal(){
     var badge=(l[0]==='personal'&&pendN)?' <span class="cnt" style="position:static;margin-left:5px">'+pendN+'</span>':'';
     return '<button class="btn'+(_calLayer===l[0]?'':' ghost')+'" style="margin:0;padding:9px 14px;font-size:13px;width:auto" onclick="calLayerGo(\''+l[0]+'\')">'+l[1]+badge+'</button>';
   }).join('')+'</div>';
+  /* CITAS dentro del Calendario (Sesión 15, Carlos: "el de citas que esté en el
+     apartado de calendario"). Si hay invitaciones sin contestar, el botón grita. */
+  h+= pendN
+    ? '<button class="btn" style="margin:0 0 12px" onclick="openInvit()">📩 Tienes '+pendN+' invitación'+(pendN===1?'':'es')+' por responder ›</button>'
+    : '<button class="btn ghost" style="margin:0 0 12px" onclick="openInvit()">＋ Pedir una reunión · Invitaciones ›</button>';
   // cuadrícula (estática)
   h+='<div class="panel"><div class="line" style="border:none;padding:0 0 8px"><button class="back" style="padding:6px 12px" onclick="calNav(-1)" aria-label="Mes anterior">‹</button><b style="flex:1;text-align:center;font-size:15px">'+MESL[m]+' '+y+'</b><button class="back" style="padding:6px 12px" onclick="calNav(1)" aria-label="Mes siguiente">›</button></div>'+
      '<div class="cal" style="padding:0;border:none;background:transparent"><div class="calg">';
@@ -5388,7 +5393,8 @@ function renderNews(){
     h+=htile('openCal()','cal','Calendario', 'Personal · tu área · general', {cls:'hide-desk'});
     h+=invitTile();
     h+=htile('renderEncuestas()','encuestas','Encuestas', 'Crear y ver resultados');
-    h+=htile('docsHome()','docs','Documentos', 'Explora los documentos de cualquier área');
+    // DOCUMENTOS ya NO va aquí (Sesión 15, Carlos): vive en el Inicio/tablero
+    // (renderDash) y tenerlo también en Noticias duplicaba el mismo módulo.
     h+='</div></div>';
     h+='<aside class="hubside">'+calendarBlock()+'</aside></div>';
     $('s-news').innerHTML=h; show('news'); return;

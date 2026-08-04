@@ -200,6 +200,13 @@ button{font-family:var(--font)}
 .qchat .qcsel{display:flex;align-items:center;gap:9px;margin:0 0 8px}
 .qchat .qcsel b{font-size:13.5px}
 .qchat .qcsel .note{display:block;font-size:10.5px;margin-top:1px}
+/* PEDIR UNA REUNIÓN (Invitaciones): misma lista de toda la planta que el Mensaje
+   rápido, pero con selección de VARIAS personas (chips) en vez de una sola. */
+.citalist{max-height:320px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;padding:4px 8px;background:rgba(255,255,255,.02);-webkit-overflow-scrolling:touch}
+.citaarea{font-size:9.5px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;padding:9px 4px 4px;border-bottom:1px solid var(--line)}
+.citalist .dirrow{margin-bottom:7px}
+.citachip{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;font-size:12px;font-weight:700;padding:7px 10px 7px 13px;border-radius:30px;border:1px solid color-mix(in srgb,var(--accent) 48%,transparent);background:color-mix(in srgb,var(--accent) 11%,transparent);color:var(--txt)}
+.citachip b{cursor:pointer;color:var(--bad);font-size:15px;line-height:1;font-weight:900}
 /* buscador dentro de un chat en monitoreo (solo lectura) */
 .thfind{margin:0 0 10px}
 .thfind input{font-size:13px;padding:10px 12px}
@@ -995,6 +1002,7 @@ body.a11y .screen .seg button{ font-size:13px !important; }
     <section id="s-dia"     class="screen pad hide"></section>
     <section id="s-wconvs"  class="screen pad hide"></section>
     <section id="s-cal"     class="screen pad hide"></section>
+    <section id="s-invit"   class="screen pad hide"></section>
     <section id="s-docs"    class="screen pad hide"></section>
     <section id="s-perfilpub" class="screen pad hide"></section>
     <section id="s-newspost" class="screen pad hide"></section>
@@ -1004,7 +1012,6 @@ body.a11y .screen .seg button{ font-size:13px !important; }
 
   <!-- ===================== NAV INFERIOR ===================== -->
   <nav id="nav" class="nav hide"></nav>
-  <div id="lockScreen" class="lockscreen hide"></div>
   <div id="beepScreen" class="lockscreen hide"></div>
   <div id="rwdModal" class="modal hide"></div>
   <div id="shotGuard" class="shotguard hide" aria-hidden="true">
@@ -2086,7 +2093,7 @@ function startSession(cfg, saved, forceProfile){
   S.chat.push({role:'assistant',content:'Hola. Soy el asistente de planta. Pregúntame sobre seguridad, procesos, producto, la empresa o tu capacitación.'});
   applyA11y();
   document.body.classList.toggle('admin', !!S.admin);
-  ['lockScreen','beepScreen'].forEach(function(id){ var el=$(id); if(el) el.classList.add('hide'); });
+  ['beepScreen'].forEach(function(id){ var el=$(id); if(el) el.classList.add('hide'); });
   if(typeof beepStop==='function') beepStop();
   // (el "beeper/llamar a un trabajador" se eliminó: ya no hay polling de llamadas)
   if(V3_ON){ try{ sbInit(); }catch(e){} if(S.mando||S.admin){ try{ v3LoadEquipo(); }catch(e){} } try{ qstatsLoad(true); }catch(e){} }   // conectar datos en vivo ya autenticado
@@ -2474,7 +2481,7 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'"'+main+' onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','docs','perfilpub','newspost','pend','pedir','pedidos'];
+var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos'];
 var _prevShown=null;
 function show(name){
   var cambio = (name!==_prevShown);
@@ -2482,6 +2489,9 @@ function show(name){
   SCREENS.forEach(function(s){ var el=$('s-'+s); if(el) el.classList.toggle('hide', s!==name); });
   // nav activo (course/quiz/result/pay cuentan como "home")
   var navKey = (name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='dia'||name==='pend') ? 'home' : ((name==='thread'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='wconvs'||name==='perfilpub')?'msgs':((name==='encuestas'||name==='nom35'||name==='perm'||name==='cal'||name==='newspost')?'news':(name==='perfil'?(S.admin?'hr':'home'):(name==='docs'?((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home')):name))));
+  /* Invitaciones (citas): se puede llegar desde el Inicio, desde el tablero o desde
+     Noticias — el menú de abajo se ilumina donde el usuario venía (_invitFrom). */
+  if(name==='invit') navKey=_invitFrom||'home';
   if(name==='pedir') navKey=(S&&(S.admin||S.mando))?'hr':'home';       // Pedir reparación / Tus reparaciones
   if(name==='pedidos') navKey='hr';                                     // inbox de Mantenimiento
   if(navKey==='home' && S && S.admin && S.dash!=='resp') navKey='hr';   // dashboard general: su Inicio es el tablero
@@ -2510,10 +2520,10 @@ function go(name){
   if(name==='msgs') return renderMsgs();
 }
 function renderTop(name){
-  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? ('go(\'hr\')') : name==='pedir' ? ('go(\''+((S.admin||S.mando)?'hr':'home')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? ('go(\'hr\')') : name==='pedir' ? ('go(\''+((S.admin||S.mando)?'hr':'home')+'\')') : 'go(\'home\')';
     left.innerHTML='<button class="back" onclick="'+backTo+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
@@ -2768,7 +2778,11 @@ function evNotifyCheck(){
 function calDash(){ return !!(S && (S.admin||S.mando||S.dash)); }
 function calLayers(){ var L=[['personal','Personal']]; if(S&&S.area) L.push(['area','Mi área']); L.push(['general','General']); return L; }
 function calCanCreate(layer){
-  if(layer==='personal') return calDash();                                   // dashboard: crea personales
+  /* PERSONAL = de TODOS (Sesión 15, Carlos: "en todos los perfiles, toditos").
+     Antes exigía calDash(), así que el trabajador no podía ni apuntar sus cosas
+     ni invitar a nadie. El servidor SIEMPRE lo permitió: hb_puede_evento con
+     scope 'personal' solo pide ser el dueño. Área y General siguen igual. */
+  if(layer==='personal') return !!S;
   if(layer==='area')     return !!(S && (S.admin||S.mando||S.dash) && S.area); // resp/admin (el servidor valida el área)
   if(layer==='general')  return docIsTotal();                                // acceso total / RRHH (NO un responsable con admin=true del demo)
   return false;
@@ -2823,7 +2837,8 @@ function evRow(e){
 function renderCal(){
   if(sbReady() && Date.now()-(window._lastLoadEv||0)>4000){ window._lastLoadEv=Date.now(); evLoad(); }
   var layers=calLayers();
-  if(!_calLayer || !layers.some(function(l){return l[0]===_calLayer;})) _calLayer = calDash()? 'personal' : (S&&S.area?'area':'general');
+  /* Todos arrancan en PERSONAL: ahí están sus reuniones y sus invitaciones. */
+  if(!_calLayer || !layers.some(function(l){return l[0]===_calLayer;})) _calLayer='personal';
   var base=new Date(); base.setDate(1); base.setMonth(base.getMonth()+_calOff);
   var y=base.getFullYear(), m=base.getMonth();
   var now=new Date(), ty=now.getFullYear(), tm=now.getMonth(), td=now.getDate();
@@ -2943,7 +2958,7 @@ function evDel(id){
   if(!sbReady()){ flash('Sin conexión'); return; }
   SB.rpc('hb_evento_borrar',{p_id:id}).then(function(r){ var x=r&&r.data;
     if(r.error||!x||!x.ok){ flash((x&&x.error==='no_permiso')?'No puedes quitar este evento':'No se pudo quitar'); return; }
-    if(_evEdit===id)_evEdit=null; flash('Evento quitado'); evLoad(function(){ if(_screen==='cal') renderCal(); });
+    if(_evEdit===id)_evEdit=null; flash('Evento quitado'); evLoad(function(){ if(_screen==='invit') renderInvit(); else if(_screen==='cal') renderCal(); });
   }, function(){ flash('Sin conexión'); });
 }
 function evRespond(id, resp){
@@ -2955,6 +2970,273 @@ function evRespond(id, resp){
     if(r.error||!x||!x.ok){ flash('No se pudo responder'); return; }
     flash(resp==='aceptado'?'✓ Confirmado':'Anotado'); evLoad(function(){ if(_screen==='cal') renderCal(); });
   }, function(){ flash('Sin conexión'); });
+}
+
+/* ============================================================================
+   CITAS · INVITACIONES (Sesión 15 — pedido de Carlos) — "PEDIR UNA REUNIÓN"
+
+   Módulo NUEVO, para TODOS los perfiles (trabajador, responsable y acceso total):
+   escoges a UNA O VARIAS personas de toda la planta (la misma lista del Mensaje
+   rápido, pero con chips para varios), escribes el MOTIVO, el DÍA y la HORA, y
+   mandas la solicitud. A cada invitado le llega en «Invitaciones» y puede
+   ACEPTAR o DECLINAR. Al aceptar, la reunión aparece en el calendario personal
+   de ambos (eso ya lo hace evForLayer('personal'): dueño O invitado).
+
+   ⚠️ NO NECESITÓ NADA DE SQL. El servidor de v3_9 ya lo permitía todo:
+   hb_puede_evento('personal',…) solo exige ser el dueño — NUNCA pidió ser
+   admin ni mando — y hb_evento_invitar / hb_evento_responder tampoco. Lo único
+   que bloqueaba al trabajador era el CLIENTE (calCanCreate). Cero parches,
+   cero riesgo para la base de datos.
+
+   El apartado vive en su propia pantalla (s-invit) y NO en el panel lateral,
+   porque .hubside está en display:none en celular — y la planta usa celular.
+   ============================================================================ */
+var _invitFrom=null;      /* de dónde entró (para "Atrás" y el menú de abajo) */
+var _citaOpen=false;      /* ¿está abierto el formulario de pedir reunión? */
+var _citaSel=[];          /* a quién invito: [{n, nombre, area}] */
+
+function openInvit(){
+  _invitFrom = (_screen==='news') ? 'news' : (_screen==='hr') ? 'hr'
+             : ((S && S.admin && S.dash!=='resp') ? 'hr' : 'home');
+  _citaOpen=false; _citaSel=[];
+  renderInvit(); window.scrollTo(0,0);
+}
+/* El cuadro del HUB, con el contador de invitaciones sin responder. Va SIEMPRE
+   pegadito debajo del cuadro de Calendario (así lo pidió Carlos). */
+function invitTile(){
+  var n=0; try{ n=evInvitPend().length; }catch(e){}
+  return htile('openInvit()','personas','Invitaciones',
+    n ? (n+(n===1?' invitación por responder':' invitaciones por responder')) : 'Pide una reunión · acepta o declina',
+    {cnt:n||''});
+}
+
+/* ---------- ¿qué reuniones son mías? ---------- */
+function _citaMias(){   /* las que YO pedí (personales con invitados) */
+  var me=S?S.emp:-1;
+  return evGet().filter(function(e){ return e && e.scope==='personal' && e.owner===me && (e.invites||[]).length; })
+    .sort(function(a,b){ return (a.fecha||'')<(b.fecha||'')?-1:1; });
+}
+function _citaRespondidas(){   /* me invitaron y YA contesté */
+  var me=S?S.emp:-1;
+  return evGet().filter(function(e){
+    if(!e || e.scope!=='personal' || e.owner===me) return false;
+    return (e.invites||[]).some(function(i){ return +i.n===me && i.status!=='pendiente'; });
+  }).sort(function(a,b){ return (a.fecha||'')<(b.fecha||'')?-1:1; });
+}
+function _miStatus(e){ var me=S?S.emp:-1; var mi=(e.invites||[]).filter(function(i){ return +i.n===me; })[0]||{}; return mi.status||''; }
+function _citaPaso(e){ return (e.fecha||'') < mxToday(); }   /* ¿ya pasó el día? */
+
+/* ---------- una reunión, como tarjeta ---------- */
+function citaCard(e, modo){
+  /* modo: 'pend' (aceptar/declinar) · 'resp' (ya contesté) · 'mia' (yo la pedí) */
+  var p=(e.fecha||'').split('-');
+  var cuando=fmtDate(e.fecha)+(e.hora?' · '+e.hora:'')+(e.lugar?' · '+e.lugar:'');
+  var quien=(modo==='mia') ? ('Con '+(e.invites||[]).map(function(i){ return niceName(i.nombre||('Nº '+i.n)); }).join(', '))
+                           : ('Te invita '+niceName(e.ownerNombre||''));
+  var leer=(e.titulo||'')+'. '+quien+'. '+cuando+(e.nota?('. '+e.nota):'');
+  var h='<div class="card">';
+  if(_citaPaso(e)) h+='<div style="margin-bottom:7px"><span class="chipst mut">Ya pasó el día</span></div>';
+  h+='<div class="evrow" style="margin:0"><span class="dt"><span class="d">'+(+p[2]||'')+'</span><span class="m">'+(MESES[(+p[1]-1)]||'')+'</span></span>'+
+     '<span class="et"><b>'+esc(e.titulo||'')+'</b><span>'+esc(cuando)+'</span></span>'+speakBtn(leer)+'</div>';
+  h+='<div class="note" style="margin-top:7px">'+esc(quien)+'</div>';
+  if(e.nota) h+='<p class="note" style="margin:7px 0 0;line-height:1.5">'+esc(e.nota)+'</p>';
+  if(modo==='pend'){
+    h+='<div style="display:flex;gap:8px;margin-top:11px;flex-wrap:wrap">'+
+       '<button class="btn" style="margin:0;flex:1;min-width:120px" onclick="citaRespond(\''+jsAttr(e.id)+'\',\'aceptado\')">✓ Sí puedo</button>'+
+       '<button class="btn ghost" style="margin:0;flex:1;min-width:120px" onclick="citaRespond(\''+jsAttr(e.id)+'\',\'rechazado\')">No puedo</button></div>';
+  } else if(modo==='resp'){
+    var st=_miStatus(e);
+    h+='<div style="display:flex;gap:8px;margin-top:11px;align-items:center;flex-wrap:wrap">'+
+       '<span style="flex:1;min-width:110px">'+evEstadoTag(st)+'</span>'+
+       '<button class="btn ghost" style="margin:0;padding:8px 13px;font-size:12.5px;width:auto" onclick="citaRespond(\''+jsAttr(e.id)+'\',\''+(st==='aceptado'?'rechazado':'aceptado')+'\')">'+
+       (st==='aceptado'?'Ya no puedo':'Cambiar a: sí puedo')+'</button></div>';
+  } else {
+    h+='<div class="note" style="margin-top:10px">Cómo van:</div><div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">'+
+       (e.invites||[]).map(function(i){ return '<div class="line" style="border:none;padding:0"><span class="note">'+esc(niceName(i.nombre||('Nº '+i.n)))+'</span>'+evEstadoTag(i.status)+'</div>'; }).join('')+'</div>'+
+       '<button class="btn ghost" style="margin:11px 0 0;padding:9px;font-size:12.5px;color:var(--bad)" onclick="citaCancel(\''+jsAttr(e.id)+'\')">Cancelar la reunión</button>';
+  }
+  return h+'</div>';
+}
+/* cancelar una reunión que YO pedí (misma RPC que el calendario, pero preguntando
+   con las palabras de una cita, no con las de un evento) */
+function citaCancel(id){
+  var e=evGet().filter(function(x){ return x.id===id; })[0]||{};
+  var n=(e.invites||[]).length;
+  if(!confirm('¿Cancelar la reunión «'+(e.titulo||'')+'»?\n\nSe le quita del calendario a '+
+              (n===1?'la persona invitada':'las '+n+' personas invitadas')+'.')) return;
+  if(!V3_ON){
+    lsSet('hb_eventos', lsGet('hb_eventos').filter(function(x){ return x.id!==id; }));
+    flash('Reunión cancelada'); if(_screen==='invit') renderInvit(); return;
+  }
+  if(!sbReady()){ flash('Sin conexión'); return; }
+  SB.rpc('hb_evento_borrar',{p_id:id}).then(function(r){ var x=r&&r.data;
+    if(r.error||!x||!x.ok){ flash('No se pudo cancelar'); return; }
+    flash('Reunión cancelada');
+    evLoad(function(){ if(_screen==='invit') renderInvit(); else if(_screen==='cal') renderCal(); });
+  }, function(){ flash('Sin conexión'); });
+}
+/* responder desde AQUÍ (misma RPC del calendario; repinta esta pantalla) */
+function citaRespond(id, resp){
+  if(!V3_ON){ evRespond(id,resp); if(_screen==='invit') renderInvit(); return; }
+  if(!sbReady()){ flash('Sin conexión'); return; }
+  SB.rpc('hb_evento_responder',{p_id:id,p_resp:resp}).then(function(r){ var x=r&&r.data;
+    if(r.error||!x||!x.ok){ flash('No se pudo responder'); return; }
+    flash(resp==='aceptado'?'✓ Confirmado: ya está en tu calendario':'Anotado: avisamos que no puedes');
+    evLoad(function(){ if(_screen==='invit') renderInvit(); else if(_screen==='cal') renderCal(); });
+  }, function(){ flash('Sin conexión'); });
+}
+
+/* ---------- el formulario: a quién, motivo, día y hora ---------- */
+function _citaChips(){
+  if(!_citaSel.length) return '<span class="note">Nadie todavía. Búscalo abajo y tócalo.</span>';
+  return _citaSel.map(function(p){
+    return '<span class="citachip">'+esc(niceName(p.nombre||('Nº '+p.n)))+
+           '<b onclick="_citaDel('+(+p.n)+')" role="button" tabindex="0" onkeydown="_kb(event)" aria-label="Quitar a '+escA(niceName(p.nombre||''))+'">✕</b></span>';
+  }).join('');
+}
+function _citaDel(n){ _citaSel=_citaSel.filter(function(p){ return +p.n!==+n; }); _citaChipsPaint(); _citaPaint(); }
+function _citaAdd(n){
+  var p=(dirPeople()||[]).filter(function(x){ return +x.id===+n; })[0]; if(!p) return;
+  if(_citaSel.some(function(x){ return +x.n===+n; })) return;
+  _citaSel.push({n:+n, nombre:p.name, area:p.area});
+  _citaChipsPaint(); _citaPaint();
+  var s=$('citaQ'); if(s){ s.value=''; try{ s.focus(); }catch(e){} }
+}
+function _citaChipsPaint(){ var c=$('citaChips'); if(c) c.innerHTML=_citaChips(); var n=$('citaCnt'); if(n) n.textContent=_citaSel.length?(_citaSel.length+' elegida(s)'):''; }
+/* La LISTA se repinta sola; la CAJA de búsqueda nunca (si no, el celular cierra
+   el teclado a media palabra — misma lección del buscador de Documentos). */
+function _citaPaint(){
+  var box=$('citaList'); if(!box) return;
+  box.innerHTML=_citaListHTML((($('citaQ')||{}).value||''));
+}
+function _citaListHTML(term){
+  var people=dirPeople();
+  if(!people) return '<div class="note" style="padding:10px">Cargando el directorio de la planta…</div>';
+  var q=_norm(term||''), digits=(term||'').replace(/\D/g,''), me=S?S.emp:-1;
+  var ya={}; _citaSel.forEach(function(p){ ya[+p.n]=1; });
+  var byArea={}, order=[], n=0;
+  people.forEach(function(p){
+    if(+p.id===me || ya[+p.id]) return;                       // ni yo ni los ya elegidos
+    if(term){ var bn=q&&_norm(p.name).indexOf(q)>=0, bi=digits&&(''+p.id).padStart(3,'0').indexOf(digits)>=0; if(!bn&&!bi) return; }
+    var a=p.area||'Otros'; if(!byArea[a]){ byArea[a]=[]; order.push(a); } byArea[a].push(p); n++;
+  });
+  if(!n) return '<div class="note" style="padding:10px">'+(term?('Nadie coincide con «'+esc(term)+'».'):'No hay nadie más a quién invitar.')+'</div>';
+  var h='';
+  order.sort();
+  order.forEach(function(a){
+    h+='<div class="citaarea">'+esc(a)+'</div>';
+    byArea[a].forEach(function(p){
+      var init=(p.name||'').split(' ').map(function(w){ return w[0]||''; }).slice(0,2).join('').toUpperCase();
+      var r=rangeOf(p.id), col=(r&&r.accent)||'var(--accent)';
+      h+='<div class="dirrow" role="button" tabindex="0" onkeydown="_kb(event)" onclick="_citaAdd('+(+p.id)+')" aria-label="Invitar a '+escA(p.name||'')+'">'+
+         '<span class="ava" style="background:'+col+'">'+esc(init)+'</span>'+
+         '<span class="t"><b>'+esc(p.name||('Nº '+p.id))+'</b><span>'+esc(a)+'</span></span>'+
+         '<span class="idtag">＋</span></div>';
+    });
+  });
+  return h;
+}
+function citaToggle(){
+  _citaOpen=!_citaOpen;
+  if(!_citaOpen) _citaSel=[];
+  renderInvit();
+  if(_citaOpen){ var t=$('citaMotivo'); if(t) try{ t.focus(); }catch(e){} }
+}
+function citaFormHTML(){
+  var hoy=mxToday();
+  var h='<div class="panel"><div class="hd"><div><div class="eyebrow">Nueva solicitud</div><b style="font-size:17px">Pedir una reunión</b></div>'+
+        '<button class="back" style="padding:6px 10px" onclick="citaToggle()">Cancelar</button></div>';
+  h+='<div class="note" style="margin:0 0 6px;display:flex;align-items:center;gap:8px"><b style="color:var(--txt)">1 · ¿Con quién?</b><span id="citaCnt" style="color:var(--accent);font-weight:800">'+(_citaSel.length?(_citaSel.length+' elegida(s)'):'')+'</span></div>';
+  h+='<div id="citaChips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">'+_citaChips()+'</div>';
+  h+='<div class="search" style="margin:0 0 8px">'+SEARCH_SVG+'<input id="citaQ" placeholder="Busca por nombre o número…" autocomplete="off" autocorrect="off" spellcheck="false" oninput="_citaPaint()"></div>';
+  h+='<div id="citaList" class="citalist">'+_citaListHTML('')+'</div>';
+  h+='<div class="note" style="margin:14px 0 5px"><b style="color:var(--txt)">2 · ¿De qué se trata?</b></div>';
+  h+='<input id="citaMotivo" class="fin" maxlength="140" autocomplete="off" placeholder="Motivo de la reunión" style="margin:0">';
+  h+='<div class="note" style="margin:14px 0 5px"><b style="color:var(--txt)">3 · ¿Qué día y a qué hora?</b></div>';
+  h+='<div style="display:flex;gap:8px"><input id="citaFecha" class="fin" type="date" min="'+hoy+'" value="'+hoy+'" style="flex:1"><input id="citaHora" class="fin" type="time" style="flex:1"></div>';
+  h+='<input id="citaLugar" class="fin" style="margin-top:8px" maxlength="140" autocomplete="off" placeholder="Lugar (opcional): oficina, sala, tu área…">';
+  h+='<textarea id="citaNota" class="fin" style="margin-top:8px" rows="2" maxlength="400" placeholder="Algo más que quieras decirle (opcional)"></textarea>';
+  h+='<button class="btn" style="margin-top:13px" onclick="citaSend()">Mandar la solicitud ›</button>';
+  h+='<p class="note" style="margin:9px 0 0">Le va a llegar en <b>Invitaciones</b>. Cuando acepte, la reunión aparece en el calendario de los dos.</p>';
+  return h+'</div>';
+}
+/* ¿está escribiendo? (no repintar en vivo y borrarle lo capturado) */
+function _invitComposing(){
+  if(!_citaOpen) return false;
+  if(_citaSel.length) return true;
+  var ids=['citaMotivo','citaLugar','citaNota','citaQ','citaHora'];
+  for(var i=0;i<ids.length;i++){ var e=$(ids[i]); if(e && (e.value||'').trim()) return true; }
+  return false;
+}
+function citaSend(){
+  if(window._citaBusy) return;                                     // anti doble-toque
+  var motivo=(($('citaMotivo')||{}).value||'').trim();
+  var fecha =(($('citaFecha')||{}).value||'').trim();
+  var hora  =(($('citaHora')||{}).value||'').trim();
+  var lugar =(($('citaLugar')||{}).value||'').trim();
+  var nota  =(($('citaNota')||{}).value||'').trim();
+  if(!_citaSel.length){ flash('Primero escoge a quién invitas'); return; }
+  if(!motivo){ flash('Escribe el motivo de la reunión'); return; }
+  if(!fecha){ flash('Elige el día'); return; }
+  if(!hora){ flash('Elige la hora'); return; }
+  if(fecha < mxToday()){ flash('Ese día ya pasó: elige otro'); return; }
+  var ns=_citaSel.map(function(p){ return +p.n; });
+  var cuantos=ns.length;
+  var listo=function(){
+    window._citaBusy=false; _citaOpen=false; _citaSel=[];
+    flash('✓ Solicitud enviada a '+cuantos+(cuantos===1?' persona':' personas'));
+    if(_screen==='invit') renderInvit();
+  };
+  // ---- DEMO (sin servidor): se guarda en el aparato ----
+  if(!V3_ON){
+    var a=lsGet('hb_eventos'), me=S.emp;
+    a.push({ id:'ev'+Date.now(), scope:'personal', owner:me, ownerClave:S.clave||(''+me), ownerNombre:S.nombre||('Nº '+me),
+      area:'', titulo:motivo, fecha:fecha, hora:hora, lugar:lugar, nota:nota,
+      invites:_citaSel.map(function(p){ return {n:+p.n, clave:''+p.n, nombre:p.nombre, status:'pendiente'}; }),
+      ts:Date.now(), demo:(location.hash==='#demo') });
+    lsSet('hb_eventos',a); listo(); return;
+  }
+  if(!sbReady()){ flash('Sin conexión: intenta cuando haya señal'); return; }
+  window._citaBusy=true;
+  /* UN solo llamado: hb_evento_alta ya acepta los invitados en el alta (v3_9). */
+  SB.rpc('hb_evento_alta',{p:{scope:'personal', titulo:motivo, fecha:fecha, hora:hora,
+                             lugar:lugar, nota:nota, invites:ns}}).then(function(r){
+    var x=r&&r.data;
+    if(r.error||!x||!x.ok){
+      window._citaBusy=false;
+      flash(r.error ? (_rpcFaltante(r.error)?'La función se está activando, intenta en un momento':(_rpcSinRed(r.error)?'Sin conexión':'No se pudo mandar')) : 'No se pudo mandar');
+      return;
+    }
+    evLoad(listo);
+  }, function(){ window._citaBusy=false; flash('Sin conexión: no se pudo mandar'); });
+}
+
+function renderInvit(){
+  if(sbReady() && Date.now()-(window._lastLoadEv||0)>4000){ window._lastLoadEv=Date.now(); evLoad(); }
+  dirLoad(function(){ if(_screen==='invit' && _citaOpen) _citaPaint(); });   // el directorio de la planta
+  var pend=evInvitPend().slice().sort(function(a,b){ return (a.fecha||'')<(b.fecha||'')?-1:1; });
+  var resp=_citaRespondidas(), mias=_citaMias();
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Calendario</div>'+
+    '<b style="font-size:20px">Invitaciones</b>'+
+    '<p class="note" style="margin:4px 0 0;max-width:280px">Pide una reunión a quien necesites, y contesta las que te mandan. Al aceptar, se anota en el calendario de los dos.</p></div>'+
+    '<span class="status"><span class="d"></span>En línea</span></div></div>';
+  if(_citaOpen) h+=citaFormHTML();
+  else h+='<button class="btn" style="margin:0 0 14px" onclick="citaToggle()">＋ Pedir una reunión</button>';
+  // 1) lo que me mandaron y no he contestado
+  h+='<div class="sec-t">Te invitaron'+(pend.length?(' · '+pend.length):'')+'<span class="ln"></span></div>';
+  h+= pend.length ? pend.map(function(e){ return citaCard(e,'pend'); }).join('')
+                  : '<div class="card"><div class="note">No tienes invitaciones por contestar. ✓</div></div>';
+  // 2) las que yo pedí
+  h+='<div class="sec-t">Las que tú pediste'+(mias.length?(' · '+mias.length):'')+'<span class="ln"></span></div>';
+  h+= mias.length ? mias.map(function(e){ return citaCard(e,'mia'); }).join('')
+                  : '<div class="card"><div class="note">Todavía no has pedido ninguna reunión.</div></div>';
+  // 3) las que ya contesté (por si se arrepiente)
+  if(resp.length){
+    h+='<div class="sec-t">Ya contestaste · '+resp.length+'<span class="ln"></span></div>';
+    h+= resp.map(function(e){ return citaCard(e,'resp'); }).join('');
+  }
+  h+='<button class="btn ghost" style="margin-top:16px" onclick="openCal()">Ver mi calendario completo ›</button>';
+  $('s-invit').innerHTML=h; show('invit');
 }
 
 /* ===== ENCUESTAS (bloque de entrada + pantalla con todas) ===== */
@@ -3545,6 +3827,10 @@ function renderHome(){
   h+=htile("go('chat')",'ai','Asistente', 'Pregúntale a Bandi');
   h+=htile('renderClases()','edu','Educación', 'Clases básicas');
   h+=htile('docsHome()','docs','Documentos', nDoc?(nDoc+(nDoc===1?' documento para ti':' documentos para ti')):'Manuales de tu área', {wide:true});
+  // Calendario + Invitaciones (Sesión 15): antes el trabajador solo llegaba al
+  // calendario por Noticias. Ahora los trae en su Inicio, uno debajo del otro.
+  h+=htile('openCal()','cal','Calendario', 'Tus citas · tu área · la planta');
+  h+=invitTile();
   // Pedir reparación / Tus reparaciones (V3.11): la Orden de Trabajo digital
   try{
     if(pedEsTecnico()){ var _nA=pedAsigMios().filter(function(p){ return ['asignado','reparando'].indexOf(p.estado)>-1; }).length;
@@ -3556,8 +3842,6 @@ function renderHome(){
   // comedor y transporte se retiraron (la empresa no los ofrece).
   h+=htile('renderDia()','dia','Directorio', 'A quién llamar en la planta', {wide:true});
   h+='</div>';
-  // control de uso (lock-down) — demo
-  h+=lockCard();
   $('s-home').innerHTML=h; show('home');
 }
 /* ===== INICIO del dashboard GENERAL (acceso total): saludo + directorio. Sin recibo
@@ -3665,7 +3949,6 @@ function courseRow(c){
 /* ====================== CURSO (video + quiz / exentar) ====================== */
 function findCourse(id){ var c=myCourses(); for(var i=0;i<c.length;i++) if(c[i].id===id) return c[i]; return null; }
 function openCourse(id){
-  if(!learnAllow(function(){ openCourse(id); })) return;   // lock-down: 10 min en horario laboral
   var c=findCourse(id); if(!c) return;
   var seen=!!S.watched[id];
   cur={course:c, watched:seen, exempt:false, answers:[]};
@@ -4476,7 +4759,8 @@ function renderResp(){
   h+=htile("respGo('focos')",'focos','Focos', myAlerts.length?(myAlerts.length+' en tu área'):'Todo en orden ✓', {cnt:myAlerts.length||''});
   var nDocA=0; try{ nDocA=docsGet().filter(function(d){ return canManageThisDoc(d); }).length; }catch(e){}
   h+=htile("docsHome()",'docs','Documentos','Manuales de tu área: subir, ver y borrar',{wide:true, cnt:nDocA||''});
-  try{ var _pi=evInvitPend().length; h+=htile('openCal()','cal','Calendario', _pi?(_pi+' invitación'+(_pi===1?'':'es')+' pendiente'+(_pi===1?'':'s')):'Personal · tu área · general', {cnt:_pi||''}); }catch(e){}
+  h+=htile('openCal()','cal','Calendario', 'Personal · tu área · general');
+  h+=invitTile();
   // Pedidos (V3.11): el responsable de MANTENIMIENTO recibe las órdenes de trabajo;
   // los demás responsables también pueden pedir una reparación.
   try{
@@ -4647,7 +4931,8 @@ function managerDash(role){
   try{ var _pedN=pedNuevosN();
     h+=htile('renderPedidos()','rep','Pedidos', pedAbiertos().length?(pedAbiertos().length+' abiertos · mantenimiento'):'Órdenes de trabajo · en vivo', {cnt:_pedN||''}); }catch(e){}
   h+=htile('docsHome()','docs','Documentos', 'Explora los documentos de cualquier área');
-  try{ var _pi=evInvitPend().length; h+=htile('openCal()','cal','Calendario', _pi?(_pi+' invitación'+(_pi===1?'':'es')+' pendiente'+(_pi===1?'':'s')):'Personal · áreas · general', {cnt:_pi||''}); }catch(e){}
+  h+=htile('openCal()','cal','Calendario', 'Personal · áreas · general');
+  h+=invitTile();
   h+=htile('renderDia()','dia','Directorio', 'A quién llamar en la planta');
   h+='</div>';
   $('s-hr').innerHTML=h; show('hr');
@@ -5095,6 +5380,7 @@ function renderNews(){
     h+='<div class="sec-t">Gestionar<span class="ln"></span></div><div class="tgrid">';
     h+=htile('renderNewsPost()','news','Noticias y avisos', nPub+' publicada(s) · subir/editar');
     h+=htile('openCal()','cal','Calendario', 'Personal · tu área · general', {cls:'hide-desk'});
+    h+=invitTile();
     h+=htile('renderEncuestas()','encuestas','Encuestas', 'Crear y ver resultados');
     h+=htile('docsHome()','docs','Documentos', 'Explora los documentos de cualquier área');
     h+='</div></div>';
@@ -5102,8 +5388,10 @@ function renderNews(){
     $('s-news').innerHTML=h; show('news'); return;
   } else {
     // HUB de cuadros del trabajador (pedido de Carlos): Pendientes PRIMERO (rectángulo
-    // grande: noticias nuevas + avisos de RRHH), Calendario como caja, Ya leídas y
-    // Documentos como cuadros. Encuestas se quitó de aquí: ya vive en el Inicio.
+    // grande: noticias nuevas + avisos de RRHH), Calendario e Invitaciones como cajas,
+    // y Ya leídas. Encuestas se quitó de aquí: ya vive en el Inicio. DOCUMENTOS también
+    // se quitó de aquí (Sesión 15, Carlos): ya tiene su propio cuadro en el Inicio, y
+    // repetirlo en Noticias solo confundía.
     if(_newsPage){ return newsPage_(); }
     var vis = a.filter(function(n){ return inTarget(n.to, S.emp); });
     var nuevas=vis.filter(function(n){ return !hasRead(n); });
@@ -5114,7 +5402,7 @@ function renderNews(){
     h+=htile("newsGo('pend')",'news','Pendientes', nuevas.length?(nuevas.length+(nuevas.length===1?' noticia nueva':' noticias nuevas')+(avisosN?' · avisos de RRHH':'')):'Estás al día ✓', {wide:true, cnt:nuevas.length||''});
     h+=htile("newsGo('leidas')",'edu','Ya leídas', leidas.length?(leidas.length+(leidas.length===1?' noticia':' noticias')):'Aún no hay', {wide:true});
     h+=htile('openCal()','cal','Calendario', 'Personal · tu área · general', {cls:'hide-desk'});
-    if(docsGet().length) h+=htile('docsHome()','docs','Documentos', docsGet().length+' para ti');
+    h+=invitTile();
     h+='</div>';
     // FORO DE NOTICIAS: todas las noticias para ti, en recuadros bonitos (texto + PDF/imagen)
     h+='<div class="sec-t">Foro de noticias<span class="ln"></span></div>';
@@ -5419,7 +5707,6 @@ function clLevelDone(id,n){ return !!(S.clases && S.clases[id+':'+n]); }
 function clTopicDone(tp){ var c=0; for(var n=1;n<=10;n++) if(clLevelDone(tp.id,n)) c++; return c; }
 var CLASE_ART={ lectura:['chat','#5b6cf0','#1e2470'], hule:['tire','#0e9e8e','#053b36'], matematicas:['cal','#0e9e8e','#053b36'], ingles:['cap','#2a7de1','#0f3d78'], finanzas:['card','#1c9444','#08351a'], medidas:['gear','#e07a1f','#5a2e07'], tecnologia:['snack','#8a3bd1','#37146b'], salud:['sun','#e0564b','#7a1410'], comunicacion:['mega','#b8860b','#7a5807'], _d:['cap','#5b6cf0','#1e2470'] };
 function renderClases(){
-  if(!learnAllow(function(){ renderClases(); })) return;   // lock-down: 10 min en horario laboral
   var totDone=0, topicsFull=0;
   CFG.clases.forEach(function(tp){ var d=clTopicDone(tp); totDone+=d; if(d>=10) topicsFull++; });
   var totLv=CFG.clases.length*10;
@@ -6703,74 +6990,19 @@ function hoursChart(rows){
 }
 
 
-/* ===== #9 LOCK-DOWN (opción B): 10 min/día SOLO en capacitación + educación básica, en
-   horario laboral. Todo lo demás (mensajes, noticias, recibos, premios) SIEMPRE libre.
-   Al salir del turno se reanuda sin límite. Demo: datos de ejemplo + simulador de horario;
-   en Fase 2 usa la hora del servidor y los horarios reales por trabajador. */
-var LOCK_MIN=10, LOCK_SEC=600, _simWork=false, _learnTimer=null, _consentCb=null, _screen='';
-var SHIFTS={ almacen:{ini:7,fin:16}, inventario:{ini:7,fin:16}, produccion:{ini:7,fin:17}, calidad:{ini:8,fin:17}, comercial:{ini:9,fin:18}, maquinaria:{ini:6,fin:15} };
-function myShift(){ return SHIFTS[S.key]||{ini:8,fin:17}; }
-function shiftEnd(){ return (''+myShift().fin).padStart(2,'0')+':00'; }
-/* Hora oficial de la app: America/Mexico_City (centro de México), sin importar el reloj del teléfono */
+/* ===== HORA OFICIAL DE LA APP: America/Mexico_City (centro de México), sin importar
+   el reloj del teléfono.
+
+   (Sesión 15 · decisión de Carlos) SE ELIMINÓ EL LÍMITE DE 10 MINUTOS DE ESTUDIO.
+   Antes había un "lock-down": en horario laboral el trabajador solo tenía 10 min al
+   día para capacitación y Clases Básicas. Ya no: este sistema se va a usar DIARIO y a
+   TODAS HORAS, así que un reloj en contra no tiene sentido. Capacitación y educación
+   quedan SIEMPRE libres, para todos. Se retiraron: el candado y su pantalla, el
+   consentimiento, el contador por segundo, la tarjeta "Tiempo de estudio" del Inicio,
+   los horarios simulados (SHIFTS) y los tres botones de demo. ===== */
+var _screen='';
 function mxNow(){ try{ return new Date(new Date().toLocaleString('en-US',{timeZone:'America/Mexico_City'})); }catch(e){ return new Date(); } }
 function mxToday(){ var d=mxNow(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
-function inWorkHours(){ if(_simWork) return true; var s=myShift(), d=mxNow(); if(d.getDay()===0) return false; var hh=d.getHours()+d.getMinutes()/60; return hh>=s.ini && hh<s.fin; }
-function learnState(){ var d; try{ d=kvGet('hb_learn_'+S.emp)||{}; }catch(e){ d={}; } var today=mxToday(); if(d.date!==today) d={date:today,used:0,consent:false}; return d; }
-function learnSave(d){ kvSet('hb_learn_'+S.emp, d); }
-function learnLeft(){ return Math.max(0, LOCK_SEC-(learnState().used||0)); }
-/* ¿se puede entrar a capacitación/educación? si no, muestra consentimiento o bloqueo y devuelve false */
-function learnAllow(reenter){
-  if(!S || S.admin || !inWorkHours()) return true;            // admin o fuera de horario = libre
-  if(learnLeft()<=0){ showLearnLock(); return false; }         // ya gastó sus 10 min de hoy
-  if(!learnState().consent){ showConsent(reenter); return false; }
-  startLearnTimer(); return true;
-}
-function startLearnTimer(){
-  if(_learnTimer) return;
-  _learnTimer=setInterval(function(){
-    if(!S || S.admin) return;
-    if(['course','quiz','result','clases'].indexOf(_screen)<0) return;  // solo cuenta en capacitación/educación
-    if(!inWorkHours()) return;                                          // fuera de horario: libre
-    var d=learnState(); if(d.used>=LOCK_SEC) return;
-    d.used++; d.consent=true; learnSave(d);
-    if(d.used>=LOCK_SEC) showLearnLock();
-  },1000);
-}
-function showConsent(cb){
-  _consentCb=cb||null; var el=$('lockScreen'); if(!el){ if(cb) cb(); return; }
-  el.innerHTML='<div style="width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--data);background:color-mix(in srgb,var(--data) 14%,transparent);box-shadow:0 0 0 10px color-mix(in srgb,var(--data) 7%,transparent)"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>'+
-    '<h2>Tus '+LOCK_MIN+' minutos de hoy</h2>'+
-    '<p style="display:flex;align-items:center;gap:8px"><span>En horario laboral tienes <b>'+LOCK_MIN+' minutos al día</b> para <b>capacitación y educación básica</b>. Hoy te quedan <b>'+Math.ceil(learnLeft()/60)+' min</b>. El tiempo corre mientras estés aquí.</span>'+speakBtn('En horario laboral tienes '+LOCK_MIN+' minutos al día para capacitación y educación básica. Hoy te quedan '+Math.ceil(learnLeft()/60)+' minutos. El tiempo corre mientras estés aquí.')+'</p>'+
-    '<p>Todo lo demás —mensajes, noticias, recibos, premios— está <b>siempre libre</b>.</p>'+
-    '<button class="btn" style="max-width:280px;margin-top:16px" onclick="acceptLearn()">Empezar mis '+LOCK_MIN+' min ›</button>'+
-    '<div class="lk-demo"><span onclick="hideLock()" style="text-decoration:underline;cursor:pointer">Ahora no</span></div>';
-  el.classList.remove('hide');
-}
-function acceptLearn(){ var d=learnState(); d.consent=true; learnSave(d); hideLock(); startLearnTimer(); var f=_consentCb; _consentCb=null; if(f) f(); }
-function showLearnLock(){
-  var el=$('lockScreen'); if(!el) return;
-  el.innerHTML='<div style="width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--data);background:color-mix(in srgb,var(--data) 14%,transparent);box-shadow:0 0 0 10px color-mix(in srgb,var(--data) 7%,transparent)"><span style="width:46px;height:46px;display:block">'+IC2.lock+'</span></div>'+
-    '<h2>Terminaste tus '+LOCK_MIN+' min de hoy</h2>'+
-    '<p style="display:flex;align-items:center;gap:8px"><span>Ya usaste tus <b>'+LOCK_MIN+' minutos</b> de capacitación en horario laboral. <b>Se reanuda al terminar tu turno</b> y podrás estudiar todo lo que quieras.</span>'+speakBtn('Ya usaste tus '+LOCK_MIN+' minutos de capacitación de hoy. Se reanuda al terminar tu turno y podrás estudiar todo lo que quieras.')+'</p>'+
-    '<p>Mientras, el resto del app sigue libre: mensajes, noticias, recibos y premios.</p>'+
-    '<div class="lk-time">Se libera a las '+shiftEnd()+'</div>'+
-    '<button class="btn" style="max-width:280px" onclick="hideLock();go(\'home\')">Ir al inicio</button>'+
-    '<div class="lk-demo">Demostración · <span onclick="hideLock()" style="text-decoration:underline;cursor:pointer">Cerrar</span></div>';
-  el.classList.remove('hide');
-}
-function hideLock(){ var el=$('lockScreen'); if(el) el.classList.add('hide'); }
-function lockCard(){
-  var on=inWorkHours(), leftMin=Math.ceil(learnLeft()/60), pctL=Math.round(learnLeft()/LOCK_SEC*100);
-  return '<div class="panel"><div class="hd"><div><div class="eyebrow">Tiempo de estudio</div><b style="font-size:16px">'+LOCK_MIN+' min en horario laboral</b></div><span style="display:flex;gap:8px;align-items:center"><span class="chipst'+(on?'':' mut')+'"'+(on?' style="border-color:color-mix(in srgb,var(--warn) 40%,transparent);background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn)"':'')+'>'+(on?'En horario':'Libre')+'</span>'+speakBtn('En tu turno tienes '+LOCK_MIN+' minutos al día para capacitación y educación básica. Lo demás siempre está libre. Hoy te quedan '+leftMin+' minutos.')+'</span></div>'+
-    '<div class="ringwrap">'+ring(pctL,'var(--data)')+'<div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:800">Te quedan '+leftMin+' min hoy</div>'+
-    '<div class="note" style="margin-top:4px">En tu turno tienes <b>'+LOCK_MIN+' min al día</b> para <b>capacitación y educación básica</b>.</div></div></div>'+
-    '<p class="note" style="margin:10px 0 0">Lo demás (mensajes, noticias, recibos, premios) <b>siempre libre</b>. Al salir de tu turno (<b>'+shiftEnd()+'</b>) se reanuda sin límite.</p>'+
-    '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn ghost" style="margin:0;flex:1;padding:10px;font-size:12px" onclick="demoToggleWork()">'+(_simWork?'Quitar horario (demo)':'Simular horario (demo)')+'</button><button class="btn ghost" style="margin:0;flex:1;padding:10px;font-size:12px" onclick="demoUseUp()">Simular 10 min usados</button><button class="btn ghost" style="margin:0;flex:1;padding:10px;font-size:12px" onclick="demoLearnReset()">Reiniciar (demo)</button></div>'+
-    '<p class="note" style="margin:8px 0 0;text-align:center">Hora de la app: <b>'+(''+mxNow().getHours()).padStart(2,'0')+':'+(''+mxNow().getMinutes()).padStart(2,'0')+' · centro de México</b></p></div>';
-}
-function demoToggleWork(){ _simWork=!_simWork; flash(_simWork?'Demo: simulando horario laboral':'Demo: fuera de horario'); renderHome(); }
-function demoUseUp(){ var d=learnState(); d.used=LOCK_SEC; d.consent=true; learnSave(d); _simWork=true; flash('Demo: 10 min agotados'); showLearnLock(); }
-function demoLearnReset(){ var d=learnState(); d.used=0; d.consent=false; learnSave(d); _simWork=false; flash('Demo: minutos de estudio restaurados'); renderHome(); }
 
 /* ============================================================================
    MI PERFIL — foto, información personal y PIN (por dispositivo en la demo;
@@ -8565,6 +8797,9 @@ function _sbRerenderNow(){ try{
   // Calendario/Documentos: NO re-pintar en vivo si el admin está escribiendo o ya
   // eligió un archivo (perdería lo tecleado / el archivo). El repintado llega al salir/guardar.
   else if(_screen==='cal'){ if(!_sectionBusy('s-cal') && !_evComposing()) renderCal(); }
+  // Invitaciones: una invitación nueva entra EN VIVO (es lo valioso del módulo),
+  // pero nunca si está a media captura de una solicitud.
+  else if(_screen==='invit'){ if(!_sectionBusy('s-invit') && !_invitComposing()) renderInvit(); }
   else if(_screen==='wconvs') renderWConvs();
   else if(_screen==='docs'){ if(!_sectionBusy('s-docs') && !(($('docFile')||{}).files||[]).length) renderDocs(); }
   // Pedidos (inbox de mantenimiento): en vivo, pero sin pisar la nota/búsqueda a media

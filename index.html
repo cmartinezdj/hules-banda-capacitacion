@@ -678,6 +678,14 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .calg .dc.has{background:color-mix(in srgb,var(--data) 14%,transparent)}
 .calg .dc .ev{width:5px;height:5px;border-radius:50%;background:var(--data);position:absolute;bottom:5px}
 .calg .dc.today .ev{background:#fff}
+/* Días TOCABLES (Sesión 15): tocar una fecha abre el desglose de ese día para
+   agregar o quitar. Área de toque completa (la celda es cuadrada, ~44px en
+   celular) y el día abierto se queda marcado para no perderse. */
+.calg button.dc{border:1px solid transparent;background:none;cursor:pointer;font-family:inherit;padding:0;-webkit-tap-highlight-color:transparent;transition:transform .12s var(--ease-out),border-color .15s var(--ease-out)}
+.calg button.dc.has{background:color-mix(in srgb,var(--data) 14%,transparent)}
+.calg button.dc:active{transform:scale(.92)}
+.calg button.dc.sel{border-color:var(--accent2);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent2) 28%,transparent)}
+.calg button.dc:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
 .evrow{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
 .evrow:last-child{border-bottom:none}
 .evrow .dt{width:48px;flex:none;text-align:center;background:color-mix(in srgb,var(--data) 14%,transparent);border-radius:11px;padding:6px 0;color:var(--data)}
@@ -2747,6 +2755,7 @@ function calendarBlock(){
    ÁREA los publica el responsable; los GENERALES, acceso total/RRHH. Sin correr
    v3_9 cae a demo local ('hb_eventos'). Reemplaza al viejo 'hb_events' (deuda kv). ===== */
 var _calOff=0, _evEdit=null, _calLayer=null, _calDay=null, _evInv=[], _evTry=0;
+var _evFecha=null;   /* fecha precargada cuando agregas desde un día del calendario */
 function evV3(){ return !!(V3_ON && S && Array.isArray(DBC.eventos)); }
 function evGet(){ return evV3()? (DBC.eventos||[]) : lsGet('hb_eventos'); }
 function evLoad(cb){
@@ -2787,11 +2796,26 @@ function calCanCreate(layer){
   if(layer==='general')  return docIsTotal();                                // acceso total / RRHH (NO un responsable con admin=true del demo)
   return false;
 }
+/* ⭐ REGLA DEL CALENDARIO PERSONAL (Sesión 15, recordatorio de Carlos):
+   una invitación NO se anota en tu calendario hasta que la ACEPTAS, y si la
+   RECHAZAS no se anota nunca. Solo entra si:
+     · es TUYA (tú la creaste), o
+     · te invitaron y tú dijiste que SÍ (status 'aceptado').
+   Las pendientes y las rechazadas viven únicamente en «Invitaciones» — ahí sí
+   siguen visibles (en "Te invitaron" y en "Ya contestaste") para que puedas
+   contestar o cambiar de opinión, y en cuanto aceptes aparece en el calendario. */
+function evMiStatus(e){ var me=S?S.emp:-1; var mi=((e&&e.invites)||[]).filter(function(i){ return +i.n===me; })[0]; return mi?(mi.status||'pendiente'):null; }
+function evEnMiCalendario(e){
+  if(!e || e.scope!=='personal') return false;
+  var me=S?S.emp:-1;
+  if(e.owner===me) return true;              // lo que yo apunté: siempre es mío
+  return evMiStatus(e)==='aceptado';         // de otros: solo si dije que sí
+}
 function evForLayer(layer){
-  var me=S?S.emp:-1, mySlug=deptoSlug(S?S.area:'');
+  var mySlug=deptoSlug(S?S.area:'');
   return evGet().filter(function(e){
     if(!e) return false;
-    if(layer==='personal') return e.scope==='personal' && (e.owner===me || (e.invites||[]).some(function(i){return +i.n===me;}));
+    if(layer==='personal') return evEnMiCalendario(e);
     if(layer==='area')     return e.scope==='area' && (e.area===mySlug || (S&&S.admin));
     if(layer==='general')  return e.scope==='general';
     return false;
@@ -2801,9 +2825,91 @@ function evForLayer(layer){
 function evVisibles(){ return evForLayer('personal').concat(evForLayer('area')).concat(evForLayer('general')); }
 
 /* ---------- navegación pantalla ---------- */
-function openCal(){ _calOff=0; _evEdit=null; _calDay=null; _calLayer=null; _evInv=[]; renderCal(); }
-function calNav(d){ _calOff+=d; renderCal(); }
-function calLayerGo(l){ _calLayer=l; _evEdit=null; _calDay=null; _evInv=[]; renderCal(); window.scrollTo(0,0); }
+function openCal(){ _calOff=0; _evEdit=null; _calDay=null; _calLayer=null; _evInv=[]; _evFecha=null; renderCal(); }
+function calNav(d){ _calOff+=d; _calDay=null; renderCal(); }   /* el día abierto no existe en otro mes */
+/* ---------- TOCAR UN DÍA (Sesión 15, pedido de Carlos) ----------
+   Tocas la fecha en la cuadrícula y se abre el desglose de ESE día: lo que hay
+   (de cualquiera de tus 3 calendarios, etiquetado), con la opción de QUITAR cada
+   cosa y de AGREGAR algo nuevo ya con la fecha puesta. Tocar el mismo día lo
+   cierra. Aquí es donde alguien que ya no puede ir a una reunión la declina. */
+function calDayGo(iso){
+  _calDay = (_calDay===iso) ? null : iso;
+  _evEdit=null;
+  renderCal();
+  if(_calDay) setTimeout(function(){ var el=$('calDayBox'); if(el) try{ el.scrollIntoView({block:'center'}); }catch(e){ } }, 30);
+}
+function calDayClose(){ _calDay=null; renderCal(); }
+/* Agregar algo en el día abierto: abre el formulario con la fecha ya cargada. */
+function calDayAdd(iso){
+  _evFecha=iso; _evEdit=null;
+  renderCal();
+  setTimeout(function(){ var t=$('evTitle2'); if(t){ try{ t.scrollIntoView({block:'center'}); t.focus(); }catch(e){} } }, 40);
+}
+/* Nombre largo del día, para el encabezado del desglose */
+function calDayLabel(iso){
+  var p=(iso||'').split('-'); if(p.length!==3) return iso||'';
+  var d=new Date(+p[0], +p[1]-1, +p[2]);
+  var DIAS=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  return DIAS[d.getDay()]+' '+(+p[2])+' de '+MESL[+p[1]-1];
+}
+/* De dónde viene: se dice con precisión, no solo la capa — una invitación que
+   aceptaste ya vive en tu calendario, pero no la pusiste tú. */
+function calDayOrigen(e){
+  if(e.scope==='area')    return 'Tu área';
+  if(e.scope==='general') return 'Toda la planta';
+  return (e.owner===(S?S.emp:-1)) ? 'Tú lo apuntaste' : 'Te invitaron';
+}
+/* Un renglón del desglose: qué es, de dónde viene y qué puedo hacerle.
+   El TÍTULO se lleva el ancho completo (los títulos de HB son largos y con el
+   chip al lado se partían en tres renglones); el origen baja al meta. */
+function calDayRow(e){
+  var me=S?S.emp:-1, soyDueno=(e.owner===me), st=evMiStatus(e);
+  var puedeGestion = (e.scope==='personal') ? soyDueno : calCanCreate(e.scope);
+  var cuando=(e.hora? e.hora : 'Sin hora')+(e.lugar? (' · '+esc(e.lugar)) : '');
+  var h='<div class="card" style="margin-bottom:9px">';
+  h+='<div style="display:flex;align-items:flex-start;gap:9px">'+
+     '<span style="min-width:0;flex:1"><b style="font-size:14.5px;display:block;line-height:1.3">'+esc(e.titulo||'')+'</b>'+
+     '<span class="note" style="display:block;margin-top:3px">'+cuando+'</span>'+
+     '<span class="chipst mut" style="margin-top:6px;display:inline-block">'+esc(calDayOrigen(e))+'</span></span>'+
+     speakBtn((e.titulo||'')+'. '+(e.hora?('A las '+e.hora+'. '):'')+(e.lugar?('En '+e.lugar+'. '):'')+(e.nota||''))+'</div>';
+  if(e.scope==='personal' && !soyDueno) h+='<div class="note" style="margin-top:7px">Te invitó '+esc(niceName(e.ownerNombre||''))+'</div>';
+  if(e.nota) h+='<p class="note" style="margin:6px 0 0;line-height:1.5">'+esc(e.nota)+'</p>';
+  if(soyDueno && (e.invites||[]).length){
+    h+='<div class="note" style="margin-top:7px">Con '+esc((e.invites||[]).map(function(i){ return niceName(i.nombre||('Nº '+i.n)); }).join(', '))+'</div>';
+  }
+  var acc='';
+  if(puedeGestion){
+    acc+='<button class="btn ghost" style="margin:0;flex:1;min-width:110px;padding:9px;font-size:12.5px" onclick="calEdit(\''+jsAttr(e.id)+'\')">Modificar</button>'+
+         '<button class="btn ghost" style="margin:0;flex:1;min-width:110px;padding:9px;font-size:12.5px;color:var(--bad)" onclick="'+((e.scope==='personal'&&(e.invites||[]).length)?('citaCancel(\''+jsAttr(e.id)+'\')'):('evDel(\''+jsAttr(e.id)+'\')'))+'">Quitar</button>';
+  } else if(st==='aceptado'){
+    /* Me invitaron y ya había dicho que sí: aquí es donde se echa para atrás.
+       No borra el evento (no es suyo) — lo declina, y con eso SALE de su calendario. */
+    acc+='<button class="btn ghost" style="margin:0;flex:1;padding:9px;font-size:12.5px;color:var(--bad)" onclick="citaRespond(\''+jsAttr(e.id)+'\',\'rechazado\')">Ya no puedo ir · quitar de mi calendario</button>';
+  }
+  if(acc) h+='<div style="display:flex;gap:7px;margin-top:10px;flex-wrap:wrap">'+acc+'</div>';
+  return h+'</div>';
+}
+function calDayBlock(iso){
+  /* TODO lo que hay ese día, de los 3 calendarios: si estás parado en "Personal"
+     y ese día hay una junta general, tienes que verla — si no, agendas encima. */
+  var dia=evVisibles().filter(function(e){ return (e.fecha||'')===iso; })
+          .sort(function(a,b){ return (a.hora||'99')<(b.hora||'99')?-1:1; });
+  var h='<div class="panel" id="calDayBox" style="border-color:color-mix(in srgb,var(--accent2) 35%,transparent)">'+
+    '<div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Ese día</div>'+
+    '<b style="font-size:17px;text-transform:capitalize">'+esc(calDayLabel(iso))+'</b>'+
+    '<p class="note" style="margin:3px 0 0">'+(dia.length? (dia.length===1?'1 cosa anotada':dia.length+' cosas anotadas') : 'No tienes nada anotado')+'</p></div>'+
+    '<button class="back" style="padding:6px 10px" onclick="calDayClose()">Cerrar</button></div>';
+  if(dia.length) dia.forEach(function(e){ h+=calDayRow(e); });
+  else h+='<div class="card"><div class="note">Este día está libre. Puedes agregar algo abajo.</div></div>';
+  if(calCanCreate('personal')) h+='<button class="btn" style="margin-top:11px" onclick="calDayAdd(\''+jsAttr(iso)+'\')">＋ Agregar algo este día</button>';
+  /* Las pendientes de ese día NO están en el calendario (regla: solo entran al
+     aceptar) — pero avisar que existen evita que agende encima sin saber. */
+  var pendDia=evInvitPend().filter(function(e){ return (e.fecha||'')===iso; });
+  if(pendDia.length) h+='<div class="note" style="margin:10px 2px 0">📩 Además tienes <b>'+pendDia.length+' invitación'+(pendDia.length===1?'':'es')+'</b> sin contestar para este día. '+
+    '<span style="color:var(--accent2);cursor:pointer;text-decoration:underline" role="button" tabindex="0" onkeydown="_kb(event)" onclick="openInvit()">Verlas ›</span></div>';
+  return h+'</div>';
+}
+function calLayerGo(l){ _calLayer=l; _evEdit=null; _calDay=null; _evInv=[]; _evFecha=null; renderCal(); window.scrollTo(0,0); }
 function calEdit(id){ _evEdit=id; var e=evGet().filter(function(x){return x.id===id;})[0]; if(e){ _calLayer=e.scope; _evInv=(e.invites||[]).map(function(i){return {n:+i.n,nombre:i.nombre};}); } renderCal(); var t=$('evTitle2'); if(t) t.focus(); }
 
 function evEstadoTag(st){ var m={aceptado:['Aceptó','var(--ok)'],rechazado:['No irá','var(--bad)'],pendiente:['Pendiente','var(--mut)']}[st]||['',''];
@@ -2858,13 +2964,23 @@ function renderCal(){
   h+= pendN
     ? '<button class="btn" style="margin:0 0 12px" onclick="openInvit()">📩 Tienes '+pendN+' invitación'+(pendN===1?'':'es')+' por responder ›</button>'
     : '<button class="btn ghost" style="margin:0 0 12px" onclick="openInvit()">＋ Pedir una reunión · Invitaciones ›</button>';
-  // cuadrícula (estática)
+  // cuadrícula TOCABLE: cada día abre su desglose (Sesión 15)
   h+='<div class="panel"><div class="line" style="border:none;padding:0 0 8px"><button class="back" style="padding:6px 12px" onclick="calNav(-1)" aria-label="Mes anterior">‹</button><b style="flex:1;text-align:center;font-size:15px">'+MESL[m]+' '+y+'</b><button class="back" style="padding:6px 12px" onclick="calNav(1)" aria-label="Mes siguiente">›</button></div>'+
      '<div class="cal" style="padding:0;border:none;background:transparent"><div class="calg">';
   ['D','L','M','M','J','V','S'].forEach(function(w){ h+='<div class="wd">'+w+'</div>'; });
   for(var i=0;i<first;i++) h+='<div class="dc mut"></div>';
-  for(var dd=1;dd<=dim;dd++){ var cls='dc'+((dd===td&&y===ty&&m===tm)?' today':(byDay[dd]?' has':'')); h+='<div class="'+cls+'">'+dd+(byDay[dd]?'<span class="ev"></span>':'')+'</div>'; }
-  h+='</div></div></div>';
+  var mesIso=y+'-'+('0'+(m+1)).slice(-2);
+  for(var dd=1;dd<=dim;dd++){
+    var iso=mesIso+'-'+('0'+dd).slice(-2);
+    var cls='dc'+((dd===td&&y===ty&&m===tm)?' today':(byDay[dd]?' has':''))+(_calDay===iso?' sel':'');
+    var cuantos=(byDay[dd]||[]).length;
+    var etq=dd+' de '+MESL[m]+(cuantos?(' · '+cuantos+(cuantos===1?' evento':' eventos')):' · sin eventos')+'. Toca para ver y editar este día.';
+    h+='<button type="button" class="'+cls+'" onclick="calDayGo(\''+iso+'\')" aria-label="'+escA(etq)+'">'+dd+(cuantos?'<span class="ev"></span>':'')+'</button>';
+  }
+  h+='</div></div>';
+  h+='<p class="note" style="margin:9px 2px 0;text-align:center">Toca un día para ver, agregar o quitar lo de esa fecha.</p></div>';
+  // desglose del día tocado
+  if(_calDay) h+=calDayBlock(_calDay);
   // formulario (si puede crear en esta capa)
   if(calCanCreate(_calLayer)) h+=evForm();
   else if(_calLayer==='general') h+='<div class="note" style="margin:0 2px 10px">Los eventos generales los publica Recursos Humanos / Dirección.</div>';
@@ -2896,20 +3012,28 @@ function _evComposing(){
 function evForm(){
   var ed=null; if(_evEdit){ evGet().forEach(function(e){ if(e.id===_evEdit) ed=e; }); if(!ed) _evEdit=null; }
   var esPersonal=(_calLayer==='personal');
-  var titLbl={personal:'Nuevo evento personal',area:'Nuevo evento de tu área',general:'Nuevo evento general'}[_calLayer];
-  var h='<div class="panel"><div class="hd"><b>'+(ed?'Modificar evento':titLbl)+'</b>'+(ed?'<button class="back" style="padding:6px 10px" onclick="_evEdit=null;_evInv=[];renderCal()">Cancelar</button>':'')+'</div>'+
-    '<input id="evTitle2" class="fin" placeholder="'+(esPersonal?'Ej. Reunión con César':'Ej. Junta de seguridad, día de pago')+'" autocomplete="off" value="'+escA(ed?ed.titulo:'')+'" style="margin:0 0 8px">'+
-    '<div style="display:flex;gap:8px"><input id="evDate2" class="fin" type="date" value="'+escA(ed?ed.fecha:'')+'" style="flex:1"><input id="evHora2" class="fin" type="time" value="'+escA(ed?ed.hora:'')+'" style="flex:1"></div>'+
+  /* (Sesión 15, Carlos) El calendario personal NO es solo de invitaciones: es TU
+     calendario, privado, para usarlo a tu gusto. Por eso el encabezado dice
+     "Agregar a mi calendario" y se aclara que nadie lo ve — hasta que TÚ invites
+     a alguien y esa persona acepte, y entonces le aparece a los dos. */
+  var titLbl={personal:'Agregar a mi calendario',area:'Nuevo evento de tu área',general:'Nuevo evento general'}[_calLayer];
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div>'+
+    (esPersonal&&!ed?'<div class="eyebrow">Privado</div>':'')+
+    '<b style="font-size:17px">'+(ed?'Modificar':titLbl)+'</b>'+
+    (esPersonal&&!ed?'<p class="note" style="margin:3px 0 0;max-width:270px">Solo tú lo ves. Si invitas a alguien y acepta, les aparece a los dos.</p>':'')+
+    '</div>'+(ed?'<button class="back" style="padding:6px 10px" onclick="_evEdit=null;_evInv=[];_evFecha=null;renderCal()">Cancelar</button>':'')+'</div>'+
+    '<input id="evTitle2" class="fin" placeholder="'+(esPersonal?'Ej. Cita con el doctor, junta, recordatorio…':'Ej. Junta de seguridad, día de pago')+'" autocomplete="off" value="'+escA(ed?ed.titulo:'')+'" style="margin:0 0 8px">'+
+    '<div style="display:flex;gap:8px"><input id="evDate2" class="fin" type="date" value="'+escA(ed?ed.fecha:(_evFecha||''))+'" style="flex:1"><input id="evHora2" class="fin" type="time" value="'+escA(ed?ed.hora:'')+'" style="flex:1"></div>'+
     '<input id="evLugar2" class="fin" style="margin-top:8px" maxlength="140" placeholder="Lugar (opcional)" value="'+escA(ed?ed.lugar:'')+'">'+
     '<textarea id="evNota2" class="fin" style="margin-top:8px" rows="2" maxlength="400" placeholder="Nota (opcional)">'+esc(ed?ed.nota:'')+'</textarea>';
   // invitaciones (solo personal, y solo al CREAR o si eres dueño)
   if(esPersonal){
-    h+='<div class="note" style="margin:12px 0 5px">Invitar a (opcional)</div>';
+    h+='<div class="note" style="margin:14px 0 5px"><b style="color:var(--txt)">Invitar a alguien</b> — opcional. Déjalo vacío y queda solo para ti.</div>';
     h+='<div id="evInvChips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">'+_evInvChips()+'</div>';
     h+='<input id="evInvSearch" class="fin" placeholder="Escribe un nombre o número…" autocomplete="off" oninput="_evInvPaint()">';
     h+='<div id="evInvList" style="margin-top:6px"></div>';
   }
-  h+='<button class="btn" style="margin-top:12px" onclick="evSave()">'+(ed?'Guardar cambios':'Agregar al calendario')+'</button></div>';
+  h+='<button class="btn" style="margin-top:12px" onclick="evSave()">'+(ed?'Guardar cambios':(esPersonal?'Guardar en mi calendario':'Agregar al calendario'))+'</button></div>';
   return h;
 }
 function _evInvChips(){ return _evInv.map(function(p){ return '<span class="chip2" style="pointer-events:auto">'+esc(niceName(p.nombre||('Nº '+p.n)))+' <b style="cursor:pointer;color:var(--bad)" onclick="_evInvDel('+(+p.n)+')">✕</b></span>'; }).join('') || '<span class="note">Nadie aún</span>'; }
@@ -2941,14 +3065,14 @@ function evSave(){
       a.push({ id:'ev'+Date.now(), scope:_calLayer, owner:me, ownerClave:S.clave||(''+me), ownerNombre:S.nombre||('Nº '+me),
         area:(_calLayer==='area'?deptoSlug(S.area):''), titulo:t, fecha:d, hora:datos.hora, lugar:datos.lugar, nota:datos.nota, invites:inv, ts:Date.now(), demo:(location.hash==='#demo') });
       flash('✓ Evento agregado'); }
-    lsSet('hb_eventos',a); _evEdit=null; _evInv=[]; renderCal(); return;
+    lsSet('hb_eventos',a); _evEdit=null; _evInv=[]; _evFecha=null; renderCal(); return;
   }
   if(!sbReady()){ flash('Sin conexión'); return; }
   var rpc=_evEdit? SB.rpc('hb_evento_editar',{p_id:_evEdit,p:datos}) : SB.rpc('hb_evento_alta',{p:datos});
   rpc.then(function(r){ var x=r&&r.data;
     if(r.error||!x||!x.ok){ flash(r.error?(_rpcFaltante(r.error)?'La función se está activando, intenta en un momento':(_rpcSinRed(r.error)?'Sin conexión':'No se pudo guardar')):((x&&x.error==='no_permiso')?'No puedes publicar en esta vista':'No se pudo guardar')); return; }
     var eid=_evEdit||(x.id), esPersonal=(_calLayer==='personal');
-    _evEdit=null; var inv=_evInv.slice(); _evInv=[];
+    _evEdit=null; var inv=_evInv.slice(); _evInv=[]; _evFecha=null;
     var done=function(){ flash('✓ Guardado'); evLoad(function(){ if(_screen==='cal') renderCal(); }); };
     // Sincronizar invitados (crear o editar). hb_evento_invitar es idempotente y
     // CONSERVA el status de quien ya había respondido; solo los nuevos quedan 'pendiente'.
@@ -3028,7 +3152,7 @@ function _citaRespondidas(){   /* me invitaron y YA contesté */
     return (e.invites||[]).some(function(i){ return +i.n===me && i.status!=='pendiente'; });
   }).sort(function(a,b){ return (a.fecha||'')<(b.fecha||'')?-1:1; });
 }
-function _miStatus(e){ var me=S?S.emp:-1; var mi=(e.invites||[]).filter(function(i){ return +i.n===me; })[0]||{}; return mi.status||''; }
+function _miStatus(e){ return evMiStatus(e)||''; }   /* una sola verdad: la del calendario */
 function _citaPaso(e){ return (e.fecha||'') < mxToday(); }   /* ¿ya pasó el día? */
 
 /* ---------- una reunión, como tarjeta ---------- */

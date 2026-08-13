@@ -9130,7 +9130,7 @@ function mzBuscaCausa(q){
   var hits=(_mzCat&&_mzCat.causas||[]).filter(function(c){ return c.nombre.toLowerCase().indexOf(q)>-1; }).slice(0,8);
   res.innerHTML=hits.map(function(c){
     return '<button class="btn ghost" style="margin:6px 6px 0 0;width:auto;padding:7px 11px;font-size:12px" onclick="mzSetCausa('+c.id+')">'+esc(c.nombre)+'</button>';
-  }).join('')||'<div class="note" style="margin-top:6px;color:var(--warn)">Esa causa no está en la lista oficial. Busca con otra palabra; si de verdad falta, dirección la agrega al catálogo.</div>';
+  }).join('')||'<div class="note" style="margin-top:6px;color:var(--warn)">Esa causa no existe. Debes elegir una de la lista oficial — busca con otra palabra.</div>';
 }
 function mzSetCausa(id){
   var c=(_mzCat&&_mzCat.causas||[]).filter(function(x){ return x.id===id; })[0]; if(!c) return;
@@ -9382,7 +9382,7 @@ function mzTitulo(txt,key,ops,def){ var cur=mzGT(key,def);
   return '<div style="display:flex;align-items:center;gap:8px"><b style="font-size:13px">'+txt+'</b>'+
     '<select onchange="mzGrafTipo(\''+key+'\',this.value)" aria-label="Tipo de gráfico" style="margin-left:auto;padding:4px 8px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--mut);font:inherit;font-size:11px">'+
     ops.map(function(o){ return '<option value="'+o[0]+'"'+(cur===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'; }
-function mzPie(items){
+function mzPie(items,dona){
   var tot=0; items.forEach(function(i){ tot+=(i.v||0); });
   if(!tot) return '<div class="note" style="margin-top:6px">Sin datos en el rango.</div>';
   var cx=80,cy=80,r=66,a=0,paths='';
@@ -9399,8 +9399,44 @@ function mzPie(items){
       '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(i.l)+'</span>'+
       '<b style="font-variant-numeric:tabular-nums">'+Number(i.v||0).toLocaleString()+'</b><span class="note" style="width:34px;text-align:right">'+pc+'%</span></div>'; }).join('');
   return '<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:9px">'+
-    '<svg viewBox="0 0 160 160" style="width:148px;height:148px;flex:none" role="img" aria-label="Gráfico de pastel">'+paths+'<circle cx="80" cy="80" r="34" fill="var(--panel)"/></svg>'+
+    '<svg viewBox="0 0 160 160" style="width:148px;height:148px;flex:none" role="img" aria-label="Gráfico circular">'+paths+(dona?'<circle cx="80" cy="80" r="34" fill="var(--panel)"/>':'')+'</svg>'+
     '<div style="flex:1;min-width:210px">'+leg+'</div></div>'; }
+function mzCols(items){  /* columnas verticales con el número arriba */
+  var max=1; items.forEach(function(i){ if((i.v||0)>max) max=i.v; });
+  return '<div style="display:flex;align-items:flex-end;gap:10px;margin-top:10px">'+
+    items.map(function(i,k){ var pc=Math.max(4,Math.round((i.v||0)/max*100));
+      return '<span style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px">'+
+        '<span style="font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums">'+Number(i.v||0).toLocaleString()+'</span>'+
+        '<span style="width:100%;max-width:64px;height:74px;display:flex;align-items:flex-end"><span style="display:block;width:100%;height:'+pc+'%;border-radius:4px 4px 0 0;background:'+MZ_COL[k%MZ_COL.length]+'"></span></span>'+
+        '<span style="font-size:10px;color:var(--mut);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(i.l)+'</span></span>'; }).join('')+'</div>'; }
+function mzTablaG(items,unidad){  /* tabla de números puros */
+  var tot=0; items.forEach(function(i){ tot+=(i.v||0); });
+  return '<div style="margin-top:8px">'+items.map(function(i){
+    return '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px;font-variant-numeric:tabular-nums">'+
+      '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(i.l)+'</span>'+
+      '<b>'+Number(i.v||0).toLocaleString()+'</b><span class="note" style="width:70px;text-align:right">'+esc(unidad||'')+'</span>'+
+      '<span class="note" style="width:40px;text-align:right">'+(tot?Math.round((i.v||0)/tot*100):0)+'%</span></div>'; }).join('')+
+    '<div style="display:flex;justify-content:space-between;padding:7px 0;font-size:12.5px"><b>Total</b><b style="font-variant-numeric:tabular-nums">'+tot.toLocaleString()+'</b></div></div>'; }
+function mzArea(dias,maxD){  /* área bajo la curva */
+  var n=dias.length,W=640,H=150,PL=10,PR=10,PT=18,PB=18;
+  var pts=dias.map(function(d,i){ var x=PL+i*(W-PL-PR)/Math.max(1,n-1);
+    var y=PT+(H-PT-PB)*(1-(d.mezclas||0)/maxD); return [x,y]; });
+  var poly=pts.map(function(p){ return p[0].toFixed(1)+','+p[1].toFixed(1); }).join(' ');
+  var area='M'+pts[0][0].toFixed(1)+' '+(H-PB)+' L'+poly.split(' ').join(' L').replace(/,/g,' ')+' L'+pts[n-1][0].toFixed(1)+' '+(H-PB)+' Z';
+  var paso=Math.ceil(n/12),labs='',tops='';
+  dias.forEach(function(d,i){ var m=d.mezclas||0;
+    if(m===maxD) tops+='<text x="'+pts[i][0].toFixed(1)+'" y="'+(pts[i][1]-6).toFixed(1)+'" text-anchor="middle" font-size="10.5" fill="#e73b2f">'+m.toLocaleString()+'</text>';
+    if(i%paso===0||i===n-1) labs+='<text x="'+pts[i][0].toFixed(1)+'" y="'+(H-4)+'" text-anchor="middle" font-size="9" fill="#8a8f9c">'+(+d.fecha.slice(8,10))+'</text>'; });
+  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;margin-top:9px" role="img" aria-label="Gráfico de área">'+
+    '<path d="'+area+'" fill="rgba(204,26,31,.28)"/><polyline points="'+poly+'" fill="none" stroke="#cc1a1f" stroke-width="2.2"/>'+tops+labs+'</svg>'; }
+var MZ_OPS_CAT=[['barras','Barras'],['columnas','Columnas'],['pastel','Pastel'],['dona','Dona'],['tabla','Tabla']];
+function mzCatGraf(key,items,unidad,barrasHtml){  /* render de un gráfico categórico según el tipo elegido */
+  var t=mzGT(key,'barras');
+  if(t==='pastel') return mzPie(items,false);
+  if(t==='dona')   return mzPie(items,true);
+  if(t==='columnas') return mzCols(items);
+  if(t==='tabla')  return mzTablaG(items,unidad);
+  return barrasHtml; }
 function mzLinea(dias,maxD){
   var n=dias.length,W=640,H=150,PL=10,PR=10,PT=18,PB=18;
   var pts=dias.map(function(d,i){ var x=PL+i*(W-PL-PR)/Math.max(1,n-1);
@@ -9441,8 +9477,11 @@ function mzTabPaint(x){
   if(dias.length>1){
     var maxD=1; dias.forEach(function(d){ if((d.mezclas||0)>maxD) maxD=d.mezclas; });
     var chico=dias.length>16;   /* mes completo: números en vertical para que quepan */
-    h+='<div class="card" style="margin-bottom:12px">'+mzTitulo('Producción por día · mezclas','dia',[['barras','Barras'],['linea','Línea del tiempo']],'barras');
-    if(mzGT('dia','barras')==='linea'){ h+=mzLinea(dias,maxD); }
+    h+='<div class="card" style="margin-bottom:12px">'+mzTitulo('Producción por día · mezclas','dia',[['barras','Barras'],['linea','Línea del tiempo'],['area','Área'],['tabla','Tabla']],'barras');
+    var _td=mzGT('dia','barras');
+    if(_td==='linea'){ h+=mzLinea(dias,maxD); }
+    else if(_td==='area'){ h+=mzArea(dias,maxD); }
+    else if(_td==='tabla'){ h+=mzTablaG(dias.map(function(d){ return {l:d.fecha+(d.quemadas?' · '+d.quemadas+' quemadas':''), v:d.mezclas||0}; }),'mezclas'); }
     else{
       h+='<div style="display:flex;align-items:flex-end;gap:'+(chico?'2px':'6px')+';margin-top:10px">'+
        dias.map(function(d){ var m=d.mezclas||0; var pc=Math.max(4,Math.round(m/maxD*100));
@@ -9456,22 +9495,22 @@ function mzTabPaint(x){
   var tc=x.top_compuestos||[];
   if(tc.length){
     var maxC=tc[0].mezclas||1;
-    h+='<div class="card" style="margin-bottom:12px">'+mzTitulo('Los compuestos más corridos','top',[['barras','Barras'],['pastel','Pastel']],'barras');
-    if(mzGT('top','barras')==='pastel'){ h+=mzPie(tc.map(function(c){ return {l:c.compuesto||'¿?', v:c.mezclas||0}; })); }
-    else h+=tc.map(function(c){ return '<div style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:12px"><span>'+esc(c.compuesto||'¿?')+((c.reproceso||0)>0?' <span class="note">· '+c.reproceso+' de reproceso</span>':'')+'</span><span class="note">'+Number(c.mezclas||0).toLocaleString()+' mez</span></div>'+
-       '<span style="display:block;height:7px;border-radius:4px;background:var(--data);opacity:.9;margin-top:3px;width:'+Math.max(3,Math.round((c.mezclas||0)/maxC*100))+'%"></span></div>'; }).join('');
+    h+='<div class="card" style="margin-bottom:12px">'+mzTitulo('Los compuestos más corridos','top',MZ_OPS_CAT,'barras');
+    h+=mzCatGraf('top', tc.map(function(c){ return {l:c.compuesto||'¿?', v:c.mezclas||0}; }), 'mezclas',
+       tc.map(function(c){ return '<div style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:12px"><span>'+esc(c.compuesto||'¿?')+((c.reproceso||0)>0?' <span class="note">· '+c.reproceso+' de reproceso</span>':'')+'</span><span class="note">'+Number(c.mezclas||0).toLocaleString()+' mez</span></div>'+
+       '<span style="display:block;height:7px;border-radius:4px;background:var(--data);opacity:.9;margin-top:3px;width:'+Math.max(3,Math.round((c.mezclas||0)/maxC*100))+'%"></span></div>'; }).join(''));
     h+='</div>';
   }
   h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'+
      '<div><b style="font-size:13px">Tipo de cambio (DOF · el de facturación)</b>'+
      (x.fx?('<div style="margin-top:3px"><b style="font-size:19px;color:var(--ok)">$'+x.fx.fix+'</b> <span class="note">del '+esc(x.fx.fecha)+' · '+esc(x.fx.fuente==='banxico'?'Banxico automático':'capturado a mano')+'</span></div>'):'<div class="note" style="margin-top:3px;color:var(--warn)">Sin tasa todavía — falta el token de Banxico o captúrala a mano.</div>')+'</div>'+
      '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzFixManual()">Corregir / capturar</button></div></div>';
-  h+='<div class="card" style="margin-bottom:12px">'+mzTitulo('Por banbury','bb',[['barras','Barras'],['pastel','Pastel']],'barras');
+  h+='<div class="card" style="margin-bottom:12px">'+mzTitulo('Por banbury','bb',MZ_OPS_CAT,'barras');
   var maxM=1; (x.por_banbury||[]).forEach(function(b){ if(b.mezclas>maxM) maxM=b.mezclas; });
-  if(mzGT('bb','barras')==='pastel'){
-    h+=mzPie([1,2,3,4,5].map(function(nb){ var b=(x.por_banbury||[]).filter(function(y){ return y.banbury===nb; })[0];
+  if(mzGT('bb','barras')!=='barras'){
+    h+=mzCatGraf('bb', [1,2,3,4,5].map(function(nb){ var b=(x.por_banbury||[]).filter(function(y){ return y.banbury===nb; })[0];
       var par=x.banburys&&x.banburys[String(nb)]==='parado';
-      return {l:'BB'+nb+(par?' (parado)':''), v:b?b.mezclas:0}; }).filter(function(i){ return i.v>0; }));
+      return {l:'BB'+nb+(par?' (parado)':''), v:b?b.mezclas:0}; }).filter(function(i){ return i.v>0; }), 'mezclas', '');
   } else [1,2,3,4,5].forEach(function(nb){
     var b=(x.por_banbury||[]).filter(function(y){ return y.banbury===nb; })[0];
     var par=x.banburys&&x.banburys[String(nb)]==='parado';
@@ -9486,10 +9525,10 @@ function mzTabPaint(x){
   });
   h+='</div>';
   var repro=(x.reproceso_por_origen||[]); var totR=repro.reduce(function(a,o){ return a+o.mezclas; },0);
-  h+='<div class="card" style="margin-bottom:12px">'+mzTitulo('Reproceso por origen','org',[['barras','Barras'],['pastel','Pastel']],'barras');
+  h+='<div class="card" style="margin-bottom:12px">'+mzTitulo('Reproceso por origen','org',MZ_OPS_CAT,'barras');
   if(!totR) h+='<div class="note" style="margin-top:4px">Sin reproceso en el rango.</div>';
-  else if(mzGT('org','barras')==='pastel'){
-    h+=mzPie(repro.map(function(o){ return {l:mzOrgTxt(o.origen), v:o.mezclas}; }));
+  else if(mzGT('org','barras')!=='barras'){
+    h+=mzCatGraf('org', repro.map(function(o){ return {l:mzOrgTxt(o.origen), v:o.mezclas}; }), 'mezclas', '');
   } else repro.forEach(function(o){
     h+='<div style="display:flex;align-items:center;gap:9px;margin-top:7px;font-variant-numeric:tabular-nums"><span class="note" style="width:150px;flex:none">'+esc(mzOrgTxt(o.origen))+'</span>'+
        '<span style="flex:1;height:9px;border-radius:5px;background:var(--card2);overflow:hidden"><span style="display:block;height:9px;border-radius:5px;background:var(--warn);width:'+Math.round(o.mezclas/totR*100)+'%"></span></span>'+
@@ -9498,10 +9537,10 @@ function mzTabPaint(x){
   });
   h+='</div>';
   var tmt=(x.tm_top||[]); var maxTm=1; tmt.forEach(function(c){ if(c.minutos>maxTm) maxTm=c.minutos; });
-  h+='<div class="card">'+mzTitulo('Paros · las causas que más pegan','tm',[['barras','Barras'],['pastel','Pastel']],'barras');
+  h+='<div class="card">'+mzTitulo('Paros · las causas que más pegan','tm',MZ_OPS_CAT,'barras');
   if(!tmt.length) h+='<div class="note" style="margin-top:4px">Sin paros en el rango.</div>';
-  else if(mzGT('tm','barras')==='pastel'){
-    h+=mzPie(tmt.map(function(c){ return {l:c.causa||'¿?', v:Math.round(c.minutos)}; }));
+  else if(mzGT('tm','barras')!=='barras'){
+    h+=mzCatGraf('tm', tmt.map(function(c){ return {l:c.causa||'¿?', v:Math.round(c.minutos)}; }), 'minutos', '');
   } else tmt.forEach(function(c){
     h+='<div style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:12px"><span>'+esc(c.causa||'¿?')+'</span><span class="note">'+Math.round(c.minutos).toLocaleString()+' min</span></div>'+
        '<span style="display:block;height:7px;border-radius:4px;background:var(--data);opacity:.85;margin-top:3px;width:'+Math.round(c.minutos/maxTm*100)+'%"></span></div>';

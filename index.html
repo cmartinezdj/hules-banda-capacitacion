@@ -9348,7 +9348,9 @@ function mzFicha(cid){
 function renderMezTab(){
   if(!S.admin){ alert('Solo acceso total.'); return; }
   var hoy=mxToday();
-  if(!_mztD1){ _mztD1=hoy.slice(0,8)+'01'; _mztD2=hoy; }
+  if(!_mztD1){ /* default: los últimos 31 días (si el mes va empezando, aún se ve el pasado) */
+    var d0=new Date(hoy+'T12:00:00'); d0.setDate(d0.getDate()-30);
+    _mztD1=d0.toISOString().slice(0,10); _mztD2=hoy; }
   $('s-meztab').innerHTML='<div class="card"><div class="note">Cargando el tablero…</div></div>'; show('meztab');
   SB.rpc('hb_mez_tablero',{p_desde:_mztD1,p_hasta:_mztD2}).then(function(r){ var x=r&&r.data;
     if(!(x&&x.ok)){ $('s-meztab').innerHTML='<div class="card"><b>'+esc(mzErr(x))+'</b></div>'; return; }
@@ -9366,13 +9368,33 @@ function mzTabPaint(x){
      '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzTabRango(\''+hoy+'\',\''+hoy+'\')">Hoy</button>'+
      '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzTabRango(\''+hace7+'\',\''+hoy+'\')">7 días</button>'+
      '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzTabRango(\''+hoy.slice(0,8)+'01\',\''+hoy+'\')">Mes</button>'+
+     (function(){ var f=new Date(hoy+'T12:00:00'); f.setDate(0); var fin=f.toISOString().slice(0,10); var ini=fin.slice(0,8)+'01';
+       return '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzTabRango(\''+ini+'\',\''+fin+'\')">Mes pasado</button>'; })()+
      '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzExcel(_mztD1,_mztD2)">⬇ Excel</button></div>'+
      '<div class="note" style="margin-top:5px">Del '+esc(_mztD1)+' al '+esc(_mztD2)+'</div></div>';
+  var dias=x.por_dia||[]; var totKg=0; dias.forEach(function(d){ totKg+=(d.kg||0); });
   h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin-bottom:12px">'+
      '<div class="card"><div class="note">Mezclas</div><b style="font-size:22px;color:var(--data)">'+(t.mezclas||0).toLocaleString()+'</b></div>'+
+     '<div class="card"><div class="note">Kilos (por receta)</div><b style="font-size:22px">'+(totKg>=1000000?((totKg/1000000).toFixed(2)+' M'):totKg.toLocaleString())+'</b></div>'+
      '<div class="card"><div class="note">Corridas</div><b style="font-size:22px">'+(t.corridas||0).toLocaleString()+'</b></div>'+
      '<div class="card"><div class="note">Quemadas</div><b style="font-size:22px;color:var(--bad)">'+(t.quemadas||0)+'</b></div>'+
      '<div class="card"><div class="note">En bandeja</div><b style="font-size:22px;color:var(--warn)">'+(t.pendientes||0)+'</b></div></div>';
+  /* gráfica: producción por día (como el Excel de Alejandro, pero viva) */
+  if(dias.length>1){
+    var maxD=1; dias.forEach(function(d){ if(d.mezclas>maxD) maxD=d.mezclas; });
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Producción por día · mezclas</b>'+
+       '<div style="display:flex;align-items:flex-end;gap:3px;height:112px;margin-top:9px">'+
+       dias.map(function(d){ var pc=Math.max(3,Math.round((d.mezclas||0)/maxD*100));
+         return '<span title="'+esc(d.fecha)+' · '+(d.mezclas||0)+' mezclas · '+Number(d.kg||0).toLocaleString()+' kg" style="flex:1;min-width:4px;background:'+((d.mezclas||0)===maxD?'var(--accent2)':'#7d0d11')+';height:'+pc+'%;border-radius:3px 3px 0 0"></span>'; }).join('')+
+       '</div><div style="display:flex;justify-content:space-between;margin-top:5px"><span class="note">'+esc(dias[0].fecha)+'</span><span class="note">el más alto en rojo vivo · pasa el cursor para el detalle</span><span class="note">'+esc(dias[dias.length-1].fecha)+'</span></div></div>';
+  }
+  var tc=x.top_compuestos||[];
+  if(tc.length){
+    var maxC=tc[0].mezclas||1;
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Los compuestos más corridos</b>'+
+       tc.map(function(c){ return '<div style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:12px"><span>'+esc(c.compuesto||'¿?')+((c.reproceso||0)>0?' <span class="note">· '+c.reproceso+' de reproceso</span>':'')+'</span><span class="note">'+Number(c.mezclas||0).toLocaleString()+' mez</span></div>'+
+       '<span style="display:block;height:7px;border-radius:4px;background:var(--data);opacity:.9;margin-top:3px;width:'+Math.max(3,Math.round((c.mezclas||0)/maxC*100))+'%"></span></div>'; }).join('')+'</div>';
+  }
   h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'+
      '<div><b style="font-size:13px">Tipo de cambio (DOF · el de facturación)</b>'+
      (x.fx?('<div style="margin-top:3px"><b style="font-size:19px;color:var(--ok)">$'+x.fx.fix+'</b> <span class="note">del '+esc(x.fx.fecha)+' · '+esc(x.fx.fuente==='banxico'?'Banxico automático':'capturado a mano')+'</span></div>'):'<div class="note" style="margin-top:3px;color:var(--warn)">Sin tasa todavía — falta el token de Banxico o captúrala a mano.</div>')+'</div>'+

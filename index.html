@@ -9322,13 +9322,20 @@ function mzFicha(cid){
     var c=x.compuesto, pr=x.produccion||{}, h='';
     h+='<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
        '<div><b style="font-size:16px">'+esc(c.nombre)+'</b><div class="note" style="margin-top:2px">Familia '+esc(c.familia)+' · '+esc(c.tipo)+'</div></div>'+speakBtn('Ficha de '+c.nombre)+'</div></div>';
-    if(x.costo&&x.costo.ok){
+    if(x.costo&&x.costo.ok&&x.costo.fx){
       h+='<div class="card" style="margin-bottom:10px;border-color:color-mix(in srgb,var(--data) 35%,transparent)"><b style="font-size:13px">Costo de materia prima (solo dirección)</b>'+
         '<div style="display:flex;gap:16px;margin-top:6px;flex-wrap:wrap;font-size:13px">'+
         '<span><b style="font-size:18px;color:var(--data)">'+(x.costo.costo_kg_mxn!=null?('$'+x.costo.costo_kg_mxn):'—')+'</b> <span class="note">MXN/kg</span></span>'+
         '<span><b style="font-size:18px">$'+(x.costo.costo_batch_mxn||0).toLocaleString()+'</b> <span class="note">por mezcla ('+(x.costo.peso_total_kg||'?')+' kg)</span></span></div>'+
-        (x.costo.fx?('<div class="note" style="margin-top:5px">Tasa DOF $'+x.costo.fx+' del '+esc(x.costo.fx_fecha||'')+'</div>'):'<div class="note" style="margin-top:5px;color:var(--warn)">Sin tipo de cambio todavía — los precios en dólares no están convertidos.</div>')+
-        ((x.costo.faltantes||[]).length?('<div class="note" style="margin-top:5px;color:var(--warn)">Faltan precios de: '+esc(x.costo.faltantes.join(', '))+'</div>'):'')+'</div>';
+        '<div class="note" style="margin-top:5px">Tasa DOF $'+x.costo.fx+' del '+esc(x.costo.fx_fecha||'')+'</div>'+
+        ((x.costo.faltantes||[]).length?('<div class="note" style="margin-top:5px;color:var(--warn)">Sin precio de compra: '+esc(x.costo.faltantes.join(', '))+' — no van en el total.</div>'):'')+'</div>';
+    } else if(x.costo&&x.costo.ok&&!x.costo.fx){
+      h+='<div class="card" style="margin-bottom:10px;border-color:color-mix(in srgb,var(--warn) 40%,transparent)"><b style="font-size:13px;color:var(--warn)">Costo pendiente: falta la tasa del día</b>'+
+        '<div class="note" style="margin-top:4px">La mayoría de los materiales se compran en dólares. Captura la tasa DOF en <b>Gráficos → Corregir/capturar</b> (o dame el token de Banxico) y el costo aparece solo.</div></div>';
+    } else if(x.costo&&!x.costo.ok){
+      h+='<div class="card" style="margin-bottom:10px"><b style="font-size:13px;color:var(--warn)">'+esc(mzErr(x.costo))+'</b></div>';
+    } else if(S.admin){
+      h+='<div class="card" style="margin-bottom:10px"><b style="font-size:13px;color:var(--warn)">Sin costo</b><div class="note" style="margin-top:4px">Este compuesto no tiene una versión vigente con receta digitalizada — falta su hoja de la carpeta.</div></div>';
     }
     h+='<div class="card" style="margin-bottom:10px"><b style="font-size:13px">Producción registrada (desde el arranque)</b>'+
        '<div style="display:flex;gap:16px;margin-top:6px;flex-wrap:wrap;font-size:13px">'+
@@ -9386,12 +9393,16 @@ function mzTabPaint(x){
      '<div class="card"><div class="note">En bandeja</div><b style="font-size:22px;color:var(--warn)">'+(t.pendientes||0)+'</b></div></div>';
   /* gráfica: producción por día (como el Excel de Alejandro, pero viva) */
   if(dias.length>1){
-    var maxD=1; dias.forEach(function(d){ if(d.mezclas>maxD) maxD=d.mezclas; });
+    var maxD=1; dias.forEach(function(d){ if((d.mezclas||0)>maxD) maxD=d.mezclas; });
+    var chico=dias.length>16;   /* mes completo: números en vertical para que quepan */
     h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Producción por día · mezclas</b>'+
-       '<div style="display:flex;align-items:flex-end;gap:3px;height:112px;margin-top:9px">'+
-       dias.map(function(d){ var pc=Math.max(3,Math.round((d.mezclas||0)/maxD*100));
-         return '<span title="'+esc(d.fecha)+' · '+(d.mezclas||0)+' mezclas · '+Number(d.kg||0).toLocaleString()+' kg" style="flex:1;min-width:4px;background:'+((d.mezclas||0)===maxD?'var(--accent2)':'#7d0d11')+';height:'+pc+'%;border-radius:3px 3px 0 0"></span>'; }).join('')+
-       '</div><div style="display:flex;justify-content:space-between;margin-top:5px"><span class="note">'+esc(dias[0].fecha)+'</span><span class="note">el más alto en rojo vivo · pasa el cursor para el detalle</span><span class="note">'+esc(dias[dias.length-1].fecha)+'</span></div></div>';
+       '<div style="display:flex;align-items:flex-end;gap:'+(chico?'2px':'6px')+';margin-top:10px">'+
+       dias.map(function(d){ var m=d.mezclas||0; var pc=Math.max(4,Math.round(m/maxD*100));
+         return '<span style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px">'+
+           '<span style="font-size:'+(chico?'9.5px':'11px')+';color:'+(m===maxD?'var(--accent2)':'var(--mut)')+';font-variant-numeric:tabular-nums;'+(chico?'writing-mode:vertical-rl;transform:rotate(180deg);':'')+'">'+m.toLocaleString()+'</span>'+
+           '<span style="width:100%;height:60px;display:flex;align-items:flex-end"><span style="display:block;width:100%;height:'+pc+'%;border-radius:3px 3px 0 0;background:'+(m===maxD?'var(--accent2)':'#7d0d11')+'"></span></span>'+
+           '<span style="font-size:9px;color:var(--mut)">'+(+d.fecha.slice(8,10))+'</span></span>'; }).join('')+
+       '</div><div style="display:flex;justify-content:space-between;margin-top:6px"><span class="note">'+esc(dias[0].fecha)+'</span><span class="note">'+Number(totKg).toLocaleString()+' kg en el rango</span><span class="note">'+esc(dias[dias.length-1].fecha)+'</span></div></div>';
   }
   var tc=x.top_compuestos||[];
   if(tc.length){
@@ -9409,9 +9420,14 @@ function mzTabPaint(x){
   [1,2,3,4,5].forEach(function(nb){
     var b=(x.por_banbury||[]).filter(function(y){ return y.banbury===nb; })[0];
     var par=x.banburys&&x.banburys[String(nb)]==='parado';
-    h+='<div style="display:flex;align-items:center;gap:9px;margin-top:7px"><span class="note" style="width:34px'+(par?';opacity:.5':'')+'">BB'+nb+'</span>'+
-       '<span style="flex:1;height:9px;border-radius:5px;background:var(--card2);overflow:hidden"><span style="display:block;height:9px;border-radius:5px;background:var(--data);width:'+(b?Math.round(b.mezclas/maxM*100):0)+'%"></span></span>'+
-       '<span style="font-size:12px;width:130px;text-align:right'+(par?';color:var(--mut)':'')+'">'+(par?'parado':(b?(b.mezclas+' mez · '+Number(b.kg_estimados||0).toLocaleString()+' kg'):'0'))+'</span></div>';
+    /* números en columnas fijas, alineados y en el mismo renglón (pedido de Carlos) */
+    h+='<div style="display:flex;align-items:center;gap:10px;margin-top:8px;font-variant-numeric:tabular-nums">'+
+       '<span class="note" style="width:34px;flex:none'+(par?';opacity:.5':'')+'">BB'+nb+'</span>'+
+       '<span style="flex:1;min-width:50px;height:9px;border-radius:5px;background:var(--card2);overflow:hidden"><span style="display:block;height:9px;border-radius:5px;background:var(--data);width:'+(b?Math.round(b.mezclas/maxM*100):0)+'%"></span></span>'+
+       (par?'<span style="font-size:12.5px;color:var(--mut);width:182px;text-align:center;flex:none">— parado —</span>'
+           :'<span style="font-size:12.5px;width:82px;text-align:right;flex:none"><b>'+(b?Number(b.mezclas).toLocaleString():'0')+'</b> <span class="note">mez</span></span>'+
+            '<span style="font-size:12.5px;width:100px;text-align:right;flex:none"><b>'+(b?Number(b.kg_estimados||0).toLocaleString():'0')+'</b> <span class="note">kg</span></span>')+
+       '</div>';
   });
   h+='</div>';
   var repro=(x.reproceso_por_origen||[]); var totR=repro.reduce(function(a,o){ return a+o.mezclas; },0);

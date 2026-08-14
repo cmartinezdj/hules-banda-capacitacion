@@ -9017,7 +9017,12 @@ function mezInit(){
     if(S.admin){ mzFxLoad(1); if(!window._mzFxTimer) window._mzFxTimer=setInterval(function(){ mzFxLoad(1); }, 900000); } /* 15 min */
   }catch(e){}
 }
-function mzErr(x){ var m={no_autorizado:'No tienes permiso para esto.',datos:'Faltan datos: revisa fecha, turno y banbury.',rango:'El rango es muy grande (máximo 2 meses).',maximo_500:'Máximo 500 renglones por tanda.',no_existe:'Ese registro ya no existe.',valor:'El valor no es válido.'}; return m[(x&&x.error)||'']||'No se pudo. Revisa tu conexión e intenta de nuevo.'; }
+function mzErr(x,e){ var m={no_autorizado:'No tienes permiso para esto.',datos:'Faltan datos: revisa fecha, turno y banbury.',rango:'El rango es muy grande (máximo 2 meses).',maximo_500:'Máximo 500 renglones por tanda.',no_existe:'Ese registro ya no existe.',valor:'El valor no es válido.'};
+  if(x&&x.error&&m[x.error]) return m[x.error];
+  /* si la llamada falló, decir la verdad: puede ser el servidor, no siempre la conexión */
+  var det=''; try{ det=(e&&(e.message||e.details||e.hint))||''; }catch(_){}
+  if(navigator && navigator.onLine===false) return 'Estás sin internet. Se reintenta cuando vuelva la señal.';
+  return 'No se pudo cargar esta información.'+(det?(' ('+String(det).slice(0,90)+')'):' Avísale a Carlos si sigue pasando.'); }
 function mzCat(cb){ if(_mzCat) return cb(_mzCat);
   SB.rpc('hb_mez_catalogo').then(function(r){ var x=r&&r.data; if(x&&x.ok){ _mzCat=x; } cb(_mzCat); },function(){ cb(null); });
 }
@@ -9357,6 +9362,7 @@ function mzBuscaAna(q){
 function mzFicha(cid){
   $('mza-ficha').innerHTML='<div class="card"><div class="note">Cargando la ficha…</div></div>';
   SB.rpc('hb_mez_ficha',{p_cid:cid}).then(function(r){ var x=r&&r.data;
+    if(r&&r.error){ $('mza-ficha').innerHTML='<div class="card"><b>'+esc(mzErr(null,r.error))+'</b></div>'; return; }
     if(!(x&&x.ok)){ $('mza-ficha').innerHTML='<div class="card"><b>'+esc(mzErr(x))+'</b></div>'; return; }
     var c=x.compuesto, pr=x.produccion||{}, h='';
     h+='<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
@@ -9392,7 +9398,7 @@ function mzFicha(cid){
     if(!(x.versiones||[]).length) h+='<div class="note" style="margin-top:5px;color:var(--warn)">Sin receta digitalizada — falta su hoja GT.</div>';
     h+='</div>';
     $('mza-ficha').innerHTML=h;
-  },function(){ $('mza-ficha').innerHTML='<div class="card"><b>'+esc(mzErr())+'</b></div>'; });
+  },function(e){ $('mza-ficha').innerHTML='<div class="card"><b>'+esc(mzErr(null,e))+'</b></div>'; });
 }
 
 /* ---------- TABLERO DE DIRECCIÓN (acceso total) ---------- */
@@ -9610,8 +9616,9 @@ function renderMezDesg(tema){
   if(!_mztD1){ var hoy=mxToday(); _mztD1=hoy.slice(0,8)+'01'; _mztD2=hoy; }
   $('s-mezdesg').innerHTML='<div class="card"><div class="note">Cargando el desglose…</div></div>'; show('mezdesg');
   SB.rpc('hb_mez_desglose',{p_tema:_mzDesgTema,p_desde:_mztD1,p_hasta:_mztD2}).then(function(r){ var x=r&&r.data;
+    if(r&&r.error){ $('s-mezdesg').innerHTML='<div class="card"><b>'+esc(mzErr(null,r.error))+'</b></div>'; return; }
     if(!(x&&x.ok)){ $('s-mezdesg').innerHTML='<div class="card"><b>'+esc(mzErr(x))+'</b></div>'; return; }
-    _mzDesg=x; mzDesgPaint(); },function(){ $('s-mezdesg').innerHTML='<div class="card"><b>'+esc(mzErr())+'</b></div>'; });
+    _mzDesg=x; mzDesgPaint(); },function(e){ $('s-mezdesg').innerHTML='<div class="card"><b>'+esc(mzErr(null,e))+'</b></div>'; });
 }
 function mzTh(a){ return '<tr style="color:var(--mut);text-align:left">'+a.map(function(t,i){
   return '<th style="padding:7px 8px;font-weight:600;font-size:11px;border-bottom:1px solid var(--line)'+(i?';text-align:right':'')+'">'+t+'</th>'; }).join('')+'</tr>'; }
@@ -9852,8 +9859,9 @@ function renderMezComp(cid,nom){
   if(!_mztD1){ var hoy=mxToday(); _mztD1=hoy.slice(0,8)+'01'; _mztD2=hoy; }
   $('s-mezcomp').innerHTML='<div class="card"><div class="note">Cargando…</div></div>'; show('mezcomp');
   SB.rpc('hb_mez_compuesto',{p_cid:cid,p_desde:_mztD1,p_hasta:_mztD2}).then(function(r){ var x=r&&r.data;
+    if(r&&r.error){ $('s-mezcomp').innerHTML='<div class="card"><b>'+esc(mzErr(null,r.error))+'</b></div>'; return; }
     if(!(x&&x.ok)){ $('s-mezcomp').innerHTML='<div class="card"><b>'+esc(mzErr(x))+'</b></div>'; return; }
-    mzCompPaint(x); },function(){ $('s-mezcomp').innerHTML='<div class="card"><b>'+esc(mzErr())+'</b></div>'; });
+    mzCompPaint(x); },function(e){ $('s-mezcomp').innerHTML='<div class="card"><b>'+esc(mzErr(null,e))+'</b></div>'; });
 }
 function mzCompPaint(x){
   var c=x.compuesto, p=x.produccion||{}, hi=x.historico||{}, co=x.costo, h='';

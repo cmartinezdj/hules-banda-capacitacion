@@ -38,7 +38,7 @@
    ============================================================================ */
 
 var MODO_APAGADO = false;      // true = el service worker se desinstala solo
-var VER   = 'v1';              // subir esto solo si cambia ESTE archivo
+var VER   = 'v2';              // subir esto solo si cambia ESTE archivo
 var CACHE = 'hb-app-' + VER;
 var INDEX = './index.html';
 

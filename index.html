@@ -1024,6 +1024,7 @@ body.a11y .screen .seg button{ font-size:13px !important; }
     <section id="s-meztab"  class="screen pad hide"></section>
     <section id="s-mezdesg" class="screen pad hide"></section>
     <section id="s-mezcomp" class="screen pad hide"></section>
+    <section id="s-mezcierres" class="screen pad hide"></section>
   </main>
 
   <!-- ===================== NAV INFERIOR ===================== -->
@@ -2501,7 +2502,7 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'"'+main+' onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp'];
+var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp','mezcierres'];
 var _prevShown=null;
 function show(name){
   var cambio = (name!==_prevShown);
@@ -2514,7 +2515,7 @@ function show(name){
   if(name==='invit') navKey=_invitFrom||'home';
   if(name==='pedir') navKey=(S&&(S.admin||S.mando))?'hr':'home';       // Pedir reparación / Tus reparaciones
   if(name==='pedidos') navKey='hr';                                     // inbox de Mantenimiento
-  if(name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp') navKey='prod';
+  if(name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres') navKey='prod';
   if(name==='prod'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab') navKey='prod';  // Producción (mezclado)
   if(navKey==='home' && S && S.admin && S.dash!=='resp') navKey='hr';   // dashboard general: su Inicio es el tablero
   ['home','msgs','rewards','chat','hr','clases','news','buzon','prod'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
@@ -2543,10 +2544,10 @@ function go(name){
   if(name==='msgs') return renderMsgs();
 }
 function renderTop(name){
-  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? ('go(\'hr\')') : name==='pedir' ? ('go(\''+((S.admin||S.mando)?'hr':'home')+'\')') : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab') ? 'go(\'prod\')' : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? ('go(\'hr\')') : name==='pedir' ? ('go(\''+((S.admin||S.mando)?'hr':'home')+'\')') : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres') ? 'go(\'prod\')' : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
     left.innerHTML='<button class="back" onclick="'+backTo+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
@@ -9045,6 +9046,7 @@ function renderMezHub(){
     h+=htile('renderMezProg()','pend','Programación','La cédula: qué se corre y cuánto');
   }
   if(veGraf) h+=htile('renderMezTab()','deptos','Gráficos','Producción por día, paros y reproceso');
+  if(veGraf) h+=htile('renderMezCierres()','pend','Cierres','Semana y mes listos para junta (PDF)');
   if(S.mezTec||S.admin) h+=htile('renderMezAna()','focos','Analista de compuestos','Eficiencia, fallas e historial por compuesto');
   h+='</div>';
   $('s-prod').innerHTML=h; show('prod');
@@ -9742,6 +9744,25 @@ function mzDesgPaint(){
           '<span style="color:'+((c.real>=c.programado)?'var(--ok)':'var(--warn)')+'">'+mzPct(c.real,c.programado)+'</span>']); }))+'</div>';
   }
   $('s-mezdesg').innerHTML=h; show('mezdesg');
+}
+/* ---------- CIERRES: pantalla propia (cuadro del hub) ---------- */
+function renderMezCierres(){
+  var hoy=mxToday();
+  var f=new Date(hoy+'T12:00:00'); f.setDate(0);
+  var mesFin=f.toISOString().slice(0,10), mesIni=mesFin.slice(0,8)+'01';
+  var d=new Date(hoy+'T12:00:00'); var dow=(d.getDay()+6)%7;
+  var sfin=new Date(d); sfin.setDate(d.getDate()-dow-1);
+  var sini=new Date(sfin); sini.setDate(sfin.getDate()-6);
+  var h='<div class="card" style="margin-bottom:12px"><b style="font-size:15px">Cierres para junta</b>'+
+    '<div class="note" style="margin-top:3px">Arman el resumen ejecutivo del periodo en una hoja lista para imprimir o guardar como PDF: producción, comparativo contra el periodo anterior y contra el año pasado, top de compuestos'+(S.admin?' con su costo':'')+', reproceso por origen y paros.</div></div>';
+  h+='<div class="tgrid">'+
+    htile("mzCierre('semana')",'pend','Cierre de SEMANA','Del '+sini.toISOString().slice(0,10)+' al '+sfin.toISOString().slice(0,10),{wide:true})+
+    htile("mzCierre('mes')",'news','Cierre de MES','Del '+mesIni+' al '+mesFin,{wide:true})+
+    '</div>';
+  h+='<div class="card" style="margin-top:12px"><b style="font-size:13px">¿Otro periodo?</b>'+
+     '<div class="note" style="margin-top:3px">Elige el rango que quieras y usa los botones de cierre dentro de Gráficos.</div>'+
+     '<button class="btn ghost" style="margin:9px 0 0" onclick="renderMezTab()">Abrir Gráficos</button></div>';
+  $('s-mezcierres').innerHTML=h; show('mezcierres');
 }
 /* ---------- CIERRE de semana / mes: resumen ejecutivo imprimible ---------- */
 function mzCierre(tipo){

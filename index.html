@@ -9501,6 +9501,10 @@ function mzTabPaint(x){
      (function(){ var f=new Date(hoy+'T12:00:00'); f.setDate(0); var fin=f.toISOString().slice(0,10); var ini=fin.slice(0,8)+'01';
        return '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzTabRango(\''+ini+'\',\''+fin+'\')">Mes pasado</button>'; })()+
      '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzExcel(_mztD1,_mztD2)">⬇ Excel</button></div>'+
+     '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center">'+
+     '<span class="note">Cierres listos para junta:</span>'+
+     '<button class="btn ghost" style="margin:0;width:auto;padding:7px 12px;font-size:11.5px" onclick="mzCierre(\'semana\')">Cierre de semana</button>'+
+     '<button class="btn ghost" style="margin:0;width:auto;padding:7px 12px;font-size:11.5px" onclick="mzCierre(\'mes\')">Cierre de mes</button></div>'+
      '<div class="note" style="margin-top:5px">Del '+esc(_mztD1)+' al '+esc(_mztD2)+'</div></div>';
   var dias=x.por_dia||[]; var totKg=0; dias.forEach(function(d){ totKg+=(d.kg||0); });
   /* KPI TÁCTILES (pedido de Carlos): cada cuadro abre su desglose completo */
@@ -9739,6 +9743,88 @@ function mzDesgPaint(){
   }
   $('s-mezdesg').innerHTML=h; show('mezdesg');
 }
+/* ---------- CIERRE de semana / mes: resumen ejecutivo imprimible ---------- */
+function mzCierre(tipo){
+  var hoy=mxToday(), d1, d2;
+  if(tipo==='semana'){
+    var d=new Date(hoy+'T12:00:00'); var dow=(d.getDay()+6)%7;   /* lunes = 0 */
+    var fin=new Date(d); fin.setDate(d.getDate()-dow-1);          /* domingo pasado */
+    var ini=new Date(fin); ini.setDate(fin.getDate()-6);          /* lunes pasado */
+    d1=ini.toISOString().slice(0,10); d2=fin.toISOString().slice(0,10);
+  } else {
+    var f=new Date(hoy+'T12:00:00'); f.setDate(0);                /* último día del mes pasado */
+    d2=f.toISOString().slice(0,10); d1=d2.slice(0,8)+'01';
+  }
+  _mztD1=d1; _mztD2=d2;
+  alert('Preparando el cierre de '+(tipo==='semana'?'la semana':'el mes')+' ('+d1+' al '+d2+')…');
+  var temas=['produccion','merma','eficiencia'].concat(S.admin?['costos']:[]);
+  var res={}, pend=temas.length;
+  temas.forEach(function(t){
+    SB.rpc('hb_mez_desglose',{p_tema:t,p_desde:d1,p_hasta:d2}).then(function(r){
+      var x=r&&r.data; if(x&&x.ok) res[t]=x; pend--; if(!pend) mzCierrePinta(tipo,d1,d2,res);
+    },function(){ pend--; if(!pend) mzCierrePinta(tipo,d1,d2,res); });
+  });
+}
+function mzCierrePinta(tipo,d1,d2,res){
+  var p=res.produccion, m=res.merma, e=res.eficiencia, c=res.costos;
+  if(!p){ alert('No se pudo armar el cierre. Revisa tu conexión.'); return; }
+  var t=p.tot||{}, ta=p.tot_ant||{}, ty=p.tot_ay||{};
+  function fila(k,v,extra){ return '<tr><td>'+k+'</td><td class="n"><b>'+v+'</b></td><td class="n mut">'+(extra||'')+'</td></tr>'; }
+  var kg=t.kg||0, mez=t.mezclas||0;
+  var costoTot=0, costoKg=null;
+  if(c&&c.por_compuesto){ c.por_compuesto.forEach(function(x){ costoTot+=(+x.costo_total_mxn||0); }); costoKg=kg?costoTot/kg:null; }
+  var paros=(e&&e.paros||[]).reduce(function(a,x){ return a+(+x.minutos||0); },0);
+  var tit='Cierre de '+(tipo==='semana'?'semana':'mes')+' · Mezclado';
+  var html='<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>'+tit+'</title><style>'+
+   '@page{size:letter;margin:.7in}*{box-sizing:border-box;margin:0;padding:0}'+
+   'body{font-family:Arial,Helvetica,sans-serif;color:#16181d}'+
+   '.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #cc1a1f;padding-bottom:10px;margin-bottom:16px}'+
+   'h1{font-size:20px}h2{font-size:13px;color:#cc1a1f;margin:16px 0 6px;text-transform:uppercase;letter-spacing:.5px}'+
+   '.sub{font-size:11px;color:#6b7280}'+
+   'table{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:4px}'+
+   'td,th{padding:5px 7px;border-bottom:1px solid #e5e7eb;text-align:left}'+
+   'th{background:#16181d;color:#fff;font-size:10.5px}'+
+   '.n{text-align:right;font-variant-numeric:tabular-nums}.mut{color:#6b7280}'+
+   '.kpis{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}'+
+   '.k{flex:1;min-width:120px;border:1px solid #e5e7eb;border-left:3px solid #cc1a1f;padding:8px 10px}'+
+   '.k b{display:block;font-size:18px}.k span{font-size:10px;color:#6b7280}'+
+   '.ft{margin-top:22px;border-top:1px solid #e5e7eb;padding-top:7px;font-size:9.5px;color:#9ca3af;display:flex;justify-content:space-between}'+
+   '@media print{.noprint{display:none}}</style></head><body>'+
+   '<div class="hd"><div><h1>'+tit+'</h1><div class="sub">Hules Banda · del '+d1+' al '+d2+
+     (p.fx?(' · tasa DOF $'+mzN(p.fx,4)):'')+'</div></div><div class="sub">Generado el '+hoy_txt()+'</div></div>'+
+   '<div class="noprint" style="margin-bottom:14px"><button onclick="window.print()" style="padding:9px 16px;border:0;border-radius:8px;background:#cc1a1f;color:#fff;font-size:13px;cursor:pointer">Imprimir o guardar como PDF</button>'+
+   ' <span class="sub">En el diálogo elige “Guardar como PDF”.</span></div>'+
+   '<div class="kpis">'+
+     '<div class="k"><b>'+mzN(mez)+'</b><span>mezclas</span></div>'+
+     '<div class="k"><b>'+mzN(kg)+'</b><span>kilos producidos</span></div>'+
+     '<div class="k"><b>'+mzN(t.reproceso||0)+'</b><span>de reproceso ('+mzPct(t.reproceso||0,mez)+')</span></div>'+
+     '<div class="k"><b>'+mzN(t.quemadas||0)+'</b><span>mezclas quemadas</span></div>'+
+     (c?('<div class="k"><b>'+mzMx(costoTot,2)+'</b><span>costo de materia prima</span></div>'+
+         '<div class="k"><b>'+mzMx(costoKg,4)+'</b><span>por kilo</span></div>'):'')+
+   '</div>'+
+   '<h2>Comparativo</h2><table><tr><th>Concepto</th><th class="n">Este periodo</th><th class="n">Periodo anterior</th><th class="n">Año pasado</th></tr>'+
+     '<tr><td>Mezclas</td><td class="n">'+mzN(mez)+'</td><td class="n">'+mzN(ta.mezclas)+'</td><td class="n">'+mzN(ty.mezclas)+'</td></tr>'+
+     '<tr><td>Kilos</td><td class="n">'+mzN(kg)+'</td><td class="n">'+mzN(ta.kg)+'</td><td class="n">'+mzN(ty.kg)+'</td></tr>'+
+     '<tr><td>Reproceso</td><td class="n">'+mzN(t.reproceso||0)+'</td><td class="n">'+mzN(ta.reproceso)+'</td><td class="n">'+mzN(ty.reproceso)+'</td></tr>'+
+     '<tr><td>Quemadas</td><td class="n">'+mzN(t.quemadas||0)+'</td><td class="n">'+mzN(ta.quemadas)+'</td><td class="n">'+mzN(ty.quemadas)+'</td></tr></table>'+
+   '<h2>Los 10 compuestos más corridos</h2><table><tr><th>Compuesto</th><th class="n">Mezclas</th><th class="n">Kilos</th><th class="n">% del total</th>'+(c?'<th class="n">Costo total</th>':'')+'</tr>'+
+     (p.por_compuesto||[]).slice(0,10).map(function(x){
+       var cx=c?(c.por_compuesto||[]).filter(function(y){ return y.compuesto===x.compuesto; })[0]:null;
+       return '<tr><td>'+esc(x.compuesto||'')+'</td><td class="n">'+mzN(x.mezclas)+'</td><td class="n">'+mzN(x.kg)+'</td><td class="n">'+mzPct(x.mezclas,mez)+'</td>'+
+         (c?('<td class="n">'+(cx?mzMx(cx.costo_total_mxn,2):'—')+'</td>'):'')+'</tr>'; }).join('')+'</table>'+
+   '<h2>Reproceso por origen</h2><table><tr><th>Origen</th><th class="n">Mezclas</th><th class="n">Kilos</th><th class="n">%</th></tr>'+
+     ((m&&m.reproceso_origen||[]).map(function(o){ return '<tr><td>'+esc(mzOrgTxt(o.origen))+'</td><td class="n">'+mzN(o.mezclas)+'</td><td class="n">'+mzN(o.kg)+'</td><td class="n">'+mzPct(o.mezclas,t.reproceso||0)+'</td></tr>'; }).join('')||'<tr><td colspan="4">Sin reproceso en el periodo.</td></tr>')+'</table>'+
+   '<h2>Paros · '+mzN(paros)+' minutos en total</h2><table><tr><th>Causa</th><th class="n">Minutos</th><th class="n">Veces</th><th class="n">Con folio</th></tr>'+
+     ((e&&e.paros||[]).slice(0,10).map(function(x){ return '<tr><td>'+esc(x.causa||'')+'</td><td class="n">'+mzN(x.minutos)+'</td><td class="n">'+mzN(x.veces)+'</td><td class="n">'+mzN(x.con_folio)+'</td></tr>'; }).join('')||'<tr><td colspan="4">Sin paros.</td></tr>')+'</table>'+
+     ((e&&e.paros_sin_folio)?('<div class="sub" style="margin-top:5px">'+mzN(e.paros_sin_folio)+' paros quedaron sin folio de mantenimiento.</div>'):'')+
+   '<div class="ft"><span>Hules Banda · Sistema Integral · Módulo de Mezclado</span><span>Información confidencial</span></div>'+
+   '</body></html>';
+  var w=window.open('','_blank');
+  if(!w){ alert('Permite las ventanas emergentes para ver el cierre.'); return; }
+  w.document.write(html); w.document.close();
+}
+function hoy_txt(){ try{ return new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'}); }catch(e){ return mxToday(); } }
+
 /* ---------- NIVEL 3: TODO de un compuesto ---------- */
 function renderMezComp(cid,nom){
   _mzCompId=cid; _mzCompNom=nom||'';

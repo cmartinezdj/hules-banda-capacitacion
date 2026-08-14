@@ -1022,6 +1022,8 @@ body.a11y .screen .seg button{ font-size:13px !important; }
     <section id="s-mezprog" class="screen pad hide"></section>
     <section id="s-mezana"  class="screen pad hide"></section>
     <section id="s-meztab"  class="screen pad hide"></section>
+    <section id="s-mezdesg" class="screen pad hide"></section>
+    <section id="s-mezcomp" class="screen pad hide"></section>
   </main>
 
   <!-- ===================== NAV INFERIOR ===================== -->
@@ -2499,7 +2501,7 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'"'+main+' onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab'];
+var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp'];
 var _prevShown=null;
 function show(name){
   var cambio = (name!==_prevShown);
@@ -2512,6 +2514,7 @@ function show(name){
   if(name==='invit') navKey=_invitFrom||'home';
   if(name==='pedir') navKey=(S&&(S.admin||S.mando))?'hr':'home';       // Pedir reparación / Tus reparaciones
   if(name==='pedidos') navKey='hr';                                     // inbox de Mantenimiento
+  if(name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp') navKey='prod';
   if(name==='prod'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab') navKey='prod';  // Producción (mezclado)
   if(navKey==='home' && S && S.admin && S.dash!=='resp') navKey='hr';   // dashboard general: su Inicio es el tablero
   ['home','msgs','rewards','chat','hr','clases','news','buzon','prod'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
@@ -2540,10 +2543,10 @@ function go(name){
   if(name==='msgs') return renderMsgs();
 }
 function renderTop(name){
-  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? ('go(\'hr\')') : name==='pedir' ? ('go(\''+((S.admin||S.mando)?'hr':'home')+'\')') : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab') ? 'go(\'prod\')' : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? ('go(\'hr\')') : name==='pedir' ? ('go(\''+((S.admin||S.mando)?'hr':'home')+'\')') : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab') ? 'go(\'prod\')' : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
     left.innerHTML='<button class="back" onclick="'+backTo+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
@@ -2553,7 +2556,8 @@ function renderTop(name){
       '<span style="min-width:0"><b>'+esc(_pn||S.area)+'</b><span>'+(_pn?esc(S.area)+' · ':'')+'#'+(''+S.emp).padStart(3,'0')+' · Mi perfil ›</span></span></span>';
   }
   var EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
-  var a11yBtn='<button class="a11ybtn'+(S&&S.accessible?' on':'')+'" onclick="toggleAcc()" title="Texto grande (accesibilidad)" aria-label="Texto grande para accesibilidad">'+EYE+'Aa</button>';
+  /* dólar en vivo (acceso total): siempre visible junto al Aa — pedido de Carlos */
+  var a11yBtn=mzFxWidget()+'<button class="a11ybtn'+(S&&S.accessible?' on':'')+'" onclick="toggleAcc()" title="Texto grande (accesibilidad)" aria-label="Texto grande para accesibilidad">'+EYE+'Aa</button>';
   var salir='<button class="back" onclick="logout()" style="padding:8px 11px">Salir</button>';
   $('topRight').innerHTML = S.admin
     ? '<span class="topR">'+a11yBtn+salir+'</span>'
@@ -8972,6 +8976,36 @@ function _sbRerenderNow(){ try{
    Modo práctica: hasta el 1-sep todo nace marcado y el botón de arranque lo borra.
    ============================================================================ */
 var _mzCat=null, _mzDia=null, _mzF=null, _mzT=1, _mzB=1, _mzSel=null, _mzEditId=null, _mztD1=null, _mztD2=null;
+var _mzFx=null, _mzFxT=0, _mzDesg=null, _mzDesgTema='produccion', _mzCompId=null, _mzCompNom='';
+/* ---- números EXACTOS (regla de Carlos): miles con coma, decimales pedidos ---- */
+function mzN(v,dec){ if(v==null||isNaN(v)) return '—';
+  return Number(v).toLocaleString('es-MX',{minimumFractionDigits:dec||0,maximumFractionDigits:(dec==null?0:dec)}); }
+function mzMx(v,dec){ return v==null||isNaN(v)?'—':('$'+mzN(v,dec==null?2:dec)); }
+function mzUs(v,dec){ return v==null||isNaN(v)?'—':('US$'+mzN(v,dec==null?2:dec)); }
+function mzPct(a,b){ if(!b) return '—'; return mzN(a/b*100,1)+'%'; }
+function mzDelta(hoy,antes){  /* comparativo con flecha y color */
+  if(antes==null||!antes) return '<span class="note">sin comparativo</span>';
+  var d=(hoy-antes)/antes*100, up=d>=0;
+  return '<span style="color:'+(up?'var(--ok)':'var(--bad)')+';font-size:11.5px">'+(up?'▲':'▼')+' '+mzN(Math.abs(d),1)+'%</span>';
+}
+/* ---- WIDGET del dólar en el HUD (solo acceso total, junto al botón Aa) ---- */
+function mzFxWidget(){
+  if(!S||!S.admin) return '';
+  var sp=_mzFx&&_mzFx.spot, dof=_mzFx&&_mzFx.dof;
+  var val=sp&&sp.valor, hora='';
+  if(sp&&sp.ts){ try{ var d=new Date(+sp.ts); hora=d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}); }catch(e){} }
+  return '<span id="mzfxw" onclick="mzFxLoad(1)" title="Dólar en vivo · toca para actualizar" style="cursor:pointer;display:inline-flex;flex-direction:column;align-items:flex-end;gap:0;padding:5px 10px;border-radius:12px;border:1px solid var(--line);background:var(--card2);line-height:1.15;flex:none">'+
+    '<span style="font-size:12.5px;font-weight:800;color:'+(val?'var(--ok)':'var(--mut)')+';font-variant-numeric:tabular-nums">'+(val?('$'+mzN(val,4)):'USD —')+'</span>'+
+    '<span style="font-size:8.5px;color:var(--mut);letter-spacing:.2px">'+(dof&&dof.valor?('DOF '+mzN(dof.valor,4)):'sin DOF')+(hora?(' · '+hora):'')+'</span></span>';
+}
+function mzFxPinta(){ var el=$('mzfxw'); if(el&&el.parentNode){ el.outerHTML=mzFxWidget(); } else if(typeof renderTop==='function'&&_screen) renderTop(_screen); }
+function mzFxLoad(forzar){
+  if(!S||!S.admin||!window.SB) return;
+  if(!forzar && Date.now()-_mzFxT < 300000) return;      /* no repreguntar antes de 5 min */
+  _mzFxT=Date.now();
+  SB.rpc('hb_mez_fx_actual').then(function(r){ var x=r&&r.data;
+    if(x&&x.ok){ _mzFx=x; mzFxPinta(); } },function(){});
+}
 var MZ_ORG=[['tubuladora_precurado','Tubuladora precurado'],['tubuladora_cojin','Tubuladora cojín'],['banbury','Banbury'],['laboratorio','Laboratorio'],['otro','Otro']];
 function mzOrgTxt(k){ for(var i=0;i<MZ_ORG.length;i++) if(MZ_ORG[i][0]===k) return MZ_ORG[i][1]; return k==='sin_origen'?'Sin origen':(k||''); }
 function mezInit(){
@@ -8979,6 +9013,7 @@ function mezInit(){
   try{
     SB.rpc('hb_es_mez_capturista').then(function(r){ if(r&&r.data===true && !S.mezCap){ S.mezCap=true; buildNav(); } });
     SB.rpc('hb_es_mez_tecnico').then(function(r){ if(r&&r.data===true && !S.mezTec){ S.mezTec=true; buildNav(); } });
+    if(S.admin){ mzFxLoad(1); if(!window._mzFxTimer) window._mzFxTimer=setInterval(function(){ mzFxLoad(1); }, 900000); } /* 15 min */
   }catch(e){}
 }
 function mzErr(x){ var m={no_autorizado:'No tienes permiso para esto.',datos:'Faltan datos: revisa fecha, turno y banbury.',rango:'El rango es muy grande (máximo 2 meses).',maximo_500:'Máximo 500 renglones por tanda.',no_existe:'Ese registro ya no existe.',valor:'El valor no es válido.'}; return m[(x&&x.error)||'']||'No se pudo. Revisa tu conexión e intenta de nuevo.'; }
@@ -9361,6 +9396,7 @@ function mzFicha(cid){
 /* ---------- TABLERO DE DIRECCIÓN (acceso total) ---------- */
 function renderMezTab(){
   if(!(S.admin||(S.mando&&S.mezCap))){ alert('Solo dirección y jefatura de producción.'); return; }
+  mzFxLoad(1);   /* al abrir Gráficos SIEMPRE se refresca el dólar (pedido de Carlos) */
   var hoy=mxToday();
   if(!_mztD1){ /* default: los últimos 31 días (si el mes va empezando, aún se ve el pasado) */
     var d0=new Date(hoy+'T12:00:00'); d0.setDate(d0.getDate()-30);
@@ -9467,12 +9503,21 @@ function mzTabPaint(x){
      '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzExcel(_mztD1,_mztD2)">⬇ Excel</button></div>'+
      '<div class="note" style="margin-top:5px">Del '+esc(_mztD1)+' al '+esc(_mztD2)+'</div></div>';
   var dias=x.por_dia||[]; var totKg=0; dias.forEach(function(d){ totKg+=(d.kg||0); });
-  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin-bottom:12px">'+
-     '<div class="card"><div class="note">Mezclas</div><b style="font-size:22px;color:var(--data)">'+(t.mezclas||0).toLocaleString()+'</b></div>'+
-     '<div class="card"><div class="note">Kilos (por receta)</div><b style="font-size:22px">'+(totKg>=1000000?((totKg/1000000).toFixed(2)+' M'):totKg.toLocaleString())+'</b></div>'+
-     '<div class="card"><div class="note">Corridas</div><b style="font-size:22px">'+(t.corridas||0).toLocaleString()+'</b></div>'+
-     '<div class="card"><div class="note">Quemadas</div><b style="font-size:22px;color:var(--bad)">'+(t.quemadas||0)+'</b></div>'+
-     '<div class="card"><div class="note">En bandeja</div><b style="font-size:22px;color:var(--warn)">'+(t.pendientes||0)+'</b></div></div>';
+  /* KPI TÁCTILES (pedido de Carlos): cada cuadro abre su desglose completo */
+  function kpi(tema,tit,val,color,sub){
+    return '<div class="card" role="button" tabindex="0" onkeydown="_kb(event)" onclick="renderMezDesg(\''+tema+'\')" style="cursor:pointer;position:relative">'+
+      '<div class="note">'+tit+'</div><b style="font-size:22px'+(color?';color:'+color:'')+'">'+val+'</b>'+
+      '<div class="note" style="margin-top:2px;font-size:10px">'+(sub||'ver desglose')+' ›</div></div>';
+  }
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:9px;margin-bottom:12px">'+
+     kpi('produccion','Mezclas', mzN(t.mezclas||0), 'var(--data)')+
+     kpi('produccion','Kilos (por receta)', (totKg>=1000000?(mzN(totKg/1000000,2)+' M'):mzN(totKg)), null)+
+     kpi('produccion','Corridas', mzN(t.corridas||0), null)+
+     kpi('merma','Quemadas', mzN(t.quemadas||0), 'var(--bad)','merma y calidad')+
+     kpi('eficiencia','Paros', mzN((x.tm_top||[]).reduce(function(a,c){ return a+(+c.minutos||0); },0))+' min', 'var(--warn)','eficiencia')+
+     (S.admin?kpi('costos','Costo de materia prima','ver','var(--ok)','costos y utilidad'):
+       '<div class="card"><div class="note">En bandeja</div><b style="font-size:22px;color:var(--warn)">'+mzN(t.pendientes||0)+'</b></div>')+
+     '</div>';
   /* gráfica: producción por día (como el Excel de Alejandro, pero viva) */
   if(dias.length>1){
     var maxD=1; dias.forEach(function(d){ if((d.mezclas||0)>maxD) maxD=d.mezclas; });
@@ -9547,6 +9592,222 @@ function mzTabPaint(x){
   });
   h+='</div>';
   $('s-meztab').innerHTML=h; show('meztab');
+}
+/* ============================================================================
+   DESGLOSES DE DIRECCIÓN (v3_18) — cada KPI del tablero abre su tema completo.
+   Jerarquía: Gráficos → desglose del tema → página del compuesto (nivel 3).
+   Costos y utilidad SOLO acceso total. Doble moneda y números exactos.
+   ============================================================================ */
+var MZ_TEMAS={produccion:'Producción',costos:'Costos y utilidad',merma:'Merma y calidad',eficiencia:'Eficiencia y paros'};
+function renderMezDesg(tema){
+  _mzDesgTema=tema||'produccion';
+  if(!_mztD1){ var hoy=mxToday(); _mztD1=hoy.slice(0,8)+'01'; _mztD2=hoy; }
+  $('s-mezdesg').innerHTML='<div class="card"><div class="note">Cargando el desglose…</div></div>'; show('mezdesg');
+  SB.rpc('hb_mez_desglose',{p_tema:_mzDesgTema,p_desde:_mztD1,p_hasta:_mztD2}).then(function(r){ var x=r&&r.data;
+    if(!(x&&x.ok)){ $('s-mezdesg').innerHTML='<div class="card"><b>'+esc(mzErr(x))+'</b></div>'; return; }
+    _mzDesg=x; mzDesgPaint(); },function(){ $('s-mezdesg').innerHTML='<div class="card"><b>'+esc(mzErr())+'</b></div>'; });
+}
+function mzTh(a){ return '<tr style="color:var(--mut);text-align:left">'+a.map(function(t,i){
+  return '<th style="padding:7px 8px;font-weight:600;font-size:11px;border-bottom:1px solid var(--line)'+(i?';text-align:right':'')+'">'+t+'</th>'; }).join('')+'</tr>'; }
+function mzTd(a,click){ return '<tr'+(click?' onclick="'+click+'" style="cursor:pointer"':'')+'>'+a.map(function(t,i){
+  return '<td style="padding:7px 8px;font-size:12px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums'+(i?';text-align:right':'')+'">'+t+'</td>'; }).join('')+'</tr>'; }
+function mzTabla(head,rows){ return '<div style="overflow-x:auto;margin-top:8px"><table style="width:100%;border-collapse:collapse;min-width:520px">'+mzTh(head)+rows.join('')+'</table></div>'; }
+function mzDesgPaint(){
+  var x=_mzDesg, t=x.tot||{}, ta=x.tot_ant||{}, ty=x.tot_ay||{}, h='';
+  h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'+
+     '<div><b style="font-size:15px">'+esc(MZ_TEMAS[x.tema]||x.tema)+'</b>'+
+     '<div class="note" style="margin-top:2px">Del '+esc(x.desde)+' al '+esc(x.hasta)+' · '+x.dias+' días'+
+     (x.fx?(' · tasa DOF $'+mzN(x.fx,4)):'')+'</div></div>'+
+     '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
+     Object.keys(MZ_TEMAS).map(function(k){
+       if(k==='costos'&&!x.admin) return '';
+       return '<button class="btn'+(k===x.tema?'':' ghost')+'" style="margin:0;width:auto;padding:7px 11px;font-size:11.5px" onclick="renderMezDesg(\''+k+'\')">'+MZ_TEMAS[k]+'</button>'; }).join('')+
+     '<button class="btn ghost" style="margin:0;width:auto;padding:7px 11px;font-size:11.5px" onclick="mzExcel(_mztD1,_mztD2)">⬇ Excel</button></div></div></div>';
+  /* comparativos dobles (pedido de Carlos: ambas) */
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:12px">'+
+     '<div class="card"><div class="note">Mezclas</div><b style="font-size:20px;color:var(--data)">'+mzN(t.mezclas)+'</b>'+
+       '<div style="margin-top:3px">'+mzDelta(t.mezclas,ta.mezclas)+' <span class="note">vs periodo anterior</span></div>'+
+       '<div>'+mzDelta(t.mezclas,ty.mezclas)+' <span class="note">vs año pasado</span></div></div>'+
+     '<div class="card"><div class="note">Kilos</div><b style="font-size:20px">'+mzN(t.kg)+'</b>'+
+       '<div style="margin-top:3px">'+mzDelta(t.kg,ta.kg)+' <span class="note">vs anterior</span></div>'+
+       '<div>'+mzDelta(t.kg,ty.kg)+' <span class="note">vs año pasado</span></div></div>'+
+     '<div class="card"><div class="note">Reproceso</div><b style="font-size:20px;color:var(--warn)">'+mzN(t.reproceso)+'</b>'+
+       '<div class="note" style="margin-top:3px">'+mzPct(t.reproceso,t.mezclas)+' de lo producido</div>'+
+       '<div>'+mzDelta(t.reproceso,ta.reproceso)+' <span class="note">vs anterior</span></div></div>'+
+     '<div class="card"><div class="note">Quemadas</div><b style="font-size:20px;color:var(--bad)">'+mzN(t.quemadas)+'</b>'+
+       '<div class="note" style="margin-top:3px">'+mzPct(t.quemadas,t.mezclas)+' de lo producido</div>'+
+       '<div>'+mzDelta(t.quemadas,ta.quemadas)+' <span class="note">vs anterior</span></div></div></div>';
+
+  if(x.tema==='produccion'){
+    var pc=x.por_compuesto||[];
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Por compuesto</b>'+
+       '<div class="note" style="margin-top:2px">Toca un renglón para ver TODO de ese compuesto.</div>'+
+       mzTabla(['Compuesto','Familia','Mezclas','Kilos','% del total','Corridas','Días','Reproceso','Quemadas'],
+        pc.map(function(c){ return mzTd([esc(c.compuesto||'¿?'),esc(c.familia||'—'),mzN(c.mezclas),mzN(c.kg),
+          mzPct(c.mezclas,t.mezclas),mzN(c.corridas),mzN(c.dias),mzN(c.reproceso||0),mzN(c.quemadas||0)],
+          c.compuesto_id?('renderMezComp('+c.compuesto_id+',\''+jsAttr(c.compuesto||'')+'\')'):''); }))+'</div>';
+    var mx=x.matriz||[]; var maxMz=1; mx.forEach(function(m){ if(m.mezclas>maxMz) maxMz=m.mezclas; });
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Banbury × turno</b>'+
+       mzTabla(['Banbury','Turno 1','Turno 2','Turno 3','Total'],
+        [1,2,3,4,5].map(function(b){
+          var f=[1,2,3].map(function(tt){ var m=mx.filter(function(y){ return y.banbury===b&&y.turno===tt; })[0]; return m?m.mezclas:0; });
+          return mzTd(['BB'+b,mzN(f[0]),mzN(f[1]),mzN(f[2]),'<b>'+mzN(f[0]+f[1]+f[2])+'</b>']); }))+'</div>';
+    if((x.exp||[]).length) h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Pruebas EXP corriendo</b>'+
+       mzTabla(['Compuesto','Versión','Mezclas'], x.exp.map(function(e){ return mzTd([esc(e.compuesto||''),esc(e.letra||'—'),mzN(e.mezclas)]); }))+'</div>';
+    var prg=x.programa||{};
+    h+='<div class="card"><b style="font-size:13px">Programa vs real</b><div style="display:flex;gap:18px;margin-top:6px;flex-wrap:wrap;font-size:13px">'+
+       '<span><b style="font-size:17px">'+mzN(prg.programado||0)+'</b> <span class="note">programado</span></span>'+
+       '<span><b style="font-size:17px;color:var(--data)">'+mzN(t.mezclas)+'</b> <span class="note">real</span></span>'+
+       '<span><b style="font-size:17px;color:'+((t.mezclas>=(prg.programado||0))?'var(--ok)':'var(--warn)')+'">'+mzPct(t.mezclas,prg.programado||0)+'</b> <span class="note">cumplimiento</span></span></div></div>';
+
+  } else if(x.tema==='costos'){
+    var cc=x.por_compuesto||[], totMx=0, totUs=0;
+    cc.forEach(function(c){ totMx+=(+c.costo_total_mxn||0); totUs+=(+c.costo_total_usd||0); });
+    var kgTot=t.kg||0;
+    h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:9px;margin-bottom:12px">'+
+       '<div class="card"><div class="note">Costo de materia prima</div><b style="font-size:20px;color:var(--data)">'+mzMx(totMx)+'</b>'+
+         '<div class="note" style="margin-top:2px">'+mzUs(totUs)+'</div></div>'+
+       '<div class="card"><div class="note">Costo por kilo (promedio)</div><b style="font-size:20px">'+mzMx(kgTot?totMx/kgTot:null,4)+'</b>'+
+         '<div class="note" style="margin-top:2px">'+mzUs(kgTot?totUs/kgTot:null,4)+' / kg</div></div>'+
+       '<div class="card"><div class="note">Sensibilidad al dólar</div><b style="font-size:20px;color:var(--warn)">'+mzMx(totUs)+'</b>'+
+         '<div class="note" style="margin-top:2px">+$1 al tipo de cambio ≈ '+mzMx(totUs)+' más al mes</div></div></div>';
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Costo por compuesto — números exactos</b>'+
+       '<div class="note" style="margin-top:2px">Tasa DOF $'+mzN(x.fx,4)+' del '+esc(x.fx_fecha)+'. Toca un renglón para el detalle completo.</div>'+
+       mzTabla(['Compuesto','Mezclas','$/kg MXN','$/kg USD','$/mezcla MXN','Costo total MXN','Costo total USD','% del gasto','Venta','Utilidad'],
+        cc.map(function(c){
+          var ven=c.venta, util='<span class="note">falta precio</span>', vtx='<span class="note">—</span>';
+          if(ven&&ven.precio){
+            var pv=+ven.precio*(ven.moneda==='USD'?(+x.fx||0):1);
+            vtx=mzMx(pv,2)+' <span class="note">/'+esc(ven.unidad||'kg')+'</span>';
+            var costoU=(ven.unidad==='mezcla')?(+c.costo_batch_mxn||0):(+c.costo_kg_mxn||0);
+            if(costoU>0){ var u=pv-costoU; util='<span style="color:'+(u>=0?'var(--ok)':'var(--bad)')+'">'+mzMx(u,2)+'</span> <span class="note">'+mzN(pv?u/pv*100:0,1)+'%</span>'; }
+          }
+          return mzTd([esc(c.compuesto||'¿?'),mzN(c.mezclas),mzMx(c.costo_kg_mxn,4),mzUs(c.costo_kg_usd,4),
+            mzMx(c.costo_batch_mxn,2),mzMx(c.costo_total_mxn,2),mzUs(c.costo_total_usd,2),
+            mzPct(c.costo_total_mxn,totMx),vtx,util],
+            c.compuesto_id?('renderMezComp('+c.compuesto_id+',\''+jsAttr(c.compuesto||'')+'\')'):''); }))+
+       ((cc.filter(function(c){ return (c.faltantes||[]).length; }).length)?
+         '<div class="note" style="margin-top:7px;color:var(--warn)">Algunos compuestos tienen materiales sin precio de compra — no van en el total. Se ven en la ficha de cada uno.</div>':'')+'</div>';
+    h+='<div class="card"><b style="font-size:13px">Materiales · últimas compras</b>'+
+       mzTabla(['Material','Precio','Moneda','En pesos','Última compra','Compras'],
+        (x.materiales||[]).map(function(m){
+          var mxp=(+m.precio||0)*(m.moneda==='USD'?(+x.fx||0):1);
+          return mzTd([esc(m.codigo),mzN(m.precio,4),esc(m.moneda||''),mzMx(mxp,4),esc(m.ultima_compra||'—'),mzN(m.compras)]); }))+'</div>';
+
+  } else if(x.tema==='merma'){
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Quemadas por compuesto</b>'+
+       ((x.quemadas_compuesto||[]).length? mzTabla(['Compuesto','Quemadas','Mezclas','% quemado'],
+        x.quemadas_compuesto.map(function(q){ return mzTd([esc(q.compuesto||'¿?'),mzN(q.quemadas),mzN(q.mezclas),mzN(q.pct,2)+'%']); }))
+        :'<div class="note" style="margin-top:5px">Sin quemadas en el periodo.</div>')+'</div>';
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Quemadas por banbury y turno</b>'+
+       ((x.quemadas_banbury||[]).length? mzTabla(['Banbury','Turno','Quemadas','Mezclas','%'],
+        x.quemadas_banbury.map(function(q){ return mzTd(['BB'+q.banbury,'T'+q.turno,mzN(q.quemadas),mzN(q.mezclas),mzPct(q.quemadas,q.mezclas)]); }))
+        :'<div class="note" style="margin-top:5px">Sin quemadas en el periodo.</div>')+'</div>';
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Reproceso por origen</b>'+
+       ((x.reproceso_origen||[]).length? mzTabla(['Origen','Mezclas','Kilos','% del reproceso'],
+        x.reproceso_origen.map(function(o){ return mzTd([esc(mzOrgTxt(o.origen)),mzN(o.mezclas),mzN(o.kg),mzPct(o.mezclas,t.reproceso)]); }))
+        :'<div class="note" style="margin-top:5px">Sin reproceso en el periodo.</div>')+'</div>';
+    var rs=x.reproceso_semana||[];
+    if(rs.length) h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Reproceso semana a semana</b>'+
+       mzTabla(['Semana','Reproceso','Total','% de la semana'],
+        rs.map(function(s){ return mzTd([esc(s.semana),mzN(s.reproceso||0),mzN(s.total),mzPct(s.reproceso||0,s.total)]); }))+'</div>';
+    h+='<div class="card"><b style="font-size:13px">Pérdida invisible (merma estándar)</b>'+
+       '<div class="note" style="margin-top:4px">Parámetro actual: '+mzN(x.merma_pct,2)+'% · equivale a <b>'+mzN((t.kg||0)*(+x.merma_pct||0)/100)+' kg</b> en el periodo.</div></div>';
+
+  } else if(x.tema==='eficiencia'){
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Velocidad real vs estándar de la hoja</b>'+
+       mzTabla(['Compuesto','Mezclas','Min/mezcla real','Estándar hoja','Diferencia'],
+        (x.velocidad||[]).map(function(v){
+          var d=(v.estandar_gt&&v.min_por_mezcla)?(v.min_por_mezcla-v.estandar_gt):null;
+          return mzTd([esc(v.compuesto||'¿?'),mzN(v.mezclas),mzN(v.min_por_mezcla,2),
+            v.estandar_gt?mzN(v.estandar_gt,2):'<span class="note">sin dato</span>',
+            d==null?'—':('<span style="color:'+(d<=0?'var(--ok)':'var(--warn)')+'">'+(d>0?'+':'')+mzN(d,2)+'</span>')]); }))+'</div>';
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Utilización por banbury</b>'+
+       mzTabla(['Banbury','Turnos','Minutos de paro','Mezclas','Paro por turno'],
+        (x.utilizacion||[]).map(function(u){ return mzTd(['BB'+u.banbury,mzN(u.turnos),mzN(u.paros_min),mzN(u.mezclas),
+          u.turnos?mzN(u.paros_min/u.turnos,1)+' min':'—']); }))+'</div>';
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Causas de paro</b>'+
+       '<div class="note" style="margin-top:2px">'+mzN(x.paros_sin_folio||0)+' paros sin folio de mantenimiento.</div>'+
+       mzTabla(['Causa','Minutos','Veces','Con folio','Promedio'],
+        (x.paros||[]).map(function(p){ return mzTd([esc(p.causa||'¿?'),mzN(p.minutos),mzN(p.veces),mzN(p.con_folio),
+          p.veces?mzN(p.minutos/p.veces,1)+' min':'—']); }))+'</div>';
+    var cu=x.cumplimiento||[];
+    if(cu.length) h+='<div class="card"><b style="font-size:13px">Cumplimiento por turno (cédula vs bitácora)</b>'+
+       mzTabla(['Fecha','Turno','Banbury','Programado','Real','Cumplimiento'],
+        cu.map(function(c){ return mzTd([esc(c.fecha),'T'+c.turno,'BB'+c.banbury,mzN(c.programado),mzN(c.real),
+          '<span style="color:'+((c.real>=c.programado)?'var(--ok)':'var(--warn)')+'">'+mzPct(c.real,c.programado)+'</span>']); }))+'</div>';
+  }
+  $('s-mezdesg').innerHTML=h; show('mezdesg');
+}
+/* ---------- NIVEL 3: TODO de un compuesto ---------- */
+function renderMezComp(cid,nom){
+  _mzCompId=cid; _mzCompNom=nom||'';
+  if(!_mztD1){ var hoy=mxToday(); _mztD1=hoy.slice(0,8)+'01'; _mztD2=hoy; }
+  $('s-mezcomp').innerHTML='<div class="card"><div class="note">Cargando…</div></div>'; show('mezcomp');
+  SB.rpc('hb_mez_compuesto',{p_cid:cid,p_desde:_mztD1,p_hasta:_mztD2}).then(function(r){ var x=r&&r.data;
+    if(!(x&&x.ok)){ $('s-mezcomp').innerHTML='<div class="card"><b>'+esc(mzErr(x))+'</b></div>'; return; }
+    mzCompPaint(x); },function(){ $('s-mezcomp').innerHTML='<div class="card"><b>'+esc(mzErr())+'</b></div>'; });
+}
+function mzCompPaint(x){
+  var c=x.compuesto, p=x.produccion||{}, hi=x.historico||{}, co=x.costo, h='';
+  h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
+     '<div><b style="font-size:18px">'+esc(c.nombre)+'</b><div class="note" style="margin-top:2px">Familia '+esc(c.familia)+' · '+esc(c.tipo)+
+     ' · del '+esc(_mztD1)+' al '+esc(_mztD2)+'</div></div>'+speakBtn('Ficha completa de '+c.nombre)+'</div></div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;margin-bottom:12px">'+
+     '<div class="card"><div class="note">Mezclas del periodo</div><b style="font-size:20px;color:var(--data)">'+mzN(p.mezclas)+'</b><div class="note">'+mzN(p.kg)+' kg</div></div>'+
+     '<div class="card"><div class="note">Corridas · días</div><b style="font-size:20px">'+mzN(p.corridas)+'</b><div class="note">en '+mzN(p.dias)+' días</div></div>'+
+     '<div class="card"><div class="note">Quemadas</div><b style="font-size:20px;color:var(--bad)">'+mzN(p.quemadas)+'</b><div class="note">'+mzPct(p.quemadas,p.mezclas)+'</div></div>'+
+     '<div class="card"><div class="note">Velocidad real</div><b style="font-size:20px">'+(x.velocidad!=null?mzN(x.velocidad,2):'—')+'</b><div class="note">min por mezcla</div></div>'+
+     '<div class="card"><div class="note">Histórico total</div><b style="font-size:20px">'+mzN(hi.mezclas)+'</b><div class="note">'+esc(hi.desde||'—')+' → '+esc(hi.hasta||'—')+'</div></div></div>';
+  if(x.admin){
+    if(co&&co.ok&&co.fx){
+      var vt=x.venta, filas=[
+        ['Costo de materia prima por kilo', mzMx(co.costo_kg_mxn,4), mzUs(co.costo_kg_usd,4)],
+        ['Costo por mezcla ('+mzN(co.peso_total_kg,3)+' kg)', mzMx(co.costo_batch_mxn,2), mzUs(co.costo_batch_usd,2)],
+        ['Costo de lo producido en el periodo', mzMx((+co.costo_batch_mxn||0)*(p.mezclas||0),2), mzUs((+co.costo_batch_usd||0)*(p.mezclas||0),2)]];
+      if(vt&&vt.precio){
+        var pv=+vt.precio*(vt.moneda==='USD'?(+co.fx||0):1);
+        var cu=(vt.unidad==='mezcla')?(+co.costo_batch_mxn||0):(+co.costo_kg_mxn||0);
+        filas.push(['Precio de venta ('+esc(vt.unidad||'kg')+')', mzMx(pv,2), mzUs(co.fx?pv/co.fx:null,4)]);
+        filas.push(['<b>Utilidad por '+esc(vt.unidad||'kg')+'</b>', '<b style="color:'+((pv-cu)>=0?'var(--ok)':'var(--bad)')+'">'+mzMx(pv-cu,2)+'</b>', mzN(pv?(pv-cu)/pv*100:0,2)+'%']);
+      }
+      h+='<div class="card" style="margin-bottom:12px;border-color:color-mix(in srgb,var(--data) 35%,transparent)">'+
+         '<b style="font-size:13px">Dinero (solo dirección)</b>'+
+         '<div class="note" style="margin-top:2px">Tasa DOF $'+mzN(co.fx,4)+' del '+esc(co.fx_fecha||'')+' — cada día usa la suya.</div>'+
+         mzTabla(['Concepto','MXN','USD'], filas.map(function(f){ return mzTd(f); }))+
+         (!(vt&&vt.precio)?'<div class="note" style="margin-top:6px;color:var(--warn)">Falta el precio de venta de este compuesto para calcular la utilidad.</div>':'')+
+         ((co.faltantes||[]).length?'<div class="note" style="margin-top:5px;color:var(--warn)">Sin precio de compra: '+esc(co.faltantes.join(', '))+'</div>':'')+'</div>';
+    } else {
+      h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px;color:var(--warn)">Sin costo</b>'+
+         '<div class="note" style="margin-top:3px">'+(co&&co.ok?'Falta la tasa del día — captúrala en Gráficos.':'Este compuesto no tiene receta digitalizada vigente.')+'</div></div>';
+    }
+  }
+  var vs=x.versiones||[];
+  h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Versiones</b>'+
+     mzTabla(['Versión','Folio','Fecha','Estado','Peso kg','Ciclo min'],
+      vs.map(function(v){ return mzTd(['<b'+(v.estado==='vigente'?' style="color:var(--data)"':'')+'>'+esc(v.letra)+'</b>'+(v.es_exp?' <span class="note">EXP</span>':'')+(v.es_tr?' <span class="note">TR</span>':'')+(v.es_r?' <span class="note">R</span>':''),
+        esc(v.folio||'—'),esc(v.fecha||'—'),esc(v.estado),v.peso?mzN(v.peso,3):'—',v.ciclo_min?mzN(v.ciclo_min,2):'—']); }))+'</div>';
+  if((x.receta||[]).length){
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Receta de la versión vigente</b>'+
+       mzTabla(['Ingrediente','Sección','Kg','Tolerancia'].concat(x.admin?['Precio']:[]),
+        x.receta.map(function(i){
+          var pr=i.precio? (mzN(i.precio.precio,4)+' '+esc(i.precio.moneda)) : (i.es_recorte?'<span class="note">recorte</span>':(i.compuesto_ref?'<span class="note">de la casa</span>':'<span class="note">sin precio</span>'));
+          return mzTd([esc(i.nombre)+(i.compuesto_ref?' <span class="note">→ '+esc(i.compuesto_ref)+'</span>':''),
+            esc((i.seccion||'').replace('_',' ')),i.kg!=null?mzN(i.kg,3):'—',
+            (i.tol_min!=null?(mzN(i.tol_min,3)+' – '+mzN(i.tol_max,3)):'—')].concat(x.admin?[pr]:[])); }))+'</div>';
+  }
+  var pb=x.por_banbury||[];
+  if(pb.length) h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Dónde se corre</b>'+
+     mzTabla(['Banbury','Turno','Mezclas'], pb.map(function(b){ return mzTd(['BB'+b.banbury,'T'+b.turno,mzN(b.mezclas)]); }))+'</div>';
+  var cr=x.corridas||[];
+  h+='<div class="card"><b style="font-size:13px">Corridas del periodo (dato crudo)</b>'+
+     '<div class="note" style="margin-top:2px">Tal como se capturaron en la bitácora.</div>'+
+     (cr.length? mzTabla(['Fecha','Turno','BB','Versión','Corrida','Mezclas','Quem.','Reproceso','Operador'],
+      cr.map(function(r){ return mzTd([esc(r.fecha),'T'+r.turno,'BB'+r.banbury,esc(r.letra||'—'),
+        r.num_corrida?mzN(r.num_corrida):'—',mzN(r.mezclas),mzN(r.quemadas),
+        r.es_reproceso?esc(mzOrgTxt(r.origen)):'—', r.operador_n?mzN(r.operador_n):'—']); }))
+      :'<div class="note" style="margin-top:5px">Sin corridas en el periodo.</div>')+'</div>';
+  $('s-mezcomp').innerHTML=h; show('mezcomp');
 }
 function mzFixManual(){
   var v=prompt('Tipo de cambio DOF de HOY (ej. 17.07):'); if(!v) return;

@@ -9509,11 +9509,11 @@ function mzTabPaint(x){
      (function(){ var f=new Date(hoy+'T12:00:00'); f.setDate(0); var fin=f.toISOString().slice(0,10); var ini=fin.slice(0,8)+'01';
        return '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzTabRango(\''+ini+'\',\''+fin+'\')">Mes pasado</button>'; })()+
      '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzExcel(_mztD1,_mztD2)">⬇ Excel</button></div>'+
-     '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center">'+
-     '<span class="note">Cierres listos para junta:</span>'+
-     '<button class="btn ghost" style="margin:0;width:auto;padding:7px 12px;font-size:11.5px" onclick="mzCierre(\'semana\')">Cierre de semana</button>'+
-     '<button class="btn ghost" style="margin:0;width:auto;padding:7px 12px;font-size:11.5px" onclick="mzCierre(\'mes\')">Cierre de mes</button></div>'+
-     '<div class="note" style="margin-top:5px">Del '+esc(_mztD1)+' al '+esc(_mztD2)+'</div></div>';
+     /* cierres alineados a la DERECHA, debajo de Mes pasado y Excel (pedido de Carlos) */
+     '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;justify-content:flex-end">'+
+     '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzCierre(\'semana\')">Cierre de semana</button>'+
+     '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzCierre(\'mes\')">Cierre de mes</button></div>'+
+     '<div class="note" style="margin-top:7px">Del '+esc(_mztD1)+' al '+esc(_mztD2)+'</div></div>';
   var dias=x.por_dia||[]; var totKg=0; dias.forEach(function(d){ totKg+=(d.kg||0); });
   /* KPI TÁCTILES (pedido de Carlos): cada cuadro abre su desglose completo */
   function kpi(tema,tit,val,color,sub){
@@ -9558,10 +9558,8 @@ function mzTabPaint(x){
        '<span style="display:block;height:7px;border-radius:4px;background:var(--data);opacity:.9;margin-top:3px;width:'+Math.max(3,Math.round((c.mezclas||0)/maxC*100))+'%"></span></div>'; }).join(''));
     h+='</div>';
   }
-  h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'+
-     '<div><b style="font-size:13px">Tipo de cambio (DOF · el de facturación)</b>'+
-     (x.fx?('<div style="margin-top:3px"><b style="font-size:19px;color:var(--ok)">$'+x.fx.fix+'</b> <span class="note">del '+esc(x.fx.fecha)+' · '+esc(x.fx.fuente==='banxico'?'Banxico automático':'capturado a mano')+'</span></div>'):'<div class="note" style="margin-top:3px;color:var(--warn)">Sin tasa todavía — falta el token de Banxico o captúrala a mano.</div>')+'</div>'+
-     '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzFixManual()">Corregir / capturar</button></div></div>';
+  /* la tarjeta del tipo de cambio se quitó: ya vive en el widget del HUD y entra
+     solo en todas las cuentas (decisión de Carlos 14-ago). */
   h+='<div class="card" style="margin-bottom:12px">'+mzTitulo('Por banbury','bb',MZ_OPS_CAT,'barras');
   var maxM=1; (x.por_banbury||[]).forEach(function(b){ if(b.mezclas>maxM) maxM=b.mezclas; });
   if(mzGT('bb','barras')!=='barras'){

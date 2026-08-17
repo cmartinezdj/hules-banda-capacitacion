@@ -705,9 +705,16 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
    Se ancla al CENTRO del botón (no al borde derecho): así muerde siempre la esquina
    superior derecha del ícono, sin importar cuán ancho quede el botón en cada teléfono.
    Antes usaba right:8px y quedaba ~20px flotando en el vacío. */
-.nbadge{position:absolute;top:1px;left:calc(50% + 2px);min-width:16px;height:16px;padding:1px 4px 0;border-radius:999px;
-  background:#2a7de1;color:#fff;font-size:9.5px;font-weight:800;display:grid;place-items:center;line-height:1;
+/* El número va ÓPTICAMENTE centrado. Ojo: `.nav button span{display:block}`
+   (los rótulos del menú) le ganaba al badge por especificidad y rompía el
+   centrado — por eso abajo se repite con selector más fuerte. */
+.nbadge{position:absolute;top:1px;left:calc(50% + 2px);min-width:16px;height:16px;padding:0 5px;border-radius:999px;
+  background:#2a7de1;color:#fff;font-size:9.5px;font-weight:800;line-height:1;
+  display:inline-flex;align-items:center;justify-content:center;
   font-variant-numeric:tabular-nums;box-shadow:0 0 8px rgba(42,125,225,.9)}
+.nav button span.nbadge{display:inline-flex;align-items:center;justify-content:center;
+  overflow:visible;text-overflow:clip;line-height:1;max-width:none;
+  padding-top:.5px}   /* el dígito se apoya en el baseline: medio pixel abajo lo centra a la vista */
 .nav button.on{color:#fff}
 /* Inicio central: círculo blanco elevado con la casita roja (identidad) */
 /* OJO: sin justify-content:center + padding:0 el contenido se pega ARRIBA del círculo

@@ -9494,6 +9494,77 @@ function mzLinea(dias,maxD){
     if(i%paso===0||i===n-1) labs+='<text x="'+p[0].toFixed(1)+'" y="'+(H-4)+'" text-anchor="middle" font-size="9" fill="#8a8f9c">'+(+d.fecha.slice(8,10))+'</text>'; });
   return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;margin-top:9px" role="img" aria-label="Línea del tiempo de producción">'+
     '<polyline points="'+poly+'" fill="none" stroke="#cc1a1f" stroke-width="2.2"/>'+dots+labs+'</svg>'; }
+/* ---- SELECTOR DE RANGO: un solo control con flechas ‹ › y calendario ----
+   (pedido de Carlos: nada de 5 botones amontonados; se navega de izquierda a
+   derecha y el mismo control abre el mini calendario para el rango exacto) */
+function mzRangos(){
+  var hoy=mxToday(), d=new Date(hoy+'T12:00:00');
+  function iso(x){ return x.toISOString().slice(0,10); }
+  var ayer=new Date(d); ayer.setDate(d.getDate()-1);
+  var h7=new Date(d);   h7.setDate(d.getDate()-6);
+  var h30=new Date(d);  h30.setDate(d.getDate()-29);
+  var mp=new Date(d);   mp.setDate(0);
+  var dow=(d.getDay()+6)%7;
+  var sfin=new Date(d); sfin.setDate(d.getDate()-dow-1);
+  var sini=new Date(sfin); sini.setDate(sfin.getDate()-6);
+  return [
+    {k:'hoy',    t:'Hoy',            d1:hoy,                  d2:hoy},
+    {k:'ayer',   t:'Ayer',           d1:iso(ayer),            d2:iso(ayer)},
+    {k:'sem',    t:'Semana pasada',  d1:iso(sini),            d2:iso(sfin)},
+    {k:'d7',     t:'Últimos 7 días', d1:iso(h7),              d2:hoy},
+    {k:'d30',    t:'Últimos 30 días',d1:iso(h30),             d2:hoy},
+    {k:'mes',    t:'Este mes',       d1:hoy.slice(0,8)+'01',  d2:hoy},
+    {k:'mespas', t:'Mes pasado',     d1:iso(mp).slice(0,8)+'01', d2:iso(mp)},
+    {k:'anio',   t:'Este año',       d1:hoy.slice(0,4)+'-01-01', d2:hoy}
+  ];
+}
+function mzRangoIdx(){
+  var r=mzRangos();
+  for(var i=0;i<r.length;i++){ if(r[i].d1===_mztD1 && r[i].d2===_mztD2) return i; }
+  return -1;   /* rango a la medida */
+}
+function mzRangoNom(){
+  var i=mzRangoIdx();
+  if(i>=0) return mzRangos()[i].t;
+  return fmtCorto(_mztD1)+' → '+fmtCorto(_mztD2);
+}
+function fmtCorto(f){ try{ var p=(f||'').split('-'); return (+p[2])+' '+(MESES[+p[1]-1]||'').toLowerCase(); }catch(e){ return f; } }
+function mzRangoMover(paso){
+  var r=mzRangos(), i=mzRangoIdx();
+  if(i<0) i = paso>0 ? -1 : r.length;          /* desde un rango a la medida */
+  var j=Math.min(r.length-1, Math.max(0, i+paso));
+  mzTabRango(r[j].d1, r[j].d2);
+}
+function mzRangoCtl(){
+  var i=mzRangoIdx(), r=mzRangos();
+  return '<span style="display:inline-flex;align-items:stretch;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card2);flex:none">'+
+    '<button class="btn ghost" title="Periodo anterior" aria-label="Periodo anterior" style="margin:0;width:auto;border:0;border-radius:0;padding:8px 11px;font-size:14px;background:transparent'+(i===0?';opacity:.35':'')+'" onclick="mzRangoMover(-1)">‹</button>'+
+    '<button class="btn ghost" style="margin:0;width:auto;border:0;border-left:1px solid var(--line);border-right:1px solid var(--line);border-radius:0;padding:8px 14px;font-size:12.5px;background:transparent;min-width:132px" onclick="mzRangoPanel()">'+
+      esc(mzRangoNom())+' <span style="font-size:9px;opacity:.7">▼</span></button>'+
+    '<button class="btn ghost" title="Periodo siguiente" aria-label="Periodo siguiente" style="margin:0;width:auto;border:0;border-radius:0;padding:8px 11px;font-size:14px;background:transparent'+(i===r.length-1?';opacity:.35':'')+'" onclick="mzRangoMover(1)">›</button>'+
+    '</span>';
+}
+function mzRangoPanel(){
+  var el=$('mz-rangopanel'); if(!el) return;
+  if(el.innerHTML){ el.innerHTML=''; return; }
+  var r=mzRangos(), i=mzRangoIdx();
+  el.innerHTML='<div class="card" style="margin-top:9px;background:var(--card2)">'+
+    '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
+    r.map(function(x,k){ return '<button class="btn'+(k===i?'':' ghost')+'" style="margin:0;width:auto;padding:7px 12px;font-size:12px" onclick="mzTabRango(\''+x.d1+'\',\''+x.d2+'\')">'+x.t+'</button>'; }).join('')+
+    '</div>'+
+    '<div class="note" style="margin:10px 0 5px">O elige el rango exacto:</div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
+    '<input type="date" id="mz-r1" value="'+esc(_mztD1)+'" style="padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--txt);font:inherit;font-size:12.5px">'+
+    '<span class="note">hasta</span>'+
+    '<input type="date" id="mz-r2" value="'+esc(_mztD2)+'" style="padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--txt);font:inherit;font-size:12.5px">'+
+    '<button class="btn" style="margin:0;width:auto;padding:8px 14px;font-size:12.5px" onclick="mzRangoAplica()">Ver</button></div></div>';
+}
+function mzRangoAplica(){
+  var a=$('mz-r1').value, b=$('mz-r2').value;
+  if(!a||!b){ alert('Elige las dos fechas.'); return; }
+  if(a>b){ var t=a; a=b; b=t; }
+  mzTabRango(a,b);
+}
 function mzTabPaint(x){
   window._mzTabX=x;
   var hoy=mxToday(), t=x.totales||{};
@@ -9501,19 +9572,15 @@ function mzTabPaint(x){
   var h='';
   if(x.practica) h+='<div class="card" style="border-color:color-mix(in srgb,var(--warn) 45%,transparent);background:color-mix(in srgb,var(--warn) 9%,transparent);margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><b style="color:var(--warn);font-size:13px">Modo práctica activo</b><div class="note" style="margin-top:2px">Lo que ves es julio cargado de ensayo. El botón borra las prácticas y arranca en cero.</div></div>'+
       (S.admin?'<button class="btn ghost" style="margin:0;width:auto;padding:9px 12px;font-size:12px;color:var(--bad)" onclick="mzArranque()">Arranque 1-sep</button>':'')+'</div></div>';
-  h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
-     '<b style="font-size:14px;flex:1">Gráficos · Mezclado</b>'+
-     '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzTabRango(\''+hoy+'\',\''+hoy+'\')">Hoy</button>'+
-     '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzTabRango(\''+hace7+'\',\''+hoy+'\')">7 días</button>'+
-     '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzTabRango(\''+hoy.slice(0,8)+'01\',\''+hoy+'\')">Mes</button>'+
-     (function(){ var f=new Date(hoy+'T12:00:00'); f.setDate(0); var fin=f.toISOString().slice(0,10); var ini=fin.slice(0,8)+'01';
-       return '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzTabRango(\''+ini+'\',\''+fin+'\')">Mes pasado</button>'; })()+
+  h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">'+
+     '<b style="font-size:14px;flex:1;min-width:130px">Gráficos · Mezclado</b>'+
+     mzRangoCtl()+
      '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzExcel(_mztD1,_mztD2)">⬇ Excel</button></div>'+
-     /* cierres alineados a la DERECHA, debajo de Mes pasado y Excel (pedido de Carlos) */
+     '<div id="mz-rangopanel"></div>'+
+     /* cierres alineados a la DERECHA, debajo del selector y Excel (pedido de Carlos) */
      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;justify-content:flex-end">'+
      '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzCierre(\'semana\')">Cierre de semana</button>'+
-     '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzCierre(\'mes\')">Cierre de mes</button></div>'+
-     '<div class="note" style="margin-top:7px">Del '+esc(_mztD1)+' al '+esc(_mztD2)+'</div></div>';
+     '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzCierre(\'mes\')">Cierre de mes</button></div></div>';
   var dias=x.por_dia||[]; var totKg=0; dias.forEach(function(d){ totKg+=(d.kg||0); });
   /* KPI TÁCTILES (pedido de Carlos): cada cuadro abre su desglose completo */
   function kpi(tema,tit,val,color,sub){

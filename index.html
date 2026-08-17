@@ -9044,7 +9044,8 @@ function mzMetaEdit(){
     if(x&&x.ok){ mzMetaLoad(function(){ if(window._mzTabX) mzTabPaint(window._mzTabX); }); }
     else alert((x&&x.detalle)||mzErr(x)); },function(e){ alert(mzErr(null,e)); });
 }
-function mzErr(x,e){ var m={no_autorizado:'No tienes permiso para esto.',datos:'Faltan datos: revisa fecha, turno y banbury.',rango:'El rango es muy grande (máximo 2 meses).',maximo_500:'Máximo 500 renglones por tanda.',no_existe:'Ese registro ya no existe.',valor:'El valor no es válido.'};
+function mzErr(x,e){ var m={no_autorizado:'No tienes permiso para esto.',datos:'Faltan datos: revisa fecha, turno y banbury.',rango:'El rango es muy grande (máximo 2 meses).',maximo_500:'Máximo 500 renglones por tanda.',no_existe:'Ese registro ya no existe.',valor:'El valor no es válido.',
+    limite:'Ya mandaste varias órdenes seguidas. Espera un rato.',ya_tiene:'Ese paro ya está ligado a un folio.'};
   if(x&&x.error&&m[x.error]) return m[x.error];
   /* si la llamada falló, decir la verdad: puede ser el servidor, no siempre la conexión */
   var det=''; try{ det=(e&&(e.message||e.details||e.hint))||''; }catch(_){}
@@ -9249,7 +9250,7 @@ function mzTmPedido(id,causa,bb){
   if(d===null) return;
   SB.rpc('hb_mez_tm_a_pedido',{p_id:id, p_maquina:'BANBURY '+bb, p_descr:d, p_tipo:'mecanico'})
     .then(function(r){ var x=r&&r.data;
-      if(x&&x.ok){ alert('Listo. Orden de trabajo '+x.folio+' enviada a Mantenimiento.\nEl paro quedó ligado a ese folio.'); mzLoadDia(mzCapPaint); }
+      if(x&&x.ok){ alert('Listo. Orden de trabajo #'+x.folio+' enviada a Mantenimiento.\nEl paro quedó ligado a ese folio.'); mzLoadDia(mzCapPaint); }
       else alert((x&&x.detalle)||mzErr(x)); },function(e){ alert(mzErr(null,e)); });
 }
 function mzDelTm(id){

@@ -1033,6 +1033,7 @@ body.a11y .screen .seg button{ font-size:13px !important; }
     <section id="s-mezcomp" class="screen pad hide"></section>
     <section id="s-mezcierres" class="screen pad hide"></section>
     <section id="s-mezprecios" class="screen pad hide"></section>
+    <section id="s-mezsem" class="screen pad hide"></section>
   </main>
 
   <!-- ===================== NAV INFERIOR ===================== -->
@@ -2510,7 +2511,7 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'"'+main+' onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp','mezcierres','mezprecios'];
+var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp','mezcierres','mezprecios','mezsem'];
 var _prevShown=null;
 function show(name){
   var cambio = (name!==_prevShown);
@@ -2523,7 +2524,7 @@ function show(name){
   if(name==='invit') navKey=_invitFrom||'home';
   if(name==='pedir') navKey=(S&&(S.admin||S.mando))?'hr':'home';       // Pedir reparación / Tus reparaciones
   if(name==='pedidos') navKey='hr';                                     // inbox de Mantenimiento
-  if(name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios') navKey='prod';
+  if(name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem') navKey='prod';
   if(name==='prod'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab') navKey='prod';  // Producción (mezclado)
   if(navKey==='home' && S && S.admin && S.dash!=='resp') navKey='hr';   // dashboard general: su Inicio es el tablero
   ['home','msgs','rewards','chat','hr','clases','news','buzon','prod'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
@@ -2552,10 +2553,10 @@ function go(name){
   if(name==='msgs') return renderMsgs();
 }
 function renderTop(name){
-  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? ('go(\'hr\')') : name==='pedir' ? ('go(\''+((S.admin||S.mando)?'hr':'home')+'\')') : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres'||name==='mezprecios') ? 'go(\'prod\')' : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? ('go(\'hr\')') : name==='pedir' ? ('go(\''+((S.admin||S.mando)?'hr':'home')+'\')') : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres'||name==='mezprecios'||name==='mezsem') ? 'go(\'prod\')' : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
     left.innerHTML='<button class="back" onclick="'+backTo+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
@@ -9024,7 +9025,24 @@ function mezInit(){
     SB.rpc('hb_es_mez_tecnico').then(function(r){ if(r&&r.data===true && !S.mezTec){ S.mezTec=true; buildNav(); } });
     SB.rpc('hb_es_mez_costos').then(function(r){ if(r&&r.data===true && !S.mezCostos){ S.mezCostos=true; buildNav(); } },function(){});
     if(S.admin){ mzFxLoad(1); if(!window._mzFxTimer) window._mzFxTimer=setInterval(function(){ mzFxLoad(1); }, 900000); } /* 15 min */
+    mzMetaLoad();
   }catch(e){}
+}
+/* ---- LA META DIARIA de Ana: un solo número que manda en la gráfica ---- */
+var _mzMeta=null;
+function mzMetaLoad(cb){
+  SB.rpc('hb_mez_meta').then(function(r){ var x=r&&r.data;
+    _mzMeta=(x&&x.ok)?x:null; if(cb) cb(); },function(){ if(cb) cb(); });
+}
+function mzMetaEdit(){
+  var act=(_mzMeta&&_mzMeta.meta_dia)||0;
+  var v=prompt('¿Cuántas mezclas al día quieres como meta?\n\n(0 = sin meta, se quita la línea de la gráfica)', act||'');
+  if(v===null) return;
+  v=Number(String(v).replace(/[^0-9.]/g,''));
+  if(isNaN(v)){ alert('Escribe un número.'); return; }
+  SB.rpc('hb_mez_meta_set',{p_meta:v}).then(function(r){ var x=r&&r.data;
+    if(x&&x.ok){ mzMetaLoad(function(){ if(window._mzTabX) mzTabPaint(window._mzTabX); }); }
+    else alert((x&&x.detalle)||mzErr(x)); },function(e){ alert(mzErr(null,e)); });
 }
 function mzErr(x,e){ var m={no_autorizado:'No tienes permiso para esto.',datos:'Faltan datos: revisa fecha, turno y banbury.',rango:'El rango es muy grande (máximo 2 meses).',maximo_500:'Máximo 500 renglones por tanda.',no_existe:'Ese registro ya no existe.',valor:'El valor no es válido.'};
   if(x&&x.error&&m[x.error]) return m[x.error];
@@ -9062,6 +9080,7 @@ function renderMezHub(){
   if(veGraf) h+=htile('renderMezTab()','deptos','Gráficos','Producción por día, paros y reproceso');
   if(veGraf) h+=htile('renderMezCierres()','pend','Cierres','Semana y mes listos para junta (PDF)');
   if(S.mezCostos) h+=htile('renderMezPrecios()','recibo','Precios de materia prima','Súbelos y el sistema recalcula desde esa fecha');
+  if(S.admin||S.mezCostos||veGraf) h+=htile('renderMezSem()','deptos','Semáforo de materia prima','Qué se está consumiendo y qué no se ha comprado');
   if(S.mezTec||S.admin) h+=htile('renderMezAna()','focos','Analista de compuestos','Eficiencia, fallas e historial por compuesto');
   h+='</div>';
   $('s-prod').innerHTML=h; show('prod');
@@ -9142,10 +9161,12 @@ function mzCapPaint(){
   if(!tms.length) h+='<div class="card"><div class="note">Sin paros capturados en este turno.</div></div>';
   tms.forEach(function(t){
     var cn=t.causa||t.causa_txt||'¿?';
-    h+='<div class="card" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center">'+
-       '<div style="min-width:0"><b style="font-size:13px">'+esc(cn)+'</b><div class="note" style="margin-top:2px">'+t.minutos+' min · '+
-       (t.folio_mant?('<span style="color:var(--ok)">folio '+esc(t.folio_mant)+' · ligado a mantenimiento</span>'):'<span>sin folio · lo reportó el banburista</span>')+'</div></div>'+
-       '<button class="btn ghost" style="margin:0;width:auto;padding:7px 10px;font-size:12px;flex:none" onclick="mzDelTm('+t.id+')">Quitar</button></div></div>';
+    h+='<div class="card" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">'+
+       '<div style="min-width:0;flex:1"><b style="font-size:13px">'+esc(cn)+'</b><div class="note" style="margin-top:2px">'+t.minutos+' min · '+
+       (t.folio_mant?('<span style="color:var(--ok)">folio '+esc(t.folio_mant)+' · ligado a mantenimiento</span>'):'<span style="color:var(--warn)">sin folio · lo reportó el banburista</span>')+'</div></div>'+
+       '<div style="display:flex;gap:6px;flex:none">'+
+       (t.folio_mant?'':'<button class="btn" style="margin:0;width:auto;padding:7px 11px;font-size:12px" onclick="mzTmPedido('+t.id+',\''+jsAttr(cn)+'\','+t.banbury+')">Crear pedido a mantenimiento</button>')+
+       '<button class="btn ghost" style="margin:0;width:auto;padding:7px 10px;font-size:12px" onclick="mzDelTm('+t.id+')">Quitar</button></div></div></div>';
   });
   h+='<div class="card" style="border-style:dashed"><b style="font-size:13px">Agregar paro</b>'+
      '<div style="margin-top:8px;position:relative">'+mzInp('mzt-causa','Busca la causa y elígela de la lista…','oninput="mzBuscaCausa(this.value)" autocomplete="off"')+'<div id="mzt-res"></div></div>'+
@@ -9220,6 +9241,16 @@ function mzAddTm(){
     folio_mant:$('mzt-folio').value.trim()||null};
   SB.rpc('hb_mez_tm_alta',{p:p}).then(function(r){ var x=r&&r.data;
     if(x&&x.ok){ _mzCauSel=null; mzLoadDia(mzCapPaint); } else alert(mzErr(x)); },function(){ alert(mzErr()); });
+}
+/* ---- un paro sin folio se vuelve Orden de Trabajo con un toque (v3_23) ---- */
+function mzTmPedido(id,causa,bb){
+  if(!confirm('Se va a crear una orden de trabajo en Mantenimiento por:\n\n'+causa+'\nBanbury '+bb+'\n\n¿La mandamos?')) return;
+  var d=prompt('Cuenta qué pasó (lo verá Mantenimiento):', causa+' en el Banbury '+bb+'.');
+  if(d===null) return;
+  SB.rpc('hb_mez_tm_a_pedido',{p_id:id, p_maquina:'BANBURY '+bb, p_descr:d, p_tipo:'mecanico'})
+    .then(function(r){ var x=r&&r.data;
+      if(x&&x.ok){ alert('Listo. Orden de trabajo '+x.folio+' enviada a Mantenimiento.\nEl paro quedó ligado a ese folio.'); mzLoadDia(mzCapPaint); }
+      else alert((x&&x.detalle)||mzErr(x)); },function(e){ alert(mzErr(null,e)); });
 }
 function mzDelTm(id){
   if(!confirm('¿Quitar este paro?')) return;
@@ -9350,6 +9381,70 @@ function mzDelProg(id){
 
 /* ---------- ANALISTA DE COMPUESTOS (Oropeza · sin costos; dirección con costos) ---------- */
 var _mzAnaLista=null;
+/* ================= SEMÁFORO DE MATERIA PRIMA (v3_23) =================
+   Con las recetas y la producción real el sistema ya sabe qué material se está
+   consumiendo. Contra las compras registradas avisa qué lleva más tiempo sin
+   comprarse. NO es inventario físico — es una alerta temprana mientras se
+   conecta el almacén. Así se lo decimos al usuario, sin adornos.            */
+var _mzSem=null, _mzSemDias=30;
+function renderMezSem(){
+  $('s-mezsem').innerHTML='<div class="card"><div class="note">Midiendo el consumo…</div></div>'; show('mezsem');
+  SB.rpc('hb_mez_semaforo',{p_dias:_mzSemDias}).then(function(r){ var x=r&&r.data;
+    if(r&&r.error){ $('s-mezsem').innerHTML='<div class="card"><b>'+esc(mzErr(null,r.error))+'</b></div>'; return; }
+    if(!(x&&x.ok)){ $('s-mezsem').innerHTML='<div class="card"><b>'+esc(mzErr(x))+'</b></div>'; return; }
+    _mzSem=x; mzSemPaint(); },function(e){ $('s-mezsem').innerHTML='<div class="card"><b>'+esc(mzErr(null,e))+'</b></div>'; });
+}
+function mzSemDias(d){ _mzSemDias=d; renderMezSem(); }
+/*  Regla del semáforo, dicha en cristiano:
+    ROJO   = lleva sin comprarse más del doble del periodo que llevamos midiendo
+    ÁMBAR  = lleva sin comprarse más de lo que dura el periodo
+    VERDE  = se compró dentro del periodo                                     */
+function mzSemLuz(m,dias){
+  var s=m.dias_sin_comprar;
+  if(s==null) return {c:'var(--bad)', t:'nunca se ha capturado su precio', k:0};
+  if(s > dias*2) return {c:'var(--bad)',  t:'lleva '+mzN(s)+' días sin compra', k:0};
+  if(s > dias)   return {c:'var(--warn)', t:'lleva '+mzN(s)+' días sin compra', k:1};
+  return {c:'var(--ok)', t:'comprado hace '+mzN(s)+' días', k:2};
+}
+function mzSemPaint(){
+  var x=_mzSem, mats=x.materiales||[], dias=x.dias||30, h='';
+  h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">'+
+     '<div style="flex:1;min-width:170px"><b style="font-size:15px">Semáforo de materia prima</b>'+
+     '<div class="note" style="margin-top:3px">Del '+esc(x.desde)+' al '+esc(x.hasta)+'.</div></div>'+
+     [[30,'30 días'],[60,'60 días'],[90,'90 días']].map(function(o){
+       return '<button class="btn'+(o[0]===_mzSemDias?'':' ghost')+'" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzSemDias('+o[0]+')">'+o[1]+'</button>'; }).join('')+
+     '</div>'+
+     '<div class="note" style="margin-top:9px;line-height:1.5">Esto <b>no es el inventario</b>. Es el consumo que sale de las recetas por las mezclas que sí se corrieron, comparado con las compras capturadas. Sirve para avisar temprano; el conteo físico sigue siendo del almacén.</div></div>';
+  if(!mats.length){
+    h+='<div class="card"><b style="font-size:14px">Todavía no hay de dónde sacarlo</b><div class="note" style="margin-top:4px">Hacen falta corridas capturadas con compuestos que tengan su receta vigente digitalizada. En cuanto haya producción, esta pantalla se llena sola.</div></div>';
+    $('s-mezsem').innerHTML=h; return;
+  }
+  var rojos=mats.filter(function(m){ return mzSemLuz(m,dias).k===0; });
+  var ambar=mats.filter(function(m){ return mzSemLuz(m,dias).k===1; });
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px;margin-bottom:12px">'+
+     '<div class="card"><div class="note">Materiales en uso</div><b style="font-size:22px">'+mzN(mats.length)+'</b></div>'+
+     '<div class="card"><div class="note">Para revisar ya</div><b style="font-size:22px;color:var(--bad)">'+mzN(rojos.length)+'</b></div>'+
+     '<div class="card"><div class="note">Ojo con estos</div><b style="font-size:22px;color:var(--warn)">'+mzN(ambar.length)+'</b></div>'+
+     '</div>';
+  var maxKg=1; mats.forEach(function(m){ if((+m.kg_periodo||0)>maxKg) maxKg=+m.kg_periodo; });
+  var ve=x.ve_precio;
+  h+='<div class="card"><b style="font-size:13px">Ordenados por lo que más se consume</b>'+
+     mzTabla(['Material','Kg en el periodo','Kg por día',ve?'Último precio':'Compras','Cómo va'],
+       mats.map(function(m){
+         var l=mzSemLuz(m,dias);
+         var barra='<span style="display:inline-block;width:66px;height:6px;border-radius:4px;background:var(--card2);vertical-align:middle;margin-right:8px;overflow:hidden">'+
+           '<span style="display:block;height:6px;background:var(--data);width:'+Math.max(3,Math.round((+m.kg_periodo||0)/maxKg*100))+'%"></span></span>';
+         var precio = ve ? (m.precio!=null ? ((m.moneda==='USD'?mzUs(m.precio,4):mzMx(m.precio,4))+' <span class="note">'+esc(m.precio_fecha||'')+'</span>')
+                                           : '<span class="note">sin precio</span>')
+                         : (m.compras_periodo ? mzN(m.compras_periodo)+' <span class="note">compras</span>' : '<span class="note">ninguna</span>');
+         return mzTd(['<b>'+esc(m.codigo)+'</b>'+(m.nombre&&m.nombre!==m.codigo?' <span class="note">'+esc(m.nombre)+'</span>':''),
+           '<span style="white-space:nowrap">'+barra+mzN(m.kg_periodo)+'</span>', mzN(m.kg_por_dia,1), precio,
+           '<span style="color:'+l.c+';font-weight:700">●</span> <span style="font-size:11.5px">'+l.t+'</span>']);
+       }))+
+     '<div class="note" style="margin-top:8px">Rojo = lleva más del doble del periodo sin comprarse (o nunca se capturó su precio). Ámbar = más de '+mzN(dias)+' días. Verde = compra reciente.</div></div>';
+  $('s-mezsem').innerHTML=h;
+}
+
 function renderMezAna(){
   $('s-mezana').innerHTML='<div class="card"><div class="note">Cargando…</div></div>'; show('mezana');
   if(_mzAnaLista) return mzAnaPaint();
@@ -9359,15 +9454,85 @@ function renderMezAna(){
 function mzAnaPaint(){
   var h='<div class="card" style="margin-bottom:12px"><b style="font-size:14px">Analista de compuestos</b>'+
      '<div class="note" style="margin-top:3px">El histórico real de cada compuesto: versiones vigentes, producción, fallas y velocidad. Sin precios'+(S.admin?' — excepto para acceso total':'')+'.</div>'+
-     '<div style="margin-top:9px;position:relative">'+mzInp('mza-q','Busca un compuesto (ej. BP-GY)…','oninput="mzBuscaAna(this.value)" autocomplete="off"')+'<div id="mza-res"></div></div></div>'+
-     '<div id="mza-ficha"></div>';
+     '<div style="margin-top:9px;position:relative">'+mzInp('mza-q','Busca un compuesto (ej. BP-GY)…','oninput="mzBuscaAna(this.value)" autocomplete="off"')+'<div id="mza-res"></div></div>'+
+     '<div id="mza-comp" style="margin-top:9px"></div></div>'+
+     '<div id="mza-tabla"></div><div id="mza-ficha"></div>';
   $('s-mezana').innerHTML=h; show('mezana');
+  mzCompChips();
+}
+/* ---- COMPARADOR: 2-3 compuestos lado a lado (como el mockup de Oropeza) ---- */
+var _mzCmp=[];
+function mzCompChips(){
+  var el=$('mza-comp'); if(!el) return;
+  if(!_mzCmp.length){ el.innerHTML='<div class="note">Elige compuestos de la lista para <b>compararlos lado a lado</b> (hasta 3).</div>'; return; }
+  el.innerHTML='<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+
+    '<span class="note">Comparando:</span>'+
+    _mzCmp.map(function(c){ return '<span class="chipst" style="max-width:none">'+esc(c.nombre)+
+      ' <b style="cursor:pointer;margin-left:3px" onclick="mzCmpQuita('+c.id+')">✕</b></span>'; }).join('')+
+    (_mzCmp.length>1?'<button class="btn" style="margin:0;width:auto;padding:7px 12px;font-size:12px" onclick="mzCmpVer()">Comparar</button>':'<span class="note">elige otro más</span>')+
+    '</div>';
+}
+function mzCmpAgrega(id,nom){
+  if(_mzCmp.some(function(c){ return c.id===id; })) return;
+  if(_mzCmp.length>=3){ alert('Máximo 3 a la vez.'); return; }
+  _mzCmp.push({id:id,nombre:nom}); mzCompChips();
+}
+function mzCmpQuita(id){ _mzCmp=_mzCmp.filter(function(c){ return c.id!==id; }); mzCompChips(); if(_mzCmp.length<2) $('mza-tabla').innerHTML=''; }
+function mzCmpVer(){
+  if(_mzCmp.length<2) return;
+  $('mza-tabla').innerHTML='<div class="card"><div class="note">Comparando…</div></div>';
+  var d2=mxToday(), d1=d2.slice(0,4)+'-01-01', res=[], pend=_mzCmp.length;
+  _mzCmp.forEach(function(c,i){
+    SB.rpc('hb_mez_compuesto',{p_cid:c.id,p_desde:d1,p_hasta:d2}).then(function(r){
+      var x=r&&r.data; if(x&&x.ok) res[i]=x; pend--; if(!pend) mzCmpPinta(res.filter(Boolean));
+    },function(){ pend--; if(!pend) mzCmpPinta(res.filter(Boolean)); });
+  });
+}
+function mzCmpPinta(xs){
+  if(!xs.length){ $('mza-tabla').innerHTML='<div class="card"><b>No se pudo comparar.</b></div>'; return; }
+  function fila(tit, fn, mejor){
+    var vals=xs.map(fn);
+    var nums=vals.map(function(v){ return (typeof v==='object'&&v)?v.n:null; });
+    var best=null;
+    if(mejor){ var validos=nums.filter(function(n){ return n!=null&&!isNaN(n); });
+      if(validos.length) best=(mejor==='alto')?Math.max.apply(null,validos):Math.min.apply(null,validos); }
+    return '<tr><td style="padding:8px;font-size:12px;border-bottom:1px solid var(--line);color:var(--mut)">'+tit+'</td>'+
+      vals.map(function(v){
+        var txt=(typeof v==='object'&&v)?v.t:v, n=(typeof v==='object'&&v)?v.n:null;
+        var gana=(best!=null&&n!=null&&Math.abs(n-best)<1e-9);
+        return '<td style="padding:8px;font-size:12.5px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums'+
+          (gana?';color:var(--ok);font-weight:800':'')+'">'+txt+(gana?' ★':'')+'</td>'; }).join('')+'</tr>';
+  }
+  var h='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Comparación</b>'+
+    '<div class="note" style="margin-top:2px">Del año en curso. La estrella marca al mejor de cada renglón.</div>'+
+    '<div style="overflow-x:auto;margin-top:9px"><table style="width:100%;border-collapse:collapse;min-width:420px">'+
+    '<tr><th style="padding:8px;text-align:left;font-size:11px;color:var(--mut);border-bottom:1px solid var(--line)">Para el mismo pedido…</th>'+
+    xs.map(function(x){ return '<th style="padding:8px;text-align:right;font-size:13px;border-bottom:1px solid var(--line)">'+esc(x.compuesto.nombre)+'</th>'; }).join('')+'</tr>'+
+    fila('Mezclas producidas', function(x){ var n=(x.produccion||{}).mezclas||0; return {t:mzN(n),n:n}; },'alto')+
+    fila('Velocidad (min por mezcla)', function(x){ var n=x.velocidad; return {t:n!=null?mzN(n,2):'—',n:n}; },'bajo')+
+    fila('Estándar de su hoja', function(x){ var v=(x.versiones||[]).filter(function(v){return v.estado==='vigente';})[0];
+        return {t:(v&&v.ciclo_min)?mzN(v.ciclo_min,2):'<span class="note">sin dato</span>',n:null}; })+
+    fila('Quemadas', function(x){ var p=x.produccion||{}; var pc=p.mezclas?p.quemadas/p.mezclas*100:null;
+        return {t:mzN(p.quemadas||0)+(pc!=null?(' ('+mzN(pc,2)+'%)'):''),n:pc}; },'bajo')+
+    fila('Reproceso que genera', function(x){ var p=x.produccion||{}; var pc=p.mezclas?p.reproceso/p.mezclas*100:null;
+        return {t:(pc!=null?mzN(pc,2)+'%':'—'),n:pc}; },'bajo')+
+    (xs[0].admin? fila('Costo de MP por kilo', function(x){ var c=x.costo; var n=(c&&c.ok)?c.costo_kg_mxn:null;
+        return {t:n!=null?mzMx(n,4):'<span class="note">sin receta</span>',n:n}; },'bajo') : '')+
+    (xs[0].admin? fila('Costo por mezcla', function(x){ var c=x.costo; var n=(c&&c.ok)?c.costo_batch_mxn:null;
+        return {t:n!=null?mzMx(n,2):'—',n:n}; },'bajo') : '')+
+    fila('Días con producción', function(x){ var n=(x.produccion||{}).dias||0; return {t:mzN(n),n:n}; })+
+    fila('Versiones en la carpeta', function(x){ var n=(x.versiones||[]).length; return {t:mzN(n),n:null}; })+
+    '</table></div>'+
+    '<div class="note" style="margin-top:8px">Scrap y flash: pendiente de pesar en piso — cuando arranque el piloto de báscula entra aquí.</div></div>';
+  $('mza-tabla').innerHTML=h;
 }
 function mzBuscaAna(q){
   var res=$('mza-res'); if(!res) return;
   q=(q||'').trim().toLowerCase(); if(q.length<1){ res.innerHTML=''; return; }
   var hits=(_mzAnaLista||[]).filter(function(c){ return (c.nombre+' '+c.familia).toLowerCase().indexOf(q)>-1; }).slice(0,10);
-  res.innerHTML=hits.map(function(c){ return '<button class="btn ghost" style="margin:6px 6px 0 0;width:auto;padding:7px 11px;font-size:12.5px" onclick="mzFicha('+c.id+')">'+esc(c.nombre)+' <span class="note">fam '+esc(c.familia)+'</span></button>'; }).join('')||'<div class="note" style="margin-top:6px">No encontrado.</div>';
+  res.innerHTML=hits.map(function(c){ return '<span style="display:inline-flex;align-items:stretch;margin:6px 6px 0 0">'+
+    '<button class="btn ghost" style="margin:0;width:auto;padding:7px 11px;font-size:12.5px;border-top-right-radius:0;border-bottom-right-radius:0" onclick="mzFicha('+c.id+')">'+esc(c.nombre)+' <span class="note">fam '+esc(c.familia)+'</span></button>'+
+    '<button class="btn ghost" title="Agregar al comparador" style="margin:0;width:auto;padding:7px 10px;font-size:12.5px;font-weight:800;border-left:0;border-top-left-radius:0;border-bottom-left-radius:0" onclick="mzCmpAgrega('+c.id+',\''+jsAttr(c.nombre)+'\')">⇄</button></span>'; }).join('')||'<div class="note" style="margin-top:6px">No encontrado.</div>';
 }
 function mzFicha(cid){
   $('mza-ficha').innerHTML='<div class="card"><div class="note">Cargando la ficha…</div></div>';
@@ -9607,9 +9772,23 @@ function mzTabPaint(x){
      (S.admin?kpi('costos','Costo de materia prima','ver','var(--ok)','costos y utilidad'):
        '<div class="card"><div class="note">En bandeja</div><b style="font-size:22px;color:var(--warn)">'+mzN(t.pendientes||0)+'</b></div>')+
      '</div>';
+  /* LA META DE ANA: un solo número, y la gráfica lo dibuja */
+  var meta=(_mzMeta&&+_mzMeta.meta_dia)||0;
+  var puedeMeta=(_mzMeta&&_mzMeta.puede_editar);
+  if(meta||puedeMeta){
+    var cum=dias.filter(function(d){ return meta&&(d.mezclas||0)>=meta; }).length;
+    h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">'+
+       '<div style="flex:1;min-width:150px"><div class="note">Meta diaria de dirección</div>'+
+       (meta?('<b style="font-size:22px;color:var(--accent2)">'+mzN(meta)+'</b> <span class="note">mezclas al día</span>'+
+              (dias.length?('<div class="note" style="margin-top:3px">Se cumplió <b>'+mzN(cum)+'</b> de '+mzN(dias.length)+' días ('+mzPct(cum,dias.length)+')</div>'):''))
+             :'<b style="font-size:18px;color:var(--mut)">Sin fijar</b><div class="note" style="margin-top:3px">Pon un número y la gráfica dibuja su línea.</div>')+'</div>'+
+       (puedeMeta?'<button class="btn ghost" style="margin:0;width:auto;padding:9px 13px;font-size:12px" onclick="mzMetaEdit()">'+(meta?'Cambiar meta':'Fijar meta')+'</button>':'')+
+       '</div></div>';
+  }
   /* gráfica: producción por día (como el Excel de Alejandro, pero viva) */
   if(dias.length>1){
     var maxD=1; dias.forEach(function(d){ if((d.mezclas||0)>maxD) maxD=d.mezclas; });
+    var esc0=Math.max(maxD, meta||0);   /* la escala sube si la meta es más alta, para que la línea quepa */
     var chico=dias.length>16;   /* mes completo: números en vertical para que quepan */
     h+='<div class="card" style="margin-bottom:12px">'+mzTitulo('Producción por día · mezclas','dia',[['barras','Barras'],['linea','Línea del tiempo'],['area','Área'],['tabla','Tabla']],'barras');
     var _td=mzGT('dia','barras');
@@ -9617,12 +9796,20 @@ function mzTabPaint(x){
     else if(_td==='area'){ h+=mzArea(dias,maxD); }
     else if(_td==='tabla'){ h+=mzTablaG(dias.map(function(d){ return {l:d.fecha+(d.quemadas?' · '+d.quemadas+' quemadas':''), v:d.mezclas||0}; }),'mezclas'); }
     else{
-      h+='<div style="display:flex;align-items:flex-end;gap:'+(chico?'2px':'6px')+';margin-top:10px">'+
-       dias.map(function(d){ var m=d.mezclas||0; var pc=Math.max(4,Math.round(m/maxD*100));
+      h+='<div style="position:relative;display:flex;align-items:flex-end;gap:'+(chico?'2px':'6px')+';margin-top:10px">'+
+       /* la línea de la meta: cruza las barras a su altura, con su etiqueta */
+       /* 14px = alto de la etiqueta del día (11) + el gap (3); el −1 centra la
+          raya de 2px justo en el valor de la meta, no arriba de él */
+       (meta?('<span style="position:absolute;left:0;right:0;bottom:'+(13+60*meta/esc0).toFixed(1)+'px;height:0;border-top:2px dashed var(--accent2);opacity:.85;pointer-events:none;z-index:2"></span>'+
+              '<span style="position:absolute;right:0;bottom:'+(16+60*meta/esc0).toFixed(1)+'px;font-size:9.5px;font-weight:800;color:var(--accent2);background:var(--card);padding:0 3px;border-radius:3px;pointer-events:none;z-index:3">meta '+mzN(meta)+'</span>'):'')+
+       dias.map(function(d){ var m=d.mezclas||0; var pc=Math.max(4,Math.round(m/esc0*100));
+         var col=meta?(m>=meta?'var(--ok)':'#7d0d11'):(m===maxD?'var(--accent2)':'#7d0d11');
          return '<span style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px">'+
            '<span style="font-size:'+(chico?'9.5px':'11px')+';color:'+(m===maxD?'var(--accent2)':'var(--mut)')+';font-variant-numeric:tabular-nums;'+(chico?'writing-mode:vertical-rl;transform:rotate(180deg);':'')+'">'+m.toLocaleString()+'</span>'+
-           '<span style="width:100%;height:60px;display:flex;align-items:flex-end"><span style="display:block;width:100%;height:'+pc+'%;border-radius:3px 3px 0 0;background:'+(m===maxD?'var(--accent2)':'#7d0d11')+'"></span></span>'+
-           '<span style="font-size:9px;color:var(--mut)">'+(+d.fecha.slice(8,10))+'</span></span>'; }).join('')+'</div>';
+           '<span style="width:100%;height:60px;display:flex;align-items:flex-end"><span style="display:block;width:100%;height:'+pc+'%;border-radius:3px 3px 0 0;background:'+col+'"></span></span>'+
+           /* alto fijo en la etiqueta del día: así la línea de la meta cae exacta */
+           '<span style="font-size:9px;color:var(--mut);height:11px;line-height:11px">'+(+d.fecha.slice(8,10))+'</span></span>'; }).join('')+'</div>'+
+       (meta?'<div class="note" style="margin-top:6px">Verde = ese día llegó a la meta.</div>':'');
     }
     h+='<div style="display:flex;justify-content:space-between;margin-top:6px"><span class="note">'+esc(dias[0].fecha)+'</span><span class="note">'+Number(totKg).toLocaleString()+' kg en el rango</span><span class="note">'+esc(dias[dias.length-1].fecha)+'</span></div></div>';
   }

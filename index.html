@@ -1025,6 +1025,7 @@ body.a11y .screen .seg button{ font-size:13px !important; }
     <section id="s-mezdesg" class="screen pad hide"></section>
     <section id="s-mezcomp" class="screen pad hide"></section>
     <section id="s-mezcierres" class="screen pad hide"></section>
+    <section id="s-mezprecios" class="screen pad hide"></section>
   </main>
 
   <!-- ===================== NAV INFERIOR ===================== -->
@@ -2492,7 +2493,7 @@ function buildNav(){
       : [['msgs','Mensajes',ICN.msgs],['news','Noticias',ICN.news],['rewards','Premios',ICN.rewards],['chat','Asistente',ICN.chat]]);
   // PRODUCCIÓN (v3_17): pestaña visible SOLO para capturistas de mezclado (Gustavo),
   // el técnico (Oropeza) y acceso total. En escritorio el nav es la barra lateral.
-  if(S.mezCap||S.mezTec) others.splice((S.admin||S.mando)?1:0, 0, ['prod','Producción',ICN.prod]);
+  if(S.mezCap||S.mezTec||S.mezCostos) others.splice((S.admin||S.mando)?1:0, 0, ['prod','Producción',ICN.prod]);
   // "Inicio" al CENTRO, como botón circular elevado (identidad del app · móvil).
   // El dashboard general NO lleva el círculo: su Inicio es el propio tablero.
   var mid=Math.floor(others.length/2);
@@ -2502,7 +2503,7 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'"'+main+' onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp','mezcierres'];
+var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp','mezcierres','mezprecios'];
 var _prevShown=null;
 function show(name){
   var cambio = (name!==_prevShown);
@@ -2515,7 +2516,7 @@ function show(name){
   if(name==='invit') navKey=_invitFrom||'home';
   if(name==='pedir') navKey=(S&&(S.admin||S.mando))?'hr':'home';       // Pedir reparación / Tus reparaciones
   if(name==='pedidos') navKey='hr';                                     // inbox de Mantenimiento
-  if(name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres') navKey='prod';
+  if(name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios') navKey='prod';
   if(name==='prod'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab') navKey='prod';  // Producción (mezclado)
   if(navKey==='home' && S && S.admin && S.dash!=='resp') navKey='hr';   // dashboard general: su Inicio es el tablero
   ['home','msgs','rewards','chat','hr','clases','news','buzon','prod'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
@@ -2544,10 +2545,10 @@ function go(name){
   if(name==='msgs') return renderMsgs();
 }
 function renderTop(name){
-  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? ('go(\'hr\')') : name==='pedir' ? ('go(\''+((S.admin||S.mando)?'hr':'home')+'\')') : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres') ? 'go(\'prod\')' : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? ('go(\'hr\')') : name==='pedir' ? ('go(\''+((S.admin||S.mando)?'hr':'home')+'\')') : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres'||name==='mezprecios') ? 'go(\'prod\')' : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
     left.innerHTML='<button class="back" onclick="'+backTo+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
@@ -9014,6 +9015,7 @@ function mezInit(){
   try{
     SB.rpc('hb_es_mez_capturista').then(function(r){ if(r&&r.data===true && !S.mezCap){ S.mezCap=true; buildNav(); } });
     SB.rpc('hb_es_mez_tecnico').then(function(r){ if(r&&r.data===true && !S.mezTec){ S.mezTec=true; buildNav(); } });
+    SB.rpc('hb_es_mez_costos').then(function(r){ if(r&&r.data===true && !S.mezCostos){ S.mezCostos=true; buildNav(); } },function(){});
     if(S.admin){ mzFxLoad(1); if(!window._mzFxTimer) window._mzFxTimer=setInterval(function(){ mzFxLoad(1); }, 900000); } /* 15 min */
   }catch(e){}
 }
@@ -9052,6 +9054,7 @@ function renderMezHub(){
   }
   if(veGraf) h+=htile('renderMezTab()','deptos','Gráficos','Producción por día, paros y reproceso');
   if(veGraf) h+=htile('renderMezCierres()','pend','Cierres','Semana y mes listos para junta (PDF)');
+  if(S.mezCostos) h+=htile('renderMezPrecios()','recibo','Precios de materia prima','Súbelos y el sistema recalcula desde esa fecha');
   if(S.mezTec||S.admin) h+=htile('renderMezAna()','focos','Analista de compuestos','Eficiencia, fallas e historial por compuesto');
   h+='</div>';
   $('s-prod').innerHTML=h; show('prod');
@@ -9817,6 +9820,141 @@ function mzDesgPaint(){
   }
   $('s-mezdesg').innerHTML=h; show('mezdesg');
 }
+/* ============================================================================
+   PRECIOS DE MATERIA PRIMA (v3_22) — los captura COSTOS.
+   Regla de Carlos: un precio nuevo NO borra el anterior; se apila con su fecha.
+   Lo que se mezcló ayer conserva el precio de ayer; lo de hoy usa el de hoy.
+   ============================================================================ */
+var _mzPre=null, _mzPreQ='';
+function renderMezPrecios(){
+  $('s-mezprecios').innerHTML='<div class="card"><div class="note">Cargando precios…</div></div>'; show('mezprecios');
+  SB.rpc('hb_mez_precios_lista',{p_buscar:_mzPreQ||null}).then(function(r){ var x=r&&r.data;
+    if(r&&r.error){ $('s-mezprecios').innerHTML='<div class="card"><b>'+esc(mzErr(null,r.error))+'</b></div>'; return; }
+    if(!(x&&x.ok)){ $('s-mezprecios').innerHTML='<div class="card"><b>'+esc(mzErr(x))+'</b></div>'; return; }
+    _mzPre=x; mzPrePaint(); },function(e){ $('s-mezprecios').innerHTML='<div class="card"><b>'+esc(mzErr(null,e))+'</b></div>'; });
+}
+function mzPreBuscar(v){ _mzPreQ=(v||'').trim(); renderMezPrecios(); }
+function mzPrePaint(){
+  var x=_mzPre, ms=x.materiales||[], h='';
+  var hoy=mxToday();
+  h+='<div class="card" style="margin-bottom:12px"><b style="font-size:15px">Precios de materia prima</b>'+
+     '<div class="note" style="margin-top:3px">Cuando subes un precio nuevo, <b>solo aplica de esa fecha en adelante</b>. Lo que ya se mezcló conserva el precio que tenía — el histórico nunca se toca.</div>'+
+     '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'+
+     '<input id="mzp-q" value="'+esc(_mzPreQ)+'" placeholder="Buscar material…" onkeydown="if(event.key===\'Enter\')mzPreBuscar(this.value)" style="flex:1;min-width:160px;padding:9px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+     '<button class="btn ghost" style="margin:0;width:auto;padding:9px 13px;font-size:12.5px" onclick="mzPreBuscar($(\'mzp-q\').value)">Buscar</button>'+
+     '<button class="btn" style="margin:0;width:auto;padding:9px 13px;font-size:12.5px" onclick="mzPreNuevo()">＋ Precio nuevo</button>'+
+     '<button class="btn ghost" style="margin:0;width:auto;padding:9px 13px;font-size:12.5px" onclick="mzPrePegar()">Pegar de Excel</button></div>'+
+     (x.fx?('<div class="note" style="margin-top:7px">Tasa de hoy para convertir dólares: $'+mzN(x.fx,4)+'</div>'):'')+
+     '</div>';
+  h+='<div id="mzp-form"></div>';
+  h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Materiales'+(_mzPreQ?(' · "'+esc(_mzPreQ)+'"'):'')+'</b>'+
+     '<div class="note" style="margin-top:2px">Primero los que usan las recetas vigentes. Toca uno para ver su historia.</div>'+
+     mzTabla(['Material','Precio','Moneda','En pesos','Desde','Cambio','Compras'],
+      ms.map(function(m){
+        var d='—';
+        if(m.precio!=null && m.precio_previo!=null && +m.precio_previo>0){
+          var dd=(+m.precio - +m.precio_previo)/+m.precio_previo*100;
+          d='<span style="color:'+(dd>0?'var(--bad)':(dd<0?'var(--ok)':'var(--mut)'))+'">'+(dd>0?'▲':(dd<0?'▼':''))+' '+mzN(Math.abs(dd),1)+'%</span>';
+        }
+        return mzTd([esc(m.codigo)+(m.en_uso?' <span class="note">en recetas</span>':''),
+          m.precio!=null?mzN(m.precio,4):'<span class="note">sin precio</span>',
+          esc(m.moneda||'—'), m.precio_mxn!=null?mzMx(m.precio_mxn,4):'—',
+          esc(m.fecha||'—'), d, mzN(m.compras)],
+          "mzPreHist('"+jsAttr(m.codigo)+"')"); }))+'</div>';
+  var mv=x.ultimos_movimientos||[];
+  if(mv.length) h+='<div class="card"><b style="font-size:13px">Últimos precios capturados</b>'+
+     mzTabla(['Fecha','Material','Precio','Moneda','Proveedor','Quién'],
+      mv.map(function(v){ return mzTd([esc(v.fecha),esc(v.codigo),mzN(v.precio,4),esc(v.moneda||''),
+        esc(v.proveedor||'—'), esc(v.quien?niceName(v.quien):'—')]); }))+'</div>';
+  $('s-mezprecios').innerHTML=h; show('mezprecios');
+}
+function mzPreNuevo(){
+  var el=$('mzp-form'); if(!el) return;
+  if(el.innerHTML.indexOf('mzpn-cod')>-1){ el.innerHTML=''; return; }
+  el.innerHTML='<div class="card" style="margin-bottom:12px;border-style:dashed"><b style="font-size:13px">Precio nuevo</b>'+
+    '<div class="note" style="margin-top:3px">Aplica de la fecha que pongas en adelante.</div>'+
+    '<div style="display:flex;gap:7px;margin-top:9px;flex-wrap:wrap">'+
+    '<div style="flex:1.4;min-width:130px">'+mzInp('mzpn-cod','Material (ej. SKIM)')+'</div>'+
+    '<div style="flex:1;min-width:100px">'+mzInp('mzpn-precio','Precio','inputmode="decimal"')+'</div>'+
+    '<select id="mzpn-mon" style="padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px"><option value="MXN">Pesos</option><option value="USD">Dólares</option></select>'+
+    '<input type="date" id="mzpn-fecha" value="'+esc(mxToday())+'" style="padding:9px 10px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px"></div>'+
+    '<div style="margin-top:8px">'+mzInp('mzpn-prov','Proveedor (opcional)')+'</div>'+
+    '<label style="display:flex;gap:6px;align-items:center;margin-top:9px;font-size:12.5px"><input type="checkbox" id="mzpn-nuevo"> Es un material que no estaba en la lista</label>'+
+    '<button class="btn" style="margin:11px 0 0" onclick="mzPreGuardar()">Guardar precio</button></div>';
+}
+function mzPreGuardar(){
+  var p={codigo:$('mzpn-cod').value.trim(), precio:parseFloat($('mzpn-precio').value),
+    moneda:$('mzpn-mon').value, fecha:$('mzpn-fecha').value,
+    proveedor:$('mzpn-prov').value.trim()||null, crear:$('mzpn-nuevo').checked};
+  if(!p.codigo){ alert('¿Qué material?'); return; }
+  if(!(p.precio>0)){ alert('El precio debe ser mayor a cero.'); return; }
+  SB.rpc('hb_mez_precio_alta',{p:p}).then(function(r){ var x=r&&r.data;
+    if(x&&x.ok){ $('mzp-form').innerHTML=''; renderMezPrecios(); }
+    else alert((x&&x.detalle)||mzErr(x)); },function(e){ alert(mzErr(null,e)); });
+}
+var _mzPreFilas=null;
+function mzPrePegar(){
+  var el=$('mzp-form'); if(!el) return;
+  if(el.innerHTML.indexOf('mzp-tsv')>-1){ el.innerHTML=''; return; }
+  el.innerHTML='<div class="card" style="margin-bottom:12px;border-style:dashed"><b style="font-size:13px">Pegar precios desde Excel</b>'+
+    '<div class="note" style="margin-top:4px">Columnas en este orden: <b>MATERIAL · PRECIO · MONEDA · FECHA · PROVEEDOR</b> (moneda y proveedor pueden ir vacías).</div>'+
+    '<textarea id="mzp-tsv" rows="6" style="width:100%;margin-top:8px;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:12.5px" placeholder="SKIM\t1.75\tUSD\t2026-08-14\tProveedor"></textarea>'+
+    '<label style="display:flex;gap:6px;align-items:center;margin-top:8px;font-size:12.5px"><input type="checkbox" id="mzp-crear"> Dar de alta los materiales que no existan</label>'+
+    '<div id="mzp-prev"></div>'+
+    '<button class="btn" style="margin:10px 0 0" onclick="mzPrePrev()">Previsualizar</button></div>';
+}
+function mzPrePrev(){
+  var txt=($('mzp-tsv').value||'').trim(); if(!txt){ alert('Pega primero los renglones.'); return; }
+  var crear=$('mzp-crear').checked, filas=[], malas=0;
+  txt.split(/\r?\n/).forEach(function(ln){
+    if(!ln.trim()) return;
+    var c=ln.split('\t'); if(c.length<2) c=ln.split(/;|,(?=\s*\S)/);
+    var cod=(c[0]||'').trim(); if(!cod||/material|codigo|producto/i.test(cod)) return;
+    var pr=parseFloat(String(c[1]||'').replace(/[$,\s]/g,''));
+    if(!(pr>0)){ malas++; return; }
+    var mon=(c[2]||'').trim().toUpperCase();
+    mon=(mon.indexOf('US')>-1||mon.indexOf('DL')>-1||mon==='$US')?'USD':'MXN';
+    var f=(c[3]||'').trim(); if(f&&!/^\d{4}-\d{2}-\d{2}$/.test(f)){ var m=f.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); f=m?(m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2)):''; }
+    filas.push({codigo:cod, precio:pr, moneda:mon, fecha:f||mxToday(), proveedor:(c[4]||'').trim()||null, crear:crear});
+  });
+  if(!filas.length){ alert('No pude leer renglones. Revisa el orden de las columnas.'); return; }
+  _mzPreFilas=filas;
+  $('mzp-prev').innerHTML='<div class="note" style="margin-top:8px"><b>'+filas.length+' precios listos</b>'+(malas?(' · '+malas+' renglones no se leyeron'):'')+'</div>'+
+    '<div class="note" style="margin-top:4px">'+filas.slice(0,5).map(function(f){ return esc(f.codigo)+' '+mzN(f.precio,4)+' '+f.moneda+' ('+f.fecha+')'; }).join(' · ')+(filas.length>5?' …':'')+'</div>'+
+    '<button class="btn" style="margin:10px 0 0" onclick="mzPreImporta()">Guardar los '+filas.length+' precios</button>';
+}
+function mzPreImporta(){
+  if(!_mzPreFilas||!_mzPreFilas.length) return;
+  SB.rpc('hb_mez_precios_import',{p_filas:_mzPreFilas}).then(function(r){ var x=r&&r.data;
+    if(x&&x.ok){
+      var er=(x.errores||[]);
+      alert('Listo: '+x.guardados+' precios guardados'+(x.materiales_nuevos?(' · '+x.materiales_nuevos+' materiales nuevos'):'')+
+            (er.length?('\n\nNo entraron '+er.length+':\n'+er.slice(0,5).map(function(e){ return '· '+(e.codigo||('fila '+e.fila))+': '+e.error; }).join('\n')):''));
+      _mzPreFilas=null; $('mzp-form').innerHTML=''; renderMezPrecios();
+    } else alert(mzErr(x)); },function(e){ alert(mzErr(null,e)); });
+}
+function mzPreHist(cod){
+  SB.rpc('hb_mez_precio_historia',{p_codigo:cod}).then(function(r){ var x=r&&r.data;
+    if(!(x&&x.ok)){ alert(mzErr(x)); return; }
+    var m=x.material, h='';
+    h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px">'+
+       '<div><b style="font-size:16px">'+esc(m.codigo)+'</b><div class="note">'+esc(m.nombre||'')+'</div></div>'+
+       '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="renderMezPrecios()">‹ Volver</button></div></div>';
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Cómo se ha movido el precio</b>'+
+       '<div class="note" style="margin-top:2px">Cada renglón se convirtió con la tasa de SU día.</div>'+
+       mzTabla(['Fecha','Precio','Moneda','En pesos ese día','Tasa del día','Proveedor','Quién'],
+        (x.historia||[]).map(function(v){ return mzTd([esc(v.fecha),mzN(v.precio,4),esc(v.moneda||''),
+          mzMx(v.precio_mxn_del_dia,4), v.fx_del_dia?mzN(v.fx_del_dia,4):'—',
+          esc(v.proveedor||'—'), esc(v.quien?niceName(v.quien):'—')]); }))+'</div>';
+    var rc=x.recetas||[];
+    h+='<div class="card"><b style="font-size:13px">Recetas que lo usan</b>'+
+       (rc.length? mzTabla(['Compuesto','Versión','Kg por mezcla'],
+        rc.map(function(c){ return mzTd([esc(c.compuesto),esc(c.letra||'—'),mzN(c.kg,3)]); }))
+        :'<div class="note" style="margin-top:5px">Ninguna receta vigente lo usa.</div>')+'</div>';
+    $('s-mezprecios').innerHTML=h; show('mezprecios');
+  },function(e){ alert(mzErr(null,e)); });
+}
+
 /* ---------- CIERRES: pantalla propia (cuadro del hub) ---------- */
 function renderMezCierres(){
   var hoy=mxToday();

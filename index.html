@@ -9110,7 +9110,9 @@ function mzCapPaint(){
   h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
      '<input type="date" value="'+esc(_mzF)+'" onchange="mzSetF(this.value)" style="padding:9px 10px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">';
   [1,2,3].forEach(function(t){ h+='<button class="btn'+(t===_mzT?'':' ghost')+'" style="margin:0;width:auto;padding:9px 14px" onclick="mzSetT('+t+')">Turno '+t+'</button>'; });
-  h+='<span style="flex:1"></span><button class="btn ghost" style="margin:0;width:auto;padding:9px 12px;font-size:12px" onclick="mzPasteTog()">Pegar de Excel</button>'+
+  h+='<span style="flex:1"></span>'+
+     '<button class="btn" style="margin:0;width:auto;padding:9px 12px;font-size:12px" onclick="mzFoto(\'bitacora\')">📷 Subir foto</button>'+
+     '<button class="btn ghost" style="margin:0;width:auto;padding:9px 12px;font-size:12px" onclick="mzPasteTog()">Pegar de Excel</button>'+
      '<button class="btn ghost" style="margin:0;width:auto;padding:9px 12px;font-size:12px" onclick="mzExcel(\''+_mzF+'\',\''+_mzF+'\')">Excel del día</button></div>'+
      '<div style="display:flex;gap:7px;margin-top:9px;flex-wrap:wrap">';
   [1,2,3,4,5].forEach(function(b){
@@ -9299,6 +9301,167 @@ function mzImporta(){
       _mzFilas=null; $('mz-paste').classList.add('hide'); mzLoadDia(mzCapPaint);
     } else alert(mzErr(x)); },function(){ alert(mzErr()); });
 }
+/* ================= LECTOR DE FOTOS (v3_25) =================
+   Gustavo le toma foto al papel; la foto va al SERVIDOR (nunca directo a
+   OpenAI: la llave vive allá) y GPT-4o mini regresa los renglones leídos.
+   REGLA DE CARLOS: prohibido inventar — lo que el modelo no leyó llega en
+   null, aquí se pinta "no disponible" y se captura a mano.               */
+var _mzFotoPoll=null;
+function mzFotoCaja(tipo){
+  if(tipo==='bitacora'){ var el=$('mz-paste'); if(el) el.classList.remove('hide'); return el; }
+  return $('mzp-foto');
+}
+function mzFoto(tipo){
+  var inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
+  inp.onchange=function(){ if(inp.files&&inp.files[0]) mzFotoLee(inp.files[0],tipo); };
+  inp.click();
+}
+function mzFotoLee(file,tipo){
+  var caja=mzFotoCaja(tipo); if(caja) caja.innerHTML='<div class="card" style="margin:10px 0"><div class="note">Preparando la foto…</div></div>';
+  var rd=new FileReader();
+  rd.onload=function(){
+    var img=new Image();
+    img.onload=function(){
+      /* se comprime en el celular para que viaje ligera (máx ~1 MB) */
+      function encoge(lado,calidad){
+        var f=Math.min(1, lado/Math.max(img.width,img.height));
+        var cv=document.createElement('canvas');
+        cv.width=Math.round(img.width*f); cv.height=Math.round(img.height*f);
+        cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+        return cv.toDataURL('image/jpeg',calidad);
+      }
+      var du=encoge(1400,.82);
+      if(du.length>1400000) du=encoge(1100,.62);
+      if(du.length>1900000){ if(caja) caja.innerHTML='<div class="card" style="margin:10px 0"><b style="color:var(--warn)">La foto pesa demasiado.</b><div class="note">Tómala de nuevo con menos zoom.</div></div>'; return; }
+      mzFotoManda(du,tipo);
+    };
+    img.onerror=function(){ if(caja) caja.innerHTML='<div class="card" style="margin:10px 0"><b style="color:var(--warn)">No se pudo abrir esa imagen.</b></div>'; };
+    img.src=rd.result;
+  };
+  rd.readAsDataURL(file);
+}
+function mzFotoManda(du,tipo){
+  var caja=mzFotoCaja(tipo);
+  if(caja) caja.innerHTML='<div class="card" style="margin:10px 0"><b style="font-size:13px">🤖 Leyendo la foto…</b><div class="note" style="margin-top:3px">Tarda unos segundos. No cierres la pantalla.</div></div>';
+  if(_mzFotoPoll){ clearInterval(_mzFotoPoll); _mzFotoPoll=null; }
+  SB.rpc('hb_ia_leer_foto',{p_tipo:tipo,p_imagen:du,p_fecha:_mzF}).then(function(r){
+    var x=r&&r.data;
+    if(!(x&&x.ok)){ if(caja) caja.innerHTML='<div class="card" style="margin:10px 0"><b style="color:var(--warn)">'+esc((x&&x.detalle)||mzErr(x,r&&r.error))+'</b></div>'; return; }
+    var t0=Date.now();
+    _mzFotoPoll=setInterval(function(){
+      SB.rpc('hb_ia_foto_resultado',{p_id:x.foto}).then(function(r2){ var y=r2&&r2.data;
+        if(y&&y.ok&&y.estado==='esperando'){
+          if(Date.now()-t0>120000){ clearInterval(_mzFotoPoll); _mzFotoPoll=null;
+            if(caja) caja.innerHTML='<div class="card" style="margin:10px 0"><b style="color:var(--warn)">La lectura tardó demasiado.</b><div class="note">Inténtalo otra vez.</div></div>'; }
+          return;
+        }
+        clearInterval(_mzFotoPoll); _mzFotoPoll=null;
+        if(!(y&&y.ok)){ if(caja) caja.innerHTML='<div class="card" style="margin:10px 0"><b style="color:var(--warn)">'+esc((y&&y.detalle)||mzErr(y,r2&&r2.error))+'</b></div>'; return; }
+        if(tipo==='bitacora') mzFotoBita(y,caja); else mzFotoCed(y,caja);
+      },function(){ /* tropiezo de red: el siguiente intento del poll lo cubre */ });
+    },2500);
+  },function(e){ if(caja) caja.innerHTML='<div class="card" style="margin:10px 0"><b style="color:var(--warn)">'+esc(mzErr(null,e))+'</b></div>'; });
+}
+function mzND(v){ return (v==null||v==='')?'<span style="color:var(--warn);font-weight:700">no disponible</span>':esc(String(v)); }
+function mzFotoCosto(y){ return (y&&y.costo_mxn!=null)?('<div class="note" style="margin-top:6px">La lectura costó '+mzMx(y.costo_mxn,2)+' MXN.</div>'):''; }
+var _mzFotoY=null;
+function mzFotoBita(y,caja){
+  _mzFotoY=y;
+  var d=y.datos||{}, cs=d.corridas||[], ps=d.paros||[];
+  var f=d.fecha||_mzF, t=d.turno||_mzT, b=d.banbury||_mzB;
+  var h='<div class="card" style="margin:10px 0"><b style="font-size:13px">Esto leí en la foto — revísalo antes de guardar</b>'+
+    '<div class="note" style="margin-top:3px">Va a: <b>'+esc(String(f))+' · Turno '+esc(String(t))+' · BB'+esc(String(b))+'</b>'+
+    ((d.fecha||d.turno||d.banbury)?' (tomado de la foto)':' (lo elegido arriba — la foto no lo traía)')+'</div>';
+  if(cs.length){
+    h+='<div style="overflow-x:auto;margin-top:8px"><table style="width:100%;border-collapse:collapse;min-width:430px">'+
+       mzTh(['Compuesto','Versión','Corrida','Mezclas','Quemadas','Reproceso'])+
+       cs.map(function(c){ return mzTd([mzND(c.compuesto),mzND(c.letra),mzND(c.num_corrida),mzND(c.mezclas),esc(String(c.quemadas||0)),(c.reproceso?'SÍ':'no')]); }).join('')+'</table></div>';
+    var listas=cs.filter(function(c){ return c.compuesto&&c.mezclas!=null&&c.mezclas>=0; });
+    var manuales=cs.length-listas.length;
+    if(manuales>0) h+='<div class="note" style="margin-top:6px;color:var(--warn)">'+manuales+' renglón(es) traen datos no disponibles — esos se capturan a mano, no se guardan así.</div>';
+    if(listas.length) h+='<button class="btn" style="margin:10px 0 0" onclick="mzFotoGuardaBita()">Guardar '+listas.length+' corridas leídas</button>';
+  } else h+='<div class="note" style="margin-top:8px">No leí corridas en la foto.</div>';
+  if(ps.length){
+    h+='<div style="margin-top:12px"><b style="font-size:12.5px">Paros que leí</b>'+
+       ps.map(function(p,i){
+         var cau=mzFotoCausa(p.causa);
+         return '<div style="display:flex;gap:7px;align-items:center;margin-top:7px;flex-wrap:wrap">'+
+           '<span class="note" style="flex:1;min-width:120px">'+mzND(p.causa)+' · '+mzND(p.minutos)+' min</span>'+
+           '<select id="mzfp-c'+i+'" style="padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:12px;max-width:240px">'+
+             '<option value="">— escoge la causa oficial —</option>'+
+             (_mzCat&&_mzCat.causas||[]).map(function(c){ return '<option value="'+c.id+'"'+((cau&&cau.id===c.id)?' selected':'')+'>'+esc(c.nombre)+'</option>'; }).join('')+'</select>'+
+           ((p.minutos!=null&&p.minutos>0)?'<button class="btn ghost" style="margin:0;width:auto;padding:7px 10px;font-size:12px" onclick="mzFotoGuardaParo('+i+','+p.minutos+',\''+esc(f)+'\','+t+','+b+')">＋ Agregar</button>':'<span class="note">minutos no disponibles</span>')+
+           '</div>'; }).join('')+
+       '<div class="note" style="margin-top:5px">Solo se aceptan causas de la lista oficial: si el texto de la foto no coincidió, escógela tú.</div></div>';
+  }
+  if((d.dudas||[]).length) h+='<div class="note" style="margin-top:8px;color:var(--warn)"><b>Dudas de la lectura:</b> '+d.dudas.map(function(x){ return esc(x); }).join(' · ')+'</div>';
+  h+=mzFotoCosto(y)+'</div>';
+  if(caja) caja.innerHTML=h;
+}
+/* la causa de la foto contra la lista oficial: coincidencia simple sin acentos */
+function mzFotoCausa(txt){
+  if(!txt) return null;
+  function nrm(x){ return String(x).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/ +/g,' ').trim(); }
+  var q=nrm(txt), cs=(_mzCat&&_mzCat.causas)||[];
+  for(var i=0;i<cs.length;i++) if(nrm(cs[i].nombre)===q) return cs[i];
+  for(var j=0;j<cs.length;j++){ var n=nrm(cs[j].nombre); if(n.indexOf(q)>-1||q.indexOf(n)>-1) return cs[j]; }
+  return null;
+}
+function mzFotoGuardaBita(){
+  var y=_mzFotoY; if(!y) return;
+  var d=y.datos||{}, f=d.fecha||_mzF, t=d.turno||_mzT, b=d.banbury||_mzB;
+  var filas=(d.corridas||[]).filter(function(c){ return c.compuesto&&c.mezclas!=null&&c.mezclas>=0; })
+    .map(function(c){ return {fecha:f, turno:t, banbury:b, compuesto_txt:c.compuesto,
+      letra:c.letra||null, num_corrida:(c.num_corrida!=null?c.num_corrida:null),
+      mezclas:c.mezclas, quemadas:c.quemadas||0, es_reproceso:!!c.reproceso,
+      nota:'leída por foto'}; });
+  if(!filas.length) return;
+  _mzFilas=filas; mzImporta();
+}
+function mzFotoGuardaParo(i,min,f,t,b){
+  var sel=$('mzfp-c'+i); var cid=sel?parseInt(sel.value,10):null;
+  if(!cid){ alert('Escoge la causa de la lista oficial.'); return; }
+  SB.rpc('hb_mez_tm_alta',{p:{fecha:f,turno:t,banbury:b,minutos:min,causa_id:cid,folio_mant:null}}).then(function(r){ var x=r&&r.data;
+    if(x&&x.ok){ if(sel) sel.parentElement.innerHTML='<span class="note" style="color:var(--ok)">✓ paro agregado ('+min+' min)</span>'; mzLoadDia(function(){}); }
+    else alert(mzErr(x)); },function(e){ alert(mzErr(null,e)); });
+}
+function mzFotoCed(y,caja){
+  _mzFotoY=y;
+  var d=y.datos||{}, rs=d.renglones||[], f=d.fecha||_mzF;
+  var h='<div class="card" style="margin:10px 0"><b style="font-size:13px">Esto leí en la cédula — revísalo antes de programar</b>'+
+    '<div class="note" style="margin-top:3px">Fecha: <b>'+esc(f)+'</b>'+(d.fecha?' (de la foto)':' (la elegida arriba — la foto no la traía)')+'</div>';
+  if(rs.length){
+    h+='<div style="overflow-x:auto;margin-top:8px"><table style="width:100%;border-collapse:collapse;min-width:380px">'+
+       mzTh(['Turno','Banbury','Compuesto','Versión','Mezclas'])+
+       rs.map(function(p){ return mzTd([mzND(p.turno),mzND(p.banbury),mzND(p.compuesto),mzND(p.letra),mzND(p.mezclas_prog)]); }).join('')+'</table></div>';
+    var listos=rs.filter(function(p){ return p.turno>=1&&p.turno<=3&&p.banbury>=1&&p.banbury<=5&&p.compuesto&&p.mezclas_prog>0; });
+    var manuales=rs.length-listos.length;
+    if(manuales>0) h+='<div class="note" style="margin-top:6px;color:var(--warn)">'+manuales+' renglón(es) traen datos no disponibles — esos van a mano.</div>';
+    if(listos.length) h+='<button class="btn" style="margin:10px 0 0" onclick="mzFotoGuardaCed()">Programar los '+listos.length+' renglones leídos</button>';
+  } else h+='<div class="note" style="margin-top:8px">No leí renglones en la foto.</div>';
+  if((d.dudas||[]).length) h+='<div class="note" style="margin-top:8px;color:var(--warn)"><b>Dudas de la lectura:</b> '+d.dudas.map(function(x){ return esc(x); }).join(' · ')+'</div>';
+  h+=mzFotoCosto(y)+'</div>';
+  if(caja) caja.innerHTML=h;
+}
+function mzFotoGuardaCed(){
+  var y=_mzFotoY; if(!y) return;
+  var d=y.datos||{}, f=d.fecha||_mzF;
+  var listos=(d.renglones||[]).filter(function(p){ return p.turno>=1&&p.turno<=3&&p.banbury>=1&&p.banbury<=5&&p.compuesto&&p.mezclas_prog>0; });
+  if(!listos.length) return;
+  var i=0, oks=0, errs=0;
+  function uno(){
+    if(i>=listos.length){ alert('Listo: '+oks+' renglones programados'+(errs?(' · '+errs+' con error'):'')); mzLoadDia(mzProgPaint); return; }
+    var p=listos[i++];
+    var cat=(_mzCat&&_mzCat.compuestos||[]).filter(function(c){ return c.nombre.toUpperCase().trim()===String(p.compuesto).toUpperCase().trim(); })[0];
+    SB.rpc('hb_mez_programa_alta',{p:{fecha:f,turno:p.turno,banbury:p.banbury,
+      compuesto_id:cat?cat.id:null, compuesto_txt:cat?null:p.compuesto,
+      letra:p.letra||null, mezclas_prog:p.mezclas_prog}}).then(function(r){
+        var x=r&&r.data; if(x&&x.ok) oks++; else errs++; uno();
+      },function(){ errs++; uno(); });
+  }
+  uno();
+}
+
 /* ---- Excel de salida (.xls con 3 hojas, sin dependencias) ---- */
 function mzXCell(v){ v=(v==null?'':String(v)); var n=(v!==''&&isFinite(v)&&!/^0[0-9]/.test(v));
   return '<Cell><Data ss:Type="'+(n?'Number':'String')+'">'+String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</Data></Cell>'; }
@@ -9348,7 +9511,9 @@ function mzProgPaint(){
          '<button class="btn ghost" style="margin:0;width:auto;padding:7px 10px;font-size:12px;flex:none" onclick="mzDelProg('+p.id+')">Quitar</button></div></div>';
     });
   });
-  h+='<div class="card" style="border-style:dashed"><b style="font-size:13px">Programar</b>'+
+  h+='<div id="mzp-foto"></div>';
+  h+='<div class="card" style="border-style:dashed"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><b style="font-size:13px">Programar</b>'+
+     '<button class="btn" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzFoto(\'cedula\')">📷 Foto de la cédula</button></div>'+
      '<div style="display:flex;gap:7px;margin-top:8px;flex-wrap:wrap">'+
      '<select id="mzp-t" style="padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px"><option value="1">Turno 1</option><option value="2">Turno 2</option><option value="3">Turno 3</option></select>'+
      '<select id="mzp-b" style="padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+[1,2,3,4,5].map(function(b){ return '<option value="'+b+'">BB'+b+'</option>'; }).join('')+'</select></div>'+

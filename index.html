@@ -9595,20 +9595,35 @@ function mzSemPaint(){
      '</div>';
   var maxKg=1; mats.forEach(function(m){ if((+m.kg_periodo||0)>maxKg) maxKg=+m.kg_periodo; });
   var ve=x.ve_precio;
+  /* orden de Carlos (17-ago): MP · usado en periodo · restante · kg/día ·
+     costo de lo usado · último precio con su fecha (chiquita) · cómo va.
+     "Restante" aún NO existe como dato (faltan los KILOS de cada compra):
+     va "no disponible" — prohibido aproximar. */
+  var ND='<span class="note">no disponible</span>';
+  var cab = ve ? ['Materia prima','Usado en el periodo','Restante','Kg/día prom.','Costo de lo usado','Último precio','Cómo va']
+               : ['Materia prima','Usado en el periodo','Restante','Kg/día prom.','Cómo va'];
   h+='<div class="card"><b style="font-size:13px">Ordenados por lo que más se consume</b>'+
-     mzTabla(['Material','Kg en el periodo','Kg por día',ve?'Último precio':'Compras','Cómo va'],
+     mzTabla(cab,
        mats.map(function(m){
          var l=mzSemLuz(m,dias);
-         var barra='<span style="display:inline-block;width:66px;height:6px;border-radius:4px;background:var(--card2);vertical-align:middle;margin-right:8px;overflow:hidden">'+
+         var barra='<span style="display:inline-block;width:44px;height:6px;border-radius:4px;background:var(--card2);vertical-align:middle;margin-right:7px;overflow:hidden">'+
            '<span style="display:block;height:6px;background:var(--data);width:'+Math.max(3,Math.round((+m.kg_periodo||0)/maxKg*100))+'%"></span></span>';
-         var precio = ve ? (m.precio!=null ? ((m.moneda==='USD'?mzUs(m.precio,4):mzMx(m.precio,4))+' <span class="note">'+esc(m.precio_fecha||'')+'</span>')
-                                           : '<span class="note">sin precio</span>')
-                         : (m.compras_periodo ? mzN(m.compras_periodo)+' <span class="note">compras</span>' : '<span class="note">ninguna</span>');
-         return mzTd(['<b>'+esc(m.codigo)+'</b>'+(m.nombre&&m.nombre!==m.codigo?' <span class="note">'+esc(m.nombre)+'</span>':''),
-           '<span style="white-space:nowrap">'+barra+mzN(m.kg_periodo)+'</span>', mzN(m.kg_por_dia,1), precio,
-           '<span style="color:'+l.c+';font-weight:700">●</span> <span style="font-size:11.5px">'+l.t+'</span>']);
+         var mp='<b>'+esc(m.codigo)+'</b>'+(m.nombre&&m.nombre!==m.codigo?'<div class="note" style="font-size:10px;margin-top:1px">'+esc(m.nombre)+'</div>':'');
+         var usado='<span style="white-space:nowrap">'+barra+mzN(m.kg_periodo)+' <span class="note">kg</span></span>';
+         var costo=(m.costo_mxn!=null)?mzMx(m.costo_mxn,2):ND;
+         var precio=(m.precio!=null)
+           ? ('<span style="white-space:nowrap">'+(m.moneda==='USD'?mzUs(m.precio,4):mzMx(m.precio,4))+'</span>'+
+              (m.precio_fecha?('<div class="note" style="font-size:9.5px;margin-top:1px">compra '+esc(m.precio_fecha)+'</div>'):''))
+           : ND;
+         var semaf='<span style="color:'+l.c+';font-weight:700">●</span> <span style="font-size:11.5px;white-space:nowrap">'+l.t+'</span>';
+         var celdas=[mp, usado, ND, mzN(m.kg_por_dia,1)];
+         if(ve){ celdas.push(costo, precio); }
+         celdas.push(semaf);
+         return mzTd(celdas);
        }))+
-     '<div class="note" style="margin-top:8px">Rojo = lleva más del doble del periodo sin comprarse (o nunca se capturó su precio). Ámbar = más de '+mzN(dias)+' días. Verde = compra reciente.</div></div>';
+     '<div class="note" style="margin-top:8px">Rojo = lleva más del doble del periodo sin comprarse (o nunca se capturó su precio). Ámbar = más de '+mzN(dias)+' días. Verde = compra reciente.</div>'+
+     (ve?'<div class="note" style="margin-top:4px">El «costo de lo usado» se valúa día por día: los kilos de cada fecha con el precio y la tasa DOF de esa fecha. Si a un material le faltó precio algún día, sale «no disponible» — no se suman pedazos.</div>':'')+
+     '<div class="note" style="margin-top:4px">«Restante» necesita los <b>kilos</b> de cada compra, y ese dato todavía no entra al sistema: se llenará solo cuando la captura de costos incluya cantidades o cuando se conecte almacén.</div></div>';
   $('s-mezsem').innerHTML=h;
 }
 

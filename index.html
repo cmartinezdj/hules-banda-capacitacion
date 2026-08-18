@@ -9045,7 +9045,8 @@ function mzMetaEdit(){
     else alert((x&&x.detalle)||mzErr(x)); },function(e){ alert(mzErr(null,e)); });
 }
 function mzErr(x,e){ var m={no_autorizado:'No tienes permiso para esto.',datos:'Faltan datos: revisa fecha, turno y banbury.',rango:'El rango es muy grande (máximo 2 meses).',maximo_500:'Máximo 500 renglones por tanda.',no_existe:'Ese registro ya no existe.',valor:'El valor no es válido.',
-    limite:'Ya mandaste varias órdenes seguidas. Espera un rato.',ya_tiene:'Ese paro ya está ligado a un folio.'};
+    limite:'Ya mandaste varias órdenes seguidas. Espera un rato.',ya_tiene:'Ese paro ya está ligado a un folio.',
+    sin_receta:'Sin receta digitalizada — falta su hoja GT.'};
   if(x&&x.error&&m[x.error]) return m[x.error];
   /* si la llamada falló, decir la verdad: puede ser el servidor, no siempre la conexión */
   var det=''; try{ det=(e&&(e.message||e.details||e.hint))||''; }catch(_){}
@@ -9937,16 +9938,21 @@ function mzDesgPaint(){
        '<span><b style="font-size:17px;color:'+((t.mezclas>=(prg.programado||0))?'var(--ok)':'var(--warn)')+'">'+mzPct(t.mezclas,prg.programado||0)+'</b> <span class="note">cumplimiento</span></span></div></div>';
 
   } else if(x.tema==='costos'){
-    var cc=x.por_compuesto||[], totMx=0, totUs=0;
-    cc.forEach(function(c){ totMx+=(+c.costo_total_mxn||0); totUs+=(+c.costo_total_usd||0); });
-    var kgTot=t.kg||0;
+    var cc=x.por_compuesto||[], totMx=0, totUs=0, kgCost=0, usdReal=0, sinRec=0;
+    cc.forEach(function(c){ totMx+=(+c.costo_total_mxn||0); totUs+=(+c.costo_total_usd||0);
+      if(c.costeable===false){ sinRec++; } else { kgCost+=(+c.kg||0); usdReal+=(+c.usd_total||0); } });
+    /* el $/kg se divide entre los kilos COSTEADOS: sin reproceso y sin los compuestos
+       sin receta — antes mezclaba denominadores y salía ~4% barato (auditoría A1) */
     h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:9px;margin-bottom:12px">'+
        '<div class="card"><div class="note">Costo de materia prima</div><b style="font-size:20px;color:var(--data)">'+mzMx(totMx)+'</b>'+
-         '<div class="note" style="margin-top:2px">'+mzUs(totUs)+'</div></div>'+
-       '<div class="card"><div class="note">Costo por kilo (promedio)</div><b style="font-size:20px">'+mzMx(kgTot?totMx/kgTot:null,4)+'</b>'+
-         '<div class="note" style="margin-top:2px">'+mzUs(kgTot?totUs/kgTot:null,4)+' / kg</div></div>'+
-       '<div class="card"><div class="note">Sensibilidad al dólar</div><b style="font-size:20px;color:var(--warn)">'+mzMx(totUs)+'</b>'+
-         '<div class="note" style="margin-top:2px">+$1 al tipo de cambio ≈ '+mzMx(totUs)+' más al mes</div></div></div>';
+         '<div class="note" style="margin-top:2px">'+mzUs(totUs)+' · sin reproceso</div></div>'+
+       '<div class="card"><div class="note">Costo por kilo costeado</div><b style="font-size:20px">'+mzMx(kgCost?totMx/kgCost:null,4)+'</b>'+
+         '<div class="note" style="margin-top:2px">'+mzUs(kgCost?totUs/kgCost:null,4)+' / kg · sobre '+mzN(kgCost)+' kg</div></div>'+
+       /* la parte que DE VERDAD se compra en dólares: +$1 de tasa = +ese monto en pesos,
+          del periodo en pantalla (regla de Carlos: cada día su tasa; lo ya comprado
+          conserva el precio de su día) */
+       '<div class="card"><div class="note">Comprado en dólares</div><b style="font-size:20px;color:var(--warn)">'+mzUs(usdReal||totUs)+'</b>'+
+         '<div class="note" style="margin-top:2px">+$1 al dólar ≈ '+mzMx(usdReal||totUs)+' más en este periodo</div></div></div>';
     h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Costo por compuesto — números exactos</b>'+
        '<div class="note" style="margin-top:2px">Tasa DOF $'+mzN(x.fx,4)+' del '+esc(x.fx_fecha)+'. Toca un renglón para el detalle completo.</div>'+
        mzTabla(['Compuesto','Mezclas','$/kg MXN','$/kg USD','$/mezcla MXN','Costo total MXN','Costo total USD','% del gasto','Venta','Utilidad'],
@@ -9958,12 +9964,13 @@ function mzDesgPaint(){
             var costoU=(ven.unidad==='mezcla')?(+c.costo_batch_mxn||0):(+c.costo_kg_mxn||0);
             if(costoU>0){ var u=pv-costoU; util='<span style="color:'+(u>=0?'var(--ok)':'var(--bad)')+'">'+mzMx(u,2)+'</span> <span class="note">'+mzN(pv?u/pv*100:0,1)+'%</span>'; }
           }
-          return mzTd([esc(c.compuesto||'¿?'),mzN(c.mezclas),mzMx(c.costo_kg_mxn,4),mzUs(c.costo_kg_usd,4),
-            mzMx(c.costo_batch_mxn,2),mzMx(c.costo_total_mxn,2),mzUs(c.costo_total_usd,2),
-            mzPct(c.costo_total_mxn,totMx),vtx,util],
+          var sr=(c.costeable===false), SR='<span class="note" style="color:var(--warn)">sin receta</span>';
+          return mzTd([esc(c.compuesto||'¿?'),mzN(c.mezclas),sr?SR:mzMx(c.costo_kg_mxn,4),sr?SR:mzUs(c.costo_kg_usd,4),
+            sr?SR:mzMx(c.costo_batch_mxn,2),sr?SR:mzMx(c.costo_total_mxn,2),sr?SR:mzUs(c.costo_total_usd,2),
+            sr?SR:mzPct(c.costo_total_mxn,totMx),vtx,sr?SR:util],
             c.compuesto_id?('renderMezComp('+c.compuesto_id+',\''+jsAttr(c.compuesto||'')+'\')'):''); }))+
        ((cc.filter(function(c){ return (c.faltantes||[]).length; }).length)?
-         '<div class="note" style="margin-top:7px;color:var(--warn)">Algunos compuestos tienen materiales sin precio de compra — no van en el total. Se ven en la ficha de cada uno.</div>':'')+'</div>';
+         '<div class="note" style="margin-top:7px;color:var(--warn)">Hay renglones sin precio, sin amarrar al catálogo o sin receta — ya no se esconden: el detalle sale en la ficha de cada compuesto.</div>':'')+'</div>';
     h+='<div class="card"><b style="font-size:13px">Materiales · últimas compras</b>'+
        mzTabla(['Material','Precio','Moneda','En pesos','Última compra','Compras'],
         (x.materiales||[]).map(function(m){
@@ -10197,8 +10204,10 @@ function mzCierrePinta(tipo,d1,d2,res){
   var t=p.tot||{}, ta=p.tot_ant||{}, ty=p.tot_ay||{};
   function fila(k,v,extra){ return '<tr><td>'+k+'</td><td class="n"><b>'+v+'</b></td><td class="n mut">'+(extra||'')+'</td></tr>'; }
   var kg=t.kg||0, mez=t.mezclas||0;
-  var costoTot=0, costoKg=null;
-  if(c&&c.por_compuesto){ c.por_compuesto.forEach(function(x){ costoTot+=(+x.costo_total_mxn||0); }); costoKg=kg?costoTot/kg:null; }
+  var costoTot=0, costoKg=null, kgCost=0;
+  if(c&&c.por_compuesto){ c.por_compuesto.forEach(function(x){ costoTot+=(+x.costo_total_mxn||0);
+      if(x.costeable!==false) kgCost+=(+x.kg||0); });
+    costoKg=kgCost?costoTot/kgCost:null; }   /* entre kilos costeados, no totales (A1) */
   var paros=(e&&e.paros||[]).reduce(function(a,x){ return a+(+x.minutos||0); },0);
   var tit='Cierre de '+(tipo==='semana'?'semana':'mes')+' · Mezclado';
   var html='<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>'+tit+'</title><style>'+
@@ -10226,7 +10235,7 @@ function mzCierrePinta(tipo,d1,d2,res){
      '<div class="k"><b>'+mzN(t.reproceso||0)+'</b><span>de reproceso ('+mzPct(t.reproceso||0,mez)+')</span></div>'+
      '<div class="k"><b>'+mzN(t.quemadas||0)+'</b><span>mezclas quemadas</span></div>'+
      (c?('<div class="k"><b>'+mzMx(costoTot,2)+'</b><span>costo de materia prima</span></div>'+
-         '<div class="k"><b>'+mzMx(costoKg,4)+'</b><span>por kilo</span></div>'):'')+
+         '<div class="k"><b>'+mzMx(costoKg,4)+'</b><span>MP por kilo costeado (sin reproceso)</span></div>'):'')+
    '</div>'+
    '<h2>Comparativo</h2><table><tr><th>Concepto</th><th class="n">Este periodo</th><th class="n">Periodo anterior</th><th class="n">Año pasado</th></tr>'+
      '<tr><td>Mezclas</td><td class="n">'+mzN(mez)+'</td><td class="n">'+mzN(ta.mezclas)+'</td><td class="n">'+mzN(ty.mezclas)+'</td></tr>'+
@@ -10274,10 +10283,14 @@ function mzCompPaint(x){
      '<div class="card"><div class="note">Histórico total</div><b style="font-size:20px">'+mzN(hi.mezclas)+'</b><div class="note">'+esc(hi.desde||'—')+' → '+esc(hi.hasta||'—')+'</div></div></div>';
   if(x.admin){
     if(co&&co.ok&&co.fx){
+      var ct=x.costo_total;
       var vt=x.venta, filas=[
-        ['Costo de materia prima por kilo', mzMx(co.costo_kg_mxn,4), mzUs(co.costo_kg_usd,4)],
-        ['Costo por mezcla ('+mzN(co.peso_total_kg,3)+' kg)', mzMx(co.costo_batch_mxn,2), mzUs(co.costo_batch_usd,2)],
-        ['Costo de lo producido en el periodo', mzMx((+co.costo_batch_mxn||0)*(p.mezclas||0),2), mzUs((+co.costo_batch_usd||0)*(p.mezclas||0),2)]];
+        ['Costo de materia prima por kilo (hoy)', mzMx(co.costo_kg_mxn,4), mzUs(co.costo_kg_usd,4)],
+        ['Costo por mezcla ('+mzN(co.peso_total_kg,3)+' kg, hoy)', mzMx(co.costo_batch_mxn,2), mzUs(co.costo_batch_usd,2)],
+        /* el total del periodo va día por día (tasa y precios de CADA día) —
+           mismo criterio que la tabla de costos, para que cuadren (A6) */
+        (ct&&ct.dias?['Costo de lo producido en el periodo (día por día)', mzMx(+ct.mxn||0,2), mzUs(+ct.usd||0,2)]
+                    :['Costo de lo producido en el periodo', mzMx((+co.costo_batch_mxn||0)*(p.mezclas||0),2), mzUs((+co.costo_batch_usd||0)*(p.mezclas||0),2)])];
       if(vt&&vt.precio){
         var pv=+vt.precio*(vt.moneda==='USD'?(+co.fx||0):1);
         var cu=(vt.unidad==='mezcla')?(+co.costo_batch_mxn||0):(+co.costo_kg_mxn||0);

@@ -9577,13 +9577,19 @@ function mzFotoBitaVieja(y,caja){
   h+=mzFotoCosto(y)+'</div>';
   if(caja) caja.innerHTML=h;
 }
-/* la causa de la foto contra la lista oficial: coincidencia simple sin acentos */
+/* la causa de la foto contra la lista oficial: sin acentos, sin plural, y con
+   las abreviaturas del piso ("C/C" = cambio de compuesto). REGLA DE ORO de
+   Carlos: aquí NO se crean causas nuevas — solo se reconocen las oficiales;
+   lo que no coincida lo escoge el capturista a mano (o no se captura). */
 function mzFotoCausa(txt){
   if(!txt) return null;
   function nrm(x){ return String(x).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/ +/g,' ').trim(); }
-  var q=nrm(txt), cs=(_mzCat&&_mzCat.causas)||[];
+  function sing(x){ return x.split(' ').map(function(w){ return w.length>3&&/s$/.test(w)?w.slice(0,-1):w; }).join(' '); }
+  var q=nrm(txt);
+  if(q==='c c'||q==='cc') q='cambio de compuesto';        /* abreviatura real del piso */
+  var qs=sing(q), cs=(_mzCat&&_mzCat.causas)||[];
   for(var i=0;i<cs.length;i++) if(nrm(cs[i].nombre)===q) return cs[i];
-  for(var j=0;j<cs.length;j++){ var n=nrm(cs[j].nombre); if(n.indexOf(q)>-1||q.indexOf(n)>-1) return cs[j]; }
+  for(var j=0;j<cs.length;j++){ var n=sing(nrm(cs[j].nombre)); if(n.indexOf(qs)>-1||qs.indexOf(n)>-1) return cs[j]; }
   return null;
 }
 function mzFotoGuardaBita(){

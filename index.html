@@ -9515,13 +9515,33 @@ function mzFotoBita(y,caja){
        '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><b style="font-size:13px">BANBURY '+b.banbury+'</b>'+cuadre+
        '<span class="note">Operador: '+mzND(b.operador)+'</span></div>';
     if((b.corridas||[]).length){
-      h+='<div style="overflow-x:auto;margin-top:7px"><table style="width:100%;border-collapse:collapse;min-width:330px">'+
-         mzTh(['Compuesto','Versión','Mezclas'])+
-         b.corridas.map(function(c){ if(c.compuesto&&c.mezclas!=null) totLegibles++;
-           return mzTd([mzND(c.compuesto),mzND(c.letra),mzND(c.mezclas)]); }).join('')+'</table></div>';
+      h+='<div style="overflow-x:auto;margin-top:7px"><table style="width:100%;border-collapse:collapse;min-width:430px">'+
+         mzTh(['Compuesto','Versión','Mezclas','Quemadas','Reproceso'])+
+         b.corridas.map(function(c,ci){ if(c.compuesto&&c.mezclas!=null) totLegibles++;
+           var rep=!!c.reproceso||String(c.letra||'').trim().toUpperCase()==='R';
+           /* reproceso: el origen lo escoge el capturista con las reglas de
+              Alejandro (el papel no lo trae). HNA-4 lleva banbury por regla suya. */
+           var ori='';
+           if(rep){
+             var esHNA4=/HNA-?4/i.test(String(c.compuesto||''));
+             ori='<select id="mzfr-o'+b.banbury+'_'+ci+'" style="padding:6px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:11.5px">'+
+               '<option value="">— ¿de dónde salió? —</option>'+
+               MZ_ORG.map(function(o){ return '<option value="'+o[0]+'"'+((esHNA4&&o[0]==='banbury')?' selected':'')+'>'+esc(o[1])+'</option>'; }).join('')+
+               '</select>';
+           }
+           return mzTd([mzND(c.compuesto),mzND(c.letra),mzND(c.mezclas),
+             (c.quemadas!=null?esc(String(c.quemadas)):'<span class="note">—</span>'),
+             rep?('<span style="color:var(--warn);font-weight:700">SÍ</span> '+ori):'no']);
+         }).join('')+'</table></div>';
     } else h+='<div class="note" style="margin-top:6px">Sin corridas leídas en esta columna.</div>';
     (b.paros||[]).forEach(function(p,i){
-      var cau=mzFotoCausa(p.causa), key=b.banbury+'_'+i;
+      var key=b.banbury+'_'+i;
+      /* comida y baño: programado, NO tiempo muerto (regla de Alejandro) */
+      if(p.programado||mzEsProgramado(p.causa)){
+        h+='<div class="note" style="margin-top:7px;opacity:.75">🍽 '+mzND(p.causa)+' · '+mzND(p.minutos)+' min — <b>paro programado</b>, no se captura como tiempo muerto (la jornada ya lo descuenta).</div>';
+        return;
+      }
+      var cau=mzFotoCausa(p.causa);
       h+='<div style="display:flex;gap:7px;align-items:center;margin-top:7px;flex-wrap:wrap">'+
         '<span class="note" style="flex:1;min-width:120px">⏱ '+mzND(p.causa)+' · '+mzND(p.minutos)+' min</span>'+
         '<select id="mzfp-c'+key+'" style="padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:12px;max-width:240px">'+
@@ -9539,7 +9559,7 @@ function mzFotoBita(y,caja){
   }
   if(totLegibles) h+='<button class="btn" style="margin:12px 0 0" onclick="mzFotoGuardaBita()">Guardar las '+totLegibles+' corridas legibles (todos los banburys)</button>';
   else h+='<div class="note" style="margin-top:8px">No hay corridas completas para guardar.</div>';
-  h+='<div class="note" style="margin-top:8px">Este formato no trae quemadas ni número de corrida — si hubo quemadas, captúralas a mano. El operador viene con nombre; el sistema todavía no lo guarda (pendiente de decidirlo con dirección).</div>';
+  h+='<div class="note" style="margin-top:8px">Las <b>mezclas quemadas</b> se leen de su columna (desde este mes la trae la hoja); si sale “—” es que no venía y se captura a mano. El <b>reproceso</b> se detecta por la versión “R” — escoge de dónde salió. El operador viene con nombre; el sistema aún no lo guarda (pendiente con dirección).</div>';
   if((d.dudas||[]).length) h+='<div class="note" style="margin-top:8px;color:var(--warn)"><b>Dudas de la lectura:</b> '+d.dudas.map(function(x){ return esc(x); }).join(' · ')+'</div>';
   h+=mzFotoCosto(y)+'</div>';
   if(caja) caja.innerHTML=h;
@@ -9577,6 +9597,14 @@ function mzFotoBitaVieja(y,caja){
   h+=mzFotoCosto(y)+'</div>';
   if(caja) caja.innerHTML=h;
 }
+/* REGLA DE ALEJANDRO (19-ago): comida y baño son paros PROGRAMADOS, no tiempo
+   muerto — los minutos de jornada (420/390/450) YA los descuentan. Si se
+   capturaran como paro se descontarían dos veces y la velocidad saldría falsa.
+   Por eso NO están en las 95 causas oficiales y aquí no se dejan capturar.   */
+function mzEsProgramado(txt){
+  var t=String(txt||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  return /comida|bano|desayuno|almuerzo/.test(t);
+}
 /* la causa de la foto contra la lista oficial: sin acentos, sin plural, y con
    las abreviaturas del piso ("C/C" = cambio de compuesto). REGLA DE ORO de
    Carlos: aquí NO se crean causas nuevas — solo se reconocen las oficiales;
@@ -9599,11 +9627,15 @@ function mzFotoGuardaBita(){
   if(d.banburys){
     d.banburys.forEach(function(b){
       if(!(b&&b.banbury>=1&&b.banbury<=5)) return;
-      (b.corridas||[]).forEach(function(c){
-        if(c.compuesto&&c.mezclas!=null&&c.mezclas>=0)
-          filas.push({fecha:f, turno:t, banbury:b.banbury, compuesto_txt:c.compuesto,
-            letra:c.letra||null, num_corrida:null, mezclas:+c.mezclas, quemadas:0,
-            nota:'leída por foto'});
+      (b.corridas||[]).forEach(function(c,ci){
+        if(!(c.compuesto&&c.mezclas!=null&&c.mezclas>=0)) return;
+        var rep=!!c.reproceso||String(c.letra||'').trim().toUpperCase()==='R';
+        var os=$('mzfr-o'+b.banbury+'_'+ci);
+        filas.push({fecha:f, turno:t, banbury:b.banbury, compuesto_txt:c.compuesto,
+          letra:c.letra||null, num_corrida:null, mezclas:+c.mezclas,
+          quemadas:(c.quemadas!=null?+c.quemadas:0),
+          es_reproceso:rep, origen:(rep&&os&&os.value)?os.value:null,
+          nota:'leída por foto'});
       });
     });
   } else {
@@ -9626,20 +9658,32 @@ function mzFotoGuardaParo(key,min,f,t,b){
     if(x&&x.ok){ if(sel) sel.parentElement.innerHTML='<span class="note" style="color:var(--ok)">✓ paro agregado ('+min+' min)</span>'; mzLoadDia(function(){}); }
     else alert(mzErr(x)); },function(e){ alert(mzErr(null,e)); });
 }
+/* v3_32: la CÉDULA REAL (R-BB-08) es UNA hoja = UN turno de UN banbury, con
+   número de operador, familia, marca EXP e indicaciones de laboratorio. */
 function mzFotoCed(y,caja){
   _mzFotoY=y;
   var d=y.datos||{}, rs=d.renglones||[], f=d.fecha||_mzF;
+  var t=d.turno, b=d.banbury;
   var h='<div class="card" style="margin:10px 0"><b style="font-size:13px">Esto leí en la cédula — revísalo antes de programar</b>'+
-    '<div class="note" style="margin-top:3px">Fecha: <b>'+esc(f)+'</b>'+(d.fecha?' (de la foto)':' (la elegida arriba — la foto no la traía)')+'</div>';
+    '<div class="note" style="margin-top:3px">Fecha <b>'+mzND(f)+'</b> · Turno <b>'+mzND(t)+'</b> · Banbury <b>'+mzND(b)+'</b>'+
+    (d.fecha?' (de la hoja)':' (la elegida arriba — la hoja no la traía)')+'</div>'+
+    '<div class="note" style="margin-top:2px">Operador: '+mzND(d.operador)+(d.operador_n?' <b>#'+esc(String(d.operador_n))+'</b>':'')+
+    ' · Supervisor: '+mzND(d.supervisor)+'</div>';
+  if(!(t>=1&&t<=3)||!(b>=1&&b<=5))
+    h+='<div class="note" style="margin-top:6px;color:var(--warn)">⚠ El turno o el banbury no se leyeron: se usarán los de arriba ('+esc(String(_mzT))+' / BB'+esc(String(_mzB))+'). Corrígelos si no son.</div>';
   if(rs.length){
-    h+='<div style="overflow-x:auto;margin-top:8px"><table style="width:100%;border-collapse:collapse;min-width:380px">'+
-       mzTh(['Turno','Banbury','Compuesto','Versión','Mezclas'])+
-       rs.map(function(p){ return mzTd([mzND(p.turno),mzND(p.banbury),mzND(p.compuesto),mzND(p.letra),mzND(p.mezclas_prog)]); }).join('')+'</table></div>';
-    var listos=rs.filter(function(p){ return p.turno>=1&&p.turno<=3&&p.banbury>=1&&p.banbury<=5&&p.compuesto&&p.mezclas_prog>0; });
+    h+='<div style="overflow-x:auto;margin-top:8px"><table style="width:100%;border-collapse:collapse;min-width:430px">'+
+       mzTh(['Familia','Compuesto','Versión','Mezclas','Indicación de laboratorio'])+
+       rs.map(function(p){ return mzTd([mzND(p.familia),mzND(p.compuesto)+(p.es_exp?' <span class="chipst" style="font-size:9px;padding:2px 6px">EXP</span>':''),
+         mzND(p.letra),mzND(p.mezclas_prog),
+         p.indicacion?('<span class="note" style="font-size:10.5px">'+esc(p.indicacion)+'</span>'):'<span class="note">—</span>']); }).join('')+'</table></div>';
+    var listos=rs.filter(function(p){ return p.compuesto&&p.mezclas_prog>0; });
     var manuales=rs.length-listos.length;
     if(manuales>0) h+='<div class="note" style="margin-top:6px;color:var(--warn)">'+manuales+' renglón(es) traen datos no disponibles — esos van a mano.</div>';
     if(listos.length) h+='<button class="btn" style="margin:10px 0 0" onclick="mzFotoGuardaCed()">Programar los '+listos.length+' renglones leídos</button>';
-  } else h+='<div class="note" style="margin-top:8px">No leí renglones en la foto.</div>';
+  } else h+='<div class="note" style="margin-top:8px">No leí renglones en la hoja.</div>';
+  if(d.observaciones) h+='<div class="note" style="margin-top:8px">📝 Observaciones de la hoja: '+esc(d.observaciones)+'</div>';
+  h+='<div class="note" style="margin-top:6px">La familia y las indicaciones de laboratorio (ancho y espesor) se muestran para que las revises; el sistema todavía no las guarda.</div>';
   if((d.dudas||[]).length) h+='<div class="note" style="margin-top:8px;color:var(--warn)"><b>Dudas de la lectura:</b> '+d.dudas.map(function(x){ return esc(x); }).join(' · ')+'</div>';
   h+=mzFotoCosto(y)+'</div>';
   if(caja) caja.innerHTML=h;
@@ -9647,7 +9691,10 @@ function mzFotoCed(y,caja){
 function mzFotoGuardaCed(){
   var y=_mzFotoY; if(!y) return;
   var d=y.datos||{}, f=d.fecha||_mzF;
-  var listos=(d.renglones||[]).filter(function(p){ return p.turno>=1&&p.turno<=3&&p.banbury>=1&&p.banbury<=5&&p.compuesto&&p.mezclas_prog>0; });
+  /* la hoja es de UN turno y UN banbury: si no se leyeron, se usan los de arriba */
+  var tt=(d.turno>=1&&d.turno<=3)?d.turno:_mzT, bb=(d.banbury>=1&&d.banbury<=5)?d.banbury:_mzB;
+  var listos=(d.renglones||[]).filter(function(p){ return p.compuesto&&p.mezclas_prog>0; })
+    .map(function(p){ return {turno:tt, banbury:bb, compuesto:p.compuesto, letra:p.letra, mezclas_prog:p.mezclas_prog}; });
   if(!listos.length) return;
   var i=0, oks=0, errs=0;
   function uno(){

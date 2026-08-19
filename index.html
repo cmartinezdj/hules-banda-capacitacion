@@ -2516,6 +2516,17 @@ var _prevShown=null;
 function show(name){
   var cambio = (name!==_prevShown);
   _prevShown=name; _screen=name;
+  /* v3_28 (regla de Carlos): al USAR el sistema se revisa si hay versión nueva
+     — sin polling cada segundo. Si ya llegó una, se aplica al entrar a una
+     pantalla segura (nunca a media captura). */
+  try{ hbRevisaVersion(); }catch(e){}
+  try{
+    if(window._hbVerNueva && cambio && window.HB_SEGURAS && HB_SEGURAS[name]){
+      window._hbVerNueva=false;
+      flash('✨ Actualizando a la versión nueva…');
+      setTimeout(function(){ location.reload(); }, 400);
+    }
+  }catch(e){}
   SCREENS.forEach(function(s){ var el=$('s-'+s); if(el) el.classList.toggle('hide', s!==name); });
   // nav activo (course/quiz/result/pay cuentan como "home")
   var navKey = (name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='dia'||name==='pend') ? 'home' : ((name==='thread'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='wconvs'||name==='perfilpub')?'msgs':((name==='encuestas'||name==='nom35'||name==='perm'||name==='cal'||name==='newspost')?'news':(name==='perfil'?(S.admin?'hr':'home'):(name==='docs'?((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home')):name))));
@@ -6551,17 +6562,56 @@ function pedTipoL(t){ for(var i=0;i<PED_TIPOS.length;i++){ if(PED_TIPOS[i][0]===
 function pedEstTag(e){ var x=PED_EST[e]||{l:e,c:'var(--mut)'}; return '<span class="chipst" style="border-color:color-mix(in srgb,'+x.c+' 45%,transparent);color:'+x.c+'">'+esc(x.l)+'</span>'; }
 
 /* ---------- datos ---------- */
-var _pedTry=0;
+var _pedTry=0, _pedFin=false, PED_PAGINA=300;
 function pedV3(){ return !!(V3_ON && S && S.clave && Array.isArray(DBC.peds)); }
 function pedsGet(){ return pedV3()? (DBC.peds||[]) : lsGet('hb_pedidos'); }
 function maqsGet(){ var a=(V3_ON && Array.isArray(DBC.maqs))? DBC.maqs : lsGet('hb_maquinas'); return (a||[]).filter(function(m){ return m && m.nombre; }); }
 function pedsLoad(cb){
+  /* v3_28: bajan los 300 MÁS NUEVOS (antes bajaba la tabla completa en orden
+     viejo→nuevo: al pasar de 1,000 el tope de la API habría cortado los más
+     recientes sin avisar). La base de datos guarda TODO siempre — esto solo
+     decide cuánto baja la pantalla de un jalón; lo antiguo se pide con el
+     botón "ver más". */
   if(!sbReady()){ if(cb) cb(); return; }
-  try{ SB.from('pedidos').select('data').order('ts',{ascending:true}).then(function(r){
-    if(!r.error && r.data){ _pedTry=0; DBC.peds=r.data.map(function(x){ return x.data; }); pedNotifyCheck(); sbRerender(); if(cb) cb(); }
+  try{ SB.from('pedidos').select('data').order('ts',{ascending:false}).limit(PED_PAGINA).then(function(r){
+    if(!r.error && r.data){ _pedTry=0; _pedFin=(r.data.length<PED_PAGINA);
+      DBC.peds=r.data.map(function(x){ return x.data; }).reverse();
+      pedNotifyCheck(); sbRerender(); if(cb) cb(); }
     else if(r.error && _pedTry<4 && !_recTablaFalta(r.error)){ _pedTry++; setTimeout(pedsLoad, Math.min(20000, 2000*_pedTry)); if(cb) cb(); }
     else if(cb) cb();
   }); }catch(e){ if(cb) cb(); }
+}
+function pedsMas(){
+  if(!sbReady() || _pedFin){ return; }
+  var tsMin=null; (DBC.peds||[]).forEach(function(p){ var t=p&&(p.tsSol||0); if(t&&(tsMin==null||t<tsMin)) tsMin=t; });
+  var q=SB.from('pedidos').select('data').order('ts',{ascending:false}).limit(PED_PAGINA);
+  if(tsMin!=null) q=q.lt('ts', tsMin);
+  q.then(function(r){
+    if(r.error||!r.data){ alert(mzErr(null,r&&r.error)); return; }
+    _pedFin=(r.data.length<PED_PAGINA);
+    var ya={}; (DBC.peds||[]).forEach(function(p){ if(p&&p.id) ya[p.id]=1; });
+    var nuevos=r.data.map(function(x){ return x.data; }).filter(function(p){ return p&&!ya[p.id]; });
+    DBC.peds=nuevos.reverse().concat(DBC.peds||[]);
+    window._pedHistN=(window._pedHistN||30)+PED_PAGINA;
+    renderPedidos();
+  });
+}
+/* v3_28: el cambio llega POR PIEZA — ya no se re-baja la tabla completa en
+   cada movimiento (con 505 celulares eso era una tormenta de datos). */
+function pedCambio(ev){
+  try{
+    if(!Array.isArray(DBC.peds)){ pedsLoad(); return; }
+    var t=ev&&ev.eventType, fila=ev&&ev['new']&&ev['new'].data;
+    if(t==='DELETE'){
+      var id=ev.old&&ev.old.id;
+      if(!id){ pedsLoad(); return; }
+      DBC.peds=DBC.peds.filter(function(p){ return p&&('pd-'+p.folio)!==id&&p.id!==id; });
+    } else if(fila){
+      var i=-1; DBC.peds.forEach(function(p,j){ if(p&&p.id===fila.id) i=j; });
+      if(i>-1) DBC.peds[i]=fila; else DBC.peds.push(fila);
+    } else { pedsLoad(); return; }
+    pedNotifyCheck(); sbRerender();
+  }catch(e){ try{ pedsLoad(); }catch(_){} }
 }
 function maqsLoad(){
   if(!sbReady()) return;
@@ -6572,7 +6622,7 @@ function maqsLoad(){
 function pedInit(){
   if(window._pedInited || !sbReady()) return; window._pedInited=true;
   pedsLoad(); maqsLoad();
-  try{ SB.channel('rt-pedidos').on('postgres_changes',{event:'*',schema:'public',table:'pedidos'},function(){ pedsLoad(); }).subscribe(); }catch(e){}
+  try{ SB.channel('rt-pedidos').on('postgres_changes',{event:'*',schema:'public',table:'pedidos'},function(ev){ pedCambio(ev); }).subscribe(); }catch(e){}
   try{ SB.channel('rt-maquinas').on('postgres_changes',{event:'*',schema:'public',table:'maquinas'},function(){ maqsLoad(); }).subscribe(); }catch(e){}
 }
 
@@ -6978,9 +7028,11 @@ function renderPedidos(){
       '<div class="statile"><div class="n">'+done.length+'</div><div class="l">Reparaciones</div></div>'+
       '<div class="statile"><div class="n">'+(done.length?fmin(repMin):'—')+'</div><div class="l">Prom. reparación</div></div>'+
       '<div class="statile"><div class="n">'+(respMin?fmin(respMin):'—')+'</div><div class="l">Prom. respuesta</div></div>'+
-    '</div><div class="note" style="margin-top:6px">Estos números se calculan solos con las horas reales de cada pedido.</div></div>';
+    '</div><div class="note" style="margin-top:6px">Estos números se calculan solos con las horas reales de cada pedido (sobre los cargados en pantalla).</div></div>';
     if(!hist.length) h+='<div class="card"><div class="note">Aún no hay pedidos cerrados.</div></div>';
-    hist.slice(0,30).forEach(function(p){ h+=pedCardAdmin(p,true); });
+    hist.slice(0, window._pedHistN||30).forEach(function(p){ h+=pedCardAdmin(p,true); });
+    if(hist.length>(window._pedHistN||30)) h+='<div class="card" style="text-align:center"><button class="btn ghost" style="margin:0;width:auto;padding:9px 16px;font-size:12.5px" onclick="window._pedHistN=(window._pedHistN||30)+60;renderPedidos()">Ver más del historial</button></div>';
+    if(!_pedFin) h+='<div class="card" style="text-align:center"><button class="btn ghost" style="margin:0;width:auto;padding:9px 16px;font-size:12.5px" onclick="pedsMas()">Bajar pedidos más antiguos</button><div class="note" style="margin-top:5px">La base guarda TODO el historial; la pantalla lo baja por partes.</div></div>';
   }
   else { h+=pedMaqBlock(); }
   $('s-pedidos').innerHTML=h; show('pedidos');
@@ -9018,11 +9070,33 @@ function mzFxLoad(forzar){
 }
 var MZ_ORG=[['tubuladora_precurado','Tubuladora precurado'],['tubuladora_cojin','Tubuladora cojín'],['banbury','Banbury'],['laboratorio','Laboratorio'],['otro','Otro']];
 function mzOrgTxt(k){ for(var i=0;i<MZ_ORG.length;i++) if(MZ_ORG[i][0]===k) return MZ_ORG[i][1]; return k==='sin_origen'?'Sin origen':(k||''); }
+var _mzRTt=null;
+function mzCambioVivo(){
+  /* si otro turno captura mientras esta pantalla está abierta, se refresca
+     sola — pero JAMÁS pisa lo que se esté escribiendo */
+  if(_screen!=='mezcap'&&_screen!=='mezprog') return;
+  clearTimeout(_mzRTt);
+  _mzRTt=setTimeout(function(){
+    try{
+      if(_screen==='mezcap'){ if(mzFormVacio()) mzLoadDia(mzCapPaint); else flash('👀 Un compañero capturó algo nuevo — se verá al terminar lo tuyo.'); }
+      else if(_screen==='mezprog') mzLoadDia(mzProgPaint);
+    }catch(e){}
+  },1200);
+}
+function mzRTArranca(){
+  if(window._mzRT) return; window._mzRT=true;
+  try{ SB.channel('rt-mez')
+    .on('postgres_changes',{event:'*',schema:'public',table:'mez_corridas'},mzCambioVivo)
+    .on('postgres_changes',{event:'*',schema:'public',table:'mez_tm'},mzCambioVivo)
+    .on('postgres_changes',{event:'*',schema:'public',table:'mez_programa'},mzCambioVivo)
+    .subscribe(); }catch(e){}
+}
 function mezInit(){
   if(!window.SB || !S) return;
   try{
-    SB.rpc('hb_es_mez_capturista').then(function(r){ if(r&&r.data===true && !S.mezCap){ S.mezCap=true; buildNav(); } });
-    SB.rpc('hb_es_mez_tecnico').then(function(r){ if(r&&r.data===true && !S.mezTec){ S.mezTec=true; buildNav(); } });
+    if(S.admin) mzRTArranca();
+    SB.rpc('hb_es_mez_capturista').then(function(r){ if(r&&r.data===true && !S.mezCap){ S.mezCap=true; buildNav(); mzRTArranca(); } });
+    SB.rpc('hb_es_mez_tecnico').then(function(r){ if(r&&r.data===true && !S.mezTec){ S.mezTec=true; buildNav(); mzRTArranca(); } });
     SB.rpc('hb_es_mez_costos').then(function(r){ if(r&&r.data===true && !S.mezCostos){ S.mezCostos=true; buildNav(); } },function(){});
     if(S.admin){ mzFxLoad(1); if(!window._mzFxTimer) window._mzFxTimer=setInterval(function(){ mzFxLoad(1); }, 900000); } /* 15 min */
     mzMetaLoad();
@@ -10841,6 +10915,50 @@ function hbLimpiaSeeds(){
      botón de emergencia (MODO_APAGADO en sw.js) llega rápido a todos.
    · Si no hay soporte (navegador viejo, webview raro), no pasa NADA: la app
      sigue funcionando como siempre, solo sin memoria. */
+/* ============== ACTUALIZACIÓN AL USAR (v3_28, regla de Carlos) ==============
+   "Cada vez que entren a producción, home, mensajes… se actualiza." Nada de
+   refrescar cada segundo: se revisa al navegar (máximo una vez cada 5 min) y
+   al volver la app del fondo. La revisión es BARATA: el fetch lo contesta la
+   memoria del aparato al instante, y el service worker revalida por detrás
+   (normalmente un 304 de puros encabezados). Si el ETag cambió, el SW guarda
+   la versión nueva y avisa; se aplica al entrar a una pantalla segura.       */
+var HB_SEGURAS={home:1,prod:1,news:1,msgs:1,hr:1,pend:1,clases:1,courses:1,rewards:1,buzon:1,chat:1};
+var _hbVerChk=0;
+function hbRevisaVersion(){
+  var ahora=Date.now();
+  if(ahora-_hbVerChk<300000) return;
+  _hbVerChk=ahora;
+  try{ fetch('index.html',{headers:{'Accept':'text/html'}}).then(function(r){ try{ if(r&&r.body&&r.body.cancel) r.body.cancel(); }catch(e){} }).catch(function(){}); }catch(e){}
+  try{ if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration) navigator.serviceWorker.getRegistration().then(function(g){ if(g&&g.update) g.update(); }); }catch(e){}
+}
+/* ¿hay algo a medio capturar en la bitácora? (para no pisarle el trabajo a nadie) */
+function mzFormVacio(){
+  try{
+    if(window._mzEditId) return false;
+    var ids=['mzc-comp','mzc-mez','mzc-letra','mzt-min'];
+    for(var i=0;i<ids.length;i++){ var el=$(ids[i]); if(el&&String(el.value||'').trim()) return false; }
+    var pa=$('mz-paste'); if(pa&&!pa.classList.contains('hide')) return false;
+    return true;
+  }catch(e){ return false; }
+}
+/* al volver la app del fondo: datos frescos de la pantalla en la que estás */
+function hbRefrescaPantalla(){
+  try{
+    if(!S) return;
+    var sc=_screen;
+    if(sc==='mezcap'){ if(mzFormVacio()) mzLoadDia(mzCapPaint); }
+    else if(sc==='mezprog') mzLoadDia(mzProgPaint);
+    else if(sc==='meztab') renderMezTab();
+    else if(sc==='mezsem') renderMezSem();
+    else if(sc==='pedidos') pedsLoad();
+  }catch(e){}
+}
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState!=='visible') return;
+  try{ hbRevisaVersion(); }catch(e){}
+  try{ hbRefrescaPantalla(); }catch(e){}
+});
+
 function swRegistra(){
   try{
     if(!('serviceWorker' in navigator)) return;
@@ -10852,7 +10970,7 @@ function swRegistra(){
         // Sin sesión (portada/login) recargamos de una vez; a media tarea NO
         // interrumpimos: la verá en cuanto vuelva a abrir.
         if(!S){ location.reload(); }
-        else{ flash('✨ Hay una versión nueva de la app. La verás al volver a entrar.'); }
+        else{ window._hbVerNueva=true; flash('✨ Hay una versión nueva. Se aplica sola en cuanto cambies de pantalla.'); }
       }catch(e){}
     });
   }catch(e){}

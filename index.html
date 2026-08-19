@@ -6989,6 +6989,18 @@ function renderMisRep(){
 function pedTerminar(id){
   var nota=prompt('¿Qué se hizo? (opcional)'); if(nota===null) return;   // Cancelar en el prompt = no terminar
   pedEstado(id,'terminado',nota||'');
+  /* v3_29 (telaraña de Carlos): mantenimiento es quien avisa que la máquina ya
+     quedó. Si la orden era de un BANBURY, aquí mismo se pregunta — y Producción
+     lo ve encendido al momento en la bitácora y la programación. */
+  try{
+    var p=pedsGet().filter(function(x){ return x&&x.id===id; })[0]||{};
+    var m=String(p.maquina||'').toUpperCase().match(/BANBURY\s*#?\s*([1-5])/);
+    if(m && confirm('¿El BANBURY '+m[1]+' ya quedó FUNCIONANDO?\n\nSi dices que sí, se enciende en Producción para que vuelvan a programarlo.')){
+      SB.rpc('hb_mez_banbury_set',{p_banbury:+m[1],p_estado:'activo'}).then(function(r){ var x=r&&r.data;
+        if(x&&x.ok){ _mzCat=null; flash('✅ BANBURY '+m[1]+' marcado como funcionando en todo el sistema.'); }
+        else alert((x&&x.detalle)||mzErr(x)); },function(e){ alert(mzErr(null,e)); });
+    }
+  }catch(e){}
 }
 
 /* ---------- PEDIDOS (inbox del responsable de Mantenimiento / acceso total) ---------- */
@@ -7034,7 +7046,7 @@ function renderPedidos(){
     if(hist.length>(window._pedHistN||30)) h+='<div class="card" style="text-align:center"><button class="btn ghost" style="margin:0;width:auto;padding:9px 16px;font-size:12.5px" onclick="window._pedHistN=(window._pedHistN||30)+60;renderPedidos()">Ver más del historial</button></div>';
     if(!_pedFin) h+='<div class="card" style="text-align:center"><button class="btn ghost" style="margin:0;width:auto;padding:9px 16px;font-size:12.5px" onclick="pedsMas()">Bajar pedidos más antiguos</button><div class="note" style="margin-top:5px">La base guarda TODO el historial; la pantalla lo baja por partes.</div></div>';
   }
-  else { h+=pedMaqBlock(); }
+  else { h+=pedMaqBlock(); setTimeout(function(){ try{ pedBanburysLoad(); }catch(e){} },0); }
   $('s-pedidos').innerHTML=h; show('pedidos');
 }
 function pedCardAdmin(p, cerrado){
@@ -7107,7 +7119,8 @@ function _pedRerender(){ if(_screen==='pedidos') renderPedidos(); else if(_scree
 /* ---------- catálogo de MÁQUINAS (lo administra el responsable de mant.) ---------- */
 function pedMaqBlock(){
   var maqs=maqsGet();
-  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><b style="font-size:16px">Catálogo de máquinas</b>'+
+  var h='<div id="bb-estados" class="panel" style="margin-bottom:12px"><div class="note">Cargando el estado de los banburys…</div></div>';
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><b style="font-size:16px">Catálogo de máquinas</b>'+
     '<div class="note" style="margin-top:3px">Es el desplegable que ve el trabajador al pedir una reparación. Tenlo al día: así las métricas salen por máquina.</div></div></div>'+
     '<div id="maqRows">'+
     maqs.map(function(m,i){ return _maqRow(m,i); }).join('')+
@@ -7115,6 +7128,29 @@ function pedMaqBlock(){
     '<button class="btn" style="margin-top:10px" onclick="maqSave()">Guardar catálogo</button>'+
     '<div class="note" style="margin-top:8px">Para quitar una, deja su nombre vacío y guarda.</div></div>';
   return h;
+}
+/* v3_29: los banburys parado/funcionando — mantenimiento es quien avisa (regla
+   de Carlos, la telaraña): al cambiarlo aquí, la bitácora y la programación de
+   Producción lo ven al momento. Cada cambio queda apuntado con quién y cuándo. */
+function pedBanburysLoad(){
+  var el=$('bb-estados'); if(!el) return;
+  SB.rpc('hb_mez_banburys').then(function(r){ var x=r&&r.data;
+    if(!(x&&x.ok)){ el.innerHTML='<b style="font-size:15px">Banburys</b><div class="note" style="margin-top:4px">'+esc((x&&x.detalle)||mzErr(x,r&&r.error))+'</div>'; return; }
+    var bb=x.banburys||{};
+    el.innerHTML='<b style="font-size:15px">Banburys · parado / funcionando</b>'+
+      '<div class="note" style="margin-top:3px">Mantenimiento es quien avisa. Al cambiarlo aquí, Producción lo ve al momento en la bitácora y la programación.</div>'+
+      [1,2,3,4,5].map(function(n){ var par=bb[String(n)]==='parado';
+        return '<div style="display:flex;align-items:center;gap:10px;margin-top:9px">'+
+          '<b style="width:44px">BB'+n+'</b>'+
+          '<span style="flex:1;color:'+(par?'var(--bad)':'var(--ok)')+';font-weight:700;font-size:13px">'+(par?'⛔ Parado':'✅ Funcionando')+'</span>'+
+          '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="pedBanburySet('+n+',\''+(par?'activo':'parado')+'\')">'+(par?'Marcar funcionando':'Marcar parado')+'</button></div>'; }).join('');
+  },function(e){ el.innerHTML='<b style="font-size:15px">Banburys</b><div class="note" style="margin-top:4px">'+esc(mzErr(null,e))+'</div>'; });
+}
+function pedBanburySet(n,estado){
+  if(!confirm('¿Marcar el BANBURY '+n+' como '+(estado==='activo'?'FUNCIONANDO':'PARADO')+'?\n\nProducción lo verá al momento.')) return;
+  SB.rpc('hb_mez_banbury_set',{p_banbury:n,p_estado:estado}).then(function(r){ var x=r&&r.data;
+    if(x&&x.ok){ _mzCat=null; pedBanburysLoad(); flash('Listo: BANBURY '+n+' '+(estado==='activo'?'funcionando':'parado')+'.'); }
+    else alert((x&&x.detalle)||mzErr(x)); },function(e){ alert(mzErr(null,e)); });
 }
 function _maqRow(m,i){
   return '<div class="maqrow" style="display:flex;gap:6px;margin-top:8px">'+
@@ -9452,7 +9488,63 @@ function mzFotoManda(du,tipo){
 function mzND(v){ return (v==null||v==='')?'<span style="color:var(--warn);font-weight:700">no disponible</span>':esc(String(v)); }
 function mzFotoCosto(y){ return (y&&y.costo_mxn!=null)?('<div class="note" style="margin-top:6px">La lectura costó '+mzMx(y.costo_mxn,2)+' MXN.</div>'):''; }
 var _mzFotoY=null;
+/* v3_29: la LIBRETA REAL (foto de Carlos 19-ago) trae UNA página por turno con
+   las 5 columnas de banburys. Este pintor la muestra por banbury, VERIFICA las
+   sumas contra el recuadro "TOTAL DE MEZCLAS" y contra el total del turno, y
+   solo ofrece guardar lo legible. Lo ilegible = "no disponible", a mano. */
 function mzFotoBita(y,caja){
+  _mzFotoY=y;
+  var d=y.datos||{};
+  if(!d.banburys && d.corridas){ mzFotoBitaVieja(y,caja); return; }
+  var f=d.fecha||_mzF, t=d.turno||_mzT;
+  var bs=(d.banburys||[]).filter(function(b){ return b&&b.banbury>=1&&b.banbury<=5; });
+  var h='<div class="card" style="margin:10px 0"><b style="font-size:13px">Esto leí en la bitácora del turno — revísalo antes de guardar</b>'+
+    '<div class="note" style="margin-top:3px">Fecha <b>'+esc(String(f))+'</b> · Turno <b>'+esc(String(t))+'</b>'+
+    (d.supervisor?' · Supervisor: '+mzND(d.supervisor):'')+
+    ((d.fecha||d.turno)?' (tomado de la foto)':' (lo elegido arriba)')+'</div>';
+  var totLegibles=0, granTotal=0, granLeido=(d.total_turno!=null?+d.total_turno:null);
+  bs.forEach(function(b){
+    var suma=0;
+    (b.corridas||[]).forEach(function(c){ if(c.mezclas!=null) suma+=+c.mezclas; });
+    granTotal+=suma;
+    var cuadre;
+    if(b.total_mezclas==null) cuadre='<span class="note">total no legible</span>';
+    else if(+b.total_mezclas===suma) cuadre='<span style="color:var(--ok);font-weight:700">✓ cuadra ('+mzN(suma)+')</span>';
+    else cuadre='<span style="color:var(--warn);font-weight:700">⚠ no cuadra: renglones '+mzN(suma)+' vs total escrito '+mzN(+b.total_mezclas)+'</span>';
+    h+='<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">'+
+       '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><b style="font-size:13px">BANBURY '+b.banbury+'</b>'+cuadre+
+       '<span class="note">Operador: '+mzND(b.operador)+'</span></div>';
+    if((b.corridas||[]).length){
+      h+='<div style="overflow-x:auto;margin-top:7px"><table style="width:100%;border-collapse:collapse;min-width:330px">'+
+         mzTh(['Compuesto','Versión','Mezclas'])+
+         b.corridas.map(function(c){ if(c.compuesto&&c.mezclas!=null) totLegibles++;
+           return mzTd([mzND(c.compuesto),mzND(c.letra),mzND(c.mezclas)]); }).join('')+'</table></div>';
+    } else h+='<div class="note" style="margin-top:6px">Sin corridas leídas en esta columna.</div>';
+    (b.paros||[]).forEach(function(p,i){
+      var cau=mzFotoCausa(p.causa), key=b.banbury+'_'+i;
+      h+='<div style="display:flex;gap:7px;align-items:center;margin-top:7px;flex-wrap:wrap">'+
+        '<span class="note" style="flex:1;min-width:120px">⏱ '+mzND(p.causa)+' · '+mzND(p.minutos)+' min</span>'+
+        '<select id="mzfp-c'+key+'" style="padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:12px;max-width:240px">'+
+          '<option value="">— causa oficial —</option>'+
+          (_mzCat&&_mzCat.causas||[]).map(function(c){ return '<option value="'+c.id+'"'+((cau&&cau.id===c.id)?' selected':'')+'>'+esc(c.nombre)+'</option>'; }).join('')+'</select>'+
+        ((p.minutos!=null&&p.minutos>0)?'<button class="btn ghost" style="margin:0;width:auto;padding:7px 10px;font-size:12px" onclick="mzFotoGuardaParo(\''+key+'\','+(+p.minutos)+',\''+jsAttr(String(f))+'\','+(+t)+','+b.banbury+')">＋ Agregar</button>':'<span class="note">min no legibles</span>')+
+        '</div>';
+    });
+    h+='</div>';
+  });
+  if(granLeido!=null){
+    h+='<div class="note" style="margin-top:10px">'+(granLeido===granTotal
+      ? '<span style="color:var(--ok);font-weight:700">✓ El total del turno cuadra: '+mzN(granTotal)+' mezclas.</span>'
+      : '<span style="color:var(--warn);font-weight:700">⚠ El total del turno NO cuadra: los renglones suman '+mzN(granTotal)+' y el papel dice '+mzN(granLeido)+'.</span>')+'</div>';
+  }
+  if(totLegibles) h+='<button class="btn" style="margin:12px 0 0" onclick="mzFotoGuardaBita()">Guardar las '+totLegibles+' corridas legibles (todos los banburys)</button>';
+  else h+='<div class="note" style="margin-top:8px">No hay corridas completas para guardar.</div>';
+  h+='<div class="note" style="margin-top:8px">Este formato no trae quemadas ni número de corrida — si hubo quemadas, captúralas a mano. El operador viene con nombre; el sistema todavía no lo guarda (pendiente de decidirlo con dirección).</div>';
+  if((d.dudas||[]).length) h+='<div class="note" style="margin-top:8px;color:var(--warn)"><b>Dudas de la lectura:</b> '+d.dudas.map(function(x){ return esc(x); }).join(' · ')+'</div>';
+  h+=mzFotoCosto(y)+'</div>';
+  if(caja) caja.innerHTML=h;
+}
+function mzFotoBitaVieja(y,caja){
   _mzFotoY=y;
   var d=y.datos||{}, cs=d.corridas||[], ps=d.paros||[];
   var f=d.fecha||_mzF, t=d.turno||_mzT, b=d.banbury||_mzB;
@@ -9496,17 +9588,33 @@ function mzFotoCausa(txt){
 }
 function mzFotoGuardaBita(){
   var y=_mzFotoY; if(!y) return;
-  var d=y.datos||{}, f=d.fecha||_mzF, t=d.turno||_mzT, b=d.banbury||_mzB;
-  var filas=(d.corridas||[]).filter(function(c){ return c.compuesto&&c.mezclas!=null&&c.mezclas>=0; })
-    .map(function(c){ return {fecha:f, turno:t, banbury:b, compuesto_txt:c.compuesto,
-      letra:c.letra||null, num_corrida:(c.num_corrida!=null?c.num_corrida:null),
-      mezclas:c.mezclas, quemadas:c.quemadas||0, es_reproceso:!!c.reproceso,
-      nota:'leída por foto'}; });
+  var d=y.datos||{}, f=d.fecha||_mzF, t=d.turno||_mzT;
+  var filas=[];
+  if(d.banburys){
+    d.banburys.forEach(function(b){
+      if(!(b&&b.banbury>=1&&b.banbury<=5)) return;
+      (b.corridas||[]).forEach(function(c){
+        if(c.compuesto&&c.mezclas!=null&&c.mezclas>=0)
+          filas.push({fecha:f, turno:t, banbury:b.banbury, compuesto_txt:c.compuesto,
+            letra:c.letra||null, num_corrida:null, mezclas:+c.mezclas, quemadas:0,
+            nota:'leída por foto'});
+      });
+    });
+  } else {
+    var b0=d.banbury||_mzB;
+    (d.corridas||[]).forEach(function(c){
+      if(c.compuesto&&c.mezclas!=null&&c.mezclas>=0)
+        filas.push({fecha:f, turno:t, banbury:b0, compuesto_txt:c.compuesto,
+          letra:c.letra||null, num_corrida:(c.num_corrida!=null?c.num_corrida:null),
+          mezclas:+c.mezclas, quemadas:c.quemadas||0, es_reproceso:!!c.reproceso,
+          nota:'leída por foto'});
+    });
+  }
   if(!filas.length) return;
   _mzFilas=filas; mzImporta();
 }
-function mzFotoGuardaParo(i,min,f,t,b){
-  var sel=$('mzfp-c'+i); var cid=sel?parseInt(sel.value,10):null;
+function mzFotoGuardaParo(key,min,f,t,b){
+  var sel=$('mzfp-c'+key); var cid=sel?parseInt(sel.value,10):null;
   if(!cid){ alert('Escoge la causa de la lista oficial.'); return; }
   SB.rpc('hb_mez_tm_alta',{p:{fecha:f,turno:t,banbury:b,minutos:min,causa_id:cid,folio_mant:null}}).then(function(r){ var x=r&&r.data;
     if(x&&x.ok){ if(sel) sel.parentElement.innerHTML='<span class="note" style="color:var(--ok)">✓ paro agregado ('+min+' min)</span>'; mzLoadDia(function(){}); }

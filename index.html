@@ -9046,7 +9046,10 @@ function mzMetaEdit(){
 }
 function mzErr(x,e){ var m={no_autorizado:'No tienes permiso para esto.',datos:'Faltan datos: revisa fecha, turno y banbury.',rango:'El rango es muy grande (máximo 2 meses).',maximo_500:'Máximo 500 renglones por tanda.',no_existe:'Ese registro ya no existe.',valor:'El valor no es válido.',
     limite:'Ya mandaste varias órdenes seguidas. Espera un rato.',ya_tiene:'Ese paro ya está ligado a un folio.',
-    sin_receta:'Sin receta digitalizada — falta su hoja GT.'};
+    sin_receta:'Sin receta digitalizada — falta su hoja GT.',
+    duplicado:'Ya hay una corrida idéntica capturada en esa fecha, turno y banbury.',
+    operador:'Ese número de operador no existe en el roster.',
+    causa:'La causa tiene que ser una de la lista oficial.'};
   if(x&&x.error&&m[x.error]) return m[x.error];
   /* si la llamada falló, decir la verdad: puede ser el servidor, no siempre la conexión */
   var det=''; try{ det=(e&&(e.message||e.details||e.hint))||''; }catch(_){}
@@ -9226,7 +9229,15 @@ function mzAddCorrida(){
     es_reproceso:$('mzc-rep').checked, origen:$('mzc-rep').checked?$('mzc-org').value:null,
     es_exp:$('mzc-exp').checked, nota:$('mzc-nota').value.trim()||null};
   var fin=function(r){ var x=r&&r.data;
-    if(x&&x.ok){ _mzEditId=null; mzLoadDia(mzCapPaint); } else alert(mzErr(x)); };
+    if(x&&x.ok){ _mzEditId=null; mzLoadDia(mzCapPaint); }
+    else if(x&&x.error==='duplicado'){
+      /* candado v3_27: la misma corrida dos veces no pasa sin preguntar */
+      if(confirm('Ya hay una corrida IDÉNTICA capturada en esta fecha, turno y banbury.\n\n¿De verdad hubo otra corrida igual y quieres guardarla también?')){
+        p.forzar=true;
+        SB.rpc('hb_mez_corrida_alta',{p:p}).then(function(r2){ var y=r2&&r2.data;
+          if(y&&y.ok) mzLoadDia(mzCapPaint); else alert(mzErr(y)); },function(){ alert(mzErr()); });
+      }
+    } else alert(mzErr(x)); };
   if(_mzEditId) SB.rpc('hb_mez_corrida_edit',{p_id:_mzEditId,p:p}).then(fin,function(){ alert(mzErr()); });
   else SB.rpc('hb_mez_corrida_alta',{p:p}).then(fin,function(){ alert(mzErr()); });
 }
@@ -9297,7 +9308,9 @@ function mzImporta(){
   if(!_mzFilas||!_mzFilas.length) return;
   SB.rpc('hb_mez_import',{p_filas:_mzFilas}).then(function(r){ var x=r&&r.data;
     if(x&&x.ok){
-      alert('Listo: '+x.insertadas+' guardados'+(x.a_bandeja?(' · '+x.a_bandeja+' fuera de catálogo (bandeja)'):'')+((x.errores||[]).length?(' · '+x.errores.length+' con error'):''));
+      alert('Listo: '+x.insertadas+' guardados'+(x.a_bandeja?(' · '+x.a_bandeja+' fuera de catálogo (bandeja)'):'')+
+        (x.duplicadas?(' · '+x.duplicadas+' repetidos NO se guardaron (ya estaban capturados)'):'')+
+        ((x.errores||[]).length?(' · '+x.errores.length+' con error'):''));
       _mzFilas=null; $('mz-paste').classList.add('hide'); mzLoadDia(mzCapPaint);
     } else alert(mzErr(x)); },function(){ alert(mzErr()); });
 }
@@ -10523,11 +10536,13 @@ function mzFixManual(){
     if(x&&x.ok){ renderMezTab(); } else alert(mzErr(x)); },function(){ alert(mzErr()); });
 }
 function mzArranque(){
-  if(!confirm('ARRANQUE EN CERO: se borra TODO lo capturado como práctica y se apaga el modo práctica. ¿Seguro?')) return;
-  if(!confirm('Segunda confirmación: esto es lo del 1 de septiembre. ¿Adelante?')) return;
+  /* v3_27: el borrado va POR FECHA (todo lo anterior al 1-sep-2026), ya no por
+     el sello de práctica — no importa a qué hora se apriete el botón */
+  if(!confirm('ARRANQUE EN CERO: se borra TODO lo capturado ANTES del 1 de septiembre de 2026 (la práctica de julio y agosto) y se apaga el modo práctica.\n\nLo capturado del 1-sep en adelante queda a salvo, sin importar la hora. ¿Seguro?')) return;
+  if(!confirm('Segunda confirmación: esto es el arranque oficial. ¿Adelante?')) return;
   SB.rpc('hb_mez_arranque').then(function(r){ var x=r&&r.data;
-    if(x&&x.ok){ _mzCat=null; alert('Listo. Se borraron '+x.corridas_borradas+' corridas, '+x.tm_borrados+' paros y '+x.programa_borrado+' del programa. El sistema arranca en cero.'); renderMezTab(); }
-    else alert(mzErr(x)); },function(){ alert(mzErr()); });
+    if(x&&x.ok){ _mzCat=null; alert('Listo. Corte: '+(x.corte||'2026-09-01')+'. Se borraron '+x.corridas_borradas+' corridas, '+x.tm_borrados+' paros y '+x.programa_borrado+' del programa. El sistema arranca en cero.'); renderMezTab(); }
+    else alert((x&&x.detalle)||mzErr(x)); },function(){ alert(mzErr()); });
 }
 
 function _sectionBusy(secId){

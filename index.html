@@ -164,6 +164,41 @@ button{font-family:var(--font)}
 .tmit.tmout{color:var(--accent2);justify-content:center;border-top:1px solid var(--line);border-radius:0 0 11px 11px;margin-top:4px;padding-top:11px}
 .tmrow{display:flex;align-items:center;justify-content:space-between;padding:8px 10px}
 .navlogo{display:none}
+.chatwrap{display:grid;grid-template-columns:1fr;gap:16px;align-items:start}
+.chside{display:none}
+.chside.abierto{display:block;position:fixed;inset:auto 12px calc(96px + env(safe-area-inset-bottom)) 12px;z-index:90;
+  background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px;box-shadow:var(--shadow);max-height:50dvh;overflow-y:auto}
+.chlist{display:flex;flex-direction:column;gap:6px}
+.chitem{display:flex;align-items:center;gap:8px;padding:10px 11px;border-radius:12px;border:1px solid transparent;cursor:pointer;transition:background .15s,border-color .15s}
+.chitem b{flex:1;min-width:0;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chitem.on{background:color-mix(in srgb,var(--accent) 14%,transparent);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+@media (hover:hover){.chitem:hover{background:rgba(255,255,255,.04)}}
+.chitem .chdel{flex:none;background:none;border:none;color:var(--mut);cursor:pointer;font-size:12px;padding:2px 5px;border-radius:7px}
+.chitem .chdel:hover{color:var(--bad)}
+.chhello{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;height:100%;min-height:230px;padding:20px}
+.chhello svg{width:64px;height:40px;margin-bottom:6px}
+.chhello b{font-size:24px;font-weight:850;letter-spacing:-.02em}
+.chhello span{font-size:14px;color:var(--txt)}
+.chhello .note{font-size:12px}
+.chstats{display:none}
+@media (min-width:1000px){
+  .chatwrap{grid-template-columns:230px minmax(0,1fr)}
+  .chatwrap.conpanel{grid-template-columns:230px minmax(0,1fr) 280px}
+  .chside{display:block;position:sticky;top:14px}
+  .chstats{display:block;position:sticky;top:14px}
+  #chSideBtn{display:none}
+  .chatwrap .chatscreen{width:100%;min-width:0}
+  .chatwrap .composer,.chatwrap .msgs,.chatwrap .chips{width:100%}
+  /* el riel ya trae el logo: no duplicarlo en el HUD de escritorio */
+  #topLeft .tlogo{display:none}
+}
+.icoa{width:38px;height:38px;flex:none;display:inline-flex;align-items:center;justify-content:center;
+  background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--txt);cursor:pointer;
+  transition:transform .16s var(--ease-out),border-color .2s,background .2s}
+.icoa svg{width:18px;height:18px}
+.icoa:active{transform:scale(.94)}
+.icoa.on{background:var(--accent2);border-color:var(--accent2);color:#fff}
+@media (hover:hover){.icoa:hover{border-color:color-mix(in srgb,var(--accent2) 45%,var(--line))}}
 :where(button,a,input,select,textarea):focus-visible{outline:2px solid color-mix(in srgb,var(--accent2) 70%,#fff);outline-offset:2px}
 
 /* ===== TILES (cuadros del home — cada uno lleva a su página) · V3.6 ===== */
@@ -932,6 +967,7 @@ body.a11y .screen .seg button{ font-size:13px !important; }
   .nav button .nbadge{position:absolute;top:4px;left:auto;right:4px;margin-left:0}
   .top{margin-left:86px;padding-left:22px;padding-right:22px}
   .screen{margin-left:86px}
+  #s-chat{max-width:1300px}   /* el asistente ahora lleva 3 columnas; el 880px era de una */
 }
 </style>
 <!-- Supabase SDK HOSPEDADO JUNTO A LA APP (mismo origen = tan confiable como que cargue la
@@ -2624,6 +2660,12 @@ function go(name){
   if(name==='news') return renderNews();
   if(name==='msgs') return renderMsgs();
 }
+/* íconos de ACCIÓN minimalistas (pedido de Carlos: iconos en vez de palabras,
+   siempre en las esquinas): cámara = subir foto · portapapeles = pegar de
+   Excel · flecha = descargar Excel */
+var IC_CAM='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
+var IC_CLIP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>';
+var IC_DL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>';
 /* la marca de HB (dos rombos) — pedido de Carlos: el logo SIEMPRE arriba-izquierda */
 var HB_MARK='<svg viewBox="0 0 54 32" xmlns="http://www.w3.org/2000/svg" aria-label="Hules Banda">'+
   '<path d="M15 2 28 16 15 30 2 16Z" fill="var(--accent2)"/>'+
@@ -2652,7 +2694,7 @@ function renderTop(name){
       '<button class="tmit" onclick="topMenuCierra();renderPerfil()">'+profAvatar(34,10)+
         '<span style="min-width:0;text-align:left"><b style="display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(_pn||S.area)+'</b>'+
         '<span class="note" style="font-size:10.5px">#'+(''+S.emp).padStart(3,'0')+' · Mi perfil ›</span></span></button>'+
-      (S.admin?'':'<div class="tmrow"><span class="note">Tus puntos</span><span class="ptchip">'+S.points+' pts</span></div>')+
+      (S.admin?'':'<div class="tmrow"><span class="note">Tus puntos</span><span class="ptchip">0 pts</span></div>')+
       '<button class="tmit" onclick="toggleAcc();topMenuCierra()"><span class="tbico" style="pointer-events:none">'+EYE+'</span>'+
         '<span style="text-align:left"><b style="font-size:13px">Texto grande</b><span class="note" style="display:block;font-size:10.5px">'+(S&&S.accessible?'Encendido':'Apagado')+'</span></span></button>'+
       '<button class="tmit tmout" onclick="logout()"><b style="font-size:13px">Salir</b></button>'+
@@ -3077,7 +3119,9 @@ function renderCal(){
   h+='<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">'+layers.map(function(l){
     var badge=(l[0]==='personal'&&pendN)?' <span class="cnt" style="position:static;margin-left:5px">'+pendN+'</span>':'';
     return '<button class="btn'+(_calLayer===l[0]?'':' ghost')+'" style="margin:0;padding:9px 14px;font-size:13px;width:auto" onclick="calLayerGo(\''+l[0]+'\')">'+l[1]+badge+'</button>';
-  }).join('')+'</div>';
+  }).join('')+
+  /* Invitaciones vive DENTRO del calendario (pedido de Carlos 19-ago) */
+  '<button class="btn ghost" style="margin:0 0 0 auto;padding:9px 14px;font-size:13px;width:auto" onclick="openInvit()">Invitaciones'+(pendN?' <span class="cnt" style="position:static;margin-left:5px">'+pendN+'</span>':'')+'</button></div>';
   /* CITAS dentro del Calendario (Sesión 15, Carlos: "el de citas que esté en el
      apartado de calendario"). Si hay invitaciones sin contestar, el botón grita. */
   h+= pendN
@@ -3793,7 +3837,7 @@ function renderPerm(){
   var ans=P.qs.filter(function(q){ return _pmAns[q.n]!=null; }).length;
   var h='';
   h+='<div class="panel" style="position:relative"><div class="hd" style="align-items:flex-start;padding-right:46px"><div><div class="eyebrow">Encuesta · Anónima</div><b style="font-size:20px">'+esc(P.nombre)+'</b><p class="note" style="margin:4px 0 0;max-width:250px">'+esc(P.intro)+'</p></div><span style="position:absolute;top:14px;right:14px">'+speakBtn(P.intro)+'</span></div>'+
-     '<div class="line" style="border:none;padding:4px 0 0"><span class="chipst'+(ans?'':' mut')+'">'+ans+'/'+P.qs.length+' contestadas</span><span class="chipst mut">+'+(CFG.points.perm||10)+' pts</span></div></div>';
+     '<div class="line" style="border:none;padding:4px 0 0"><span class="chipst'+(ans?'':' mut')+'">'+ans+'/'+P.qs.length+' contestadas</span><span class="chipst mut">✓</span></div></div>';
   h+='<div class="panel">'+P.qs.map(function(q){
     var sel=_pmAns[q.n];
     return '<div style="margin-bottom:14px"><div class="line" style="align-items:flex-start;border-bottom:none;padding:6px 0 0"><b style="flex:1;font-weight:600;line-height:1.45">'+esc(q.q)+'</b>'+speakBtn(q.q)+'</div>'+
@@ -4076,7 +4120,7 @@ function renderHome(){
   h+=htile('renderPay()','recibo','Recibo de nómina', payTileSub());
   h+=htile("go('msgs')",'msg','Mensajes', unM?'Tienes nuevos':'Sin nuevos', {cnt:unM||''});
   h+=htile('renderNews()','news','Noticias', unN?(unN+' nuevas'):'Al día ✓', {cnt:unN||''});
-  h+=htile('renderRewards()','premios','Premios', S.points+' puntos');
+  h+=htile('renderRewards()','premios','Premios', 'Muy pronto');
   h+=htile('renderEncuestas()','encuestas','Encuestas', 'Responde y gana');
   h+=htile("go('chat')",'ai','Asistente', 'Pregúntale a Bandi');
   h+=htile('renderClases()','edu','Educación', 'Clases básicas');
@@ -4084,7 +4128,6 @@ function renderHome(){
   // Calendario + Invitaciones (Sesión 15): antes el trabajador solo llegaba al
   // calendario por Noticias. Ahora los trae en su Inicio, uno debajo del otro.
   h+=htile('openCal()','cal','Calendario', 'Tus citas · tu área · la planta');
-  h+=invitTile();
   // PRODUCCIÓN (v3_17): la bitácora de mezclado — solo capturistas/técnico
   if(S.mezCap||S.mezTec) h+=htile("go('prod')",'operacion','Producción','Mezclado en Banburys · bitácora del turno',{wide:true});
   // Pedir reparación / Tus reparaciones (V3.11): la Orden de Trabajo digital
@@ -4224,7 +4267,7 @@ function openCourse(id){
              '<div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.55),rgba(0,0,0,.12) 60%)"></div>'+
              '<span class="vtag">Capacitación</span>'+
              '<button class="vplay'+(seen?' hide':'')+'" id="vplay" onclick="watch()" aria-label="Reproducir"></button>'+
-             '<div class="vstat" id="vstat">'+(seen?'Video visto ✓':'Toca para reproducir · +'+CFG.points.watch+' pts')+'</div>'+
+             '<div class="vstat" id="vstat">'+(seen?'Video visto ✓':'Toca para reproducir')+'</div>'+
              '<div class="vbarwrap"><i id="vbar"'+(seen?' style="width:100%"':'')+'></i></div>'+
            '</div>')+
        '<div style="padding:15px"><span class="tg">Para qué te sirve</span>'+
@@ -4348,7 +4391,7 @@ function showResult(){
       if(e.first) rows.push(['Por lograrlo a la primera',e.first]);
       if(e.ontime) rows.push(['Por hacerlo a tiempo',e.ontime]);
       if(e.streak) rows.push(['Racha: llevas '+S.streak+' a la primera',e.streak]);
-      h+='<div class="panel"><div class="hd"><div><div class="eyebrow">Puntos ganados</div><b style="font-size:17px">Tu esfuerzo suma</b></div><span class="chipst">+'+e.total+' pts</span></div>'+
+      h+='<div class="panel" style="display:none"><div class="hd"><div><div class="eyebrow">Puntos ganados</div><b style="font-size:17px">Tu esfuerzo suma</b></div><span class="chipst">+'+e.total+' pts</span></div>'+
         rows.map(function(r){return '<div class="line"><span>'+r[0]+'</span><span style="font-weight:800;color:#fff">+'+r[1]+'</span></div>';}).join('')+
         '<div class="line" style="border-bottom:none;font-size:15px"><span style="font-weight:800">Total ganado</span><span style="font-weight:900;color:var(--ok);font-size:18px">+'+e.total+' pts</span></div></div>';
     }
@@ -4380,7 +4423,7 @@ function showResult(){
 function renderRewards(){
   var h='';
   h+='<div class="paytop"><div class="hd" style="margin-bottom:0"><div><div class="eyebrow">Premios</div><div class="note" style="margin-top:3px">Tu saldo de puntos</div></div><span class="chipst">Nivel '+level()+'</span></div>'+
-     '<div class="neto">'+S.points+' <span style="font-size:18px;font-weight:700">pts</span></div>'+
+     '<div class="neto">0 <span style="font-size:18px;font-weight:700">pts</span></div>'+
      '<div class="note" style="margin-top:6px">Cada curso aprobado suma puntos. Cámbialos por premios reales.</div></div>';
   h+='<div class="sec-t">Catálogo<span class="ln"></span></div>';
   h+='<div class="rgrid">'+CFG.rewards.map(function(r,i){
@@ -4504,13 +4547,74 @@ function _logAlertLocal(text){
     saveQstats(s);
   }catch(e){}
 }
+/* ===== BANDI ASISTENTE estilo Claude (pedido de Carlos, 19-ago): chats por
+   tema a la izquierda, saludo al centro cuando el chat está vacío, y para
+   acceso total el gasto de IA del mes + top de consumo a la derecha. Los
+   chats se guardan por usuario en el servidor (kv). ===== */
+var _iaCh=null, _iaChT=null;
+function iaChInit(){
+  if(_iaCh) return;
+  var g=null; try{ g=kvGet('hb_iachats_'+S.emp); }catch(e){}
+  _iaCh=(g&&g.list&&g.list.length)?g:{list:[{id:Date.now(),t:'Nuevo chat',ts:Date.now(),msgs:[]}],cur:null};
+  if(!_iaCh.cur||!_iaCh.list.some(function(c){return c.id===_iaCh.cur;})) _iaCh.cur=_iaCh.list[0].id;
+  S.chat=iaChCur().msgs;
+}
+function iaChCur(){ return _iaCh.list.filter(function(c){ return c.id===_iaCh.cur; })[0]||_iaCh.list[0]; }
+function iaChSave(){ clearTimeout(_iaChT); _iaChT=setTimeout(function(){ try{ kvSet('hb_iachats_'+S.emp,_iaCh); }catch(e){} },800); }
+function iaChSync(){
+  if(!_iaCh) return;
+  var c=iaChCur(); if(!c) return;
+  var u=(c.msgs||[]).filter(function(m){ return m.role==='user'; })[0];
+  var t=u?String(u.content).slice(0,38):'Nuevo chat';
+  if(c.t!==t){ c.t=t; var el=$('iach-'+c.id); if(el) el.querySelector('b').textContent=t; }
+  c.ts=Date.now(); iaChSave();
+}
+function iaChNew(){
+  var c={id:Date.now(),t:'Nuevo chat',ts:Date.now(),msgs:[]};
+  _iaCh.list.unshift(c); _iaCh.cur=c.id; S.chat=c.msgs; iaChSave(); renderChat();
+}
+function iaChGo(id){ _iaCh.cur=id; S.chat=iaChCur().msgs; renderChat(); }
+function iaChDel(id,ev){
+  if(ev) ev.stopPropagation();
+  if(!confirm('¿Borrar este chat? No se puede recuperar.')) return;
+  _iaCh.list=_iaCh.list.filter(function(c){ return c.id!==id; });
+  if(!_iaCh.list.length) _iaCh.list=[{id:Date.now(),t:'Nuevo chat',ts:Date.now(),msgs:[]}];
+  if(_iaCh.cur===id) _iaCh.cur=_iaCh.list[0].id;
+  S.chat=iaChCur().msgs; iaChSave(); renderChat();
+}
+function hbNombrePila(){
+  var n=((profGet(S.emp)||{}).nombre||'').trim().split(/\s+/);
+  var p=(n.length>=3?n[2]:(n[0]||''));
+  return p? p.charAt(0).toUpperCase()+p.slice(1).toLowerCase() : '';
+}
 function renderChat(){
-  var h='';
+  iaChInit();
+  var esAdmin=!!S.admin;
+  var h='<div class="chatwrap'+(esAdmin?' conpanel':'')+'">';
+  /* --- IZQUIERDA: los chats por tema --- */
+  h+='<aside class="chside"><button class="btn" style="margin:0 0 10px;max-width:none;padding:11px;font-size:13.5px" onclick="iaChNew()">＋ Nuevo chat</button>'+
+     '<div class="chlist">'+_iaCh.list.map(function(c){
+       return '<div id="iach-'+c.id+'" class="chitem'+(c.id===_iaCh.cur?' on':'')+'" onclick="iaChGo('+c.id+')">'+
+         '<b>'+esc(c.t||'Nuevo chat')+'</b>'+
+         '<button class="chdel" title="Borrar chat" aria-label="Borrar chat" onclick="iaChDel('+c.id+',event)">✕</button></div>';
+     }).join('')+'</div></aside>';
+  /* --- CENTRO: el chat --- */
   h+='<div class="chatscreen">';
-  h+='<div class="chathead"><div class="t"><b>Asistente</b><span><i class="dotst on"></i>'+(bandiTotal()?'Acceso total · datos y documentos':'Respuestas autorizadas')+'</span></div></div>';
+  h+='<div class="chathead"><div class="t"><b>Bandi Asistente</b><span><i class="dotst on"></i>'+(bandiTotal()?'Acceso total · datos y documentos':'Respuestas autorizadas')+'</span></div>'+
+     '<span style="flex:1"></span>'+
+     (esAdmin?'<span class="chipst" id="iaGastoChip" title="Gasto de IA del mes (llaves API)">IA · $…</span>':'')+
+     '<button class="icoa hide-desk-no" title="Tus chats" aria-label="Tus chats" onclick="chSideTog()" id="chSideBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h10M4 18h7"/></svg></button></div>';
   h+='<div class="msgs" id="msgs"></div>';
   h+='<div class="chips" id="chips"></div>';
-  h+='<div class="composer"><input id="chatIn" placeholder="Escribe tu pregunta…" autocomplete="off"><button class="send" onclick="sendChat()" aria-label="Enviar"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button></div>';
+  h+='<div class="composer"><input id="chatIn" placeholder="Escríbele a Bandi…" autocomplete="off"><button class="send" onclick="sendChat()" aria-label="Enviar"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button></div>';
+  h+='</div>';
+  /* --- DERECHA (solo acceso total, escritorio): gasto y top de consumo --- */
+  if(esAdmin){
+    h+='<aside class="chstats"><div class="panel" style="margin-bottom:12px"><b style="font-size:13px">IA · gasto del mes</b>'+
+       '<div id="iaGasto" class="note" style="margin-top:6px">Cargando…</div></div>'+
+       '<div class="panel"><b style="font-size:13px">Top consumo (llaves API)</b>'+
+       '<div id="iaTop" class="note" style="margin-top:6px">Cargando…</div></div></aside>';
+  }
   h+='</div>';
   $('s-chat').innerHTML=h;
   var sugg=(V3_ON && (S.admin||S.mando))
@@ -4519,10 +4623,41 @@ function renderChat(){
   $('chips').innerHTML=sugg.map(function(s){return '<button class="chip2" onclick="quickAsk(this)">'+esc(s)+'</button>';}).join('');
   paintChat();
   var ci=$('chatIn'); if(ci){ ci.onkeydown=function(ev){ if(ev.key==='Enter') sendChat(); }; }
+  if(esAdmin) iaPanelLoad();
   show('chat');
+}
+function chSideTog(){ var a=document.querySelector('.chside'); if(a) a.classList.toggle('abierto'); }
+/* gasto del mes + top de consumo (RPCs del servidor; el top requiere v3_34) */
+function iaPanelLoad(){
+  if(!sbReady()) return;
+  SB.rpc('hb_ia_gasto').then(function(r){ var x=r&&r.data; if(!(x&&x.ok)) return;
+    var mes=x.mes||{}, chip=$('iaGastoChip'), g=$('iaGasto');
+    if(chip) chip.textContent='IA · US$'+mzN(+mes.costo_usd||0,2)+' este mes';
+    if(g){ g.innerHTML='<b style="font-size:20px;color:var(--txt)">US$'+mzN(+mes.costo_usd||0,2)+'</b> <span class="note">('+mzMx(+mes.costo_mxn||0,2)+')</span>'+
+      '<div class="note" style="margin-top:6px">'+(x.proveedores||[]).map(function(p){
+        return esc(p.proveedor)+': US$'+mzN(+p.gastado_usd||0,2)+' de US$'+mzN(+p.tope_usd||0,0)+(p.con_llave?'':' · sin llave');
+      }).join('<br>')+'</div>'; }
+  },function(){});
+  SB.rpc('hb_ia_top').then(function(r){ var x=r&&r.data; var t=$('iaTop'); if(!t) return;
+    if(!(x&&x.ok)){ t.innerHTML='Se enciende al correr el parche v3_34.'; return; }
+    t.innerHTML=(x.top&&x.top.length)?x.top.map(function(p,i){
+      return '<div style="display:flex;justify-content:space-between;gap:8px;margin-top:6px;font-size:12px">'+
+        '<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(i+1)+'. '+esc(niceName(p.nombre||('#'+p.n)))+'</span>'+
+        '<b style="flex:none;font-variant-numeric:tabular-nums">US$'+mzN(+p.usd||0,2)+'</b></div>';
+    }).join(''):'Sin consumo este mes.';
+  },function(){ var t=$('iaTop'); if(t) t.innerHTML='Se enciende al correr el parche v3_34.'; });
 }
 function paintChat(){
   var m=$('msgs'); if(!m) return;
+  try{ iaChSync(); }catch(e){}
+  if(!S.chat.length){
+    var pila=hbNombrePila();
+    m.innerHTML='<div class="chhello">'+HB_MARK+
+      '<b>Hola'+(pila?', '+esc(pila):'')+' 👋</b>'+
+      '<span>Bandi Asistente está aquí para ti.</span>'+
+      '<span class="note">Pregunta lo que necesites, o empieza con una sugerencia de abajo.</span></div>';
+    return;
+  }
   var h=S.chat.map(function(x){
     if(x.role==='user') return '<div class="m user"><div class="bub">'+esc(x.content)+'</div></div>';
     var extra='';
@@ -5016,7 +5151,6 @@ function renderResp(){
   var nDocA=0; try{ nDocA=docsGet().filter(function(d){ return canManageThisDoc(d); }).length; }catch(e){}
   h+=htile("docsHome()",'docs','Documentos','Manuales de tu área: subir, ver y borrar',{wide:true, cnt:nDocA||''});
   h+=htile('openCal()','cal','Calendario', 'Personal · tu área · general');
-  h+=invitTile();
   // Pedidos (V3.11): el responsable de MANTENIMIENTO recibe las órdenes de trabajo;
   // los demás responsables también pueden pedir una reparación.
   try{
@@ -5177,13 +5311,9 @@ function managerDash(role){
   h+=htile("mgrGo('hoy')",'dia','Hoy', (cenN?cenN+' acciones para hoy':'Sin pendientes')+' · horas', {wide:true, cnt:cenN||''});
   h+=htile("mgrGo('deptos')",'deptos','Departamentos', DS?(DS.global+'% global · '+DS.list.length+' deptos'):'Avance por área');
   h+=htile("mgrGo('personas')",'personas','Personas', DS?(DS.reg+' registrados · permisos'):'Equipo, permisos y recibos');
-  h+=htile("mgrGo('focos')",'focos','Focos', foco?(foco+' por atender'):'Todo en orden ✓', {cnt:foco||''});
   h+=htile("mgrGo('operacion')",'operacion','Operación', (unansN?unansN+' preguntas · ':'')+'buzón · directorio', {cnt:unansN||''});
-  try{ var _pedN=pedNuevosN();
-    h+=htile('renderPedidos()','rep','Pedidos', pedAbiertos().length?(pedAbiertos().length+' abiertos · mantenimiento'):'Órdenes de trabajo · en vivo', {cnt:_pedN||''}); }catch(e){}
   h+=htile('docsHome()','docs','Documentos', 'Explora los documentos de cualquier área');
   h+=htile('openCal()','cal','Calendario', 'Personal · áreas · general');
-  h+=invitTile();
   h+=htile('renderDia()','dia','Directorio', 'A quién llamar en la planta');
   h+='</div>';
   /* SOLO para la cuenta de Sistemas (0917): capacitación y registro del padrón,
@@ -5305,7 +5435,7 @@ function mgrPage(role){
   else if(p==='personas-rank'){
     h+='<div class="panel"><div class="hd"><b>Tabla de puntos</b></div><div class="note" style="margin:-6px 0 8px">Visible solo para '+esc(role)+'. Los empleados nunca ven esta tabla.</div>'+
        H.top.map(function(e,i){
-         return '<div class="rank"><span class="medal'+(i<3?' m'+(i+1):'')+'">'+(i+1)+'</span><span class="rn">'+esc(e[0])+'</span><span class="tg g" style="flex:none">'+e[1]+' pts</span></div>';
+         return '<div class="rank"><span class="medal'+(i<3?' m'+(i+1):'')+'">'+(i+1)+'</span><span class="rn">'+esc(e[0])+'</span><span class="tg g" style="flex:none">—</span></div>';
        }).join('')+'</div>';
   }
   else if(p==='focos'){
@@ -5562,15 +5692,81 @@ function legacyCopy(t){
 function newsGet(){ if(DBC.news!=null) return DBC.news; try{ return JSON.parse(localStorage.getItem('hb_news')||'[]')||[]; }catch(e){ return []; } }
 function newsSave(a){ try{ localStorage.setItem('hb_news', JSON.stringify(a)); }catch(e){ flash('No se pudo guardar (espacio lleno)'); } DBC.news=a; }
 function newsTime(ts){ try{ var d=new Date(ts); return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}); }catch(e){ return ''; } }
-/* segmentación por rango de número de empleado (compartido por Noticias y mensajes directos) */
-function inTarget(to,emp){ if(!to||to.mode==='all') return true; if(to.mode==='range'){ var mn=+to.min,mx=+to.max; if(isNaN(mn)||isNaN(mx)) return true; if(mn>mx){ var t=mn; mn=mx; mx=t; } return emp>=mn&&emp<=mx; } return true; }
-function targetLabel(to){ if(!to||to.mode==='all') return 'Para todos'; var mn=(''+to.min).padStart(3,'0'),mx=(''+to.max).padStart(3,'0'); return to.min===to.max?('Para ID '+mn):('Para IDs '+mn+'–'+mx); }
-function rangePicker(pfx,mode){ var act='background:var(--accent);color:#fff;border-color:var(--accent)';
-  return '<div style="display:flex;gap:7px;flex-wrap:wrap"><button id="'+pfx+'ToAll" class="chip2" style="'+(mode==='all'?act:'')+'" onclick="setTo(\''+pfx+'\',\'all\')">Todos</button><button id="'+pfx+'ToRange" class="chip2" style="'+(mode==='range'?act:'')+'" onclick="setTo(\''+pfx+'\',\'range\')">Por rango de IDs</button></div>'+
-    '<div id="'+pfx+'Range" style="display:'+(mode==='range'?'flex':'none')+';gap:8px;align-items:center;margin-top:8px"><span class="note">Desde</span><input id="'+pfx+'Min" class="fin" type="number" min="1" placeholder="001" style="width:88px"><span class="note">hasta</span><input id="'+pfx+'Max" class="fin" type="number" min="1" placeholder="050" style="width:88px"></div>';
+/* SEGMENTACIÓN DE AUDIENCIA (v4, pedido de Carlos): TRES modos con iconos —
+   Todos · Un departamento · Personas específicas (buscador por nombre o ID).
+   El modo viejo por rango de IDs se sigue LEYENDO (publicaciones ya hechas)
+   pero ya no se ofrece al publicar. */
+function inTarget(to,emp){
+  if(!to||to.mode==='all') return true;
+  if(S&&S.admin) return true;                       /* acceso total monitorea todo */
+  if(to.mode==='range'){ var mn=+to.min,mx=+to.max; if(isNaN(mn)||isNaN(mx)) return true; if(mn>mx){ var t=mn; mn=mx; mx=t; } return emp>=mn&&emp<=mx; }
+  if(to.mode==='depto'){
+    if(S&&+emp===+S.emp) return (S.area===to.depto);
+    try{ var i=dirInfo(emp); if(i&&i.depto) return i.depto===to.depto; }catch(e){}
+    return false;
+  }
+  if(to.mode==='ids'){ return (to.ids||[]).map(Number).indexOf(+emp)>-1; }
+  return true;
 }
-function setTo(pfx,m){ if(pfx==='news') _newsTo=m; else if(pfx==='poll') _pollTo=m; else _dmTo=m; var r=$(pfx+'Range'); if(r) r.style.display=(m==='range'?'flex':'none'); var act='background:var(--accent);color:#fff;border-color:var(--accent)'; var a=$(pfx+'ToAll'),b=$(pfx+'ToRange'); if(a) a.style.cssText=(m==='all'?act:''); if(b) b.style.cssText=(m==='range'?act:''); }
-function readTarget(pfx){ var mode=(pfx==='news'?_newsTo:(pfx==='poll'?_pollTo:_dmTo)); if(mode!=='range') return {mode:'all'}; var mn=parseInt(($(pfx+'Min')||{}).value,10), mx=parseInt(($(pfx+'Max')||{}).value,10); if(isNaN(mn)||isNaN(mx)) return null; return {mode:'range',min:mn,max:mx}; }
+function targetLabel(to){
+  if(!to||to.mode==='all') return 'Para todos';
+  if(to.mode==='depto') return 'Para '+to.depto;
+  if(to.mode==='ids'){ var n=(to.ids||[]).length; return 'Para '+n+(n===1?' persona':' personas'); }
+  var mn=(''+to.min).padStart(3,'0'),mx=(''+to.max).padStart(3,'0');
+  return to.min===to.max?('Para ID '+mn):('Para IDs '+mn+'–'+mx);
+}
+var _toSel={news:[],poll:[],dm:[]};
+function toChips(pfx){
+  return (_toSel[pfx]||[]).map(function(n){
+    var i=null; try{ i=dirInfo(n); }catch(e){}
+    return '<span class="chipst">'+esc(i&&i.nombre?niceName(i.nombre):('#'+(''+n).padStart(3,'0')))+
+      ' <b style="cursor:pointer;margin-left:3px" onclick="toDel(\''+pfx+'\','+n+')">✕</b></span>';
+  }).join('')||'<span class="note">Nadie elegido todavía.</span>';
+}
+function toDel(pfx,n){ _toSel[pfx]=(_toSel[pfx]||[]).filter(function(x){ return +x!==+n; }); var el=$(pfx+'PerSel'); if(el) el.innerHTML=toChips(pfx); }
+function toAdd(pfx,n){ n=+n; if(!n) return; if((_toSel[pfx]||[]).indexOf(n)<0) _toSel[pfx].push(n);
+  var el=$(pfx+'PerSel'); if(el) el.innerHTML=toChips(pfx);
+  var q=$(pfx+'PerQ'); if(q){ q.value=''; } var r=$(pfx+'PerRes'); if(r) r.innerHTML=''; }
+function toAddQ(pfx){ var q=($(pfx+'PerQ')||{}).value||''; var d=q.replace(/\D/g,''); if(d) toAdd(pfx,+d); }
+function toBuscar(pfx){
+  var r=$(pfx+'PerRes'); if(!r) return;
+  var q=(($(pfx+'PerQ')||{}).value||'').trim(); if(!q){ r.innerHTML=''; return; }
+  dirLoad();
+  var gente=(DBC.dir||[]), ql=_norm(q), dig=q.replace(/\D/g,'');
+  var hits=gente.filter(function(p){ return (ql&&_norm(p.nombre).indexOf(ql)>-1)||(dig&&(''+p.n).indexOf(dig)>-1); }).slice(0,6);
+  r.innerHTML=hits.map(function(p){ return '<button class="chip2" onclick="toAdd(\''+pfx+'\','+p.n+')">'+esc(niceName(p.nombre))+' <span class="note">#'+(''+p.n).padStart(3,'0')+'</span></button>'; }).join('')+
+    (dig?'<button class="chip2" onclick="toAdd(\''+pfx+'\','+(+dig)+')">Agregar #'+(''+dig).padStart(3,'0')+'</button>':'');
+}
+function rangePicker(pfx,mode){
+  var I_ALL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
+  var I_DEP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M16 6h.01M8 10h.01M16 10h.01M12 6h.01M12 10h.01"/></svg>';
+  var I_PER='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>';
+  var lbl={'all':'Para todos','depto':'Un departamento','ids':'Personas específicas'}[mode]||'Para todos';
+  var deptos=Object.keys(DEPTO_AREA).sort();
+  function b(m,icon,tit){ return '<button type="button" id="'+pfx+'To_'+m+'" class="icoa'+(mode===m?' on':'')+'" title="'+tit+'" aria-label="'+tit+'" onclick="setTo(\''+pfx+'\',\''+m+'\')">'+icon+'</button>'; }
+  return '<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">'+
+      b('all',I_ALL,'Todos')+b('depto',I_DEP,'Un departamento')+b('ids',I_PER,'Personas específicas')+
+      '<span class="note" id="'+pfx+'ToLbl">'+lbl+'</span></div>'+
+    '<div id="'+pfx+'Dep" style="display:'+(mode==='depto'?'block':'none')+';margin-top:8px"><select id="'+pfx+'Depto" class="fin">'+
+      deptos.map(function(d){ return '<option value="'+esc(d)+'">'+esc(d)+'</option>'; }).join('')+'</select></div>'+
+    '<div id="'+pfx+'Per" style="display:'+(mode==='ids'?'block':'none')+';margin-top:8px">'+
+      '<input id="'+pfx+'PerQ" class="fin" placeholder="Nombre o número… (Enter agrega)" autocomplete="off" oninput="toBuscar(\''+pfx+'\')" onkeydown="if(event.key===\'Enter\'){toAddQ(\''+pfx+'\');event.preventDefault();}">'+
+      '<div id="'+pfx+'PerRes" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"></div>'+
+      '<div id="'+pfx+'PerSel" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">'+toChips(pfx)+'</div></div>';
+}
+function setTo(pfx,m){
+  if(pfx==='news') _newsTo=m; else if(pfx==='poll') _pollTo=m; else _dmTo=m;
+  ['all','depto','ids'].forEach(function(k){ var b=$(pfx+'To_'+k); if(b) b.classList.toggle('on', k===m); });
+  var d=$(pfx+'Dep'); if(d) d.style.display=(m==='depto'?'block':'none');
+  var p=$(pfx+'Per'); if(p) p.style.display=(m==='ids'?'block':'none');
+  var l=$(pfx+'ToLbl'); if(l) l.textContent={'all':'Para todos','depto':'Un departamento','ids':'Personas específicas'}[m]||'';
+}
+function readTarget(pfx){
+  var mode=(pfx==='news'?_newsTo:(pfx==='poll'?_pollTo:_dmTo));
+  if(mode==='depto'){ var dp=($(pfx+'Depto')||{}).value||''; return dp?{mode:'depto',depto:dp}:null; }
+  if(mode==='ids'){ var ids=(_toSel[pfx]||[]).slice(); return ids.length?{mode:'ids',ids:ids}:null; }
+  return {mode:'all'};
+}
 var _newsTo='all', _dmTo='all', _pollTo='all';
 /* pestañas del panel "Publicar" (admin). Alterna con display para NO perder lo tecleado. */
 var _pubTab='news';
@@ -5626,7 +5822,7 @@ function markRead(id){
   n.reads.push({ emp:S.emp, ts:Date.now() });
   newsSave(a); sbSyncOne('news', n);
   S.points+=CFG.points.read; save(); renderTop();
-  flash('¡Gracias por enterarte! +'+CFG.points.read+' pts');
+  flash('¡Gracias por enterarte! ✓');
   renderNews();
 }
 function renderNews(){
@@ -5643,8 +5839,7 @@ function renderNews(){
     h+='<div class="sec-t">Gestionar<span class="ln"></span></div><div class="tgrid">';
     h+=htile('renderNewsPost()','news','Noticias y avisos', nPub+' publicada(s) · subir/editar');
     h+=htile('openCal()','cal','Calendario', 'Personal · tu área · general', {cls:'hide-desk'});
-    h+=invitTile();
-    h+=htile('renderEncuestas()','encuestas','Encuestas', 'Crear y ver resultados');
+      h+=htile('renderEncuestas()','encuestas','Encuestas', 'Crear y ver resultados');
     // DOCUMENTOS ya NO va aquí (Sesión 15, Carlos): vive en el Inicio/tablero
     // (renderDash) y tenerlo también en Noticias duplicaba el mismo módulo.
     h+='</div></div>';
@@ -5666,8 +5861,7 @@ function renderNews(){
     h+=htile("newsGo('pend')",'news','Pendientes', nuevas.length?(nuevas.length+(nuevas.length===1?' noticia nueva':' noticias nuevas')+(avisosN?' · avisos de RRHH':'')):'Estás al día ✓', {wide:true, cnt:nuevas.length||''});
     h+=htile("newsGo('leidas')",'edu','Ya leídas', leidas.length?(leidas.length+(leidas.length===1?' noticia':' noticias')):'Aún no hay', {wide:true});
     h+=htile('openCal()','cal','Calendario', 'Personal · tu área · general', {cls:'hide-desk'});
-    h+=invitTile();
-    h+='</div>';
+      h+='</div>';
     // FORO DE NOTICIAS: todas las noticias para ti, en recuadros bonitos (texto + PDF/imagen)
     h+='<div class="sec-t">Foro de noticias<span class="ln"></span></div>';
     h+= vis.length ? newsCards(vis.slice().sort(function(a,b){ return (b.ts||0)-(a.ts||0); }))
@@ -8020,7 +8214,11 @@ function msgAdminInbox(){
   try{ vacN=leaveGet().filter(function(r){return r.status==='pendiente';}).length; }catch(e){}
   try{ quejN=reportsGet().filter(function(r){return r.status==='pendiente';}).length; }catch(e){}
   var h='<div class="sec-t">Conversaciones<span class="ln"></span></div><div class="tgrid">';
-  h+=htile("msgsGo('planta')",'msg','Chats de la planta', tot?(tot+(tot===1?' conversación':' conversaciones')+' · monitoreo'):'Aún sin mensajes', {wide:true});
+  /* los chats PROPIOS del acceso total (también escriben con su usuario) */
+  var _act=[], _actUn=0;
+  try{ _act=myActiveConvs(); _act.forEach(function(c){ _actUn+=convUnread(c); }); }catch(e){}
+  h+=htile("msgsGo('activos')",'msg','Tus chats', _act.length?(_act.length+(_act.length===1?' conversación tuya':' conversaciones tuyas')):'Escríbele a quien sea', {wide:true, cnt:_actUn||''});
+  h+=htile("msgsGo('planta')",'msg','Chats de la planta', tot?(tot+(tot===1?' conversación':' conversaciones')+' · monitoreo'):'Aún sin mensajes');
   h+=htile('renderNewChat()','personas','Escribir a un trabajador', 'Chat directo 1 a 1');
   h+=htile("wcReset();renderWConvs()",'docs','Conversaciones de trabajadores', 'Revisión · solo lectura');
   h+='</div>';
@@ -9327,9 +9525,9 @@ function mzCapPaint(){
      '<input type="date" value="'+esc(_mzF)+'" onchange="mzSetF(this.value)" style="padding:9px 10px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">';
   [1,2,3].forEach(function(t){ h+='<button class="btn'+(t===_mzT?'':' ghost')+'" style="margin:0;width:auto;padding:9px 14px" onclick="mzSetT('+t+')">Turno '+t+'</button>'; });
   h+='<span style="flex:1"></span>'+
-     '<button class="btn" style="margin:0;width:auto;padding:9px 12px;font-size:12px" onclick="mzFoto(\'bitacora\')">📷 Subir foto</button>'+
-     '<button class="btn ghost" style="margin:0;width:auto;padding:9px 12px;font-size:12px" onclick="mzPasteTog()">Pegar de Excel</button>'+
-     '<button class="btn ghost" style="margin:0;width:auto;padding:9px 12px;font-size:12px" onclick="mzExcel(\''+_mzF+'\',\''+_mzF+'\')">Excel del día</button></div>'+
+     '<button class="icoa" title="Subir foto de la bitácora" aria-label="Subir foto de la bitácora" onclick="mzFoto(\'bitacora\')">'+IC_CAM+'</button>'+
+     '<button class="icoa" title="Pegar de Excel" aria-label="Pegar de Excel" onclick="mzPasteTog()">'+IC_CLIP+'</button>'+
+     '<button class="icoa" title="Descargar Excel del día" aria-label="Descargar Excel del día" onclick="mzExcel(\''+_mzF+'\',\''+_mzF+'\')">'+IC_DL+'</button></div>'+
      '<div style="display:flex;gap:7px;margin-top:9px;flex-wrap:wrap">';
   [1,2,3,4,5].forEach(function(b){
     var par=cat&&cat.banburys&&cat.banburys[String(b)]==='parado';
@@ -9864,7 +10062,7 @@ function mzProgPaint(){
   });
   h+='<div id="mzp-foto"></div>';
   h+='<div class="card" style="border-style:dashed"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><b style="font-size:13px">Programar</b>'+
-     '<button class="btn" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzFoto(\'cedula\')">📷 Foto de la cédula</button></div>'+
+     '<button class="icoa" title="Subir foto de la cédula" aria-label="Subir foto de la cédula" onclick="mzFoto(\'cedula\')">'+IC_CAM+'</button></div>'+
      '<div style="display:flex;gap:7px;margin-top:8px;flex-wrap:wrap">'+
      '<select id="mzp-t" style="padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px"><option value="1">Turno 1</option><option value="2">Turno 2</option><option value="3">Turno 3</option></select>'+
      '<select id="mzp-b" style="padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+[1,2,3,4,5].map(function(b){ return '<option value="'+b+'">BB'+b+'</option>'; }).join('')+'</select></div>'+
@@ -10282,7 +10480,7 @@ function mzTabPaint(x){
   h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">'+
      '<b style="font-size:14px;flex:1;min-width:130px">Gráficos · Mezclado</b>'+
      mzRangoCtl()+
-     '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzExcel(_mztD1,_mztD2)">⬇ Excel</button></div>'+
+     '<button class="icoa" title="Descargar Excel del periodo" aria-label="Descargar Excel del periodo" onclick="mzExcel(_mztD1,_mztD2)">'+IC_DL+'</button></div>'+
      '<div id="mz-rangopanel"></div>'+
      /* cierres alineados a la DERECHA, debajo del selector y Excel (pedido de Carlos) */
      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;justify-content:flex-end">'+

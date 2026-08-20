@@ -864,6 +864,10 @@ body.a11y .screen b{ font-weight:800 !important; }
 body.a11y .screen h2{ font-size:22px !important; }
 body.a11y .screen .btn, body.a11y .screen .bigbtn{ font-size:16.5px !important; }
 body.a11y .screen .seg button{ font-size:13px !important; }
+/* los iconos de accion tambien crecen en Texto grande — si no, el modo accesible
+   dejaba de servir justo donde cambiamos palabras por dibujos */
+body.a11y .screen .icoa{ width:46px !important; height:46px !important; }
+body.a11y .screen .icoa svg{ width:23px !important; height:23px !important; }
 /* ===== Beeper (alarma de llamada) ===== */
 .nav button span{white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;display:block}
 
@@ -2666,6 +2670,11 @@ function go(name){
 var IC_CAM='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
 var IC_CLIP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>';
 var IC_DL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>';
+/* imagen/infografia · muchos archivos · bote de basura. Para "documento" NO se hace
+   uno nuevo: ya existe IC2.doc y duplicarlo dejaria dos dibujos casi iguales. */
+var IC_IMG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 16l-5.5-5.5L7 19"/></svg>';
+var IC_DOCS='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8h7l3.5 3.5V21H8z"/><path d="M15 8v3.5h3.5"/><path d="M16 5H6v13"/></svg>';
+var IC_TRASH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9.5 7V4.5h5V7"/><path d="M6.5 7l1 12.5h9l1-12.5"/><path d="M10.5 11v5.5M13.5 11v5.5"/></svg>';
 /* la marca de HB (dos rombos) — pedido de Carlos: el logo SIEMPRE arriba-izquierda */
 var HB_MARK='<svg viewBox="0 0 54 32" xmlns="http://www.w3.org/2000/svg" aria-label="Hules Banda">'+
   '<path d="M15 2 28 16 15 30 2 16Z" fill="var(--accent2)"/>'+
@@ -5779,6 +5788,11 @@ function pubTab(t){ _pubTab=t;
   });
 }
 var _newsImg=null;
+/* quitar la infografia ya elegida (antes no habia manera: una vez adjuntada te la
+   llevabas a la publicacion o tenias que salirte de la pantalla) */
+function newsImgDel(){ _newsImg=null;
+  var pv=$('newsImgPv'); if(pv){ pv.removeAttribute('src'); pv.style.display='none'; }
+  var db=$('newsImgDelBtn'); if(db) db.style.display='none'; flash('Infografía quitada'); }
 function loadNewsImg(inp){
   var f=inp.files&&inp.files[0]; if(!f) return;
   var rd=new FileReader();
@@ -5788,6 +5802,7 @@ function loadNewsImg(inp){
       var c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h);
       _newsImg=c.toDataURL('image/jpeg',0.82);
       var pv=$('newsImgPv'); if(pv){ pv.src=_newsImg; pv.style.display='block'; }
+      var db=$('newsImgDelBtn'); if(db) db.style.display='inline-flex';
       flash('Infografía lista para publicar');
     };
     img.src=e.target.result;
@@ -5912,7 +5927,11 @@ function renderNewsPost(){
        '<input id="newsTitle" class="fin" placeholder="Título (ej. Semana de seguridad)" autocomplete="off" style="margin:0 0 8px">'+
        '<textarea id="newsBody" class="fin" rows="3" placeholder="Mensaje para los trabajadores…"></textarea>'+
        '<div class="note" style="margin:12px 0 6px">¿Para quién?</div>'+rangePicker('news',_newsTo)+
-       '<div style="margin-top:10px"><label class="btn ghost" style="margin:0;padding:11px;font-size:14px;display:inline-block;cursor:pointer;width:auto">Adjuntar infografía<input type="file" accept="image/*" onchange="loadNewsImg(this)" style="display:none"></label></div>'+
+       '<div style="display:flex;gap:7px;align-items:center;margin-top:10px">'+
+         '<span class="note" style="flex:1;min-width:0">Infografía (opcional)</span>'+
+         '<label class="icoa" style="cursor:pointer" title="Adjuntar infografía" aria-label="Adjuntar infografía">'+IC_IMG+'<input type="file" accept="image/*" onchange="loadNewsImg(this)" style="display:none"></label>'+
+         '<button class="icoa" id="newsImgDelBtn" style="display:none" title="Quitar la infografía" aria-label="Quitar la infografía" onclick="newsImgDel()">'+IC_TRASH+'</button>'+
+       '</div>'+
        '<img id="newsImgPv" alt="" style="display:none;width:100%;border-radius:10px;margin-top:9px;border:1px solid var(--line)">'+
        '<button class="btn" style="margin-top:10px;padding:13px;font-size:15px" onclick="postNews()">Publicar</button>'+
      '</div>'+
@@ -6820,8 +6839,10 @@ function recsAdminBlock(){
     '<select id="recPer" class="fin" onchange="window._recPer=this.value;recListPaint()">'+
       '<option value="cur"'+(window._recPer!=='prev'?' selected':'')+'>'+esc(cur.label)+' (actual)</option>'+
       '<option value="prev"'+(window._recPer==='prev'?' selected':'')+'>'+esc(prv.label)+'</option></select>'+
-    '<div style="margin-top:10px"><label class="btn ghost" style="margin:0;padding:11px;font-size:14px;display:inline-block;cursor:pointer;width:auto">Elegir PDFs (pueden ser cientos)'+
-      '<input id="recFiles" type="file" accept="application/pdf" multiple style="display:none" onchange="var n=(this.files?this.files.length:0);var e=document.getElementById(\'recFilesName\');if(e)e.textContent=n?(n+\' archivo\'+(n===1?\'\':\'s\')+\' listos\'):\'\';"></label> <span id="recFilesName" class="note"></span></div>'+
+    '<div style="display:flex;gap:7px;align-items:center;margin-top:10px">'+
+      '<span id="recFilesName" class="note" style="flex:1;min-width:0">Toca el ícono y escoge todos los PDFs de un jalón</span>'+
+      '<label class="icoa" style="cursor:pointer" title="Elegir los PDFs de los recibos (puedes escoger cientos de un jalón)" aria-label="Elegir los PDFs de los recibos">'+IC_DOCS+
+      '<input id="recFiles" type="file" accept="application/pdf" multiple style="display:none" onchange="var n=(this.files?this.files.length:0);var e=document.getElementById(\'recFilesName\');if(e)e.textContent=n?(n+\' archivo\'+(n===1?\'\':\'s\')+\' listos\'):\'Toca el ícono y escoge todos los PDFs de un jalón\';"></label></div>'+
     '<button class="btn" style="margin-top:12px" onclick="recsUpload()">Subir recibos</button>'+
     '<div id="recUpStatus" class="note" style="margin-top:9px">'+(window._recBusy?'':(window._recUpMsg||''))+'</div>'+
     '<div class="note" style="margin-top:8px">Si un trabajador ya tenía recibo en el periodo, el nuevo PDF lo <b>reemplaza</b> (y deberá firmar otra vez). Máximo 8 MB por PDF.</div></div>';
@@ -7560,11 +7581,13 @@ function renderPerfil(){
      '<div style="min-width:0"><div class="eyebrow">Mi perfil</div><b style="font-size:20px;display:block">'+esc(nombre||('Empleado #'+(''+S.emp).padStart(3,'0')))+'</b>'+
      '<span class="note">'+idTxt+'</span>'+(v3&&S.mando?'<br><span class="tg g" style="margin-top:5px;display:inline-block">Responsable · '+esc(S.area)+'</span>':'')+'</div></div></div></div>';
   // Foto
-  h+='<div class="panel"><div class="hd"><b>Mi foto</b><span class="chipst'+(p.foto?'':' mut')+'">'+(p.foto?'Con foto':'Sin foto')+'</span></div>'+
-     '<div style="display:flex;gap:10px;align-items:center">'+
-     '<label class="btn sec" style="margin:0;flex:1;text-align:center;cursor:pointer">Cambiar foto<input type="file" accept="image/*" onchange="pfFotoLoad(this)" style="display:none"></label>'+
-     (p.foto?'<button class="btn ghost" style="margin:0;flex:none;width:auto;padding:13px 16px" onclick="pfFotoDel()">Quitar</button>':'')+
-     '</div><p class="note" style="margin:9px 0 0">Tu foto se ve arriba junto a tu nombre. Usa una donde se vea bien tu cara.</p></div>';
+  h+='<div class="panel"><div class="hd"><b>Mi foto</b>'+
+       '<span style="display:flex;gap:7px;align-items:center">'+
+         '<span class="chipst'+(p.foto?'':' mut')+'">'+(p.foto?'Con foto':'Sin foto')+'</span>'+
+         '<label class="icoa" style="cursor:pointer" title="Cambiar mi foto" aria-label="Cambiar mi foto">'+IC_CAM+'<input type="file" accept="image/*" onchange="pfFotoLoad(this)" style="display:none"></label>'+
+         (p.foto?'<button class="icoa" title="Quitar mi foto" aria-label="Quitar mi foto" onclick="pfFotoDel()">'+IC_TRASH+'</button>':'')+
+       '</span></div>'+
+     '<p class="note" style="margin:2px 0 0">Tu foto se ve arriba junto a tu nombre. Usa una donde se vea bien tu cara. Toca la cámara para cambiarla.</p></div>';
   if(v3){
     // Datos personales oficiales (editables por el trabajador; se guardan en el servidor)
     h+='<div class="panel"><div class="hd"><div><div class="eyebrow">Datos personales</div><b style="font-size:16px">Tu información</b></div><span class="chipst mut">se guarda en el servidor</span></div>'+
@@ -7657,7 +7680,8 @@ function pfFotoLoad(inp){
     img.src=e.target.result; };
   rd.readAsDataURL(f);
 }
-function pfFotoDel(){ var p=profGet(S.emp); delete p.foto; profSaveServer(p,'Foto eliminada'); renderTop(_screen); renderPerfil(); }
+function pfFotoDel(){ if(!confirm('¿Quitar tu foto de perfil? Tendrás que volver a subirla.')) return;
+  var p=profGet(S.emp); delete p.foto; profSaveServer(p,'Foto eliminada'); renderTop(_screen); renderPerfil(); }
 function savePin(){
   var p=profGet(S.emp);
   var o=(($('pinOld')||{}).value||'').trim(), n1=(($('pinNew')||{}).value||'').trim(), n2=(($('pinNew2')||{}).value||'').trim();
@@ -8945,7 +8969,10 @@ function docUploadForm(){
   h+='<div class="note" style="margin:11px 0 3px">Permiso especial — <b>opcional</b></div>'+
      '<input id="docExtra" class="fin" placeholder="Claves de quien más lo verá (ej. 0887, 0917)" autocomplete="off" inputmode="numeric">'+
      '<div class="note" style="margin-top:5px">Déjalo vacío si solo es para tu área. Quien pongas aquí lo verá en su carpeta <b>Documentos compartidos</b> — solo para consultar.</div>';
-  h+='<div style="margin-top:10px"><label class="btn ghost" style="margin:0;padding:11px;font-size:14px;display:inline-block;cursor:pointer;width:auto">Elegir archivo<input id="docFile" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,application/pdf,image/*" style="display:none" onchange="var n=(this.files&&this.files[0])?this.files[0].name:\'\';var e=document.getElementById(\'docFileName\');if(e)e.textContent=n;"></label> <span id="docFileName" class="note"></span></div>';
+  h+='<div style="display:flex;gap:7px;align-items:center;margin-top:10px">'+
+       '<span id="docFileName" class="note" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Toca el ícono para escoger el archivo</span>'+
+       '<label class="icoa" style="cursor:pointer" title="Elegir el archivo" aria-label="Elegir el archivo">'+IC2.doc+
+       '<input id="docFile" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,application/pdf,image/*" style="display:none" onchange="var n=(this.files&&this.files[0])?this.files[0].name:\'\';var e=document.getElementById(\'docFileName\');if(e)e.textContent=n||\'Toca el ícono para escoger el archivo\';"></label></div>';
   h+='<div class="note" style="margin-top:6px">PDF, Word, Excel, PowerPoint, imagen o texto · máximo 100 MB.</div>';
   h+='<button class="btn" style="margin-top:10px" onclick="docUpload()">Subir documento</button>';
   h+='<div class="note" style="margin-top:8px">El acceso lo vigila el servidor: nadie fuera de tu área puede abrirlo, ni con la liga.</div></div>';
@@ -10768,11 +10795,11 @@ function mzPrePaint(){
   var hoy=mxToday();
   h+='<div class="card" style="margin-bottom:12px"><b style="font-size:15px">Precios de materia prima</b>'+
      '<div class="note" style="margin-top:3px">Cuando subes un precio nuevo, <b>solo aplica de esa fecha en adelante</b>. Lo que ya se mezcló conserva el precio que tenía — el histórico nunca se toca.</div>'+
-     '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'+
+     '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">'+
      '<input id="mzp-q" value="'+esc(_mzPreQ)+'" placeholder="Buscar material…" onkeydown="if(event.key===\'Enter\')mzPreBuscar(this.value)" style="flex:1;min-width:160px;padding:9px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
      '<button class="btn ghost" style="margin:0;width:auto;padding:9px 13px;font-size:12.5px" onclick="mzPreBuscar($(\'mzp-q\').value)">Buscar</button>'+
      '<button class="btn" style="margin:0;width:auto;padding:9px 13px;font-size:12.5px" onclick="mzPreNuevo()">＋ Precio nuevo</button>'+
-     '<button class="btn ghost" style="margin:0;width:auto;padding:9px 13px;font-size:12.5px" onclick="mzPrePegar()">Pegar de Excel</button></div>'+
+     '<button class="icoa" title="Pegar precios desde Excel" aria-label="Pegar precios desde Excel" onclick="mzPrePegar()">'+IC_CLIP+'</button></div>'+
      (x.fx?('<div class="note" style="margin-top:7px">Tasa de hoy para convertir dólares: $'+mzN(x.fx,4)+'</div>'):'')+
      '</div>';
   h+='<div id="mzp-form"></div>';

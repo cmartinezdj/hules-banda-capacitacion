@@ -9675,7 +9675,7 @@ function mzCapPaint(){
   h+='<span style="flex:1"></span>'+
      '<button class="icoa" title="Subir foto de la bitácora" aria-label="Subir foto de la bitácora" onclick="mzFoto(\'bitacora\')">'+IC_CAM+'</button>'+
      '<button class="icoa" title="Pegar de Excel" aria-label="Pegar de Excel" onclick="mzPasteTog()">'+IC_CLIP+'</button>'+
-     '<button class="icoa" title="Descargar Excel del día" aria-label="Descargar Excel del día" onclick="mzExcel(\''+_mzF+'\',\''+_mzF+'\')">'+IC_DL+'</button></div>'+
+     '<button class="btn ghost" style="margin:0;width:auto;padding:9px 14px;font-size:13px" title="Ver las últimas 100 bitácoras" onclick="mzHistTog()">Historial</button></div>'+
      '<div style="display:flex;gap:7px;margin-top:9px;flex-wrap:wrap">';
   [1,2,3,4,5].forEach(function(b){
     var par=cat&&cat.banburys&&cat.banburys[String(b)]==='parado';
@@ -9683,6 +9683,7 @@ function mzCapPaint(){
   });
   h+='</div></div>';
   h+='<div id="mz-paste" class="card hide" style="margin-bottom:12px"></div>';
+  h+='<div id="mz-hist" class="card hide" style="margin-bottom:12px"></div>';
   if(prog.length){
     h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Cédula de este turno</b><div class="note" style="margin-top:4px">'+
        prog.map(function(p){ return esc((p.compuesto||p.compuesto_txt||'')+(p.letra?' '+p.letra:''))+' ×'+p.mezclas_prog; }).join(' · ')+'</div></div>';
@@ -11539,6 +11540,68 @@ function hbRevisaVersion(){
   try{ fetch('index.html',{headers:{'Accept':'text/html'}}).then(function(r){ try{ if(r&&r.body&&r.body.cancel) r.body.cancel(); }catch(e){} }).catch(function(){}); }catch(e){}
   try{ if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration) navigator.serviceWorker.getRegistration().then(function(g){ if(g&&g.update) g.update(); }); }catch(e){}
 }
+/* ---------- HISTORIAL DE BITÁCORAS (v3.36) ----------
+   Pedido de Carlos: el ícono de descargar el Excel del día no servía de nada
+   ahí; en su lugar va este historial con las últimas 100 bitácoras a la mano.
+   OJO, tal como lo pidió: NO SE BORRA NADA. El tope de 100 es de VISTA — todo
+   lo capturado sigue completo en el servidor desde el primer día. Una
+   "bitácora" es un DÍA de captura, así que la lista va por fecha. */
+var MZ_DIAS=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+var MZ_MESES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function mzFechaBonita(f){
+  var p=String(f||'').split('-'); if(p.length<3) return esc(String(f||''));
+  /* se arma con partes explícitas a propósito: new Date('2026-08-13') se lee
+     como UTC y en México la fecha se corre un día para atrás */
+  var d=new Date(+p[0], +p[1]-1, +p[2]);
+  var dia=MZ_DIAS[d.getDay()]||'';
+  return dia.charAt(0).toUpperCase()+dia.slice(1)+' '+(+p[2])+' '+(MZ_MESES[+p[1]-1]||'');
+}
+function mzHistTog(){
+  var el=$('mz-hist'); if(!el) return;
+  if(!el.classList.contains('hide')){ el.classList.add('hide'); return; }
+  el.classList.remove('hide');
+  el.innerHTML='<b style="font-size:13px">Historial de bitácoras</b>'+
+    '<div class="note" style="margin-top:4px">Cargando…</div>';
+  if(!sbReady()){ el.innerHTML='<b style="font-size:13px">Historial de bitácoras</b>'+
+    '<div class="note" style="margin-top:4px">Sin conexión: el historial se lee del servidor.</div>'; return; }
+  SB.rpc('hb_mez_bitacoras',{p_limite:100}).then(function(r){
+    var x=r&&r.data;
+    if(r.error||!(x&&x.ok)){ el.innerHTML='<b style="font-size:13px">Historial de bitácoras</b>'+
+      '<div class="note" style="margin-top:4px">'+esc(mzErr(x,r&&r.error))+'</div>'; return; }
+    mzHistPaint(x);
+  }, function(e){ el.innerHTML='<b style="font-size:13px">Historial de bitácoras</b>'+
+      '<div class="note" style="margin-top:4px">'+esc(mzErr(null,e))+'</div>'; });
+}
+function mzHistPaint(x){
+  var el=$('mz-hist'); if(!el) return;
+  var ds=x.dias||[], tot=x.total_dias||ds.length;
+  var h='<div class="line"><b style="font-size:13px">Historial de bitácoras</b>'+
+        '<button class="btn ghost" style="margin:0;width:auto;padding:6px 11px;font-size:12px" onclick="mzHistTog()">Cerrar</button></div>';
+  h+='<div class="note" style="margin-top:3px">'+
+     (tot>ds.length ? ('Las '+ds.length+' más recientes, de '+tot+' días capturados. ')
+                    : (ds.length+(ds.length===1?' día capturado. ':' días capturados. ')))+
+     'Nada se borra: aquí solo se muestran las últimas 100. Toca un día para abrir su bitácora.</div>';
+  if(!ds.length){ h+='<div class="note" style="margin-top:8px">Todavía no hay bitácoras capturadas.</div>';
+    el.innerHTML=h; return; }
+  h+=mzTabla(['Día','Mezclas','Corridas','BB','Turnos','Paros','Capturó'],
+    ds.map(function(d){
+      var paro = d.paros ? (d.paros+' · '+mzN(d.paro_min,0)+' min') : '—';
+      return mzTd([
+        mzFechaBonita(d.fecha)+(d.tiene_practica?' <span class="note">práctica</span>':''),
+        mzN(d.mezclas,0), mzN(d.corridas,0), mzN(d.banburys,0), mzN(d.turnos,0), paro,
+        /* los días que entraron por importación masiva no traen quién capturó:
+           se dice "importado", NO se inventa un nombre */
+        d.capturo ? esc(niceName(d.capturo)) : '<span class="note">importado</span>'
+      ], "mzHistAbre('"+jsAttr(d.fecha)+"')");
+    }));
+  el.innerHTML=h;
+}
+function mzHistAbre(f){
+  var el=$('mz-hist'); if(el) el.classList.add('hide');
+  mzSetF(f);                      /* cambia el día y recarga la bitácora */
+  flash('Bitácora del '+mzFechaBonita(f));
+}
+
 /* ¿hay algo a medio capturar en la bitácora? (para no pisarle el trabajo a nadie) */
 function mzFormVacio(){
   try{

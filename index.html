@@ -10011,6 +10011,40 @@ function mzPasteTog(){
    agregaría la posibilidad de que transcriba mal algo que se puede leer bien.
    El archivo se normaliza a TSV y se le entrega al MISMO parser del pegado,
    que ya está probado. */
+/* ¿Es DE VERDAD un archivo de texto? (20-ago: Gustavo subió su .xlsx real y la
+   página se CONGELÓ — un .xlsx es un ZIP binario y leerlo como texto atraganta
+   al navegador. Escoger su Excel es lo natural: hay que atajarlo con
+   instrucciones, no congelarse.) Revisa extensión, firma de bytes y forma,
+   ANTES de entregar el texto. Lo usan bitácora, precios y cédula. */
+function mzArchivoTexto(f, avisa, cb){
+  var nom=String((f&&f.name)||'').toLowerCase();
+  var CONSEJO=' El sistema lee el CSV: en tu Excel ve a Archivo → Guardar como → tipo «CSV», y sube ESE. Tu Excel queda igual, no se pierde nada.';
+  if(/\.(xlsx|xlsm|xlsb|xls|numbers|ods)$/.test(nom)){
+    avisa('Ese es el Excel completo ('+nom.slice(nom.lastIndexOf('.'))+').'+CONSEJO); return; }
+  if(f.size>3000000){ avisa('Ese archivo pesa demasiado (máximo 3 MB). Guarda solo la hoja que vas a subir.'); return; }
+  var rd=new FileReader();
+  rd.onload=function(){
+    var b=new Uint8Array(rd.result||new ArrayBuffer(0));
+    if(b.length>=2 && b[0]===0x50 && b[1]===0x4B){ avisa('Ese archivo es un Excel (aunque el nombre no lo diga).'+CONSEJO); return; }
+    if(b.length>=2 && b[0]===0xD0 && b[1]===0xCF){ avisa('Ese archivo es un Excel viejo (.xls).'+CONSEJO); return; }
+    var ceros=0; for(var i=0;i<b.length;i++) if(b[i]===0) ceros++;
+    if(ceros>2){ avisa('Ese archivo no es de texto.'+CONSEJO); return; }
+    var rd2=new FileReader();
+    rd2.onload=function(){
+      var t=String(rd2.result||'');
+      /* un CSV real no trae renglones kilométricos */
+      var mx=0, prev=0, idx;
+      while((idx=t.indexOf('\n',prev))>-1){ if(idx-prev>mx) mx=idx-prev; prev=idx+1; }
+      if(t.length-prev>mx) mx=t.length-prev;
+      if(mx>200000){ avisa('Ese archivo no parece un CSV.'+CONSEJO); return; }
+      cb(t);
+    };
+    rd2.onerror=function(){ avisa('No se pudo leer ese archivo.'); };
+    rd2.readAsText(f,'utf-8');
+  };
+  rd.onerror=function(){ avisa('No se pudo leer ese archivo.'); };
+  rd.readAsArrayBuffer(f.slice(0,2000));
+}
 function mzCsvATsv(txt){
   txt=String(txt||'').replace(/^\uFEFF/,'');            /* Excel escribe BOM */
   var lns=txt.split(/\r?\n/);
@@ -10051,16 +10085,13 @@ function mzArchivoLee(inp){
   var f=(inp&&inp.files)?inp.files[0]:null; if(inp) inp.value='';
   if(!f) return;
   var av=$('mz-arch'); if(av) av.textContent='Leyendo '+f.name+'…';
-  if(f.size>3000000){ if(av) av.textContent='Ese archivo pesa demasiado (máximo 3 MB). Guarda solo la hoja del día.'; return; }
-  var rd=new FileReader();
-  rd.onload=function(){
-    var ta=$('mz-tsv'); if(!ta) return;
-    ta.value=mzCsvATsv(rd.result);
-    if(av) av.textContent=f.name+' — revisa los renglones abajo antes de guardar.';
-    mzPegaPrev();                       /* misma previsualización de siempre */
-  };
-  rd.onerror=function(){ if(av) av.textContent='No se pudo leer ese archivo.'; };
-  rd.readAsText(f,'utf-8');
+  mzArchivoTexto(f, function(msg){ if(av){ av.innerHTML='<span style="color:var(--warn)">'+esc(msg)+'</span>'; } else alert(msg); },
+    function(txt){
+      var ta=$('mz-tsv'); if(!ta) return;
+      ta.value=mzCsvATsv(txt);
+      if(av) av.textContent=f.name+' — revisa los renglones abajo antes de guardar.';
+      mzPegaPrev();                     /* misma previsualización de siempre */
+    });
 }
 var _mzFilas=null;
 function mzPegaPrev(){
@@ -10388,11 +10419,8 @@ function mzProgArchivo(inp){
   var f=(inp&&inp.files)?inp.files[0]:null; if(inp) inp.value='';
   if(!f) return;
   var pv=$('mzpg-prev'); if(pv) pv.innerHTML='<div class="note" style="margin:8px 0">Leyendo '+esc(f.name)+'…</div>';
-  if(f.size>3000000){ if(pv) pv.innerHTML='<div class="note" style="margin:8px 0;color:var(--warn)">Ese archivo pesa demasiado (máximo 3 MB).</div>'; return; }
-  var rd=new FileReader();
-  rd.onload=function(){ mzProgPrev(mzCsvATsv(rd.result), f.name); };
-  rd.onerror=function(){ if(pv) pv.innerHTML='<div class="note" style="margin:8px 0;color:var(--warn)">No se pudo leer ese archivo.</div>'; };
-  rd.readAsText(f,'utf-8');
+  mzArchivoTexto(f, function(msg){ if(pv) pv.innerHTML='<div class="note" style="margin:8px 0;color:var(--warn)">'+esc(msg)+'</div>'; else alert(msg); },
+    function(txt){ mzProgPrev(mzCsvATsv(txt), f.name); });
 }
 function mzProgPrev(tsv,nombre){
   var pv=$('mzpg-prev'); if(!pv) return;
@@ -11297,16 +11325,13 @@ function mzPreArchivo(inp){
   var f=(inp&&inp.files)?inp.files[0]:null; if(inp) inp.value='';
   if(!f) return;
   var av=$('mzp-arch'); if(av) av.textContent='Leyendo '+f.name+'…';
-  if(f.size>3000000){ if(av) av.textContent='Ese archivo pesa demasiado (máximo 3 MB).'; return; }
-  var rd=new FileReader();
-  rd.onload=function(){
-    var ta=$('mzp-tsv'); if(!ta) return;
-    ta.value=mzCsvATsv(rd.result);       /* mismo normalizador probado de la bitácora */
-    if(av) av.textContent=f.name+' — revisa los renglones abajo antes de guardar.';
-    mzPrePrev();
-  };
-  rd.onerror=function(){ if(av) av.textContent='No se pudo leer ese archivo.'; };
-  rd.readAsText(f,'utf-8');
+  mzArchivoTexto(f, function(msg){ if(av){ av.innerHTML='<span style="color:var(--warn)">'+esc(msg)+'</span>'; } else alert(msg); },
+    function(txt){
+      var ta=$('mzp-tsv'); if(!ta) return;
+      ta.value=mzCsvATsv(txt);           /* mismo normalizador probado de la bitácora */
+      if(av) av.textContent=f.name+' — revisa los renglones abajo antes de guardar.';
+      mzPrePrev();
+    });
 }
 function mzPrePrev(){
   var txt=($('mzp-tsv').value||'').trim(); if(!txt){ alert('Pega primero los renglones.'); return; }

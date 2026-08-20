@@ -9801,7 +9801,11 @@ function mzCapPaint(){
      '<div id="mzc-res"></div></div>'+
      '<div style="display:flex;gap:7px;margin-top:8px;flex-wrap:wrap">'+
      '<div style="flex:1;min-width:80px">'+mzInp('mzc-letra','Versión (letra)')+'</div>'+
-     '<div style="flex:1;min-width:80px">'+mzInp('mzc-corr','Nº corrida','inputmode="numeric"')+'</div>'+
+     '<div style="flex:1;min-width:80px">'+mzInp('mzc-corr','Nº corrida','inputmode="numeric"')+
+       /* regla de Alejandro (20-ago): la corrida SOLO la llevan HNA-9, MRY-900 y
+          SRY-95; el resto de los compuestos no la usa. Se le recuerda a Gustavo
+          aqui mismo para que no ande adivinando en el ensayo. */
+       '<div class="note" style="font-size:10px;margin-top:2px">Solo HNA-9, MRY-900 y SRY-95</div></div>'+
      '<div style="flex:1;min-width:90px">'+mzInp('mzc-mez','Mezclas','inputmode="numeric"')+'</div>'+
      '<div style="flex:1;min-width:90px">'+mzInp('mzc-quem','Quemadas','inputmode="numeric"')+'</div>'+
      '<div style="flex:1;min-width:110px">'+mzInp('mzc-op','Nº operador','inputmode="numeric"')+'</div></div>'+

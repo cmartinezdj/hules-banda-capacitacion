@@ -9997,9 +9997,9 @@ function mzPasteTog(){
     '<div class="note" style="margin-top:4px">Copia en tu Excel las columnas <b>COMPUESTO · VERSIÓN · CORRIDA · MEZCLAS · QUEMADAS</b> (en ese orden) y pégalas aquí. Van a la fecha, turno y banbury elegidos arriba.</div>'+
     '<textarea id="mz-tsv" rows="6" style="width:100%;margin-top:8px;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:12.5px" placeholder="SRY-95\tB\t02\t43\t0"></textarea>'+
     '<div style="display:flex;gap:7px;align-items:center;margin-top:9px">'+
-      '<span class="note" style="flex:1;min-width:0" id="mz-arch">…o sube el archivo, sin copiar nada. Guárdalo en Excel o Google Sheets como <b>CSV</b>.</span>'+
-      '<label class="icoa" style="cursor:pointer" title="Subir el archivo CSV de la bitácora" aria-label="Subir el archivo CSV de la bitácora">'+IC2.doc+
-        '<input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" style="display:none" onchange="mzArchivoLee(this)"></label>'+
+      '<span class="note" style="flex:1;min-width:0" id="mz-arch">…o sube el archivo directo: <b>Excel (.xlsx)</b> o CSV.</span>'+
+      '<label class="icoa" style="cursor:pointer" title="Subir el Excel o CSV de la bitácora" aria-label="Subir el Excel o CSV de la bitácora">'+IC2.doc+
+        '<input type="file" accept=".xlsx,.xlsm,.csv,.tsv,.txt" style="display:none" onchange="mzArchivoLee(this)"></label>'+
     '</div>'+
     '<button class="btn ghost" style="margin:10px 0 0" onclick="mzPegaPrev()">Previsualizar</button>'+
     '<div id="mz-prev"></div>';
@@ -10011,21 +10011,163 @@ function mzPasteTog(){
    agregaría la posibilidad de que transcriba mal algo que se puede leer bien.
    El archivo se normaliza a TSV y se le entrega al MISMO parser del pegado,
    que ya está probado. */
+/* ===== LEER EL .XLSX DIRECTO, SIN LIBRERÍAS (v3.41) =====
+   Pregunta de Carlos: "¿y por qué no puede subir también un .xlsx?" — sí puede.
+   Un .xlsx es un ZIP de XMLs, y el navegador moderno YA TRAE el descompresor
+   (DecompressionStream) y el lector de XML (DOMParser). Cero librerías: la
+   regla del archivo único queda intacta. En navegadores viejos sin
+   DecompressionStream se cae con gracia al consejo de guardar como CSV. */
+function mzLe16(b,i){ return b[i]|(b[i+1]<<8); }
+function mzLe32(b,i){ return (b[i]|(b[i+1]<<8)|(b[i+2]<<16)|(b[i+3]<<24))>>>0; }
+async function mzZipAbre(f){
+  var buf=new Uint8Array(await f.arrayBuffer());
+  /* el índice del ZIP vive AL FINAL (End of Central Directory) */
+  var i=buf.length-22, min=Math.max(0,buf.length-22-65535);
+  while(i>=min && !(buf[i]===0x50&&buf[i+1]===0x4b&&buf[i+2]===0x05&&buf[i+3]===0x06)) i--;
+  if(i<min) throw new Error('no es un ZIP válido');
+  var cuantos=mzLe16(buf,i+10), p=mzLe32(buf,i+16), entradas={};
+  var td=new TextDecoder();
+  for(var k=0;k<cuantos;k++){
+    if(!(buf[p]===0x50&&buf[p+1]===0x4b&&buf[p+2]===0x01&&buf[p+3]===0x02)) break;
+    var comp=mzLe16(buf,p+10), csz=mzLe32(buf,p+20);
+    var nlen=mzLe16(buf,p+28), elen=mzLe16(buf,p+30), clen=mzLe16(buf,p+32);
+    var off=mzLe32(buf,p+42);
+    entradas[td.decode(buf.subarray(p+46,p+46+nlen))]={comp:comp,csz:csz,off:off};
+    p+=46+nlen+elen+clen;
+  }
+  return { lee: async function(nombre){
+    var e=entradas[nombre]; if(!e) return null;
+    /* el tamaño confiable es el del índice; el encabezado local solo da el
+       arranque de los datos */
+    var q=e.off, nl=mzLe16(buf,q+26), el=mzLe16(buf,q+28), ini=q+30+nl+el;
+    var datos=buf.subarray(ini,ini+e.csz);
+    if(e.comp===0) return td.decode(datos);
+    var out=await new Response(new Blob([datos]).stream()
+      .pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+    return new TextDecoder().decode(out);
+  }};
+}
+function mzXml(t){ return new DOMParser().parseFromString(t,'text/xml'); }
+function mzXCada(x,tag,fn){ var es=x.getElementsByTagName('*');
+  for(var i=0;i<es.length;i++) if(es[i].localName===tag) fn(es[i]); }
+async function mzXlsxHojas(z){
+  var wb=await z.lee('xl/workbook.xml'); if(!wb) throw new Error('sin workbook');
+  var rl=await z.lee('xl/_rels/workbook.xml.rels')||'';
+  var mapa={};
+  mzXCada(mzXml(rl),'Relationship',function(e){
+    mapa[e.getAttribute('Id')]='xl/'+String(e.getAttribute('Target')||'').replace(/^\//,'').replace(/^xl\//,'');
+  });
+  var hojas=[];
+  mzXCada(mzXml(wb),'sheet',function(e){
+    var rid=e.getAttribute('r:id');
+    if(!rid){ for(var a=0;a<e.attributes.length;a++) if(/(:|^)id$/.test(e.attributes[a].name)) rid=e.attributes[a].value; }
+    hojas.push({nombre:e.getAttribute('name')||('Hoja '+(hojas.length+1)), ruta:mapa[rid]||null});
+  });
+  return hojas.filter(function(h){ return h.ruta; });
+}
+async function mzXlsxTextos(z){
+  var t=await z.lee('xl/sharedStrings.xml'); if(!t) return [];
+  var out=[]; mzXCada(mzXml(t),'si',function(e){ out.push(e.textContent||''); });
+  return out;
+}
+/* qué estilos de celda son FECHA (los números de fecha en Excel son días
+   contados desde 1900 — sin esto, una fecha saldría como "46247") */
+async function mzXlsxEstilosFecha(z){
+  var t=await z.lee('xl/styles.xml'); if(!t) return {};
+  var x=mzXml(t), propios={};
+  mzXCada(x,'numFmt',function(e){ propios[e.getAttribute('numFmtId')]=e.getAttribute('formatCode')||''; });
+  function esFecha(id){ id=+(id||0);
+    if((id>=14&&id<=22)||(id>=45&&id<=47)) return true;
+    var f=propios[id]; if(!f) return false;
+    f=f.replace(/\[[^\]]*\]/g,'').replace(/"[^"]*"/g,'');
+    return /[dmy]/i.test(f) && !/[#?]/.test(f);
+  }
+  var fechas={}, idx=0, cx=null;
+  mzXCada(x,'cellXfs',function(e){ cx=e; });
+  if(cx) for(var i=0;i<cx.children.length;i++){ var e=cx.children[i];
+    if(e.localName==='xf'){ if(esFecha(e.getAttribute('numFmtId'))) fechas[idx]=true; idx++; } }
+  return fechas;
+}
+function mzXlsxCol(ref){ var m=/^([A-Z]+)/.exec(ref||''); if(!m) return -1;
+  var c=0; for(var i=0;i<m[1].length;i++) c=c*26+(m[1].charCodeAt(i)-64); return c-1; }
+function mzXlsxFecha(nser){ if(!(nser>0)) return '';
+  var d=new Date(Math.round((nser-25569)*86400000));
+  return d.getUTCFullYear()+'-'+('0'+(d.getUTCMonth()+1)).slice(-2)+'-'+('0'+d.getUTCDate()).slice(-2); }
+async function mzXlsxATsv(z, ruta, textos, estFecha){
+  var t=await z.lee(ruta); if(!t) throw new Error('no pude abrir esa hoja');
+  if(t.length>40000000) throw new Error('esa hoja es demasiado grande');
+  var filas=[];
+  mzXCada(mzXml(t),'row',function(row){
+    if(filas.length>6000) return;
+    var celdas=[];
+    for(var i=0;i<row.children.length;i++){
+      var c=row.children[i]; if(c.localName!=='c') continue;
+      var col=mzXlsxCol(c.getAttribute('r')); if(col<0) col=celdas.length;
+      var tipo=c.getAttribute('t')||'', st=c.getAttribute('s'), v='', ve=null, isEl=null;
+      for(var j=0;j<c.children.length;j++){ var h=c.children[j];
+        if(h.localName==='v') ve=h.textContent; if(h.localName==='is') isEl=h; }
+      if(tipo==='s') v=textos[+ve]||'';
+      else if(tipo==='inlineStr') v=isEl?isEl.textContent:'';
+      else if(tipo==='str') v=ve||'';
+      else if(tipo==='b') v=(ve==='1'?'SI':'NO');
+      else if(ve!=null && ve!==''){ v=(st!=null && estFecha[+st]) ? mzXlsxFecha(+ve) : String(+ve); }
+      while(celdas.length<col) celdas.push('');
+      celdas[col]=String(v).replace(/[\t\r\n]+/g,' ').trim();
+    }
+    filas.push(celdas.join('\t'));
+  });
+  /* fuera renglones vacíos del final */
+  while(filas.length && !filas[filas.length-1].replace(/\t/g,'')) filas.pop();
+  return filas.join('\n');
+}
+/* la puerta de entrada: abre el xlsx, y si trae varias hojas pregunta cuál */
+function mzXlsxLee(f, avisa, cb, contId){
+  if(typeof DecompressionStream==='undefined'){
+    avisa('Tu navegador no puede abrir el Excel directo. Guárdalo como CSV (Archivo → Guardar como → CSV) y sube ese.'); return; }
+  if(f.size>10000000){ avisa('Ese Excel pesa demasiado (máximo 10 MB). Guarda solo la hoja que vas a subir, o guárdala como CSV.'); return; }
+  (async function(){
+    var z=await mzZipAbre(f);
+    var hojas=await mzXlsxHojas(z);
+    if(!hojas.length) throw new Error('el archivo no trae hojas');
+    var textos=await mzXlsxTextos(z);
+    var estF=await mzXlsxEstilosFecha(z);
+    async function abre(h){
+      avisa('Leyendo la hoja «'+h.nombre+'»…');
+      cb(await mzXlsxATsv(z,h.ruta,textos,estF), f.name+' · hoja '+h.nombre);
+    }
+    if(hojas.length===1){ await abre(hojas[0]); return; }
+    /* varias hojas: que la persona escoja cuál (el Excel real trae 30) */
+    var cont=contId?$(contId):null;
+    if(!cont){ await abre(hojas[0]); return; }
+    window._mzXlsxAbre=function(i){ abre(hojas[i])['catch'](function(e){ avisa('No se pudo leer esa hoja ('+(e&&e.message||'error')+').'); }); };
+    cont.innerHTML='<div class="card" style="margin:10px 0;border-style:dashed"><b style="font-size:13px">'+esc(f.name)+'</b>'+
+      '<div class="note" style="margin-top:3px">Ese Excel trae '+hojas.length+' hojas. ¿Cuál subo?</div>'+
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">'+
+      hojas.map(function(h,i){ return '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12.5px" onclick="_mzXlsxAbre('+i+')">'+esc(h.nombre)+'</button>'; }).join('')+
+      '</div></div>';
+    avisa('Escoge la hoja aquí abajo.');
+  })()['catch'](function(e){
+    avisa('No pude abrir ese Excel ('+(e&&e.message||'error')+'). Guárdalo como CSV y sube ese.');
+  });
+}
 /* ¿Es DE VERDAD un archivo de texto? (20-ago: Gustavo subió su .xlsx real y la
    página se CONGELÓ — un .xlsx es un ZIP binario y leerlo como texto atraganta
    al navegador. Escoger su Excel es lo natural: hay que atajarlo con
    instrucciones, no congelarse.) Revisa extensión, firma de bytes y forma,
    ANTES de entregar el texto. Lo usan bitácora, precios y cédula. */
-function mzArchivoTexto(f, avisa, cb){
+function mzArchivoTexto(f, avisa, cb, contId){
   var nom=String((f&&f.name)||'').toLowerCase();
-  var CONSEJO=' El sistema lee el CSV: en tu Excel ve a Archivo → Guardar como → tipo «CSV», y sube ESE. Tu Excel queda igual, no se pierde nada.';
-  if(/\.(xlsx|xlsm|xlsb|xls|numbers|ods)$/.test(nom)){
-    avisa('Ese es el Excel completo ('+nom.slice(nom.lastIndexOf('.'))+').'+CONSEJO); return; }
+  var CONSEJO=' Guárdalo como CSV (Archivo → Guardar como → tipo «CSV») y sube ese. Tu archivo original queda igual.';
+  /* el .xlsx/.xlsm SÍ se puede leer directo (v3.41); los formatos binarios
+     viejos (.xls, .xlsb) y los de otras marcas (.numbers, .ods) no */
+  if(/\.(xlsx|xlsm)$/.test(nom)){ mzXlsxLee(f, avisa, cb, contId); return; }
+  if(/\.(xlsb|xls|numbers|ods)$/.test(nom)){
+    avisa('Ese formato ('+nom.slice(nom.lastIndexOf('.'))+') no se puede leer directo.'+CONSEJO); return; }
   if(f.size>3000000){ avisa('Ese archivo pesa demasiado (máximo 3 MB). Guarda solo la hoja que vas a subir.'); return; }
   var rd=new FileReader();
   rd.onload=function(){
     var b=new Uint8Array(rd.result||new ArrayBuffer(0));
-    if(b.length>=2 && b[0]===0x50 && b[1]===0x4B){ avisa('Ese archivo es un Excel (aunque el nombre no lo diga).'+CONSEJO); return; }
+    if(b.length>=2 && b[0]===0x50 && b[1]===0x4B){ mzXlsxLee(f, avisa, cb, contId); return; }
     if(b.length>=2 && b[0]===0xD0 && b[1]===0xCF){ avisa('Ese archivo es un Excel viejo (.xls).'+CONSEJO); return; }
     var ceros=0; for(var i=0;i<b.length;i++) if(b[i]===0) ceros++;
     if(ceros>2){ avisa('Ese archivo no es de texto.'+CONSEJO); return; }
@@ -10086,12 +10228,13 @@ function mzArchivoLee(inp){
   if(!f) return;
   var av=$('mz-arch'); if(av) av.textContent='Leyendo '+f.name+'…';
   mzArchivoTexto(f, function(msg){ if(av){ av.innerHTML='<span style="color:var(--warn)">'+esc(msg)+'</span>'; } else alert(msg); },
-    function(txt){
+    function(txt, comoSeLlama){
       var ta=$('mz-tsv'); if(!ta) return;
       ta.value=mzCsvATsv(txt);
-      if(av) av.textContent=f.name+' — revisa los renglones abajo antes de guardar.';
+      var pv=$('mz-prev'); if(pv) pv.innerHTML='';
+      if(av) av.textContent=(comoSeLlama||f.name)+' — revisa los renglones abajo antes de guardar.';
       mzPegaPrev();                     /* misma previsualización de siempre */
-    });
+    }, 'mz-prev');
 }
 var _mzFilas=null;
 function mzPegaPrev(){
@@ -10420,7 +10563,7 @@ function mzProgArchivo(inp){
   if(!f) return;
   var pv=$('mzpg-prev'); if(pv) pv.innerHTML='<div class="note" style="margin:8px 0">Leyendo '+esc(f.name)+'…</div>';
   mzArchivoTexto(f, function(msg){ if(pv) pv.innerHTML='<div class="note" style="margin:8px 0;color:var(--warn)">'+esc(msg)+'</div>'; else alert(msg); },
-    function(txt){ mzProgPrev(mzCsvATsv(txt), f.name); });
+    function(txt, comoSeLlama){ mzProgPrev(mzCsvATsv(txt), comoSeLlama||f.name); }, 'mzpg-prev');
 }
 function mzProgPrev(tsv,nombre){
   var pv=$('mzpg-prev'); if(!pv) return;
@@ -10542,8 +10685,8 @@ function mzProgPaint(){
   h+='<div id="mzp-foto"></div>';
   h+='<div class="card" style="border-style:dashed"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><b style="font-size:13px">Programar</b>'+
      '<span style="display:flex;gap:7px;flex:none">'+
-       '<label class="icoa" style="cursor:pointer" title="Subir el CSV de la cédula" aria-label="Subir el CSV de la cédula">'+IC2.doc+
-         '<input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" style="display:none" onchange="mzProgArchivo(this)"></label>'+
+       '<label class="icoa" style="cursor:pointer" title="Subir el Excel o CSV de la cédula" aria-label="Subir el Excel o CSV de la cédula">'+IC2.doc+
+         '<input type="file" accept=".xlsx,.xlsm,.csv,.tsv,.txt" style="display:none" onchange="mzProgArchivo(this)"></label>'+
        '<button class="icoa" title="Subir foto de la cédula" aria-label="Subir foto de la cédula" onclick="mzFoto(\'cedula\')">'+IC_CAM+'</button>'+
      '</span></div>'+
      '<div id="mzpg-prev"></div>'+
@@ -11313,9 +11456,9 @@ function mzPrePegar(){
     '<div class="note" style="margin-top:4px">Columnas en este orden: <b>MATERIAL · PRECIO · MONEDA · FECHA · PROVEEDOR</b> (moneda y proveedor pueden ir vacías).</div>'+
     '<textarea id="mzp-tsv" rows="6" style="width:100%;margin-top:8px;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:12.5px" placeholder="SKIM\t1.75\tUSD\t2026-08-14\tProveedor"></textarea>'+
     '<div style="display:flex;gap:7px;align-items:center;margin-top:9px">'+
-      '<span class="note" style="flex:1;min-width:0" id="mzp-arch">…o sube el archivo, sin copiar nada. Guárdalo en Excel o Google Sheets como <b>CSV</b>.</span>'+
-      '<label class="icoa" style="cursor:pointer" title="Subir el archivo CSV de precios" aria-label="Subir el archivo CSV de precios">'+IC2.doc+
-        '<input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" style="display:none" onchange="mzPreArchivo(this)"></label>'+
+      '<span class="note" style="flex:1;min-width:0" id="mzp-arch">…o sube el archivo directo: <b>Excel (.xlsx)</b> o CSV.</span>'+
+      '<label class="icoa" style="cursor:pointer" title="Subir el Excel o CSV de precios" aria-label="Subir el Excel o CSV de precios">'+IC2.doc+
+        '<input type="file" accept=".xlsx,.xlsm,.csv,.tsv,.txt" style="display:none" onchange="mzPreArchivo(this)"></label>'+
     '</div>'+
     '<label style="display:flex;gap:6px;align-items:center;margin-top:8px;font-size:12.5px"><input type="checkbox" id="mzp-crear"> Dar de alta los materiales que no existan</label>'+
     '<div id="mzp-prev"></div>'+
@@ -11326,12 +11469,13 @@ function mzPreArchivo(inp){
   if(!f) return;
   var av=$('mzp-arch'); if(av) av.textContent='Leyendo '+f.name+'…';
   mzArchivoTexto(f, function(msg){ if(av){ av.innerHTML='<span style="color:var(--warn)">'+esc(msg)+'</span>'; } else alert(msg); },
-    function(txt){
+    function(txt, comoSeLlama){
       var ta=$('mzp-tsv'); if(!ta) return;
       ta.value=mzCsvATsv(txt);           /* mismo normalizador probado de la bitácora */
-      if(av) av.textContent=f.name+' — revisa los renglones abajo antes de guardar.';
+      var pv=$('mzp-prev'); if(pv) pv.innerHTML='';
+      if(av) av.textContent=(comoSeLlama||f.name)+' — revisa los renglones abajo antes de guardar.';
       mzPrePrev();
-    });
+    }, 'mzp-prev');
 }
 function mzPrePrev(){
   var txt=($('mzp-tsv').value||'').trim(); if(!txt){ alert('Pega primero los renglones.'); return; }

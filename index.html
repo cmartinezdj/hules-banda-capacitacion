@@ -9793,7 +9793,9 @@ function renderMezHub(){
     h+=htile('renderMezCap()','operacion','Bitácora de turno','Captura corridas, quemadas y paros');
     h+=htile('renderMezProg()','pend','Programación','La cédula: qué se corre y cuánto');
   }
-  if(veGraf) h+=htile('renderMezTab()','deptos','Gráficos','Producción por día, paros y reproceso');
+  /* v3.43: Gustavo (capturista) también ve SUS gráficas — el tablero no trae
+     dinero por diseño y el servidor le niega el tema de costos */
+  if(veGraf||S.mezCap) h+=htile('renderMezTab()','deptos','Gráficos','Producción por día, paros y reproceso');
   if(veGraf) h+=htile('renderMezCierres()','pend','Cierres','Semana y mes listos para junta (PDF)');
   if(S.mezCostos) h+=htile('renderMezPrecios()','recibo','Precios de materia prima','Súbelos y el sistema recalcula desde esa fecha');
   if(S.admin||S.mezCostos||veGraf) h+=htile('renderMezSem()','deptos','Semáforo de materia prima','Qué se está consumiendo y qué no se ha comprado');

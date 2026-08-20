@@ -198,6 +198,9 @@ button{font-family:var(--font)}
 .icoa svg{width:18px;height:18px}
 .icoa:active{transform:scale(.94)}
 .icoa.on{background:var(--accent2);border-color:var(--accent2);color:#fff}
+/* departamento que aún no se digitaliza: se ve, pero apagado y honesto */
+.htile.pronto{opacity:.6}
+.htile.pronto:active{transform:none}
 .icoa.mini{width:26px;height:26px;border-radius:9px}
 .icoa.mini svg{width:14px;height:14px}
 @media (hover:hover){.icoa:hover{border-color:color-mix(in srgb,var(--accent2) 45%,var(--line))}}
@@ -1125,6 +1128,8 @@ body.a11y .screen .icoa.mini svg{ width:17px !important; height:17px !important;
     <section id="s-pedir"   class="screen pad hide"></section>
     <section id="s-pedidos" class="screen pad hide"></section>
     <!-- PRODUCCIÓN · módulo de mezclado (v3_17, Sesión 16) -->
+    <section id="s-planta"  class="screen pad hide"></section>
+    <section id="s-manto"   class="screen pad hide"></section>
     <section id="s-prod"    class="screen pad hide"></section>
     <section id="s-mezcap"  class="screen pad hide"></section>
     <section id="s-mezprog" class="screen pad hide"></section>
@@ -2608,7 +2613,12 @@ function buildNav(){
       : [['msgs','Mensajes',ICN.msgs],['news','Noticias',ICN.news],['rewards','Premios',ICN.rewards],['chat','Asistente',ICN.chat]]);
   // PRODUCCIÓN (v3_17): pestaña visible SOLO para capturistas de mezclado (Gustavo),
   // el técnico (Oropeza) y acceso total. En escritorio el nav es la barra lateral.
-  if(S.mezCap||S.mezTec||S.mezCostos) others.splice((S.admin||S.mando)?1:0, 0, ['prod','Producción',ICN.prod]);
+  /* PLANTA (v3.37, orden de Carlos 20-ago): antes esta pestaña entraba directo a
+     Mezclado. Ahora entra al hub de DEPARTAMENTOS (Producción, Mantenimiento y los
+     que se irán digitalizando), porque "sé que vamos a agregar muchas cosas y
+     quiero orden que se vea sencilla de usar". La llave sigue siendo distinta de
+     'prod' a propósito: 'prod' ya es el hub de Producción y su Atrás vuelve aquí. */
+  if(S.admin||S.mezCap||S.mezTec||S.mezCostos) others.splice((S.admin||S.mando)?1:0, 0, ['planta','Planta',ICN.prod]);
   // "Inicio" al CENTRO, como botón circular elevado (identidad del app · móvil).
   // El dashboard general NO lleva el círculo: su Inicio es el propio tablero.
   var mid=Math.floor(others.length/2);
@@ -2618,7 +2628,7 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'"'+main+' title="'+it[1]+'" onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp','mezcierres','mezprecios','mezsem'];
+var SCREENS=['planta','manto','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp','mezcierres','mezprecios','mezsem'];
 var _prevShown=null;
 function show(name){
   var cambio = (name!==_prevShown);
@@ -2642,10 +2652,10 @@ function show(name){
   if(name==='invit') navKey=_invitFrom||'home';
   if(name==='pedir') navKey=(S&&(S.admin||S.mando))?'hr':'home';       // Pedir reparación / Tus reparaciones
   if(name==='pedidos') navKey='hr';                                     // inbox de Mantenimiento
-  if(name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem') navKey='prod';
-  if(name==='prod'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab') navKey='prod';  // Producción (mezclado)
+  if(name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem') navKey='planta';
+  if(name==='planta'||name==='manto'||name==='prod'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab') navKey='planta';  // todo lo de Planta
   if(navKey==='home' && S && S.admin && S.dash!=='resp') navKey='hr';   // dashboard general: su Inicio es el tablero
-  ['home','msgs','rewards','chat','hr','clases','news','buzon','prod'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
+  ['home','msgs','rewards','chat','hr','clases','news','buzon','planta'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
   renderTop(name);
   // ANTI-PARPADEO: la animación de entrada y el scroll-al-tope SOLO al cambiar de
   // pantalla. Los re-pintados en vivo (datos nuevos) actualizan sin "flash" ni brincos.
@@ -2662,6 +2672,8 @@ function go(name){
   _qcSel=null;                      // el Mensaje rápido vuelve al buscador (no al chat anterior)
   _pedTab='act'; _pedAsig=null;     // Pedidos regresa a "Actuales"
   if(name==='home') return renderHome();
+  if(name==='planta') return renderPlanta();
+  if(name==='manto') return renderMantoHub();
   if(name==='prod') return renderMezHub();
   if(name==='rewards') return renderRewards();
   if(name==='chat') return renderChat();
@@ -2686,10 +2698,10 @@ var HB_MARK='<svg viewBox="0 0 54 32" xmlns="http://www.w3.org/2000/svg" aria-la
   '<path d="M15 2 28 16 15 30 2 16Z" fill="var(--accent2)"/>'+
   '<path d="M39 2 52 16 39 30 26 16Z" fill="var(--accent2)" opacity=".45"/></svg>';
 function renderTop(name){
-  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='prod'||name==='manto');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? ('go(\'hr\')') : name==='pedir' ? ('go(\''+((S.admin||S.mando)?'hr':'home')+'\')') : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres'||name==='mezprecios'||name==='mezsem') ? 'go(\'prod\')' : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? ('go(\'hr\')') : name==='pedir' ? ('go(\''+((S.admin||S.mando)?'hr':'home')+'\')') : (name==='prod'||name==='manto') ? 'go(\'planta\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres'||name==='mezprecios'||name==='mezsem') ? 'go(\'prod\')' : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
     left.innerHTML='<span class="tlogo" aria-hidden="true">'+HB_MARK+'</span><button class="back" onclick="'+backTo+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
@@ -4144,7 +4156,7 @@ function renderHome(){
   // calendario por Noticias. Ahora los trae en su Inicio, uno debajo del otro.
   h+=htile('openCal()','cal','Calendario', 'Tus citas · tu área · la planta');
   // PRODUCCIÓN (v3_17): la bitácora de mezclado — solo capturistas/técnico
-  if(S.mezCap||S.mezTec) h+=htile("go('prod')",'operacion','Producción','Mezclado en Banburys · bitácora del turno',{wide:true});
+  if(S.admin||S.mezCap||S.mezTec) h+=htile("go('planta')",'operacion','Planta','Los departamentos: producción, mantenimiento y lo que sigue',{wide:true});
   // Pedir reparación / Tus reparaciones (V3.11): la Orden de Trabajo digital
   try{
     if(pedEsTecnico()){ var _nA=pedAsigMios().filter(function(p){ return ['asignado','reparando'].indexOf(p.estado)>-1; }).length;
@@ -9619,12 +9631,79 @@ function mzCat(cb){ if(_mzCat) return cb(_mzCat);
 }
 function mzLoadDia(cb){
   SB.rpc('hb_mez_dia',{p_fecha:_mzF}).then(function(r){ var x=r&&r.data;
+    /* se garantizan los tres arreglos: si alguno viniera vacío del servidor,
+       mzCapPaint truena en el .filter y el capturista se queda con la pantalla
+       en blanco a media captura, sin ni un mensaje */
+    if(x&&x.ok){ x.corridas=x.corridas||[]; x.tm=x.tm||[]; x.programa=x.programa||[]; }
     _mzDia=(x&&x.ok)?x:{corridas:[],tm:[],programa:[]}; cb(); },function(){ _mzDia={corridas:[],tm:[],programa:[]}; cb(); });
 }
 function mzInp(id,ph,extra){ return '<input id="'+id+'" placeholder="'+ph+'" '+(extra||'')+' style="width:100%;padding:10px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'; }
 function mzBanner(){ return (_mzCat&&_mzCat.practica)?'<div class="card" style="border-color:color-mix(in srgb,var(--warn) 45%,transparent);background:color-mix(in srgb,var(--warn) 9%,transparent);margin-bottom:12px"><b style="color:var(--warn);font-size:13px">Modo práctica</b><div class="note" style="margin-top:3px">Todo lo capturado en agosto es ensayo y se borra. El 1 de septiembre el sistema arranca en cero (regla de dirección).</div></div>':''; }
 
 /* ---------- HUB de Producción ---------- */
+/* ============================================================================
+   PLANTA (v3.37) — el hub de DEPARTAMENTOS
+   Orden de Carlos (20-ago): "renombra el ícono de la izquierda de producción a
+   planta, y que se abra un módulo nuevo donde van a estar los demás
+   departamentos por orden, primero producción y después mantenimiento por el
+   momento, y los demás que estarían medio huecos de funciones... esto lo quiero
+   hacer porque sé que vamos a agregar muchas cosas y quiero orden que se vea
+   sencilla de usar".
+   Las áreas son las REALES del sistema (las mismas de DEPTO_AREA), no inventadas:
+   produccion · maquinaria · calidad · almacen · comercial.
+   Los que no tienen funciones todavía se ven APAGADOS y lo dicen; no se les
+   inventa un tablero vacío que parezca roto. ========================================= */
+function renderPlanta(){
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Hules Banda</div>'+
+    '<b style="font-size:20px">Planta</b>'+
+    '<p class="note" style="margin:4px 0 0;max-width:360px">Los departamentos de la fábrica. Se van digitalizando poco a poco: entra al que ya tiene su tablero.</p></div>'+
+    '<span style="flex:none">'+speakBtn('Planta. Aquí están los departamentos de la fábrica. Producción y Mantenimiento ya tienen su tablero. Los demás se van a ir agregando poco a poco.')+'</span></div></div>';
+
+  h+='<div class="sec-t">Ya funcionando<span class="ln"></span></div><div class="tgrid">';
+  //  1 · PRODUCCIÓN (área produccion: banburys, pathex, extruido, calandrias…)
+  h+=htile("go('prod')",'operacion','Producción','Mezclado en Banburys: bitácora, cédula y gráficos',{wide:true});
+  //  2 · MANTENIMIENTO (área maquinaria: mantenimiento, montacarguistas)
+  var pn=0; try{ pn=pedNuevosN()||0; }catch(e){}
+  h+=htile("go('manto')",'rep','Mantenimiento','Órdenes de trabajo: pedir, asignar y seguir la reparación',{wide:true, cnt:pn||''});
+  h+='</div>';
+
+  //  Los que faltan. Se listan con los departamentos REALES que los componen,
+  //  para que se vea a dónde vamos y nadie se pregunte qué falta.
+  h+='<div class="sec-t">En camino<span class="ln"></span></div><div class="tgrid">';
+  [['Calidad','encuestas','Reinspección, aseguramiento de calidad y laboratorio'],
+   ['Almacén','deptos','Materia prima y producto terminado'],
+   ['Administración','personas','Administración general y recursos humanos']
+  ].forEach(function(d){
+    h+=htile("plantaPronto('"+jsAttr(d[0])+"')", d[1], d[0], d[2], {wide:true, cls:'pronto'});
+  });
+  h+='</div>';
+  h+='<div class="card" style="margin-top:12px"><div class="note">Estos departamentos todavía no tienen tablero. Se van a ir armando uno por uno, con el responsable de cada área — igual que se hizo con Producción y Mantenimiento.</div></div>';
+  $('s-planta').innerHTML=h; show('planta');
+}
+function plantaPronto(nombre){ flash(nombre+' todavía no tiene tablero. Va en camino.'); }
+
+/* ---------- MANTENIMIENTO: el hub del área (v3.37) ----------
+   No es función nueva: junta en un solo lugar las pantallas de órdenes de
+   trabajo que ya existían sueltas (v3_8 y v3_11). */
+function renderMantoHub(){
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Planta · Maquinaria</div>'+
+    '<b style="font-size:20px">Mantenimiento</b>'+
+    '<p class="note" style="margin:4px 0 0;max-width:360px">La Orden de Trabajo de siempre, digital: se pide, se asigna, se repara y queda el historial.</p></div>'+
+    '<span style="flex:none">'+speakBtn('Mantenimiento. Aquí se piden las reparaciones de las máquinas y se ve en qué van.')+'</span></div></div>';
+  h+='<div class="sec-t">Tu trabajo aquí<span class="ln"></span></div><div class="tgrid">';
+  //  pedir reparación: lo puede hacer cualquiera que trabaje con una máquina
+  h+=htile("renderPedir()",'rep','Pedir reparación','Reporta una máquina y mándale foto a Mantenimiento',{wide:true});
+  //  el técnico ve lo que trae asignado
+  var esTec=false; try{ esTec=pedEsTecnico(); }catch(e){}
+  if(esTec) h+=htile("renderMisRep()",'pend','Tus reparaciones','Lo que traes asignado y su avance',{wide:true});
+  //  el responsable del área y acceso total ven la bandeja completa
+  if(S.admin||S.mando){
+    var pn=0; try{ pn=pedNuevosN()||0; }catch(e){}
+    h+=htile("renderPedidos()",'operacion','Órdenes de trabajo','Todas las órdenes: asignar, dar seguimiento y cerrar',{wide:true, cnt:pn||''});
+  }
+  h+='</div>';
+  $('s-manto').innerHTML=h; show('manto');
+}
 function renderMezHub(){
   var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Producción</div>'+
     '<b style="font-size:20px">Mezclado en Banburys</b>'+
@@ -11531,7 +11610,7 @@ function hbLimpiaSeeds(){
    memoria del aparato al instante, y el service worker revalida por detrás
    (normalmente un 304 de puros encabezados). Si el ETag cambió, el SW guarda
    la versión nueva y avisa; se aplica al entrar a una pantalla segura.       */
-var HB_SEGURAS={home:1,prod:1,news:1,msgs:1,hr:1,pend:1,clases:1,courses:1,rewards:1,buzon:1,chat:1};
+var HB_SEGURAS={home:1,planta:1,manto:1,prod:1,news:1,msgs:1,hr:1,pend:1,clases:1,courses:1,rewards:1,buzon:1,chat:1};
 var _hbVerChk=0;
 function hbRevisaVersion(){
   var ahora=Date.now();

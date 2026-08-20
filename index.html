@@ -146,8 +146,24 @@ button{font-family:var(--font)}
 .kpi .klbl{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
 .kpi .knum{font-size:24px;font-weight:850;letter-spacing:-.02em;line-height:1.1;margin-top:4px;display:block;font-variant-numeric:tabular-nums}
 .kpi .ksub{font-size:10px;color:var(--mut);margin-top:4px}
-.tlogo{width:36px;height:24px;flex:none;display:flex;align-items:center;margin-right:2px}
+.tlogo{width:38px;height:25px;flex:none;display:flex;align-items:center;margin-right:2px}
 .tlogo svg{width:100%;height:100%}
+.tbico{width:38px;height:38px;flex:none;display:flex;align-items:center;justify-content:center;
+  background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--txt);cursor:pointer;
+  transition:transform .16s var(--ease-out),border-color .2s}
+.tbico svg{width:18px;height:18px}
+.tbico:active{transform:scale(.94)}
+.topmenu{position:fixed;top:calc(58px + env(safe-area-inset-top));right:12px;z-index:120;min-width:230px;
+  background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:8px;box-shadow:var(--shadow);
+  transition:transform .18s var(--ease-out),opacity .18s var(--ease-out);transform-origin:top right}
+.topmenu.hide{display:block!important;pointer-events:none;opacity:0;transform:scale(.96)}
+.tmit{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;color:var(--txt);
+  cursor:pointer;padding:9px 10px;border-radius:11px;font-family:var(--font);transition:background .15s}
+.tmit:active{background:rgba(255,255,255,.05)}
+@media (hover:hover){.tmit:hover{background:rgba(255,255,255,.04)}}
+.tmit.tmout{color:var(--accent2);justify-content:center;border-top:1px solid var(--line);border-radius:0 0 11px 11px;margin-top:4px;padding-top:11px}
+.tmrow{display:flex;align-items:center;justify-content:space-between;padding:8px 10px}
+.navlogo{display:none}
 :where(button,a,input,select,textarea):focus-visible{outline:2px solid color-mix(in srgb,var(--accent2) 70%,#fff);outline-offset:2px}
 
 /* ===== TILES (cuadros del home — cada uno lleva a su página) · V3.6 ===== */
@@ -902,6 +918,21 @@ body.a11y .screen .seg button{ font-size:13px !important; }
   padding-top:calc(34px + env(safe-area-inset-top))}
 .shotguard h2{font-size:22px;font-weight:900;margin:18px 0 8px;color:#fff;max-width:340px;line-height:1.25}
 .shotguard p{font-size:14px;color:#9aa0b0;line-height:1.55;max-width:330px;margin:0}
+/* ===== V4 · ESCRITORIO: riel de PUROS ÍCONOS con el logo arriba (foto de referencia) ===== */
+@media (min-width:1000px){
+  .nav{width:86px;padding:14px 10px 16px;align-items:center}
+  .nav:before,.nav:after{display:none}
+  .navlogo{display:flex;width:44px;height:30px;margin:2px 0 14px;align-items:center;justify-content:center}
+  .navlogo svg{width:100%;height:100%}
+  .nav button,.nav button.navmain{flex:none;width:54px;max-width:54px;height:48px;flex-direction:column;justify-content:center;align-items:center;
+    gap:0;padding:0;margin-top:6px;border-radius:14px;font-size:0;box-shadow:none;background:none;color:rgba(255,255,255,.62)}
+  .nav button>span:not(.nbadge),.nav button.navmain>span:not(.nbadge){display:none}
+  .nav button .ni,.nav button.navmain .ni{width:22px;height:22px}
+  .nav button.on,.nav button.navmain.on{background:color-mix(in srgb,var(--accent) 22%,transparent);color:#fff}
+  .nav button .nbadge{position:absolute;top:4px;left:auto;right:4px;margin-left:0}
+  .top{margin-left:86px;padding-left:22px;padding-right:22px}
+  .screen{margin-left:86px}
+}
 </style>
 <!-- Supabase SDK HOSPEDADO JUNTO A LA APP (mismo origen = tan confiable como que cargue la
      página). 'defer' = NO bloquea el dibujado, así la portada aparece al instante aunque la
@@ -2536,9 +2567,9 @@ function buildNav(){
   // El dashboard general NO lleva el círculo: su Inicio es el propio tablero.
   var mid=Math.floor(others.length/2);
   var items = esDashGral ? others : others.slice(0,mid).concat([home]).concat(others.slice(mid));
-  $('nav').innerHTML = items.map(function(it){
+  $('nav').innerHTML = '<span class="navlogo" aria-hidden="true">'+HB_MARK+'</span>'+items.map(function(it){
     var main=(it[0]==='home')?' class="navmain"':'';
-    return '<button id="nav-'+it[0]+'"'+main+' onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
+    return '<button id="nav-'+it[0]+'"'+main+' title="'+it[1]+'" onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
 var SCREENS=['home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp','mezcierres','mezprecios','mezsem'];
@@ -2605,20 +2636,36 @@ function renderTop(name){
     left.innerHTML='<span class="tlogo" aria-hidden="true">'+HB_MARK+'</span><button class="back" onclick="'+backTo+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
-    left.classList.add('who');
-    var _pn=(profGet(S.emp).nombre||'').trim();
-    left.innerHTML='<span class="tlogo" aria-hidden="true">'+HB_MARK+'</span>'+
-      '<span style="display:flex;align-items:center;gap:10px;min-width:0;cursor:pointer" onclick="renderPerfil()" title="Mi perfil">'+profAvatar(40,13)+
-      '<span style="min-width:0"><b>'+esc(_pn||S.area)+'</b><span>'+(_pn?esc(S.area)+' · ':'')+'#'+(''+S.emp).padStart(3,'0')+' · Mi perfil ›</span></span></span>';
+    left.classList.remove('who');
+    left.innerHTML='<span class="tlogo" aria-hidden="true">'+HB_MARK+'</span>';
   }
+  /* HUD de la referencia: [USD si acceso total] · campana (Mensajes) · menú ≡ */
+  var BELL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>';
+  var MENU='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
   var EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
-  /* dólar en vivo (acceso total): siempre visible junto al Aa — pedido de Carlos */
-  var a11yBtn=mzFxWidget()+'<button class="a11ybtn'+(S&&S.accessible?' on':'')+'" onclick="toggleAcc()" title="Texto grande (accesibilidad)" aria-label="Texto grande para accesibilidad">'+EYE+'Aa</button>';
-  var salir='<button class="back" onclick="logout()" style="padding:8px 11px">Salir</button>';
-  $('topRight').innerHTML = S.admin
-    ? '<span class="topR">'+a11yBtn+salir+'</span>'
-    : '<span class="topR">'+a11yBtn+'<span class="ptchip">'+S.points+' pts</span>'+salir+'</span>';
+  var _pn=(profGet(S.emp).nombre||'').trim();
+  $('topRight').innerHTML =
+    '<span class="topR">'+mzFxWidget()+
+    '<button class="tbico" onclick="go(\'msgs\')" title="Mensajes" aria-label="Mensajes">'+BELL+'</button>'+
+    '<button class="tbico" onclick="topMenuTog(event)" title="Menú" aria-label="Menú">'+MENU+'</button></span>'+
+    '<div id="topMenu" class="topmenu hide" onclick="event.stopPropagation()">'+
+      '<button class="tmit" onclick="topMenuCierra();renderPerfil()">'+profAvatar(34,10)+
+        '<span style="min-width:0;text-align:left"><b style="display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(_pn||S.area)+'</b>'+
+        '<span class="note" style="font-size:10.5px">#'+(''+S.emp).padStart(3,'0')+' · Mi perfil ›</span></span></button>'+
+      (S.admin?'':'<div class="tmrow"><span class="note">Tus puntos</span><span class="ptchip">'+S.points+' pts</span></div>')+
+      '<button class="tmit" onclick="toggleAcc();topMenuCierra()"><span class="tbico" style="pointer-events:none">'+EYE+'</span>'+
+        '<span style="text-align:left"><b style="font-size:13px">Texto grande</b><span class="note" style="display:block;font-size:10.5px">'+(S&&S.accessible?'Encendido':'Apagado')+'</span></span></button>'+
+      '<button class="tmit tmout" onclick="logout()"><b style="font-size:13px">Salir</b></button>'+
+    '</div>';
 }
+function topMenuTog(ev){
+  if(ev){ ev.stopPropagation(); }
+  var m=$('topMenu'); if(!m) return;
+  var abrir=m.classList.contains('hide');
+  m.classList.toggle('hide', !abrir);
+  if(abrir) setTimeout(function(){ document.addEventListener('click', topMenuCierra, {once:true}); },0);
+}
+function topMenuCierra(){ var m=$('topMenu'); if(m) m.classList.add('hide'); }
 
 /* ====================== HELPERS VISUALES (HUD) ======================
    Gráficas y medidores SIMPLES en SVG puro: sparkline, anillo, columnas de

@@ -145,6 +145,8 @@ button{font-family:var(--font)}
 #mz-prev .mzt, #mzp-prev .mzt, #mzpg-prev .mzt{min-width:0}
 #mz-prev .mzt td:first-child, #mzp-prev .mzt td:first-child{white-space:normal;word-break:break-word}
 #mzpg-prev .mzt td:nth-child(3){white-space:normal;word-break:break-word}
+#s-mezrec .mzt{min-width:0}
+#s-mezrec .mzt td:first-child{white-space:normal;word-break:break-word}
 @media (hover:hover){.mzt tbody tr:hover td,.mzt tr:hover td{background:rgba(255,255,255,.02)}}
 .delta{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;padding:3px 8px;border-radius:20px;font-variant-numeric:tabular-nums}
 .delta.up{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
@@ -1152,6 +1154,7 @@ body.a11y .screen .icoa.mini svg{ width:17px !important; height:17px !important;
     <section id="s-mezcierres" class="screen pad hide"></section>
     <section id="s-mezprecios" class="screen pad hide"></section>
     <section id="s-mezsem" class="screen pad hide"></section>
+    <section id="s-mezrec" class="screen pad hide"></section>
   </main>
 
   <!-- ===================== NAV INFERIOR ===================== -->
@@ -2640,7 +2643,7 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'"'+main+' title="'+it[1]+'" onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['planta','manto','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp','mezcierres','mezprecios','mezsem'];
+var SCREENS=['planta','manto','mezrec','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp','mezcierres','mezprecios','mezsem'];
 var _prevShown=null;
 function show(name){
   var cambio = (name!==_prevShown);
@@ -2664,7 +2667,7 @@ function show(name){
   if(name==='invit') navKey=_invitFrom||'home';
   if(name==='pedir') navKey=(S&&(S.admin||S.mando))?'hr':'home';       // Pedir reparación / Tus reparaciones
   if(name==='pedidos') navKey='hr';                                     // inbox de Mantenimiento
-  if(name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem') navKey='planta';
+  if(name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') navKey='planta';
   if(name==='planta'||name==='manto'||name==='prod'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab') navKey='planta';  // todo lo de Planta
   if(navKey==='home' && S && S.admin && S.dash!=='resp') navKey='hr';   // dashboard general: su Inicio es el tablero
   ['home','msgs','rewards','chat','hr','clases','news','buzon','planta'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
@@ -2710,10 +2713,10 @@ var HB_MARK='<svg viewBox="0 0 54 32" xmlns="http://www.w3.org/2000/svg" aria-la
   '<path d="M15 2 28 16 15 30 2 16Z" fill="var(--accent2)"/>'+
   '<path d="M39 2 52 16 39 30 26 16Z" fill="var(--accent2)" opacity=".45"/></svg>';
 function renderTop(name){
-  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='prod'||name==='manto');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='prod'||name==='manto');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? ('go(\'hr\')') : name==='pedir' ? ('go(\''+((S.admin||S.mando)?'hr':'home')+'\')') : (name==='prod'||name==='manto') ? 'go(\'planta\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres'||name==='mezprecios'||name==='mezsem') ? 'go(\'prod\')' : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? ('go(\'hr\')') : name==='pedir' ? ('go(\''+((S.admin||S.mando)?'hr':'home')+'\')') : (name==='prod'||name==='manto') ? 'go(\'planta\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
     left.innerHTML='<span class="tlogo" aria-hidden="true">'+HB_MARK+'</span><button class="back" onclick="'+backTo+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
@@ -9800,6 +9803,9 @@ function renderMezHub(){
   if(S.mezCostos) h+=htile('renderMezPrecios()','recibo','Precios de materia prima','Súbelos y el sistema recalcula desde esa fecha');
   if(S.admin||S.mezCostos||veGraf) h+=htile('renderMezSem()','deptos','Semáforo de materia prima','Qué se está consumiendo y qué no se ha comprado');
   if(S.mezTec||S.admin) h+=htile('renderMezAna()','focos','Analista de compuestos','Eficiencia, fallas e historial por compuesto');
+  /* v3.44: la carpeta de recetas — Alejandro: "las fórmulas las sube el
+     laboratorio". Solo laboratorio (técnico) y dirección. */
+  if(S.mezTec||S.admin) h+=htile('renderMezRec()','docs','Recetas (carpeta GT)','Vigentes por familia: ver, confirmar y cambiar');
   h+='</div>';
   $('s-prod').innerHTML=h; show('prod');
   mzCat(function(){ var el=$('mz-hub-banner'); if(el) el.innerHTML=mzBanner(); });
@@ -10864,6 +10870,117 @@ var _mzAnaLista=null;
    comprarse. NO es inventario físico — es una alerta temprana mientras se
    conecta el almacén. Así se lo decimos al usuario, sin adornos.            */
 var _mzSem=null, _mzSemDias=30;
+/* ============ RECETAS · la carpeta GT del laboratorio (v3.44) ============
+   Ver la carpeta completa, CONFIRMAR la letra vigente (requisito del arranque
+   1-sep: lo cargado eran pilotos de julio) y cambiar la vigente entre las
+   versiones ya cargadas. Los kilos por ingrediente = secreto de fábrica:
+   solo laboratorio y dirección llegan aquí (el servidor lo vuelve a checar). */
+var _mzRec=null, _mzRecQ='';
+function renderMezRec(){
+  $('s-mezrec').innerHTML='<div class="card"><div class="note">Abriendo la carpeta…</div></div>'; show('mezrec');
+  SB.rpc('hb_mez_recetas').then(function(r){ var x=r&&r.data;
+    if(r&&r.error){ $('s-mezrec').innerHTML='<div class="card"><b>'+esc(mzErr(null,r.error))+'</b></div>'; return; }
+    if(!(x&&x.ok)){ $('s-mezrec').innerHTML='<div class="card"><b>'+esc(mzErr(x))+'</b></div>'; return; }
+    _mzRec=x; mzRecPaint(); },function(e){ $('s-mezrec').innerHTML='<div class="card"><b>'+esc(mzErr(null,e))+'</b></div>'; });
+}
+function mzRecBusca(v){ _mzRecQ=(v||'').trim().toUpperCase(); mzRecPaint(true); }
+function mzRecPaint(soloLista){
+  var fams=(_mzRec&&_mzRec.familias)||[];
+  var reales=fams.filter(function(f){ return !f.placeholder; });
+  var conf=reales.filter(function(f){ return f.confirmada_ts; }).length;
+  var lista=fams.filter(function(f){ return !_mzRecQ ||
+    (String(f.nombre)+' '+String(f.familia)).toUpperCase().indexOf(_mzRecQ)>-1; });
+  var filas=lista.map(function(f){
+    var vig=(f.placeholder?'<span class="note">peso del Excel · sin receta</span>'
+      : esc(f.letra||'—')+(f.folio_gt?' <span class="note">'+esc(f.folio_gt)+'</span>':''));
+    var est=f.confirmada_ts
+      ? '<span style="color:var(--ok);font-weight:700">✓</span>'
+      : (f.placeholder?'<span class="note">—</span>'
+         :'<span style="color:var(--warn);font-weight:700">falta</span>');
+    return mzTd([esc(f.nombre)+'<div class="note">fam. '+esc(f.familia||'—')+' · '+esc(f.tipo||'')+
+        (f.n_versiones>1?' · '+f.n_versiones+' versiones':'')+'</div>', vig, est],
+      "renderMezRecDet("+f.cid+")");
+  });
+  var h='';
+  if(!soloLista){
+    h+='<div class="card" style="margin-bottom:12px"><div class="hd" style="align-items:flex-start"><div>'+
+      '<div class="eyebrow">Laboratorio</div><b style="font-size:16px">Recetas — la carpeta GT</b>'+
+      '<div class="note" style="margin-top:3px">La letra vigente de cada familia. <b>Confírmalas antes del 1 de septiembre</b>: lo cargado viene de las hojas piloto de julio.</div></div>'+
+      '<span style="flex:none">'+speakBtn('Recetas. Aquí el laboratorio confirma qué versión de cada fórmula es la vigente.')+'</span></div>'+
+      '<div class="note" style="margin-top:6px"><b>'+conf+' de '+reales.length+'</b> familias con receta real confirmadas.</div>'+
+      '<input value="'+escA(_mzRecQ)+'" placeholder="Buscar familia o compuesto…" oninput="mzRecBusca(this.value)" '+
+        'style="width:100%;margin-top:10px;padding:9px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px"></div>'+
+      '<div id="mzrec-lista"></div>';
+    $('s-mezrec').innerHTML=h; show('mezrec');
+  }
+  $('mzrec-lista').innerHTML='<div class="card">'+
+    (lista.length? mzTabla(['Compuesto','Vigente','Confirmada'],filas)
+      : '<div class="note">Nada con «'+esc(_mzRecQ)+'».</div>')+'</div>';
+}
+function renderMezRecDet(cid){
+  $('s-mezrec').innerHTML='<div class="card"><div class="note">Abriendo la receta…</div></div>';
+  SB.rpc('hb_mez_receta',{p_cid:cid}).then(function(r){ var x=r&&r.data;
+    if(!(x&&x.ok)){ alert(mzErr(x,r&&r.error)); renderMezRec(); return; }
+    var c=x.compuesto, vs=x.versiones||[], ing=x.ingredientes||[];
+    var vig=vs.filter(function(v){ return v.estado==='vigente'; })[0]||{};
+    var h='<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">'+
+      '<div><div class="eyebrow">fam. '+esc(c.familia||'—')+' · '+esc(c.tipo||'')+'</div>'+
+      '<b style="font-size:18px">'+esc(c.nombre)+'</b>'+
+      '<div class="note" style="margin-top:2px">Vigente: <b>'+esc(vig.letra||'—')+'</b>'+
+        (vig.folio_gt?' · '+esc(vig.folio_gt):'')+(vig.fecha_emision?' · '+esc(vig.fecha_emision):'')+
+        (vig.peso_total_kg?' · '+mzN(vig.peso_total_kg,3)+' kg':'')+'</div>'+
+      (vig.confirmada_ts?'<div class="note" style="color:var(--ok);margin-top:2px">✓ Confirmada'+(vig.confirmada_por?' por '+esc(niceName(vig.confirmada_por)):'')+'</div>'
+        :'<div class="note" style="color:var(--warn);margin-top:2px">Sin confirmar</div>')+'</div>'+
+      '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px;flex:none" onclick="renderMezRec()">‹ Carpeta</button></div>'+
+      (vig.vid&&!vig.confirmada_ts?'<button class="btn" style="margin-top:10px" onclick="mzRecConfirma('+vig.vid+','+cid+')">✓ Confirmar que esta es la vigente</button>':'')+
+      '</div>';
+    if(vs.length>1){
+      h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Versiones cargadas</b>'+
+        '<div class="note" style="margin-top:2px">Toca otra para volverla la vigente (queda registrado quién y cuándo).</div>'+
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">'+
+        vs.map(function(v){
+          var t=esc(v.letra||('v'+v.vid))+(v.es_exp?' EXP':'')+(v.es_tr?' TR':'')+(v.es_r?' R':'');
+          return v.estado==='vigente'
+            ? '<span class="tg g" style="font-weight:700">'+t+' · vigente</span>'
+            : '<button class="btn ghost" style="margin:0;width:auto;padding:7px 11px;font-size:12px" onclick="mzRecVigente('+cid+','+v.vid+',\''+jsAttr(v.letra||'')+'\')">'+t+'</button>';
+        }).join('')+'</div></div>';
+    }
+    if(ing.length){
+      var tot=0; ing.forEach(function(i){ tot+=(+i.kg||0); });
+      var sec=null, filas=[];
+      ing.forEach(function(i){
+        if(i.seccion!==sec){ sec=i.seccion;
+          filas.push('<tr><td colspan="2" style="padding-top:10px"><b style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)">'+esc(sec||'')+'</b></td></tr>'); }
+        filas.push(mzTd([esc(i.material||i.compuesto_casa||i.nombre)+
+          (i.compuesto_casa?' <span class="note">compuesto de la casa</span>':'')+
+          (i.es_recorte?' <span class="note">recorte</span>':'')+
+          (i.nota?'<div class="note">'+esc(i.nota)+'</div>':''),
+          '<b>'+mzN(i.kg,3)+'</b>']));
+      });
+      filas.push('<tr style="border-top:2px solid var(--line)"><td><b>TOTAL</b></td><td><b>'+mzN(tot,3)+'</b></td></tr>');
+      h+='<div class="card"><b style="font-size:13px">Ingredientes de la vigente (kg por mezcla)</b>'+
+        '<div class="note" style="margin-top:2px">Secreto de fábrica: esta pantalla solo la ven laboratorio y dirección.</div>'+
+        mzTabla(['Ingrediente','kg'],filas)+
+        (vig.peso_total_kg&&Math.abs(tot-vig.peso_total_kg)>0.01
+          ?'<div class="note" style="margin-top:6px;color:var(--warn)">⚠ La suma ('+mzN(tot,3)+') no cuadra con el peso de la hoja ('+mzN(vig.peso_total_kg,3)+').</div>'
+          :(vig.peso_total_kg?'<div class="note" style="margin-top:6px;color:var(--ok)">✓ La suma cuadra con el peso de la hoja.</div>':''))+'</div>';
+    } else {
+      h+='<div class="card"><div class="note">Esta familia todavía no tiene receta digitalizada (peso del Excel). Cuando llegue su hoja GT, se carga.</div></div>';
+    }
+    $('s-mezrec').innerHTML=h;
+  },function(e){ alert(mzErr(null,e)); });
+}
+function mzRecConfirma(vid,cid){
+  SB.rpc('hb_mez_vigente_confirma',{p_vid:vid}).then(function(r){ var x=r&&r.data;
+    if(x&&x.ok){ flash('✓ Confirmada'); renderMezRecDet(cid); } else alert(mzErr(x)); },
+    function(){ alert(mzErr()); });
+}
+function mzRecVigente(cid,vid,letra){
+  if(!confirm('¿Volver VIGENTE la versión «'+(letra||vid)+'»?\n\nDesde ese momento los kilos y el costeo de las corridas nuevas usan esa receta. Queda registrado quién lo cambió.')) return;
+  SB.rpc('hb_mez_vigente_set',{p_cid:cid,p_vid:vid}).then(function(r){ var x=r&&r.data;
+    if(x&&x.ok){ flash('✓ Vigente cambiada'); renderMezRecDet(cid); } else alert(mzErr(x)); },
+    function(){ alert(mzErr()); });
+}
 function renderMezSem(){
   $('s-mezsem').innerHTML='<div class="card"><div class="note">Midiendo el consumo…</div></div>'; show('mezsem');
   SB.rpc('hb_mez_semaforo',{p_dias:_mzSemDias}).then(function(r){ var x=r&&r.data;

@@ -142,8 +142,8 @@ button{font-family:var(--font)}
 /* La previsualización del pegado/CSV se revisa EN UN TELÉFONO. El min-width de
    520px que necesitan las tablas de 7 columnas aquí sacaba de pantalla justo
    las columnas que hay que cotejar (mezclas y quemadas): se anula solo aquí. */
-#mz-prev .mzt{min-width:0}
-#mz-prev .mzt td:first-child{white-space:normal;word-break:break-word}
+#mz-prev .mzt, #mzp-prev .mzt{min-width:0}
+#mz-prev .mzt td:first-child, #mzp-prev .mzt td:first-child{white-space:normal;word-break:break-word}
 @media (hover:hover){.mzt tbody tr:hover td,.mzt tr:hover td{background:rgba(255,255,255,.02)}}
 .delta{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;padding:3px 8px;border-radius:20px;font-variant-numeric:tabular-nums}
 .delta.up{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
@@ -9048,7 +9048,9 @@ function docBuscaResultados(){
   return h;
 }
 function renderDocs(){
-  if(sbReady() && Date.now()-(window._lastLoadDocs||0)>4000){ window._lastLoadDocs=Date.now(); sbLoad('docs'); }
+  /* antes cada re-pintado re-bajaba TODO a los 4 s; con el realtime incremental
+     la lista ya se mantiene sola — la recarga completa queda de reconciliación */
+  if(sbReady() && Date.now()-(window._lastLoadDocs||0)>120000){ window._lastLoadDocs=Date.now(); sbLoad('docs'); }
   var manage=canDocManage();
   var sub = docIsTotal() ? 'Explora los documentos de cualquier área. Tú decides quién ve cada uno.'
           : docIsResp() ? ('Manuales y procesos de tu área ('+esc(S.area)+'). Puedes subir, ver, descargar y borrar los de tu área.')
@@ -9450,12 +9452,23 @@ try{
 }catch(e){}
 function sbLoad(tbl, cb){
   if(!sbReady()){ if(cb) cb(); return; }
-  try{ SB.from(tbl).select('data').order('ts',{ascending:true}).then(function(r){
-    if(!r.error && r.data){ DBC[tbl]=r.data.map(function(x){ return x.data; }); try{ lsSet('hb_'+tbl, DBC[tbl]); }catch(e){}
+  /* POR PÁGINAS (v3.39): el servidor corta en 1,000 filas por petición SIN
+     avisar. Con pocas filas era invisible; con la migración masiva de
+     documentos la lista saldría incompleta y nadie se enteraría. Se pide de
+     1,000 en 1,000 hasta que venga una página corta. */
+  var PASO=1000, filas=[];
+  function pagina(desde){
+    SB.from(tbl).select('data').order('ts',{ascending:true}).range(desde, desde+PASO-1).then(function(r){
+      if(r.error || !r.data){ if(cb) cb(); return; }
+      for(var i=0;i<r.data.length;i++) filas.push(r.data[i].data);
+      if(r.data.length===PASO){ pagina(desde+PASO); return; }
+      DBC[tbl]=filas; try{ lsSet('hb_'+tbl, DBC[tbl]); }catch(e){}
       if(tbl==='msgs') msgNotifyCheck();   // avisar si llegó un mensaje para mí
-      sbRerender(); }
-    if(cb) cb();
-  }); }catch(e){ if(cb) cb(); }
+      sbRerender();
+      if(cb) cb();
+    }, function(){ if(cb) cb(); });
+  }
+  try{ pagina(0); }catch(e){ if(cb) cb(); }
 }
 /* ===== NOTIFICACIÓN de mensaje nuevo: toast dentro de la app + notificación del
    sistema (si diste permiso y la app está en segundo plano). ===== */
@@ -9498,7 +9511,54 @@ function sbSyncOne(tbl, obj, cb){
   }); }catch(e){ if(cb) cb('sin conexión'); }
 }
 function sbDelRec(tbl, id){ if(sbReady()){ try{ SB.from(tbl).delete().eq('id',id).then(function(){}); }catch(e){} } }
-function sbSubscribe(tbl){ if(!sbReady()) return; try{ SB.channel('rt-'+tbl).on('postgres_changes',{event:'*',schema:'public',table:tbl},function(){ sbLoad(tbl); }).subscribe(); }catch(e){} }
+function sbSubscribe(tbl){
+  if(!sbReady()) return;
+  try{
+    SB.channel('rt-'+tbl).on('postgres_changes',{event:'*',schema:'public',table:tbl},function(p){
+      sbAplica(tbl, p);
+    }).subscribe(function(estado){
+      /* al RECONECTAR (se fue la señal, la app durmió) pudo perderse algún
+         evento: UNA carga completa para emparejar. La primera suscripción no
+         recarga: el login ya cargó. */
+      window._rtVez=window._rtVez||{};
+      if(estado==='SUBSCRIBED' && window._rtVez[tbl]) sbLoad(tbl);
+      if(estado==='SUBSCRIBED') window._rtVez[tbl]=true;
+    });
+  }catch(e){}
+}
+/* ===== Aplicar UN evento en vivo sin re-descargar la lista (v3.39) =====
+   Antes, CUALQUIER cambio en la tabla disparaba sbLoad() completo en CADA
+   celular conectado. Con la subida masiva de documentos (miles de archivos ×
+   505 teléfonos) eso era una tormenta de descargas. Ahora el propio evento
+   trae la fila: se pone/quita del arreglo y ya. */
+function sbAplica(tbl, p){
+  try{
+    var tipo=p && (p.eventType || p.event), arr=DBC[tbl]||[];
+    if(tipo==='DELETE'){
+      var idv=p.old && p.old.id;
+      if(idv==null){ sbRecargaAgrupada(tbl); return; }   // sin id no hay cómo: recarga agrupada
+      DBC[tbl]=arr.filter(function(x){ return !(x && x.id===idv); });
+    } else {
+      var fila=p['new'];
+      if(!fila || !fila.data){ sbRecargaAgrupada(tbl); return; }
+      var d=fila.data, i=-1;
+      for(var k=0;k<arr.length;k++){ if(arr[k] && arr[k].id===d.id){ i=k; break; } }
+      if(i>=0) arr[i]=d; else arr.push(d);   // ts nuevo = al final, el orden se conserva
+      DBC[tbl]=arr;
+    }
+    sbCacheLuego(tbl);
+    if(tbl==='msgs') msgNotifyCheck();
+    sbRerender();
+  }catch(e){ sbRecargaAgrupada(tbl); }
+}
+/* Red de seguridad: si un evento no se pudo aplicar, UNA recarga completa,
+   agrupada — nunca una por evento (eso era exactamente la tormenta). */
+var _sbRcT={};
+function sbRecargaAgrupada(tbl){ clearTimeout(_sbRcT[tbl]); _sbRcT[tbl]=setTimeout(function(){ sbLoad(tbl); }, 2500); }
+/* El caché local también se escribe agrupado: serializar la lista completa en
+   cada evento de una ráfaga congela el teléfono. */
+var _sbLsT={};
+function sbCacheLuego(tbl){ clearTimeout(_sbLsT[tbl]); _sbLsT[tbl]=setTimeout(function(){ try{ lsSet('hb_'+tbl, DBC[tbl]); }catch(e){} }, 1200); }
 /* ANTI-PARPADEO: los eventos en vivo llegan en ráfagas (varios por segundo). Se juntan
    y se re-pinta UNA sola vez, 350 ms después del último — sin flash (ver show()). */
 var _rrT=null;
@@ -11157,9 +11217,29 @@ function mzPrePegar(){
   el.innerHTML='<div class="card" style="margin-bottom:12px;border-style:dashed"><b style="font-size:13px">Pegar precios desde Excel</b>'+
     '<div class="note" style="margin-top:4px">Columnas en este orden: <b>MATERIAL · PRECIO · MONEDA · FECHA · PROVEEDOR</b> (moneda y proveedor pueden ir vacías).</div>'+
     '<textarea id="mzp-tsv" rows="6" style="width:100%;margin-top:8px;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:12.5px" placeholder="SKIM\t1.75\tUSD\t2026-08-14\tProveedor"></textarea>'+
+    '<div style="display:flex;gap:7px;align-items:center;margin-top:9px">'+
+      '<span class="note" style="flex:1;min-width:0" id="mzp-arch">…o sube el archivo, sin copiar nada. Guárdalo en Excel o Google Sheets como <b>CSV</b>.</span>'+
+      '<label class="icoa" style="cursor:pointer" title="Subir el archivo CSV de precios" aria-label="Subir el archivo CSV de precios">'+IC2.doc+
+        '<input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" style="display:none" onchange="mzPreArchivo(this)"></label>'+
+    '</div>'+
     '<label style="display:flex;gap:6px;align-items:center;margin-top:8px;font-size:12.5px"><input type="checkbox" id="mzp-crear"> Dar de alta los materiales que no existan</label>'+
     '<div id="mzp-prev"></div>'+
-    '<button class="btn" style="margin:10px 0 0" onclick="mzPrePrev()">Previsualizar</button></div>';
+    '<button class="btn ghost" style="margin:10px 0 0" onclick="mzPrePrev()">Previsualizar</button></div>';
+}
+function mzPreArchivo(inp){
+  var f=(inp&&inp.files)?inp.files[0]:null; if(inp) inp.value='';
+  if(!f) return;
+  var av=$('mzp-arch'); if(av) av.textContent='Leyendo '+f.name+'…';
+  if(f.size>3000000){ if(av) av.textContent='Ese archivo pesa demasiado (máximo 3 MB).'; return; }
+  var rd=new FileReader();
+  rd.onload=function(){
+    var ta=$('mzp-tsv'); if(!ta) return;
+    ta.value=mzCsvATsv(rd.result);       /* mismo normalizador probado de la bitácora */
+    if(av) av.textContent=f.name+' — revisa los renglones abajo antes de guardar.';
+    mzPrePrev();
+  };
+  rd.onerror=function(){ if(av) av.textContent='No se pudo leer ese archivo.'; };
+  rd.readAsText(f,'utf-8');
 }
 function mzPrePrev(){
   var txt=($('mzp-tsv').value||'').trim(); if(!txt){ alert('Pega primero los renglones.'); return; }
@@ -11168,7 +11248,14 @@ function mzPrePrev(){
     if(!ln.trim()) return;
     var c=ln.split('\t'); if(c.length<2) c=ln.split(/;|,(?=\s*\S)/);
     var cod=(c[0]||'').trim(); if(!cod||/material|codigo|producto/i.test(cod)) return;
-    var pr=parseFloat(String(c[1]||'').replace(/[$,\s]/g,''));
+    /* OJO con la coma: "$1,29" es UN PESO VEINTINUEVE (coma decimal) pero
+       quitarla a ciegas lo volvía 129 — un precio ×100 descuadra el costeo en
+       silencio. Regla: coma con 1-2 dígitos al final y sin punto = decimal;
+       cualquier otra coma = separador de miles ("1,234.56"). */
+    var _t=String(c[1]||'').replace(/[$\s]/g,'');
+    if(/,\d{1,2}$/.test(_t) && _t.indexOf('.')<0) _t=_t.replace(',','.');
+    else _t=_t.replace(/,/g,'');
+    var pr=parseFloat(_t);
     if(!(pr>0)){ malas++; return; }
     var mon=(c[2]||'').trim().toUpperCase();
     mon=(mon.indexOf('US')>-1||mon.indexOf('DL')>-1||mon==='$US')?'USD':'MXN';
@@ -11177,8 +11264,14 @@ function mzPrePrev(){
   });
   if(!filas.length){ alert('No pude leer renglones. Revisa el orden de las columnas.'); return; }
   _mzPreFilas=filas;
-  $('mzp-prev').innerHTML='<div class="note" style="margin-top:8px"><b>'+filas.length+' precios listos</b>'+(malas?(' · '+malas+' renglones no se leyeron'):'')+'</div>'+
-    '<div class="note" style="margin-top:4px">'+filas.slice(0,5).map(function(f){ return esc(f.codigo)+' '+mzN(f.precio,4)+' '+f.moneda+' ('+f.fecha+')'; }).join(' · ')+(filas.length>5?' …':'')+'</div>'+
+  /* la tabla completa, no 5 renglones en una línea: quien revisa tiene que PODER
+     revisar contra su Excel — misma lección que la bitácora */
+  $('mzp-prev').innerHTML='<div class="note" style="margin-top:8px"><b>'+filas.length+' precios</b>'+
+      (malas?(' · <span style="color:var(--warn)">'+malas+' renglones no se leyeron</span>'):'')+'</div>'+
+    mzTabla(['Material','Precio','Mon.','Fecha'],
+      filas.map(function(f){ return mzTd([esc(f.codigo)+(f.proveedor?'<div class="note">'+esc(f.proveedor)+'</div>':''),
+        '<b>'+mzN(f.precio,4)+'</b>', esc(f.moneda), esc(f.fecha)]); }))+
+    '<div class="note" style="margin-top:7px">Revisa que los precios y las monedas cuadren con tu archivo. Un precio en la moneda equivocada descuadra el costeo desde esa fecha.</div>'+
     '<button class="btn" style="margin:10px 0 0" onclick="mzPreImporta()">Guardar los '+filas.length+' precios</button>';
 }
 function mzPreImporta(){

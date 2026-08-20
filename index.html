@@ -142,8 +142,9 @@ button{font-family:var(--font)}
 /* La previsualización del pegado/CSV se revisa EN UN TELÉFONO. El min-width de
    520px que necesitan las tablas de 7 columnas aquí sacaba de pantalla justo
    las columnas que hay que cotejar (mezclas y quemadas): se anula solo aquí. */
-#mz-prev .mzt, #mzp-prev .mzt{min-width:0}
+#mz-prev .mzt, #mzp-prev .mzt, #mzpg-prev .mzt{min-width:0}
 #mz-prev .mzt td:first-child, #mzp-prev .mzt td:first-child{white-space:normal;word-break:break-word}
+#mzpg-prev .mzt td:nth-child(3){white-space:normal;word-break:break-word}
 @media (hover:hover){.mzt tbody tr:hover td,.mzt tr:hover td{background:rgba(255,255,255,.02)}}
 .delta{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;padding:3px 8px;border-radius:20px;font-variant-numeric:tabular-nums}
 .delta.up{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
@@ -10378,6 +10379,67 @@ function mzFotoCed(y,caja){
   h+=mzFotoCosto(y)+'</div>';
   if(caja) caja.innerHTML=h;
 }
+/* ---------- SUBIR LA CÉDULA COMO CSV (v3.39) ----------
+   Columnas: TURNO · BANBURY · COMPUESTO · VERSIÓN · MEZCLAS (con o sin
+   encabezado). Sin IA a propósito: la hoja de cálculo ya trae los números
+   exactos. Va a la FECHA elegida arriba. */
+var _mzProgFilas=null;
+function mzProgArchivo(inp){
+  var f=(inp&&inp.files)?inp.files[0]:null; if(inp) inp.value='';
+  if(!f) return;
+  var pv=$('mzpg-prev'); if(pv) pv.innerHTML='<div class="note" style="margin:8px 0">Leyendo '+esc(f.name)+'…</div>';
+  if(f.size>3000000){ if(pv) pv.innerHTML='<div class="note" style="margin:8px 0;color:var(--warn)">Ese archivo pesa demasiado (máximo 3 MB).</div>'; return; }
+  var rd=new FileReader();
+  rd.onload=function(){ mzProgPrev(mzCsvATsv(rd.result), f.name); };
+  rd.onerror=function(){ if(pv) pv.innerHTML='<div class="note" style="margin:8px 0;color:var(--warn)">No se pudo leer ese archivo.</div>'; };
+  rd.readAsText(f,'utf-8');
+}
+function mzProgPrev(tsv,nombre){
+  var pv=$('mzpg-prev'); if(!pv) return;
+  var filas=[], malas=0;
+  String(tsv||'').split(/\r?\n/).forEach(function(ln){
+    if(!ln.trim()) return;
+    var c=ln.split('\t');
+    if(/turno|banbury|compuesto/i.test(c[0]||'')) return;          /* encabezado */
+    var t=parseInt((c[0]||'').replace(/[^0-9]/g,''),10);
+    var b=parseInt((c[1]||'').replace(/[^0-9]/g,''),10);
+    var comp=(c[2]||'').trim();
+    var mez=parseInt((c[4]||'').replace(/[^0-9]/g,''),10);
+    if(!(t>=1&&t<=3) || !(b>=1&&b<=5) || !comp || !(mez>0)){ malas++; return; }
+    filas.push({turno:t, banbury:b, compuesto:comp, letra:(c[3]||'').trim()||null, mezclas_prog:mez});
+  });
+  if(!filas.length){ pv.innerHTML='<div class="note" style="margin:8px 0;color:var(--warn)">No pude leer renglones de '+esc(nombre||'ese archivo')+'. Columnas: <b>TURNO · BANBURY · COMPUESTO · VERSIÓN · MEZCLAS</b>.</div>'; return; }
+  _mzProgFilas=filas;
+  var sum=0; filas.forEach(function(x){ sum+=x.mezclas_prog; });
+  pv.innerHTML='<div class="card" style="margin:10px 0;border-style:dashed"><b style="font-size:13px">'+esc(nombre||'Archivo')+'</b>'+
+    '<div class="note" style="margin-top:3px"><b>'+filas.length+' renglones</b> para el '+esc(_mzF)+
+      (malas?(' · <span style="color:var(--warn)">'+malas+' no se leyeron</span>'):'')+'</div>'+
+    mzTabla(['Turno','BB','Compuesto','Mezclas'],
+      filas.map(function(x){ return mzTd(['T'+x.turno,'BB'+x.banbury,
+        esc(x.compuesto)+(x.letra?' <span class="note">'+esc(x.letra)+'</span>':''), '<b>'+x.mezclas_prog+'</b>']); })
+      .concat(['<tr style="border-top:2px solid var(--line)"><td colspan="3"><b>TOTAL</b></td><td><b>'+sum+'</b></td></tr>']))+
+    '<div class="note" style="margin-top:7px">Compara el <b>TOTAL de '+sum+' mezclas</b> contra la cédula antes de guardar.</div>'+
+    '<button class="btn" style="margin:10px 0 0" onclick="mzProgImporta()">Programar los '+filas.length+' renglones</button></div>';
+}
+function mzProgImporta(){
+  var filas=_mzProgFilas; if(!filas||!filas.length) return;
+  var f=_mzF, i=0, oks=0, errs=0;
+  var pv=$('mzpg-prev');
+  function uno(){
+    if(i>=filas.length){ _mzProgFilas=null;
+      alert('Listo: '+oks+' renglones programados'+(errs?(' · '+errs+' con error'):''));
+      if(pv) pv.innerHTML=''; mzLoadDia(mzProgPaint); return; }
+    var p=filas[i++];
+    var cat=(_mzCat&&_mzCat.compuestos||[]).filter(function(c){ return c.nombre.toUpperCase().trim()===String(p.compuesto).toUpperCase().trim(); })[0];
+    SB.rpc('hb_mez_programa_alta',{p:{fecha:f,turno:p.turno,banbury:p.banbury,
+      compuesto_id:cat?cat.id:null, compuesto_txt:cat?null:p.compuesto,
+      letra:p.letra||null, mezclas_prog:p.mezclas_prog}}).then(function(r){
+        var x=r&&r.data; if(x&&x.ok) oks++; else errs++; uno();
+      },function(){ errs++; uno(); });
+  }
+  if(!sbReady()){ alert('Sin conexión: la cédula se guarda en el servidor.'); return; }
+  uno();
+}
 function mzFotoGuardaCed(){
   var y=_mzFotoY; if(!y) return;
   var d=y.datos||{}, f=d.fecha||_mzF;
@@ -10451,7 +10513,12 @@ function mzProgPaint(){
   });
   h+='<div id="mzp-foto"></div>';
   h+='<div class="card" style="border-style:dashed"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><b style="font-size:13px">Programar</b>'+
-     '<button class="icoa" title="Subir foto de la cédula" aria-label="Subir foto de la cédula" onclick="mzFoto(\'cedula\')">'+IC_CAM+'</button></div>'+
+     '<span style="display:flex;gap:7px;flex:none">'+
+       '<label class="icoa" style="cursor:pointer" title="Subir el CSV de la cédula" aria-label="Subir el CSV de la cédula">'+IC2.doc+
+         '<input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" style="display:none" onchange="mzProgArchivo(this)"></label>'+
+       '<button class="icoa" title="Subir foto de la cédula" aria-label="Subir foto de la cédula" onclick="mzFoto(\'cedula\')">'+IC_CAM+'</button>'+
+     '</span></div>'+
+     '<div id="mzpg-prev"></div>'+
      '<div style="display:flex;gap:7px;margin-top:8px;flex-wrap:wrap">'+
      '<select id="mzp-t" style="padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px"><option value="1">Turno 1</option><option value="2">Turno 2</option><option value="3">Turno 3</option></select>'+
      '<select id="mzp-b" style="padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+[1,2,3,4,5].map(function(b){ return '<option value="'+b+'">BB'+b+'</option>'; }).join('')+'</select></div>'+

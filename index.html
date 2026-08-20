@@ -139,6 +139,11 @@ button{font-family:var(--font)}
 .mzt td{padding:8px;font-size:12.5px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
 .mzt td+td{text-align:right}
 .mzt tr:last-child td{border-bottom:none}
+/* La previsualización del pegado/CSV se revisa EN UN TELÉFONO. El min-width de
+   520px que necesitan las tablas de 7 columnas aquí sacaba de pantalla justo
+   las columnas que hay que cotejar (mezclas y quemadas): se anula solo aquí. */
+#mz-prev .mzt{min-width:0}
+#mz-prev .mzt td:first-child{white-space:normal;word-break:break-word}
 @media (hover:hover){.mzt tbody tr:hover td,.mzt tr:hover td{background:rgba(255,255,255,.02)}}
 .delta{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;padding:3px 8px;border-radius:20px;font-variant-numeric:tabular-nums}
 .delta.up{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
@@ -9919,8 +9924,71 @@ function mzPasteTog(){
   el.innerHTML='<b style="font-size:13px">Pegar renglones desde Excel</b>'+
     '<div class="note" style="margin-top:4px">Copia en tu Excel las columnas <b>COMPUESTO · VERSIÓN · CORRIDA · MEZCLAS · QUEMADAS</b> (en ese orden) y pégalas aquí. Van a la fecha, turno y banbury elegidos arriba.</div>'+
     '<textarea id="mz-tsv" rows="6" style="width:100%;margin-top:8px;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:12.5px" placeholder="SRY-95\tB\t02\t43\t0"></textarea>'+
-    '<div id="mz-prev"></div>'+
-    '<button class="btn" style="margin:10px 0 0" onclick="mzPegaPrev()">Previsualizar</button>';
+    '<div style="display:flex;gap:7px;align-items:center;margin-top:9px">'+
+      '<span class="note" style="flex:1;min-width:0" id="mz-arch">…o sube el archivo, sin copiar nada. Guárdalo en Excel o Google Sheets como <b>CSV</b>.</span>'+
+      '<label class="icoa" style="cursor:pointer" title="Subir el archivo CSV de la bitácora" aria-label="Subir el archivo CSV de la bitácora">'+IC2.doc+
+        '<input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" style="display:none" onchange="mzArchivoLee(this)"></label>'+
+    '</div>'+
+    '<button class="btn ghost" style="margin:10px 0 0" onclick="mzPegaPrev()">Previsualizar</button>'+
+    '<div id="mz-prev"></div>';
+}
+/* ---------- SUBIR EL ARCHIVO en vez de copiar columnas (v3.38) ----------
+   Decisión de Carlos (20-ago): opción (a) — que guarden como CSV. Así NO hace
+   falta librería (un .xlsx es un ZIP de XML) NI pasar la hoja por un modelo:
+   una hoja de cálculo YA trae los números exactos, y mandarla a la IA solo
+   agregaría la posibilidad de que transcriba mal algo que se puede leer bien.
+   El archivo se normaliza a TSV y se le entrega al MISMO parser del pegado,
+   que ya está probado. */
+function mzCsvATsv(txt){
+  txt=String(txt||'').replace(/^\uFEFF/,'');            /* Excel escribe BOM */
+  var lns=txt.split(/\r?\n/);
+  /* ¿con qué separa? Excel en español guarda con punto y coma. Se cuenta
+     FUERA de las comillas, en el primer renglón con contenido. */
+  var sep='\t', mejor=0;
+  for(var i=0;i<lns.length && i<5;i++){
+    if(!lns[i].trim()) continue;
+    ['\t',';',','].forEach(function(cand){
+      var cta=0, q=false;
+      for(var k=0;k<lns[i].length;k++){
+        var ch=lns[i][k];
+        if(ch==='"') q=!q; else if(ch===cand && !q) cta++;
+      }
+      if(cta>mejor){ mejor=cta; sep=cand; }
+    });
+    if(mejor) break;
+  }
+  return lns.map(function(ln){
+    if(!ln.trim()) return '';
+    var campos=[], act='', q=false;
+    for(var k=0;k<ln.length;k++){
+      var ch=ln[k];
+      if(q){
+        if(ch==='"'){ if(ln[k+1]==='"'){ act+='"'; k++; } else q=false; }
+        else act+=ch;
+      } else if(ch==='"'){ q=true; }
+      else if(ch===sep){ campos.push(act); act=''; }
+      else act+=ch;
+    }
+    campos.push(act);
+    /* se rejunta con tabuladores: así un compuesto con coma en el nombre
+       ("HNA-4R, negro") no parte el renglón en dos columnas */
+    return campos.map(function(c){ return c.trim(); }).join('\t');
+  }).join('\n');
+}
+function mzArchivoLee(inp){
+  var f=(inp&&inp.files)?inp.files[0]:null; if(inp) inp.value='';
+  if(!f) return;
+  var av=$('mz-arch'); if(av) av.textContent='Leyendo '+f.name+'…';
+  if(f.size>3000000){ if(av) av.textContent='Ese archivo pesa demasiado (máximo 3 MB). Guarda solo la hoja del día.'; return; }
+  var rd=new FileReader();
+  rd.onload=function(){
+    var ta=$('mz-tsv'); if(!ta) return;
+    ta.value=mzCsvATsv(rd.result);
+    if(av) av.textContent=f.name+' — revisa los renglones abajo antes de guardar.';
+    mzPegaPrev();                       /* misma previsualización de siempre */
+  };
+  rd.onerror=function(){ if(av) av.textContent='No se pudo leer ese archivo.'; };
+  rd.readAsText(f,'utf-8');
 }
 var _mzFilas=null;
 function mzPegaPrev(){
@@ -9939,8 +10007,30 @@ function mzPegaPrev(){
   });
   if(!filas.length){ alert('No pude leer renglones. Revisa que las columnas vayan en el orden indicado.'); return; }
   _mzFilas=filas;
-  $('mz-prev').innerHTML='<div class="note" style="margin-top:8px"><b>'+filas.length+' renglones listos</b> para '+esc(_mzF)+' · T'+_mzT+' · BB'+_mzB+(malas?(' · '+malas+' no se leyeron'):'')+'</div>'+
-    '<div class="note" style="margin-top:4px">'+filas.slice(0,5).map(function(f){ return esc(f.compuesto_txt+(f.letra?' '+f.letra:''))+' ×'+f.mezclas; }).join(' · ')+(filas.length>5?' …':'')+'</div>'+
+  /* Antes aquí solo salían 5 renglones en una línea corrida. Se cambió porque
+     el trabajo de Gustavo es EXACTAMENTE cotejar esto contra el papel: si no ve
+     todos los renglones y la SUMA, la revisión es un trámite. El total está para
+     compararlo con el recuadro TOTAL DE MEZCLAS de la libreta — eso es lo que
+     agarra un número mal leído, no la buena voluntad de quien revisa. */
+  var sumM=0, sumQ=0;
+  filas.forEach(function(f){ sumM+=(+f.mezclas||0); sumQ+=(+f.quemadas||0); });
+  $('mz-prev').innerHTML='<div class="note" style="margin-top:8px"><b>'+filas.length+' renglones</b> para '+esc(_mzF)+' · T'+_mzT+' · BB'+_mzB+
+      (malas?(' · <span style="color:var(--warn)">'+malas+' no se leyeron</span>'):'')+'</div>'+
+    /* 3 columnas A PROPÓSITO: con 5 columnas, en un teléfono de 375px las de
+       MEZCLAS y QUEMADAS se salían de la pantalla y había que arrastrar la tabla
+       para verlas — justo los números que hay que cotejar contra el papel. La
+       versión y la corrida bajan como renglón chico del compuesto.
+       mzTabla hace rows.join(''), así que esto tiene que ser ARREGLO. */
+    mzTabla(['Compuesto','Mezclas','Quemadas'],
+      filas.map(function(f){
+        var sub=[]; if(f.letra) sub.push('ver. '+f.letra);
+        if(f.num_corrida!=null) sub.push('corrida '+f.num_corrida);
+        return mzTd([esc(f.compuesto_txt)+(sub.length?'<div class="note">'+esc(sub.join(' · '))+'</div>':''),
+          '<b>'+f.mezclas+'</b>', f.quemadas||0]);
+      })
+      .concat(['<tr style="border-top:2px solid var(--line)"><td><b>TOTAL</b></td>'+
+        '<td><b>'+sumM+'</b></td><td><b>'+sumQ+'</b></td></tr>']))+
+    '<div class="note" style="margin-top:7px">Compara ese <b>TOTAL de '+sumM+' mezclas</b> con el recuadro <b>TOTAL DE MEZCLAS</b> de la libreta. Si no cuadra, no lo guardes: corrige el renglón que esté mal.</div>'+
     '<button class="btn" style="margin:10px 0 0" onclick="mzImporta()">Guardar los '+filas.length+' renglones</button>';
 }
 function mzImporta(){

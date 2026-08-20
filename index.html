@@ -10237,57 +10237,189 @@ function mzArchivoLee(inp){
     }, 'mz-prev');
 }
 var _mzFilas=null;
+function mzNorm(t){ return String(t||'').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim(); }
+function mzColL(i){ var t=''; do{ t=String.fromCharCode(65+(i%26))+t; i=Math.floor(i/26)-1; }while(i>=0); return t; }
+function mzFechaCelda(v){
+  v=String(v||'').trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  var m=/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/.exec(v);
+  if(m) return m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2);
+  var d=v.replace(/\D/g,'');
+  if(d.length===8 && d.slice(0,2)==='20') return d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8);
+  if(d.length===8 && d.slice(4,6)==='20') return d.slice(4,8)+'-'+d.slice(2,4)+'-'+d.slice(0,2);
+  return '';
+}
+function mzTurnoCelda(v){
+  var t=mzNorm(v);
+  if(t.indexOf('PRIMER')>-1) return 1;
+  if(t.indexOf('SEGUND')>-1) return 2;
+  if(t.indexOf('TERCER')>-1) return 3;
+  var n=parseInt(t.replace(/[^0-9]/g,''),10);
+  return (n>=1&&n<=3)?n:null;
+}
+/* ¿Este renglón es el ENCABEZADO? Busca las columnas por su NOMBRE.
+   (20-ago: Gustavo subió su hoja CAPTURA real y el orden fijo de columnas leyó
+   basura — "ver. AGOSTO · corrida 31". Su Excel tiene SUS columnas; el sistema
+   las encuentra por nombre y le dice cuál tomó de dónde.) */
+function mzCabecera(cs){
+  var m={};
+  for(var i=0;i<cs.length;i++){
+    var t=mzNorm(cs[i]); if(!t) continue;
+    if(m.comp==null && t.indexOf('COMPUESTO')>-1) m.comp=i;
+    else if(m.lote==null && t==='LOTE') m.lote=i;
+    else if(m.ver==null && (t.indexOf('VERSION')>-1||t==='VER'||t==='VER.'||t.indexOf('LETRA')>-1)) m.ver=i;
+    else if(m.corr==null && t.indexOf('CORRIDA')>-1) m.corr=i;
+    else if(m.quem==null && t.indexOf('QUEMAD')>-1) m.quem=i;
+    else if(m.mez==null && t.indexOf('MEZCLAS')>-1 && t.indexOf('PROGRAMAD')<0) m.mez=i;
+    else if(m.fecha==null && t.indexOf('FECHA')>-1) m.fecha=i;
+    else if(m.turno==null && t.indexOf('TURNO')>-1) m.turno=i;
+    else if(m.bb==null && t.indexOf('BANBURY')>-1) m.bb=i;
+    else if(m.op==null && t.indexOf('OPERADOR')>-1) m.op=i;
+  }
+  return (m.mez!=null && (m.comp!=null || m.lote!=null)) ? m : null;
+}
 function mzPegaPrev(){
-  var txt=($('mz-tsv').value||'').trim(); if(!txt){ alert('Pega primero los renglones.'); return; }
-  var filas=[], malas=0;
+  var txt=($('mz-tsv').value||'').trim(); if(!txt){ alert('Pega primero los renglones, o sube el archivo.'); return; }
+  var crudas=[];
   txt.split(/\r?\n/).forEach(function(ln){
     if(!ln.trim()) return;
     var c=ln.split('\t'); if(c.length<2) c=ln.split(/;|,/);
-    var comp=(c[0]||'').trim(); if(!comp) return;
-    if(/compuesto|lote/i.test(comp)) return;               /* encabezado */
-    var mez=parseInt((c[3]||'').replace(/[^0-9]/g,''),10);
-    if(!(mez>=0)){ malas++; return; }
-    filas.push({fecha:_mzF, turno:_mzT, banbury:_mzB, compuesto_txt:comp,
-      letra:(c[1]||'').trim()||null, num_corrida:parseInt((c[2]||'').replace(/[^0-9]/g,''),10)||null,
-      mezclas:mez, quemadas:parseInt((c[4]||'').replace(/[^0-9]/g,''),10)||0});
+    crudas.push(c.map(function(x){ return String(x==null?'':x).trim(); }));
   });
-  if(!filas.length){ alert('No pude leer renglones. Revisa que las columnas vayan en el orden indicado.'); return; }
+  /* 1) buscar el encabezado por NOMBRE en los primeros 30 renglones */
+  var map=null, hi=-1;
+  for(var i=0;i<crudas.length && i<30 && !map;i++){ map=mzCabecera(crudas[i]); if(map) hi=i; }
+
+  /* el catálogo por FAMILIA, para resolver LOTE (ej. 160F = familia 160, versión F) */
+  var fams={}, famKeys=[];
+  if(map && map.comp==null && map.lote!=null){
+    (_mzCat&&_mzCat.compuestos||[]).forEach(function(c){
+      var f=mzNorm(c.familia).replace(/\s+/g,''); if(!f) return;
+      if(!fams[f] || String(c.nombre).length<String(fams[f].nombre).length) fams[f]=c;
+    });
+    famKeys=Object.keys(fams).sort(function(a,b){ return b.length-a.length; });
+  }
+  function deLote(l){
+    l=mzNorm(l).replace(/\s+/g,''); if(!l) return null;
+    for(var i=0;i<famKeys.length;i++) if(l.indexOf(famKeys[i])===0)
+      return { comp:fams[famKeys[i]].nombre, letra:l.slice(famKeys[i].length)||null };
+    return null;
+  }
+
+  var filas=[], malas=0, fechasMal=0, sinLote=0;
+  if(map){
+    for(var r=hi+1;r<crudas.length;r++){
+      var c=crudas[r];
+      var mez=parseInt(String(c[map.mez]||'').replace(/[^0-9]/g,''),10);
+      var comp='', letra=null;
+      if(map.comp!=null) comp=c[map.comp]||'';
+      if(!comp && map.lote!=null){
+        var res=deLote(c[map.lote]);
+        if(res){ comp=res.comp; letra=res.letra; }
+        else if((c[map.lote]||'').trim()){ comp=(c[map.lote]||'').trim(); sinLote++; } /* va a la bandeja tal cual */
+      }
+      if(map.ver!=null && (c[map.ver]||'').trim()) letra=(c[map.ver]||'').trim();
+      if(!comp && !(mez>=0)) continue;              /* renglón vacío o de totales */
+      if(!comp || !(mez>=0)){ malas++; continue; }
+      var f=_mzF, t=_mzT, b=_mzB;
+      if(map.fecha!=null){ var ff=mzFechaCelda(c[map.fecha]); if(ff) f=ff; else fechasMal++; }
+      if(map.turno!=null){ var tt=mzTurnoCelda(c[map.turno]); if(tt) t=tt; }
+      if(map.bb!=null){ var bn=parseInt(String(c[map.bb]||'').replace(/[^0-9]/g,''),10); if(bn>=1&&bn<=5) b=bn; }
+      var fila={fecha:f, turno:t, banbury:b, compuesto_txt:comp, letra:letra||null,
+        num_corrida:(map.corr!=null?parseInt(String(c[map.corr]||'').replace(/[^0-9]/g,''),10)||null:null),
+        mezclas:mez, quemadas:(map.quem!=null?parseInt(String(c[map.quem]||'').replace(/[^0-9]/g,''),10)||0:0)};
+      if(map.op!=null){ var on=parseInt(String(c[map.op]||'').replace(/[^0-9]/g,''),10); if(on>0) fila.operador_n=on; }
+      filas.push(fila);
+    }
+  } else {
+    /* SIN encabezado reconocible: el orden fijo de siempre */
+    crudas.forEach(function(c){
+      var comp=(c[0]||'').trim(); if(!comp) return;
+      if(/compuesto|lote/i.test(comp)) return;
+      var mez=parseInt((c[3]||'').replace(/[^0-9]/g,''),10);
+      if(!(mez>=0)){ malas++; return; }
+      filas.push({fecha:_mzF, turno:_mzT, banbury:_mzB, compuesto_txt:comp,
+        letra:(c[1]||'').trim()||null, num_corrida:parseInt((c[2]||'').replace(/[^0-9]/g,''),10)||null,
+        mezclas:mez, quemadas:parseInt((c[4]||'').replace(/[^0-9]/g,''),10)||0});
+    });
+  }
+  if(!filas.length){ alert('No pude leer renglones. Revisa que la hoja traiga encabezados (COMPUESTO o LOTE, y MEZCLAS) o que las columnas vayan en el orden indicado.'); return; }
   _mzFilas=filas;
-  /* Antes aquí solo salían 5 renglones en una línea corrida. Se cambió porque
-     el trabajo de Gustavo es EXACTAMENTE cotejar esto contra el papel: si no ve
-     todos los renglones y la SUMA, la revisión es un trámite. El total está para
-     compararlo con el recuadro TOTAL DE MEZCLAS de la libreta — eso es lo que
-     agarra un número mal leído, no la buena voluntad de quien revisa. */
-  var sumM=0, sumQ=0;
-  filas.forEach(function(f){ sumM+=(+f.mezclas||0); sumQ+=(+f.quemadas||0); });
-  $('mz-prev').innerHTML='<div class="note" style="margin-top:8px"><b>'+filas.length+' renglones</b> para '+esc(_mzF)+' · T'+_mzT+' · BB'+_mzB+
-      (malas?(' · <span style="color:var(--warn)">'+malas+' no se leyeron</span>'):'')+'</div>'+
-    /* 3 columnas A PROPÓSITO: con 5 columnas, en un teléfono de 375px las de
-       MEZCLAS y QUEMADAS se salían de la pantalla y había que arrastrar la tabla
-       para verlas — justo los números que hay que cotejar contra el papel. La
-       versión y la corrida bajan como renglón chico del compuesto.
-       mzTabla hace rows.join(''), así que esto tiene que ser ARREGLO. */
-    mzTabla(['Compuesto','Mezclas','Quemadas'],
-      filas.map(function(f){
-        var sub=[]; if(f.letra) sub.push('ver. '+f.letra);
-        if(f.num_corrida!=null) sub.push('corrida '+f.num_corrida);
-        return mzTd([esc(f.compuesto_txt)+(sub.length?'<div class="note">'+esc(sub.join(' · '))+'</div>':''),
-          '<b>'+f.mezclas+'</b>', f.quemadas||0]);
-      })
-      .concat(['<tr style="border-top:2px solid var(--line)"><td><b>TOTAL</b></td>'+
-        '<td><b>'+sumM+'</b></td><td><b>'+sumQ+'</b></td></tr>']))+
-    '<div class="note" style="margin-top:7px">Compara ese <b>TOTAL de '+sumM+' mezclas</b> con el recuadro <b>TOTAL DE MEZCLAS</b> de la libreta. Si no cuadra, no lo guardes: corrige el renglón que esté mal.</div>'+
+
+  var sumM=0, sumQ=0, porDia={};
+  filas.forEach(function(x){ sumM+=(+x.mezclas||0); sumQ+=(+x.quemadas||0);
+    porDia[x.fecha]=(porDia[x.fecha]||0)+(+x.mezclas||0); });
+  var dias=Object.keys(porDia).sort();
+  var h='<div class="note" style="margin-top:8px"><b>'+filas.length+' renglones</b>'+
+    (dias.length>1?(' · <b>'+dias.length+' días</b> (del '+esc(dias[0])+' al '+esc(dias[dias.length-1])+')'):(' para '+esc(dias[0]||_mzF)))+
+    (malas?(' · <span style="color:var(--warn)">'+malas+' no se leyeron</span>'):'')+
+    (fechasMal?(' · <span style="color:var(--warn)">'+fechasMal+' con fecha ilegible (usé la de arriba)</span>'):'')+
+    (sinLote?(' · <span style="color:var(--warn)">'+sinLote+' con lote fuera de catálogo (van a la bandeja)</span>'):'')+'</div>';
+  if(map){
+    var tags=[];
+    if(map.comp!=null) tags.push('COMPUESTO→'+mzColL(map.comp));
+    if(map.lote!=null) tags.push('LOTE→'+mzColL(map.lote));
+    if(map.ver!=null) tags.push('VERSIÓN→'+mzColL(map.ver));
+    if(map.corr!=null) tags.push('CORRIDA→'+mzColL(map.corr));
+    tags.push('MEZCLAS→'+mzColL(map.mez));
+    if(map.quem!=null) tags.push('QUEMADAS→'+mzColL(map.quem));
+    if(map.fecha!=null) tags.push('FECHA→'+mzColL(map.fecha));
+    if(map.turno!=null) tags.push('TURNO→'+mzColL(map.turno));
+    if(map.bb!=null) tags.push('BANBURY→'+mzColL(map.bb));
+    if(map.op!=null) tags.push('OPERADOR→'+mzColL(map.op));
+    h+='<div class="note" style="margin-top:4px">Encontré los encabezados en el renglón '+(hi+1)+' y tomé: '+tags.join(' · ')+'.</div>';
+    if(map.fecha==null||map.turno==null||map.bb==null)
+      h+='<div class="note" style="margin-top:3px;color:var(--warn)">La hoja no trae '+
+        [(map.fecha==null?'FECHA':null),(map.turno==null?'TURNO':null),(map.bb==null?'BANBURY':null)].filter(Boolean).join(' ni ')+
+        ': esos renglones van a lo elegido arriba ('+esc(_mzF)+' · T'+_mzT+' · BB'+_mzB+').</div>';
+  }
+  if(dias.length>1){
+    h+='<div class="note" style="margin-top:6px"><b>Mezclas por día</b> — compara contra el total de cada hoja de la libreta:</div>'+
+       '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px">'+
+       dias.map(function(d){ return '<span class="tg" style="font-variant-numeric:tabular-nums">'+esc(d.slice(5))+' · <b>'+porDia[d]+'</b></span>'; }).join('')+'</div>';
+  }
+  /* la tabla completa, con su día/turno/banbury cuando vienen del archivo */
+  var multi=(dias.length>1 || (map&&(map.turno!=null||map.bb!=null)));
+  h+=mzTabla(['Compuesto','Mezclas','Quemadas'],
+    filas.slice(0,400).map(function(x){
+      var sub=[];
+      if(x.letra) sub.push('ver. '+x.letra);
+      if(x.num_corrida!=null) sub.push('corrida '+x.num_corrida);
+      if(multi) sub.push(x.fecha.slice(5)+' · T'+x.turno+' · BB'+x.banbury);
+      return mzTd([esc(x.compuesto_txt)+(sub.length?'<div class="note">'+esc(sub.join(' · '))+'</div>':''),
+        '<b>'+x.mezclas+'</b>', x.quemadas||0]);
+    })
+    .concat(filas.length>400?['<tr><td colspan="3" class="note">… y '+(filas.length-400)+' renglones más (se guardan todos)</td></tr>']:[])
+    .concat(['<tr style="border-top:2px solid var(--line)"><td><b>TOTAL</b></td><td><b>'+sumM+'</b></td><td><b>'+sumQ+'</b></td></tr>']))+
+    '<div class="note" style="margin-top:7px">Compara el <b>TOTAL de '+sumM+' mezclas</b>'+(dias.length>1?' y los totales por día':'')+' contra la libreta. Si no cuadra, no lo guardes.</div>'+
     '<button class="btn" style="margin:10px 0 0" onclick="mzImporta()">Guardar los '+filas.length+' renglones</button>';
+  $('mz-prev').innerHTML=h;
 }
 function mzImporta(){
   if(!_mzFilas||!_mzFilas.length) return;
-  SB.rpc('hb_mez_import',{p_filas:_mzFilas}).then(function(r){ var x=r&&r.data;
-    if(x&&x.ok){
-      alert('Listo: '+x.insertadas+' guardados'+(x.a_bandeja?(' · '+x.a_bandeja+' fuera de catálogo (bandeja)'):'')+
-        (x.duplicadas?(' · '+x.duplicadas+' repetidos NO se guardaron (ya estaban capturados)'):'')+
-        ((x.errores||[]).length?(' · '+x.errores.length+' con error'):''));
-      _mzFilas=null; $('mz-paste').classList.add('hide'); mzLoadDia(mzCapPaint);
-    } else alert(mzErr(x)); },function(){ alert(mzErr()); });
+  /* el servidor acepta 500 por llamada: se manda por TANDAS y se suma el resultado */
+  var todas=_mzFilas.slice(), i=0, TANDA=450;
+  var tot={insertadas:0,a_bandeja:0,duplicadas:0,errores:[]};
+  var pv=$('mz-prev');
+  function fin(){
+    alert('Listo: '+tot.insertadas+' guardados'+
+      (tot.a_bandeja?(' · '+tot.a_bandeja+' fuera de catálogo (bandeja)'):'')+
+      (tot.duplicadas?(' · '+tot.duplicadas+' repetidos NO se guardaron (ya estaban capturados)'):'')+
+      (tot.errores.length?(' · '+tot.errores.length+' con error'):''));
+    _mzFilas=null; $('mz-paste').classList.add('hide'); mzLoadDia(mzCapPaint);
+  }
+  function paso(){
+    if(i>=todas.length){ fin(); return; }
+    var lote=todas.slice(i,i+TANDA); i+=TANDA;
+    if(pv && todas.length>TANDA) pv.innerHTML='<div class="note" style="margin:8px 0">Guardando… '+Math.min(i,todas.length)+' de '+todas.length+' renglones.</div>';
+    SB.rpc('hb_mez_import',{p_filas:lote}).then(function(r){ var x=r&&r.data;
+      if(x&&x.ok){
+        tot.insertadas+=x.insertadas||0; tot.a_bandeja+=x.a_bandeja||0; tot.duplicadas+=x.duplicadas||0;
+        (x.errores||[]).forEach(function(e){ tot.errores.push(e); });
+        paso();
+      } else alert(mzErr(x)); },function(){ alert(mzErr()); });
+  }
+  paso();
 }
 /* ================= LECTOR DE FOTOS (v3_25) =================
    Gustavo le toma foto al papel; la foto va al SERVIDOR (nunca directo a

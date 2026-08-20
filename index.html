@@ -973,6 +973,12 @@ body.a11y .screen .icoa.mini svg{ width:17px !important; height:17px !important;
 .shotguard p{font-size:14px;color:#9aa0b0;line-height:1.55;max-width:330px;margin:0}
 /* ===== V4 · ESCRITORIO: riel de PUROS ÍCONOS con el logo arriba (foto de referencia) ===== */
 @media (min-width:1000px){
+  /* Planta y Mantenimiento: los cuadros se quedan CUADRADOS. La regla global usa
+     auto-FIT, que colapsa las columnas vacias y estira los cuadros para llenar
+     el ancho (con 2 modulos quedaban de 555px de ancho por 152 de alto, o sea
+     renglones, no cuadros). Con auto-FILL las columnas se quedan puestas y el
+     cuadro conserva su forma. Solo aqui: los otros hubs siguen igual. */
+  #s-planta .tgrid, #s-manto .tgrid{ grid-template-columns:repeat(auto-fill,minmax(230px,1fr)) }
   .nav{width:86px;padding:14px 10px 16px;align-items:center}
   .nav:before,.nav:after{display:none}
   .navlogo{display:flex;width:44px;height:30px;margin:2px 0 14px;align-items:center;justify-content:center}
@@ -9666,20 +9672,21 @@ function renderPlanta(){
 
   h+='<div class="sec-t">Ya funcionando<span class="ln"></span></div><div class="tgrid">';
   //  1 · PRODUCCIÓN (área produccion: banburys, pathex, extruido, calandrias…)
-  h+=htile("go('prod')",'operacion','Producción','Mezclado en Banburys: bitácora, cédula y gráficos',{wide:true});
+  h+=htile("go('prod')",'operacion','Producción','Bitácora, cédula y gráficos del mezclado');
   //  2 · MANTENIMIENTO (área maquinaria: mantenimiento, montacarguistas)
   var pn=0; try{ pn=pedNuevosN()||0; }catch(e){}
-  h+=htile("go('manto')",'rep','Mantenimiento','Órdenes de trabajo: pedir, asignar y seguir la reparación',{wide:true, cnt:pn||''});
+  h+=htile("go('manto')",'rep','Mantenimiento','Órdenes de trabajo y reparaciones',{cnt:pn||''});
   h+='</div>';
 
   //  Los que faltan. Se listan con los departamentos REALES que los componen,
   //  para que se vea a dónde vamos y nadie se pregunte qué falta.
   h+='<div class="sec-t">En camino<span class="ln"></span></div><div class="tgrid">';
-  [['Calidad','encuestas','Reinspección, aseguramiento de calidad y laboratorio'],
+  /* textos cortos a propósito: en cuadro cabe menos que en renglón */
+  [['Calidad','encuestas','Reinspección y laboratorio'],
    ['Almacén','deptos','Materia prima y producto terminado'],
-   ['Administración','personas','Administración general y recursos humanos']
+   ['Administración','personas','General y recursos humanos']
   ].forEach(function(d){
-    h+=htile("plantaPronto('"+jsAttr(d[0])+"')", d[1], d[0], d[2], {wide:true, cls:'pronto'});
+    h+=htile("plantaPronto('"+jsAttr(d[0])+"')", d[1], d[0], d[2], {cls:'pronto'});
   });
   h+='</div>';
   h+='<div class="card" style="margin-top:12px"><div class="note">Estos departamentos todavía no tienen tablero. Se van a ir armando uno por uno, con el responsable de cada área — igual que se hizo con Producción y Mantenimiento.</div></div>';
@@ -9697,14 +9704,14 @@ function renderMantoHub(){
     '<span style="flex:none">'+speakBtn('Mantenimiento. Aquí se piden las reparaciones de las máquinas y se ve en qué van.')+'</span></div></div>';
   h+='<div class="sec-t">Tu trabajo aquí<span class="ln"></span></div><div class="tgrid">';
   //  pedir reparación: lo puede hacer cualquiera que trabaje con una máquina
-  h+=htile("renderPedir()",'rep','Pedir reparación','Reporta una máquina y mándale foto a Mantenimiento',{wide:true});
+  h+=htile("renderPedir()",'rep','Pedir reparación','Reporta una máquina, con foto');
   //  el técnico ve lo que trae asignado
   var esTec=false; try{ esTec=pedEsTecnico(); }catch(e){}
-  if(esTec) h+=htile("renderMisRep()",'pend','Tus reparaciones','Lo que traes asignado y su avance',{wide:true});
+  if(esTec) h+=htile("renderMisRep()",'pend','Tus reparaciones','Lo que traes asignado y su avance');
   //  el responsable del área y acceso total ven la bandeja completa
   if(S.admin||S.mando){
     var pn=0; try{ pn=pedNuevosN()||0; }catch(e){}
-    h+=htile("renderPedidos()",'operacion','Órdenes de trabajo','Todas las órdenes: asignar, dar seguimiento y cerrar',{wide:true, cnt:pn||''});
+    h+=htile("renderPedidos()",'operacion','Órdenes de trabajo','Asignar, seguir y cerrar',{cnt:pn||''});
   }
   h+='</div>';
   $('s-manto').innerHTML=h; show('manto');

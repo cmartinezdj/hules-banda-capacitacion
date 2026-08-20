@@ -9835,6 +9835,7 @@ function mzCapPaint(){
   h+='<span style="flex:1"></span>'+
      '<button class="icoa" title="Subir foto de la bitácora" aria-label="Subir foto de la bitácora" onclick="mzFoto(\'bitacora\')">'+IC_CAM+'</button>'+
      '<button class="icoa" title="Pegar de Excel" aria-label="Pegar de Excel" onclick="mzPasteTog()">'+IC_CLIP+'</button>'+
+     '<button class="btn ghost" style="margin:0;width:auto;padding:9px 14px;font-size:13px" title="Renglones fuera de catálogo por asignar" onclick="mzBandTog()">Bandeja</button>'+
      '<button class="btn ghost" style="margin:0;width:auto;padding:9px 14px;font-size:13px" title="Ver las últimas 100 bitácoras" onclick="mzHistTog()">Historial</button></div>'+
      '<div style="display:flex;gap:7px;margin-top:9px;flex-wrap:wrap">';
   [1,2,3,4,5].forEach(function(b){
@@ -9844,6 +9845,7 @@ function mzCapPaint(){
   h+='</div></div>';
   h+='<div id="mz-paste" class="card hide" style="margin-bottom:12px"></div>';
   h+='<div id="mz-hist" class="card hide" style="margin-bottom:12px"></div>';
+  h+='<div id="mz-band" class="card hide" style="margin-bottom:12px"></div>';
   if(prog.length){
     h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Cédula de este turno</b><div class="note" style="margin-top:4px">'+
        prog.map(function(p){ return esc((p.compuesto||p.compuesto_txt||'')+(p.letra?' '+p.letra:''))+' ×'+p.mezclas_prog; }).join(' · ')+'</div></div>';
@@ -10933,6 +10935,7 @@ function renderMezRecDet(cid){
         :'<div class="note" style="color:var(--warn);margin-top:2px">Sin confirmar</div>')+'</div>'+
       '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px;flex:none" onclick="renderMezRec()">‹ Carpeta</button></div>'+
       (vig.vid&&!vig.confirmada_ts?'<button class="btn" style="margin-top:10px" onclick="mzRecConfirma('+vig.vid+','+cid+')">✓ Confirmar que esta es la vigente</button>':'')+
+      '<button class="btn ghost" style="margin-top:10px" onclick="mzRecNueva('+cid+',\''+jsAttr(c.nombre)+'\')">＋ Capturar una versión nueva (de la hoja GT)</button>'+
       '</div>';
     if(vs.length>1){
       h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Versiones cargadas</b>'+
@@ -10969,6 +10972,90 @@ function renderMezRecDet(cid){
     }
     $('s-mezrec').innerHTML=h;
   },function(e){ alert(mzErr(null,e)); });
+}
+/* ---------- CAPTURAR UNA VERSIÓN A MANO (v3.45) ----------
+   El laboratorio teclea la hoja GT: letra, folio, peso e ingredientes con kg.
+   La SUMA se cuadra en vivo contra el peso declarado — el papel se verifica a
+   sí mismo antes de guardarse. (La lectura por FOTO llega con la llave de IA.) */
+var _mzMatDL=null;
+function mzRecMatCarga(cb){
+  if(_mzMatDL!==null){ cb(); return; }
+  SB.rpc('hb_mez_materiales_lista').then(function(r){ var x=r&&r.data;
+    if(!(x&&x.ok)){ alert(mzErr(x,r&&r.error)); return; }
+    _mzMatDL='<datalist id="mzrn-dl">'+
+      (x.materiales||[]).map(function(m){ return '<option value="'+escA(m.codigo)+'">'+escA(m.nombre||'')+'</option>'; }).join('')+
+      (x.compuestos||[]).map(function(c){ return '<option value="'+escA(c.nombre)+'">compuesto de la casa</option>'; }).join('')+
+      '</datalist>';
+    cb();
+  },function(e){ alert(mzErr(null,e)); });
+}
+function mzRecNueva(cid,nombre){
+  mzRecMatCarga(function(){
+    var SECS=['hules','negros_cargas','aceites','pigmentos','acelerantes','otro'];
+    window._mzRnCid=cid;
+    var h='<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center">'+
+      '<div><div class="eyebrow">Versión nueva</div><b style="font-size:17px">'+esc(nombre)+'</b></div>'+
+      '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="renderMezRecDet('+cid+')">‹ Cancelar</button></div>'+
+      '<div style="display:flex;gap:7px;margin-top:10px;flex-wrap:wrap">'+
+      '<input id="mzrn-letra" placeholder="Letra *" maxlength="20" style="flex:1;min-width:80px;padding:9px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+      '<input id="mzrn-folio" placeholder="Folio GT" maxlength="30" style="flex:1;min-width:90px;padding:9px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+      '<input id="mzrn-fecha" type="date" style="padding:9px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+      '<input id="mzrn-peso" placeholder="Peso de la hoja (kg)" inputmode="decimal" style="flex:1;min-width:120px;padding:9px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px"></div>'+
+      '<label style="display:flex;gap:6px;align-items:center;margin-top:9px;font-size:12.5px"><input type="checkbox" id="mzrn-vig"> Volverla la VIGENTE al guardar (si no, queda como piloto)</label>'+
+      '</div>'+
+      _mzMatDL+
+      '<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Ingredientes (kg por mezcla)</b>'+
+      '<div class="note" style="margin-top:2px">El código tiene que existir en materiales o ser un compuesto de la casa — escoge de la lista.</div>'+
+      '<div id="mzrn-rows"></div>'+
+      '<button class="btn ghost" style="margin-top:9px" onclick="mzRnFila()">＋ Renglón</button>'+
+      '<div class="note" style="margin-top:9px;font-size:13px">Suma: <b id="mzrn-sum">0.000</b> kg <span id="mzrn-cuadre"></span></div>'+
+      '<button class="btn" style="margin-top:10px" onclick="mzRnGuarda(\''+jsAttr(nombre)+'\')">Guardar la versión</button></div>';
+    $('s-mezrec').innerHTML=h;
+    mzRnFila(); mzRnFila(); mzRnFila();
+    $('mzrn-peso').oninput=mzRnSuma;
+  });
+}
+function mzRnFila(){
+  var SECS=['hules','negros_cargas','aceites','pigmentos','acelerantes','otro'];
+  var d=document.createElement('div');
+  d.className='mzrn-row'; d.style.cssText='display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center';
+  d.innerHTML='<select style="padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:12.5px">'+
+      SECS.map(function(x){ return '<option value="'+x+'">'+x.replace('_',' y ')+'</option>'; }).join('')+'</select>'+
+    '<input list="mzrn-dl" placeholder="Código o compuesto" autocomplete="off" style="flex:1;min-width:130px;padding:9px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+    '<input placeholder="kg" inputmode="decimal" oninput="mzRnSuma()" style="width:86px;padding:9px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px;font-variant-numeric:tabular-nums">'+
+    '<button class="icoa mini" title="Quitar este renglón" aria-label="Quitar este renglón" onclick="this.parentElement.remove();mzRnSuma()">'+IC_TRASH+'</button>';
+  $('mzrn-rows').appendChild(d);
+}
+function mzRnSuma(){
+  var t=0;
+  document.querySelectorAll('#mzrn-rows .mzrn-row').forEach(function(r){
+    var kg=parseFloat((r.children[2].value||'').replace(',','.')); if(kg>0) t+=kg; });
+  var e=$('mzrn-sum'); if(e) e.textContent=t.toFixed(3);
+  var peso=parseFloat(($('mzrn-peso').value||'').replace(',','.'));
+  var q=$('mzrn-cuadre');
+  if(q){ q.innerHTML = !(peso>0) ? ''
+    : (Math.abs(t-peso)<=0.01 ? '<span style="color:var(--ok);font-weight:700">✓ cuadra con la hoja</span>'
+                              : '<span style="color:var(--warn);font-weight:700">difiere de la hoja por '+Math.abs(t-peso).toFixed(3)+' kg</span>'); }
+}
+function mzRnGuarda(nombre){
+  var letra=($('mzrn-letra').value||'').trim();
+  if(!letra){ alert('Falta la letra de la versión.'); return; }
+  var ings=[];
+  document.querySelectorAll('#mzrn-rows .mzrn-row').forEach(function(r){
+    var cod=(r.children[1].value||'').trim(), kg=parseFloat((r.children[2].value||'').replace(',','.'));
+    if(cod && kg>0) ings.push({seccion:r.children[0].value, codigo:cod, kg:kg});
+  });
+  if(!ings.length){ alert('Captura al menos un ingrediente con sus kilos.'); return; }
+  var peso=($('mzrn-peso').value||'').trim().replace(',','.');
+  var vig=$('mzrn-vig').checked;
+  if(!confirm('¿Guardar la versión «'+letra+'» de '+nombre+' con '+ings.length+' ingredientes'+(vig?' y VOLVERLA LA VIGENTE':' (queda como piloto)')+'?')) return;
+  SB.rpc('hb_mez_version_alta',{p:{cid:window._mzRnCid, letra:letra,
+      folio:($('mzrn-folio').value||'').trim(), fecha:($('mzrn-fecha').value||'')||null,
+      peso_total:peso||null, vigente:vig, ingredientes:ings}}).then(function(r){ var x=r&&r.data;
+    if(x&&x.ok){
+      flash(x.cuadra?'✓ Versión guardada — la suma cuadra':'⚠ Guardada, pero la suma ('+x.suma+') difiere del peso de la hoja');
+      renderMezRecDet(window._mzRnCid);
+    } else alert((x&&x.detalle)||mzErr(x)); },function(e){ alert(mzErr(null,e)); });
 }
 function mzRecConfirma(vid,cid){
   SB.rpc('hb_mez_vigente_confirma',{p_vid:vid}).then(function(r){ var x=r&&r.data;
@@ -12315,6 +12402,50 @@ function mzFechaBonita(f){
   var d=new Date(+p[0], +p[1]-1, +p[2]);
   var dia=MZ_DIAS[d.getDay()]||'';
   return dia.charAt(0).toUpperCase()+dia.slice(1)+' '+(+p[2])+' '+(MZ_MESES[+p[1]-1]||'');
+}
+/* ---------- BANDEJA (v3.45): lotes fuera de catálogo, asignables aquí ----------
+   Cuando un lote no casa con el catálogo (hoy: 605 y 607), cae aquí. El
+   capturista lo asigna al compuesto correcto y se arreglan TODOS los renglones
+   de ese lote de un jalón. Antes esto solo se podía por SQL. */
+function mzBandTog(){
+  var el=$('mz-band'); if(!el) return;
+  if(!el.classList.contains('hide')){ el.classList.add('hide'); return; }
+  el.classList.remove('hide');
+  el.innerHTML='<b style="font-size:13px">Bandeja — fuera de catálogo</b><div class="note" style="margin-top:4px">Cargando…</div>';
+  if(!sbReady()){ el.innerHTML='<b style="font-size:13px">Bandeja</b><div class="note" style="margin-top:4px">Sin conexión.</div>'; return; }
+  SB.rpc('hb_mez_bandeja').then(function(r){ var x=r&&r.data;
+    if(!(x&&x.ok)){ el.innerHTML='<b style="font-size:13px">Bandeja</b><div class="note" style="margin-top:4px">'+esc(mzErr(x,r&&r.error))+'</div>'; return; }
+    mzBandPaint(x.grupos||[]);
+  },function(e){ el.innerHTML='<b style="font-size:13px">Bandeja</b><div class="note" style="margin-top:4px">'+esc(mzErr(null,e))+'</div>'; });
+}
+function mzBandPaint(gs){
+  var el=$('mz-band'); if(!el) return;
+  var h='<div class="line"><b style="font-size:13px">Bandeja — fuera de catálogo</b>'+
+    '<button class="btn ghost" style="margin:0;width:auto;padding:6px 11px;font-size:12px" onclick="mzBandTog()">Cerrar</button></div>';
+  if(!gs.length){ el.innerHTML=h+'<div class="note" style="margin-top:6px">Vacía: todo lo capturado está casado con el catálogo. ✓</div>'; return; }
+  h+='<div class="note" style="margin-top:4px">Estos lotes no casaron con ningún compuesto. Escribe a cuál pertenece cada uno y asígnalo: se corrigen todos sus renglones de un jalón.</div>';
+  h+='<datalist id="mz-band-dl">'+(_mzCat&&_mzCat.compuestos||[]).map(function(c){ return '<option value="'+escA(c.nombre)+'"></option>'; }).join('')+'</datalist>';
+  gs.forEach(function(g,i){
+    h+='<div class="card" style="margin-top:9px;border-style:dashed">'+
+      '<b style="font-size:13px">«'+esc(g.texto||'(vacío)')+'»</b>'+
+      '<div class="note" style="margin-top:2px">'+g.corridas+(g.corridas===1?' corrida':' corridas')+' · '+g.mezclas+' mezclas · '+esc(g.desde||'')+(g.hasta&&g.hasta!==g.desde?(' → '+esc(g.hasta)):'')+'</div>'+
+      '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center">'+
+      '<input id="mzbd-c'+i+'" list="mz-band-dl" placeholder="¿Qué compuesto es?" autocomplete="off" style="flex:1;min-width:150px;padding:9px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+      '<input id="mzbd-l'+i+'" placeholder="Letra" maxlength="20" style="width:76px;padding:9px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+      '<button class="btn" style="margin:0;width:auto;padding:9px 14px;font-size:12.5px" onclick="mzBandAsigna('+i+',\''+jsAttr(g.texto||'')+'\')">Asignar</button></div></div>';
+  });
+  el.innerHTML=h;
+}
+function mzBandAsigna(i,txt){
+  var nom=($('mzbd-c'+i).value||'').trim(), letra=($('mzbd-l'+i).value||'').trim();
+  if(!nom){ alert('Escribe el compuesto.'); return; }
+  var c=(_mzCat&&_mzCat.compuestos||[]).filter(function(x){ return x.nombre.toUpperCase().trim()===nom.toUpperCase(); })[0];
+  if(!c){ alert('«'+nom+'» no está en el catálogo. Escoge uno de la lista.'); return; }
+  if(!confirm('¿Asignar «'+txt+'» a '+c.nombre+(letra?(' versión '+letra):'')+'?\n\nSe corrigen TODOS sus renglones.')) return;
+  SB.rpc('hb_mez_bandeja_asigna',{p_txt:txt,p_cid:c.id,p_letra:letra||null}).then(function(r){ var x=r&&r.data;
+    if(x&&x.ok){ flash('✓ '+x.corridas+(x.corridas===1?' corrida corregida':' corridas corregidas'));
+      $('mz-band').classList.add('hide'); mzBandTog(); mzLoadDia(mzCapPaint); }
+    else alert(mzErr(x)); },function(){ alert(mzErr()); });
 }
 function mzHistTog(){
   var el=$('mz-hist'); if(!el) return;

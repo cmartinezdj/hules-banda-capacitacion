@@ -2067,17 +2067,23 @@ function pubEnsure(ids, cb, force){
   var faltan=[]; (ids||[]).forEach(function(n){ n=+n; if(!n) return; if(force || !DBC.pub[n]){ if(faltan.indexOf(n)<0) faltan.push(n); } });
   if(!faltan.length){ if(cb) cb(); return; }
   SB.rpc('hb_perfiles_publicos',{p_ns:faltan}).then(function(r){
-    if(r.data&&r.data.ok){ (r.data.perfiles||[]).forEach(function(p){ DBC.pub[+p.n]=p; }); }
+    var cambio=false;
+    if(r.data&&r.data.ok){ (r.data.perfiles||[]).forEach(function(p){
+      var prev=DBC.pub[+p.n];
+      if(!prev || JSON.stringify(prev)!==JSON.stringify(p)) cambio=true;
+      DBC.pub[+p.n]=p; }); }
     faltan.forEach(function(n){ if(!DBC.pub[n]) DBC.pub[n]={n:n}; });   // marca "ya intentado" (evita reintentos infinitos)
-    if(cb) cb();
-  }, function(){ if(cb) cb(); });
+    if(cb) cb(cambio);
+  }, function(){ if(cb) cb(false); });
 }
 /* Refresca los perfiles públicos ya conocidos (para que las fotos/datos que otros
    cambien aparezcan al resto). Throttle para no saturar. */
 function pubRefreshSeen(){
   if(!DBC.pub) return; if(Date.now()-(window._pubT||0)<12000) return; window._pubT=Date.now();
   var ids=Object.keys(DBC.pub).map(Number).filter(Boolean);
-  if(ids.length) pubEnsure(ids, function(){ sbRerender(); }, true);
+  /* repintar SOLO si de verdad llegó algo distinto — el refresco silencioso ya
+     no te mueve la pantalla (era la causa del "se traba" en Mensaje rápido) */
+  if(ids.length) pubEnsure(ids, function(cambio){ if(cambio) sbRerender(); }, true);
 }
 /* Invalida el perfil público cacheado de una persona (cuando cambió su perfil en
    el servidor) para que se vuelva a pedir con la foto/datos nuevos. */
@@ -7595,9 +7601,9 @@ function convRow(conv,title,sub,pin){
 var _curConv=null, _pendImg=null;
 function renderMsgs(){
   _pendImg=null;
-  dirLoad(function(){ if(_screen==='msgs') qcPaint(); });   // nombres reales; al llegar, pinta el Mensaje rápido
+  dirLoad();   // si el directorio llega del servidor, dirLoad repinta solo; con caché no hay nada que repintar
   // fotos de perfil para los avatares de los chats directos (una sola llamada por tanda)
-  try{ var otros=myDirects().map(function(c){ return convOther(c); }); if(otros.length) pubEnsure(otros, function(){ if(_screen==='msgs') renderMsgs(); }); }catch(e){}
+  try{ var otros=myDirects().map(function(c){ return convOther(c); }); if(otros.length) pubEnsure(otros, function(cambio){ if(cambio && _screen==='msgs') sbRerender(); }); }catch(e){}
   pubRefreshSeen();   // trae fotos/datos nuevos que otros hayan cambiado (throttle 12s)
   if(sbReady() && Date.now()-(window._lastLoadMsgs||0)>4000){ window._lastLoadMsgs=Date.now(); sbLoad('msgs'); }
   if(_msgsPage) return msgsPage_();   // página interna del hub (chats activos / personal / equipo / planta)
@@ -7633,13 +7639,20 @@ function renderMsgs(){
   // conservar lo tecleado en el Mensaje rápido ante un re-pintado en vivo (sbRerender)
   var _qDraft=($('qcIn')||{}).value||'', _qTerm=($('qcSearch')||{}).value||'';
   var _qFocus=document.activeElement?document.activeElement.id:'';
+  // …y también el SCROLL: la lista de gente ya no se brinca al inicio, y el
+  // mini-chat solo se pega abajo si ya estabas abajo (si estabas leyendo
+  // arriba, te quedas donde estabas)
+  var _qlEl=document.querySelector('.qclist'), _qlScroll=_qlEl?_qlEl.scrollTop:0;
+  var _qmEl0=$('qcMsgs'), _qmAbajo=true, _qmPos=0;
+  if(_qmEl0){ _qmAbajo=(_qmEl0.scrollHeight-_qmEl0.scrollTop-_qmEl0.clientHeight)<40; _qmPos=_qmEl0.scrollTop; }
   // cuadros a la IZQUIERDA + "Mensaje rápido" a la DERECHA (escritorio, todos los roles)
   h+='<div class="hubwrap"><div class="hubmain">'+inner+'</div><aside class="hubside">'+qchatBox(_qTerm)+'</aside></div>';
   $('s-msgs').innerHTML=h; show('msgs');
   var qi=$('qcIn'); if(qi){ qi.onkeydown=function(ev){ if(ev.key==='Enter') qcSend(); }; if(_qDraft) qi.value=_qDraft; }
   if(_qFocus==='qcIn' && qi) qi.focus();
   else if(_qFocus==='qcSearch'){ var qs=$('qcSearch'); if(qs){ qs.focus(); qs.setSelectionRange(qs.value.length,qs.value.length); } }
-  var qm=$('qcMsgs'); if(qm) qm.scrollTop=qm.scrollHeight;
+  var ql2=document.querySelector('.qclist'); if(ql2&&_qlScroll) ql2.scrollTop=_qlScroll;
+  var qm=$('qcMsgs'); if(qm) qm.scrollTop=_qmAbajo?qm.scrollHeight:_qmPos;
 }
 /* ===== MENSAJE RÁPIDO (panel lateral de Mensajes · escritorio · todos los roles):
    busca a una persona por nombre o número (agrupada por área, con scroll), escríbele
@@ -7682,8 +7695,15 @@ function qcListHTML(term){
   });
   return h;
 }
-function qcPaint(){ var b=$('qcBody'); if(b) b.innerHTML=qcBodyHTML(); var m=$('qcMsgs'); if(m) m.scrollTop=m.scrollHeight; }
-function qcPick(n){ _qcSel=+n; qcPaint(); var i=$('qcIn'); if(i) i.focus(); try{ pubFresh(n, function(){ if(_screen==='msgs' && _qcSel===+n) qcPaint(); }); }catch(e){} }
+function qcPaint(){
+  var m0=$('qcMsgs'), abajo=true, pos=0;
+  if(m0){ abajo=(m0.scrollHeight-m0.scrollTop-m0.clientHeight)<40; pos=m0.scrollTop; }
+  var l0=document.querySelector('.qclist'), lpos=l0?l0.scrollTop:0;
+  var b=$('qcBody'); if(b) b.innerHTML=qcBodyHTML();
+  var m=$('qcMsgs'); if(m) m.scrollTop=abajo?m.scrollHeight:pos;
+  var l=document.querySelector('.qclist'); if(l&&lpos) l.scrollTop=lpos;
+}
+function qcPick(n){ _qcSel=+n; qcPaint(); var i=$('qcIn'); if(i) i.focus(); try{ pubFresh(n, function(cambio){ if(cambio && _screen==='msgs' && _qcSel===+n) qcPaint(); }); }catch(e){} }
 function qcSend(){
   var i=$('qcIn'), t=i?(i.value||'').trim():''; if(!t) return;
   if(!_qcSel){ flash('Primero elige a la persona (búscala arriba)'); var s=$('qcSearch'); if(s) s.focus(); return; }

@@ -5158,16 +5158,11 @@ function managerDash(role){
   var cenN=0; try{ cenN=centinelaRun().length; }catch(e){}
   var unansN=0; try{ unansN=Object.keys(Q.unans||{}).length; }catch(e){}
   var h='';
-  // ----- cabecera HUD: stat tiles INTERACTIVOS (toca un cuadro → su detalle) -----
+  // ----- cabecera LIMPIA (pedido de Carlos 19-ago: las estadísticas de
+  //       capacitación/registro no le sirven a nadie más que a él; ver abajo) -----
   h+='<div class="panel"><div class="hd" style="align-items:flex-start">'+
      '<div><div class="eyebrow">Tablero</div><b style="font-size:20px">'+esc(role)+'</b></div>'+
-     '<span class="status"><span class="d"></span>En línea</span></div>'+
-     '<div class="gaugeWrap">'+
-       '<div class="statile stbtn" role="button" tabindex="0" onkeydown="_kb(event)" style="flex:1.25;padding:10px 8px 12px" onclick="mgrGo(\'deptos\')">'+semiGauge(DS?DS.global:H.globalAvg)+'<div class="l" style="margin-top:2px">Global ›</div></div>'+
-       '<div class="statile stbtn" role="button" tabindex="0" onkeydown="_kb(event)" onclick="mgrGo(\'focos\')"><div class="n"'+(foco?' style="color:var(--bad)"':'')+'>'+foco+'</div><div class="l">Focos ›</div></div>'+
-       '<div class="statile stbtn" role="button" tabindex="0" onkeydown="_kb(event)" onclick="mgrGo(\'personas\')"><div class="n">'+(DS?DS.total:H.employees)+'</div><div class="l">Equipo ›</div></div>'+
-       '<div class="statile stbtn" role="button" tabindex="0" onkeydown="_kb(event)" onclick="mgrGo(\'deptos\')"><div class="n">'+(DS?DS.list.length:nAreas)+'</div><div class="l">'+(DS?'Deptos':'Áreas')+' ›</div></div>'+
-     '</div></div>';
+     '<span class="status"><span class="d"></span>En línea</span></div></div>';
   // ----- ALERTA DE SEGURIDAD: banda delgada, simétrica, a todo lo ancho → Focos -----
   if(ALERTS.length){
     h+='<div class="salert" role="button" tabindex="0" onkeydown="_kb(event)" onclick="mgrGo(\'focos-alertas\')">'+
@@ -5191,6 +5186,18 @@ function managerDash(role){
   h+=invitTile();
   h+=htile('renderDia()','dia','Directorio', 'A quién llamar en la planta');
   h+='</div>';
+  /* SOLO para la cuenta de Sistemas (0917): capacitación y registro del padrón,
+     al FINAL del tablero — es información de administración del sistema, no de
+     la operación (pedido de Carlos, 19-ago). */
+  if(S.emp===917){
+    h+='<div class="sec-t">Sistema · capacitación y registro<span class="ln"></span></div>'+
+       '<div class="panel"><div class="gaugeWrap">'+
+       '<div class="statile stbtn" role="button" tabindex="0" onkeydown="_kb(event)" style="flex:1.25;padding:10px 8px 12px" onclick="mgrGo(\'deptos\')">'+semiGauge(DS?DS.global:H.globalAvg)+'<div class="l" style="margin-top:2px">Global ›</div></div>'+
+       '<div class="statile stbtn" role="button" tabindex="0" onkeydown="_kb(event)" onclick="mgrGo(\'focos\')"><div class="n"'+(foco?' style="color:var(--bad)"':'')+'>'+foco+'</div><div class="l">Focos ›</div></div>'+
+       '<div class="statile stbtn" role="button" tabindex="0" onkeydown="_kb(event)" onclick="mgrGo(\'personas\')"><div class="n">'+(DS?DS.total:H.employees)+'</div><div class="l">Equipo ›</div></div>'+
+       '<div class="statile stbtn" role="button" tabindex="0" onkeydown="_kb(event)" onclick="mgrGo(\'deptos\')"><div class="n">'+(DS?DS.list.length:nAreas)+'</div><div class="l">'+(DS?'Deptos':'Áreas')+' ›</div></div>'+
+       '</div><div class="note" style="margin-top:8px">Quién se ha registrado y cómo va la capacitación — solo lo ves tú.</div></div>';
+  }
   $('s-hr').innerHTML=h; show('hr');
 }
 /* Páginas del hub del tablero — REGLA (pedido de Carlos): cuadro → click → info,

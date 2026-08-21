@@ -710,11 +710,39 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .dres .dresa{position:absolute;top:8px;right:8px;display:flex;gap:2px;align-items:center}
 .dres .dresa .speak{position:static;width:30px;height:30px}
 .dres .dmore{position:static;width:30px;height:30px}
+/* la fila de arriba: buscador + el ＋ de subir, pegado a la derecha */
+.dtop{display:flex;gap:9px;align-items:center}
+.dtop .dsearch{flex:1;min-width:0;margin:0}
+.dplus{flex:none;width:46px;height:46px;border-radius:14px;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));background:color-mix(in srgb,var(--accent) 18%,transparent);color:#fff;font-size:22px;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+@media (hover:hover){.dplus:hover{background:var(--accent);border-color:var(--accent)}}
+.dplus:active{transform:scale(.95)}
+/* carpetas PLEGABLES en el teléfono (para que no se coman la pantalla) */
+.dfhead{display:flex;align-items:center;gap:10px;width:100%;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 12px;font-family:inherit;color:var(--txt);text-align:left;cursor:pointer;min-width:0}
+.dfhead .fic{width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:10px;background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent2)}
+.dfhead .fic svg{width:18px;height:18px}
+.dfhead .ft{flex:1;min-width:0}
+.dfhead .ft b{display:block;font-size:13.5px;font-weight:800;line-height:1.2}
+.dfhead .ft span{display:block;font-size:11.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.dfhead .chev{flex:none;color:var(--mut);font-size:11px;font-weight:900;transition:transform .18s var(--ease-out)}
+.dfhead.abierto .chev{transform:rotate(180deg)}
+.dfup{flex:none;width:34px;height:34px;border-radius:11px;border:1px solid var(--line);background:var(--panel);color:var(--txt);font-weight:900;cursor:pointer;font-size:16px;line-height:1;padding:0}
+/* MÓDULO de subir documento (ya no vive desplegado en la pantalla) */
+.dupvelo{position:fixed;inset:0;background:rgba(10,13,20,.6);backdrop-filter:blur(3px);display:none;z-index:11500;padding:16px;overflow-y:auto}
+.dupvelo.on{display:block}
+.dupbox{background:var(--panel);border:1px solid var(--line);border-radius:18px;max-width:520px;width:100%;margin:10px auto 30px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.duphd{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);border-radius:18px 18px 0 0;z-index:2}
+.duphd b{flex:1;font-size:15.5px}
+.dupbody{padding:14px 16px 18px}
+.dupbody .panel{background:none;border:none;padding:0;margin:0}
+.dupbody .panel>.hd{display:none}
+body.a11y .dfhead .ft b{font-size:16px !important}
+body.a11y .dfhead .ft span{font-size:13px !important}
+body.a11y .duphd b{font-size:18px !important}
 /* ===== DOCUMENTOS estilo gestor de archivos (21-ago, referencia de Carlos):
    carpetas en columna a la izquierda, archivos como íconos grandes a la derecha,
    en el negro y rojo de Hules Banda. Sin panel de "última actividad". ===== */
 .dwrap{display:block}
-.dfold{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 12px;margin-bottom:14px}
+.dfold{background:none;border:none;border-radius:var(--radius);padding:0;margin-bottom:14px}
 .dfsec{display:flex;align-items:center;gap:8px;padding:10px 4px 8px;font-size:10.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--mut)}
 .dfsec .ln{flex:1;height:1px;background:var(--line)}
 .dfrow{display:flex;align-items:center;gap:11px;width:100%;background:none;border:1px solid transparent;border-radius:12px;padding:9px 10px;cursor:pointer;font-family:inherit;color:var(--txt);text-align:left;min-width:0;margin-bottom:2px}
@@ -743,7 +771,10 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .dnew .plus{width:36px;height:36px;border-radius:50%;flex:none;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent2);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:800;line-height:1}
 @media (min-width:1000px){
   .dwrap{display:grid;grid-template-columns:302px minmax(0,1fr);gap:18px;align-items:start}
-  .dfold{position:sticky;top:14px;max-height:calc(100vh - 28px);overflow:auto;margin-bottom:0}
+  .dfold{position:sticky;top:14px;max-height:calc(100vh - 28px);overflow:auto;margin-bottom:0;
+    background:var(--panel);border:1px solid var(--line);padding:14px 12px}
+  .dfhead{display:none}          /* en escritorio las carpetas siempre están a la vista */
+  .dfbody{display:block !important}
 }
 body.a11y .dfrow .ft b{font-size:16px !important}
 body.a11y .dfrow .ft span{font-size:13px !important}
@@ -9220,12 +9251,12 @@ var _docAcl='depto';               // alcance que elige el ACCESO TOTAL al subir
 var _docArea=null, _docCat=null, _docSub=null;
 var _docFrom=null;    // pantalla de origen (para el botón "Atrás" de Documentos)
 var _docDepto=null;   // área elegida por el acceso total (sobrevive repintados en vivo)
-function _docReset(){ _docUpOpen=false; _docGridMax=18; _docFoldAll={}; _docArea=null; _docCat=null; _docSub=null; _docBita=false; _docFin=false; _docShr=false; _dvDept=null; _docQ=''; _docQMax=60; }
+function _docReset(){ _docUpOpen=false; _docFoldOpen=false; _docGridMax=18; _docFoldAll={}; _docArea=null; _docCat=null; _docSub=null; _docBita=false; _docFin=false; _docShr=false; _dvDept=null; _docQ=''; _docQMax=60; }
 function docsHome(){ _docFrom=_screen; _docReset(); renderDocs(); }
-function docGoArea(a){ _docArea=a; _docCat=null; _docSub=null; _docShr=false; _docGridMax=18; docRecPush(); renderDocs(); window.scrollTo(0,0); }
-function docGoCat(c){ _docCat=c; _docSub=null; _docGridMax=18; docRecPush(); renderDocs(); window.scrollTo(0,0); }
-function docGoSub(s){ _docSub=s; _docGridMax=18; docRecPush(); renderDocs(); window.scrollTo(0,0); }
-function docUpTo(l){ if(l==='root'){ _docReset(); } else if(l==='area'){ _docCat=null; _docSub=null; } else if(l==='cat'){ _docSub=null; } renderDocs(); window.scrollTo(0,0); }
+function docGoArea(a){ _docArea=a; _docCat=null; _docSub=null; _docShr=false; _docGridMax=18; docRecPush(); _docFoldCierra(); renderDocs(); window.scrollTo(0,0); }
+function docGoCat(c){ _docCat=c; _docSub=null; _docGridMax=18; docRecPush(); _docFoldCierra(); renderDocs(); window.scrollTo(0,0); }
+function docGoSub(s){ _docSub=s; _docGridMax=18; docRecPush(); _docFoldCierra(); renderDocs(); window.scrollTo(0,0); }
+function docUpTo(l){ if(l==='root'){ _docReset(); } else if(l==='area'){ _docCat=null; _docSub=null; } else if(l==='cat'){ _docSub=null; } _docFoldCierra(); renderDocs(); window.scrollTo(0,0); }
 function docAclSet(m){
   if(m==='financiero' && !_finOn){ flash('No estás en el grupo financiero'); return; }   // el servidor lo re-valida igual
   _docAcl=m;
@@ -9274,7 +9305,7 @@ function _docEsCompartido(d){
   return (d.deptoSlug||deptoSlug(d.depto||'')) !== deptoSlug(S.area||'');
 }
 function _docCompartidos(){ return docsGet().filter(_docEsCompartido); }
-function docShrGo(v){ _docShr=v; _docCat=null; _docSub=null; renderDocs(); window.scrollTo(0,0); }
+function docShrGo(v){ _docShr=v; _docCat=null; _docSub=null; _docGridMax=18; _docFoldCierra(); renderDocs(); window.scrollTo(0,0); }
 /* documentos "en alcance" según el explorador (para admin, filtra por el área abierta) */
 function _docScope(){
   var list=docsGet().slice();
@@ -9359,8 +9390,7 @@ function docBuscaBox(){
       'value="'+escA(_docQ)+'" oninput="docBuscaInput(this.value)">'+
     '<button id="docQx" class="dsx" onclick="docBuscaLimpia()" aria-label="Borrar la búsqueda"'+
       (_docQ?'':' style="display:none"')+'>✕</button>'+
-    '</div>'+
-    '<div class="note" style="margin:6px 4px 12px">Escribe el <b>código</b> (MP-LPF-21), el <b>nombre</b> o la <b>carpeta</b>. No importan los acentos ni las mayúsculas.</div>';
+    '</div>';
 }
 /* UN RESULTADO = un renglón de ancho completo con el TÍTULO COMPLETO y la carpeta
    donde vive. Mismo comportamiento que la tarjeta: tocar = Ver (liga firmada +
@@ -9452,10 +9482,15 @@ function renderDocs(){
      Carlos). El BUSCADOR vive fuera de `docBody` para que un repintado no le
      cierre el teclado a media palabra; `docBody` solo trae los archivos (o los
      resultados de la búsqueda). El panel de carpetas se repinta al navegar. */
-  h+=docBuscaBox();
+  /* Arriba: buscador y, pegado a la derecha, el ＋ que abre el módulo de subir
+     (pedido de Carlos 21-ago: que no viva desplegado ocupando pantalla). */
+  h+='<div class="dtop">'+docBuscaBox()+
+     (manage?'<button class="dplus" onclick="docUpTog()" title="Subir documento" aria-label="Subir documento">＋</button>':'')+'</div>';
+  h+='<div class="note" style="margin:7px 4px 12px">Escribe el <b>código</b> (MP-LPF-21), el <b>nombre</b> o la <b>carpeta</b>. No importan los acentos ni las mayúsculas.</div>';
   h+='<div class="dwrap">'+docFolderPane()+
      '<div class="dmain"><div id="docBody">'+(_docBuscando()?docBuscaResultados():docFilesPane())+'</div></div>'+
      '</div>';
+  if(manage) h+=docUpModal();
   $('s-docs').innerHTML=h; show('docs');
   if(manage && !_docBuscando() && _docUpOpen) docFormInit();
   docThumbsFetch();   /* miniaturas de imagen en lote (cacheadas; no toca la bitácora) */
@@ -9503,6 +9538,21 @@ function docUploadForm(){
   return h;
 }
 function docFormInit(){ if(docIsTotal()) docAclSet(_docAcl); }
+/* ===== MÓDULO de subir documento (21-ago): una ventana propia que abre el ＋ de
+   arriba a la derecha. Antes el formulario vivía desplegado en la pantalla y se
+   comía el espacio de los archivos. Se cierra con la ✕, con Escape o tocando
+   fuera; al publicar se cierra solo y te deja en la carpeta donde quedó. ===== */
+function docUpModal(){
+  if(!_docUpOpen) return '';
+  return '<div class="dupvelo on" id="docUpVelo" onclick="if(event.target===this) docUpTog()">'+
+    '<div class="dupbox" role="dialog" aria-modal="true" aria-label="Subir documento">'+
+      '<div class="duphd"><b>Subir documento</b>'+
+      '<button class="icoa" onclick="docUpTog()" aria-label="Cerrar">✕</button></div>'+
+      '<div class="dupbody">'+docUploadForm()+'</div>'+
+    '</div></div>';
+}
+/* Escape cierra el módulo de subir (en escritorio es lo que la gente espera) */
+document.addEventListener('keydown', function(e){ if((e.key||'')==='Escape' && _docUpOpen) docUpTog(); });
 /* ============================================================================
    EXPLORADOR DE DOCUMENTOS estilo gestor de archivos (21-ago-2026, referencia
    que mandó Carlos). Dos paneles:
@@ -9520,11 +9570,30 @@ function docFormInit(){ if(docIsTotal()) docAclSet(_docAcl); }
    ============================================================================ */
 var _docFoldAll={};      /* qué bloques de carpetas están "ver todas" */
 var _docGridMax=18;      /* cuántos archivos se pintan (con Ver más) */
-var _docUpOpen=false;    /* el formulario de subir arranca cerrado */
+var _docUpOpen=false;    /* el módulo de subir arranca cerrado */
+var _docFoldOpen=false;  /* en el teléfono las carpetas arrancan plegadas */
+function docFoldTog(){ _docFoldOpen=!_docFoldOpen; renderDocs(); }
+/* al escoger una carpeta en el teléfono, la lista se pliega sola: para eso la
+   tocaste — para ver los archivos, no para seguir viendo carpetas */
+function _docFoldCierra(){ if(!calEsc()) _docFoldOpen=false; }
+/* subir UN nivel (el ‹ de la cabecera plegada) */
+function docUpUno(){
+  if(_docShr){ docShrGo(false); return; }
+  if(_docSub!=null) docUpTo('cat');
+  else if(_docCat!=null) docUpTo(docIsTotal()?'area':'root');
+  else docUpTo('root');
+}
+/* dónde estoy parado, en una línea (para la cabecera plegada) */
+function _docRutaTxt(){
+  if(_docShr) return 'Documentos compartidos';
+  var p=[docIsTotal()?(_docArea||''):'', _docCat||'', _docSub||''].filter(function(x){ return !!x; });
+  if(p.length) return p.join(' › ');
+  return docIsTotal()?'Todas las áreas':('Tu área · '+(S?S.area:''));
+}
 function docFoldMas(k){ _docFoldAll[k]=!_docFoldAll[k]; renderDocs(); }
 function docGridMas(){ _docGridMax+=18; renderDocs(); }
 function docUpTog(){ _docUpOpen=!_docUpOpen; renderDocs();
-  if(_docUpOpen) setTimeout(function(){ var t=$('docTitle'); if(t){ try{ t.scrollIntoView({block:'center'}); t.focus(); }catch(e){} } },40); }
+  if(_docUpOpen) setTimeout(function(){ var t=$('docTitle'); if(t){ try{ t.focus(); }catch(e){} } },60); }
 
 /* ---- carpetas recientes (el "Recent Folder" de la referencia) ---- */
 function _docRecs(){ var a=lsGet('hb_docrec'); return Array.isArray(a)?a:[]; }
@@ -9542,7 +9611,7 @@ function docRecPush(){
 function docRecGo(i){
   var it=_docRecs()[i]; if(!it) return;
   _docShr=false; _docArea=it.a||null; _docCat=it.c||null; _docSub=it.s||null;
-  renderDocs(); window.scrollTo(0,0);
+  _docGridMax=18; _docFoldCierra(); renderDocs(); window.scrollTo(0,0);
 }
 
 /* ---- un renglón de carpeta ---- */
@@ -9566,6 +9635,17 @@ function _docCuenta(n){ return n+' documento'+(n===1?'':'s'); }
 
 function docFolderPane(){
   var h='<aside class="dfold" id="docFold">';
+  /* CABECERA PLEGABLE (solo teléfono; en escritorio el CSS la esconde y deja el
+     cuerpo siempre abierto). Dice dónde estás parado y trae el ‹ para subir. */
+  var abierto=(calEsc()||_docFoldOpen);
+  var enRaiz=(!_docShr && _docCat==null && (_docArea==null || !docIsTotal()));
+  h+='<div style="display:flex;gap:8px;align-items:center" class="dfheadrow">'+
+     (enRaiz?'':'<button class="dfup" onclick="docUpUno()" title="Subir un nivel" aria-label="Subir un nivel">‹</button>')+
+     '<button type="button" class="dfhead'+(_docFoldOpen?' abierto':'')+'" onclick="docFoldTog()" aria-expanded="'+(_docFoldOpen?'true':'false')+'">'+
+       '<span class="fic">'+DOC_FOLDER_SVG+'</span>'+
+       '<span class="ft"><b>Carpetas</b><span>'+esc(_docRutaTxt())+'</span></span>'+
+       '<span class="chev" aria-hidden="true">▼</span></button></div>';
+  h+='<div class="dfbody"'+(abierto?'':' style="display:none"')+'>';
   /* migas de pan: dónde estoy parado y cómo subir */
   var crumbs=['<button class="chip2" onclick="docUpTo(\'root\')">Documentos</button>'];
   if(_docShr) crumbs.push('<button class="chip2" style="pointer-events:none">Compartidos</button>');
@@ -9579,7 +9659,7 @@ function docFolderPane(){
   if(_docShr && !docIsTotal()){
     h+=docFolderBloque('Carpeta',[docFolderRow('Compartidos conmigo', _docCuenta(_docCompartidos().length), true, 'docShrGo(false)')]);
     h+='<button type="button" class="dfmas" onclick="docShrGo(false)">‹ Volver a mis carpetas</button>';
-    return h+'</aside>';
+    return h+'</div></aside>';
   }
   var todos=docsGet();
   /* ÁREAS (solo acceso total) */
@@ -9619,7 +9699,7 @@ function docFolderPane(){
   if(recs.length) h+=docFolderBloque('Recientes', recs.map(function(it,i){
     return docFolderRow(it.t, it.r, false, 'docRecGo('+i+')');
   }));
-  return h+'</aside>';
+  return h+'</div></aside>';
 }
 
 /* ---- los archivos que caen donde estoy parado (incluye subcarpetas) ---- */
@@ -9635,13 +9715,8 @@ function _docFilesAqui(){
 }
 function docFilesPane(){
   var manage=canDocManage(), h='';
-  /* subir: un botón, y el formulario completo solo cuando se pide */
-  if(manage){
-    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+
-       '<button class="btn'+(_docUpOpen?' ghost':'')+'" style="margin:0;width:auto;padding:10px 15px;font-size:13px" onclick="docUpTog()">'+
-       (_docUpOpen?'✕ Cerrar':'＋ Subir documento')+'</button></div>';
-    if(_docUpOpen) h+=docUploadForm();
-  }
+  /* el formulario de subir ya NO vive aquí: es un módulo aparte que abre el ＋ de
+     arriba a la derecha (docUpModal) */
   var files=_docFilesAqui();
   if(!files.length){
     var vacio = manage ? 'Aquí todavía no hay documentos. Súbelos con el botón de arriba.'
@@ -9649,7 +9724,7 @@ function docFilesPane(){
     return h+'<div class="card"><div class="note">'+vacio+'</div></div>';
   }
   /* RECIENTES: los 4 últimos, en chips (como la referencia) */
-  if(files.length>4){
+  if(files.length>4 && calEsc()){
     h+='<div class="dfsec" style="padding-left:2px">Recientes<span class="ln"></span></div><div class="drecent">';
     files.slice(0,4).forEach(function(d){
       var kb=Math.max(1,Math.round((d.size||0)/1024)), sz=(kb>=1024?(Math.round(kb/102.4)/10+' MB'):(kb+' KB'));
@@ -9819,6 +9894,7 @@ function docUpload(){
       // ir a la carpeta donde quedó, para verlo de inmediato (como un explorador)
       if(docIsTotal()) _docArea=dep;
       _docCat=(cat||'General'); _docSub=(subc||null);
+      _docUpOpen=false;            /* el módulo se cierra al publicar: ya se ve el archivo */
       sbLoad('docs');
       setTimeout(function(){ if(_screen==='docs') renderDocs(); }, 400);
     });

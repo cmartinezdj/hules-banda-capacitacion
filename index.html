@@ -145,7 +145,8 @@ button{font-family:var(--font)}
 #mz-prev .mzt, #mzp-prev .mzt, #mzpg-prev .mzt{min-width:0}
 #mz-prev .mzt td:first-child, #mzp-prev .mzt td:first-child{white-space:normal;word-break:break-word}
 #mzpg-prev .mzt td:nth-child(3){white-space:normal;word-break:break-word}
-#s-mezrec .mzt, #mz-hist .mzt, #mz-band .mzt{min-width:0}
+#s-mezrec .mzt, #mz-hist .mzt, #mz-band .mzt, #s-mezraw .mzt{min-width:0}
+#s-mezraw .mzt td:nth-child(2){white-space:normal;word-break:break-word;min-width:120px}
 #s-mezrec .mzt td:first-child{white-space:normal;word-break:break-word}
 @media (hover:hover){.mzt tbody tr:hover td,.mzt tr:hover td{background:rgba(255,255,255,.02)}}
 .delta{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;padding:3px 8px;border-radius:20px;font-variant-numeric:tabular-nums}
@@ -1329,6 +1330,7 @@ body.a11y .screen .tg{ font-size:13px !important; }
     <section id="s-mezprecios" class="screen pad hide"></section>
     <section id="s-mezsem" class="screen pad hide"></section>
     <section id="s-mezrec" class="screen pad hide"></section>
+    <section id="s-mezraw" class="screen pad hide"></section>
   </main>
 
   <!-- ===================== NAV INFERIOR ===================== -->
@@ -2858,7 +2860,7 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'"'+main+' title="'+it[1]+'" onclick="'+accion+'">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['planta','manto','mezrec','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp','mezcierres','mezprecios','mezsem'];
+var SCREENS=['planta','manto','mezrec','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp','mezcierres','mezprecios','mezsem','mezraw'];
 var _prevShown=null;
 function show(name){
   var cambio = (name!==_prevShown);
@@ -2882,6 +2884,7 @@ function show(name){
   if(name==='invit') navKey=_invitFrom||'home';
   if(name==='pedir') navKey=(window._pedFrom==='manto')?'planta':((S&&(S.admin||S.mando))?'hr':'home');   // Pedir reparación
   if(name==='pedidos') navKey=(window._pedFrom==='manto')?'planta':'hr';                                   // inbox de Mantenimiento
+  if(name==='mezraw') navKey='planta';
   if(name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') navKey='planta';
   if(name==='planta'||name==='manto'||name==='prod'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab') navKey='planta';  // todo lo de Planta
   if(name==='docs' && window._docFrom==='tab') navKey='docs';           // abierto desde el tab del riel
@@ -2946,10 +2949,10 @@ var HB_MARK=(function(){
     '<path d="M39 2 52 16 39 30 26 16Z" fill="var(--accent2)" opacity=".45"/></svg>';
 })();
 function renderTop(name){
-  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='prod'||name==='manto') && !(name==='docs' && window._docFrom==='tab');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='mezraw'||name==='prod'||name==='manto') && !(name==='docs' && window._docFrom==='tab');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? (window._pedFrom==='manto'?'go(\'manto\')':'go(\'hr\')') : name==='pedir' ? (window._pedFrom==='manto'?'go(\'manto\')':('go(\''+((S.admin||S.mando)?'hr':'home')+'\')')) : (name==='prod'||name==='manto') ? 'go(\'planta\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? (window._pedFrom==='manto'?'go(\'manto\')':'go(\'hr\')') : name==='pedir' ? (window._pedFrom==='manto'?'go(\'manto\')':('go(\''+((S.admin||S.mando)?'hr':'home')+'\')')) : (name==='prod'||name==='manto') ? 'go(\'planta\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='mezraw' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
     left.innerHTML='<span class="tlogo" aria-hidden="true">'+HB_MARK+'</span><button class="back" onclick="'+backTo+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
@@ -12129,6 +12132,8 @@ function mzTabPaint(x){
        (meta?('<b style="font-size:22px;color:var(--accent2)">'+mzN(meta)+'</b> <span class="note">mezclas al día</span>'+
               (dias.length?('<div class="note" style="margin-top:3px">Se cumplió <b>'+mzN(cum)+'</b> de '+mzN(dias.length)+' días ('+mzPct(cum,dias.length)+')</div>'):''))
              :'<b style="font-size:18px;color:var(--mut)">Sin fijar</b><div class="note" style="margin-top:3px">Pon un número y la gráfica dibuja su línea.</div>')+'</div>'+
+       ((_mzMeta&&_mzMeta.meta_por&&meta)?('<div class="note" style="margin-top:4px;font-size:11px">La fijó <b>'+esc(niceName(_mzMeta.meta_por))+'</b>'+
+          (_mzMeta.meta_ts?(' el '+esc(fmtDate(_mzMeta.meta_ts))):'')+'</div>'):'')+
        (puedeMeta?'<button class="btn ghost" style="margin:0;width:auto;padding:9px 13px;font-size:12px" onclick="mzMetaEdit()">'+(meta?'Cambiar meta':'Fijar meta')+'</button>':'')+
        '</div></div>';
   }
@@ -12233,6 +12238,103 @@ function mzTh(a){ return '<tr>'+a.map(function(t){ return '<th>'+t+'</th>'; }).j
 function mzTd(a,click){ return '<tr'+(click?' role="button" tabindex="0" onkeydown="_kb(event)" onclick="'+click+'" style="cursor:pointer"':'')+'>'+a.map(function(t){
   return '<td>'+t+'</td>'; }).join('')+'</tr>'; }
 function mzTabla(head,rows){ return '<div style="overflow-x:auto;margin-top:8px"><table class="mzt">'+mzTh(head)+rows.join('')+'</table></div>'; }
+/* ============================================================================
+   TABLA CRUDA · corrida por corrida (respuesta #6 de Ana, 21-ago: "quiero poder
+   llegar hasta la tabla cruda: del número grande bajar hasta ver corrida por
+   corrida quién la capturó y cuándo").
+   Es lo capturado tal cual, sin sumar nada: fecha, turno, banbury, compuesto,
+   letra, mezclas, quemadas, si fue reproceso, la nota… y QUIÉN lo capturó y a
+   qué hora (más un aviso si alguien la editó después).
+   Se llega desde cualquier desglose y desde el tablero. Mismo candado que el
+   tablero: acceso total, capturista o técnico — el trabajador no ve esto.
+   Las corridas que entraron por importación de Excel NO tienen autor: ahí dice
+   "sin registro (importado)", nunca un nombre inventado.
+   ============================================================================ */
+var _mzRaw=null, _mzRawF={limite:100,salta:0}, _mzRawCargando=false;
+/* del número grande a la tabla cruda: cada tema entra con el filtro que le toca */
+function mzRawDe(tema){
+  var f={limite:100,salta:0};
+  if(tema==='merma') f.solo='quemadas';
+  renderMezRaw(f);
+}
+function renderMezRaw(filtro){
+  if(filtro) _mzRawF=filtro;
+  if(!_mztD1){ var hoy=mxToday(); _mztD1=hoy.slice(0,8)+'01'; _mztD2=hoy; }
+  $('s-mezraw').innerHTML='<div class="card"><div class="note">Cargando las corridas…</div></div>'; show('mezraw');
+  mzRawCarga();
+}
+function mzRawCarga(){
+  if(_mzRawCargando) return; _mzRawCargando=true;
+  var f={}; for(var k in _mzRawF) f[k]=_mzRawF[k];
+  SB.rpc('hb_mez_corridas_raw',{p_desde:_mztD1,p_hasta:_mztD2,p_filtro:f}).then(function(r){
+    _mzRawCargando=false; var x=r&&r.data;
+    if(r&&r.error){ $('s-mezraw').innerHTML='<div class="card"><b>'+esc(mzErr(null,r.error))+'</b></div>'; return; }
+    if(!(x&&x.ok)){ $('s-mezraw').innerHTML='<div class="card"><b>'+esc(mzErr(x))+'</b></div>'; return; }
+    /* "Ver más" acumula: no se pierde lo que ya se estaba leyendo */
+    if(_mzRawF.salta && _mzRaw && _mzRaw.filas) x.filas=_mzRaw.filas.concat(x.filas||[]);
+    _mzRaw=x; mzRawPinta();
+  },function(e){ _mzRawCargando=false; $('s-mezraw').innerHTML='<div class="card"><b>'+esc(mzErr(null,e))+'</b></div>'; });
+}
+function mzRawFiltro(campo,valor){
+  var f={}; for(var k in _mzRawF) f[k]=_mzRawF[k];
+  if(valor===''||valor==null) delete f[campo]; else f[campo]=valor;
+  f.salta=0; _mzRawF=f; _mzRaw=null; mzRawCarga();
+}
+function mzRawMas(){ _mzRawF.salta=(_mzRaw&&_mzRaw.filas?_mzRaw.filas.length:0); mzRawCarga(); }
+function mzRawTurno(t){ return t==1?'1º':(t==2?'2º':(t==3?'3º':(t||'—'))); }
+function mzRawPinta(){
+  var x=_mzRaw, filas=x.filas||[], h='';
+  var chip=function(campo,val,txt){
+    var on=(String(_mzRawF[campo]==null?'':_mzRawF[campo])===String(val==null?'':val));
+    return '<button class="btn'+(on?'':' ghost')+'" style="margin:0;width:auto;padding:7px 11px;font-size:11.5px" '+
+      'onclick="mzRawFiltro(\''+campo+'\','+(val==null?"''":("'"+jsAttr(String(val))+"'"))+')">'+txt+'</button>';
+  };
+  h+='<div class="card" style="margin-bottom:12px">'+
+     '<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start">'+
+     '<div><b style="font-size:15px">Corrida por corrida</b>'+
+     '<div class="note" style="margin-top:2px">Del '+esc(x.desde)+' al '+esc(x.hasta)+' · <b>'+mzN(x.total)+'</b> corrida'+(x.total===1?'':'s')+
+       ' · <b>'+mzN(x.mezclas)+'</b> mezclas'+(x.quemadas?(' · '+mzN(x.quemadas)+' quemadas'):'')+'</div></div>'+
+     '<button class="btn ghost" style="margin:0;width:auto;padding:7px 11px;font-size:11.5px" onclick="mzExcel(_mztD1,_mztD2)">⬇ Excel</button></div>'+
+     '<div class="note" style="margin:9px 0 5px">Lo capturado tal cual, sin sumar nada. Así se coteja contra el papel.</div>'+
+     '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
+       chip('solo',null,'Todas')+chip('solo','quemadas','Con quemadas')+chip('solo','reproceso','Reproceso')+
+       chip('solo','pendientes','En bandeja')+chip('solo','editadas','Editadas después')+
+     '</div>'+
+     '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:7px">'+
+       chip('banbury',null,'Todos los banburys')+[1,2,3,4,5].map(function(b){ return chip('banbury',b,'BB '+b); }).join('')+
+     '</div>'+
+     '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:7px">'+
+       chip('turno',null,'Los 3 turnos')+[1,2,3].map(function(t){ return chip('turno',t,mzRawTurno(t)+' turno'); }).join('')+
+     '</div>'+
+     '<input class="fin" style="margin-top:9px" placeholder="Filtrar por compuesto (ej. HNA, BP-GY)…" value="'+escA(_mzRawF.buscar||'')+'" '+
+       'oninput="clearTimeout(window._mzRawT);window._mzRawT=setTimeout(function(v){return function(){mzRawFiltro(\'buscar\',v);};}(this.value),350)">'+
+     '</div>';
+  if(!filas.length){
+    h+='<div class="card"><b style="font-size:14px">No hay corridas con esos filtros</b>'+
+       '<div class="note" style="margin-top:4px">Prueba con «Todas», otro banbury u otro rango de fechas.</div></div>';
+    $('s-mezraw').innerHTML=h; return;
+  }
+  var rows=filas.map(function(f){
+    var quien = f.capturo ? esc(niceName(f.capturo))
+              : (f.capturo_n ? ('Nº '+f.capturo_n)
+                             : '<span class="note">sin registro (importado)</span>');
+    var cuando = f.creado_ts ? fechaHora(f.creado_ts) : '—';
+    var sello = '<b style="font-size:12px">'+quien+'</b><div class="note" style="font-size:10px;margin-top:1px">'+esc(cuando)+
+                (f.editado_ts?('<br><span style="color:var(--warn)">editada '+esc(fechaHora(f.editado_ts))+'</span>'):'')+'</div>';
+    var comp = '<b>'+esc(f.compuesto||'¿?')+'</b>'+(f.letra?(' <span class="note">'+esc(f.letra)+'</span>'):'')+
+               (f.resuelto?'':'<div class="note" style="font-size:10px;color:var(--warn)">en bandeja: «'+esc(f.crudo||'')+'»</div>')+
+               (f.nota?('<div class="note" style="font-size:10px">'+esc(f.nota)+'</div>'):'');
+    var marcas=(f.reproceso?'<span class="chipst mut">reproceso'+(f.origen?(' · '+esc(mzOrgTxt(f.origen))):'')+'</span>':'')+
+               (f.paso?('<span class="chipst mut">paso '+esc(f.paso)+'</span>'):'');
+    return mzTd([esc(f.fecha)+'<div class="note" style="font-size:10px">'+mzRawTurno(f.turno)+' turno · BB '+(f.banbury||'—')+'</div>',
+      comp, mzN(f.mezclas), (f.quemadas?('<span style="color:var(--bad)">'+mzN(f.quemadas)+'</span>'):'0'), marcas||'—', sello]);
+  });
+  h+='<div class="card">'+mzTabla(['Cuándo se corrió','Compuesto','Mezclas','Quemadas','Marcas','Quién la capturó'], rows)+
+     '<div class="note" style="margin-top:8px">Se ven <b>'+mzN(filas.length)+'</b> de '+mzN(x.total)+'.'+
+     (x.sin_autor?(' '+mzN(x.sin_autor)+' de estas corridas entraron por importación de Excel y no guardaron quién las subió.'):'')+'</div></div>';
+  if(filas.length<x.total) h+='<button class="btn ghost" style="margin:12px 0 0" onclick="mzRawMas()">Ver más ('+mzN(x.total-filas.length)+' faltan)</button>';
+  $('s-mezraw').innerHTML=h;
+}
 function mzDesgPaint(){
   var x=_mzDesg, t=x.tot||{}, ta=x.tot_ant||{}, ty=x.tot_ay||{}, h='';
   h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'+
@@ -12243,6 +12345,7 @@ function mzDesgPaint(){
      Object.keys(MZ_TEMAS).map(function(k){
        if(k==='costos'&&!x.admin) return '';
        return '<button class="btn'+(k===x.tema?'':' ghost')+'" style="margin:0;width:auto;padding:7px 11px;font-size:11.5px" onclick="renderMezDesg(\''+k+'\')">'+MZ_TEMAS[k]+'</button>'; }).join('')+
+     '<button class="btn ghost" style="margin:0;width:auto;padding:7px 11px;font-size:11.5px" onclick="mzRawDe(\''+x.tema+'\')">🔎 Corrida por corrida</button>'+
      '<button class="btn ghost" style="margin:0;width:auto;padding:7px 11px;font-size:11.5px" onclick="mzExcel(_mztD1,_mztD2)">⬇ Excel</button></div></div></div>';
   /* comparativos dobles (pedido de Carlos: ambas) */
   h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:12px">'+

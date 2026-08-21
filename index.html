@@ -330,6 +330,12 @@ button{font-family:var(--font)}
 .scr-h .eyebrow{color:var(--accent2);font-size:11px;font-weight:800;letter-spacing:.04em}
 .scr-h h2{font-size:22px;font-weight:850;letter-spacing:-.025em;margin:2px 0 0;line-height:1.1}
 .scr-h p{color:var(--mut);font-size:12.5px;margin:5px 0 0;max-width:260px}
+/* la cabecera del TABLERO, más grande y aireada (sin cuadro) */
+.dash-h{margin:10px 0 18px}
+.dash-h .eyebrow{font-size:12px;letter-spacing:.08em}
+.dash-h h2{font-size:32px;letter-spacing:-.03em}
+.dash-h p{font-size:13.5px;max-width:none}
+@media (min-width:1000px){ .dash-h h2{font-size:38px} .dash-h{margin:16px 0 22px} }
 .sec-t{font-size:10.5px;text-transform:uppercase;letter-spacing:.12em;color:var(--mut);margin:20px 4px 10px;font-weight:700;display:flex;align-items:center;gap:8px}
 .sec-t .ln{flex:1;height:1px;background:var(--line)}
 
@@ -5350,9 +5356,13 @@ function managerDash(role){
   var h='';
   // ----- cabecera LIMPIA (pedido de Carlos 19-ago: las estadísticas de
   //       capacitación/registro no le sirven a nadie más que a él; ver abajo) -----
-  h+='<div class="panel"><div class="hd" style="align-items:flex-start">'+
-     '<div><div class="eyebrow">Tablero</div><b style="font-size:20px">'+esc(role)+'</b></div>'+
-     '<span class="status"><span class="d"></span>En línea</span></div></div>';
+  /* cabecera SIN cuadro (pedido de Carlos 20-ago): parte de la página, grande.
+     El mismo lenguaje de las pantallas nuevas (.scr-h) pero en talla tablero. */
+  h+='<div class="scr-h dash-h"><div style="flex:1;min-width:0">'+
+     '<div class="eyebrow">Hules Banda</div>'+
+     '<h2>'+esc(role)+'</h2>'+
+     '<p>Toda la planta, en vivo.</p></div>'+
+     '<span class="status" style="margin-top:6px"><span class="d"></span>En línea</span></div>';
   // ----- ALERTA DE SEGURIDAD: banda delgada, simétrica, a todo lo ancho → Focos -----
   if(ALERTS.length){
     h+='<div class="salert" role="button" tabindex="0" onkeydown="_kb(event)" onclick="mgrGo(\'focos-alertas\')">'+

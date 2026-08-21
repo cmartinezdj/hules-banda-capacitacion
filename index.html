@@ -155,7 +155,7 @@ button{font-family:var(--font)}
 .kpi .knum{font-size:24px;font-weight:850;letter-spacing:-.02em;line-height:1.1;margin-top:4px;display:block;font-variant-numeric:tabular-nums}
 .kpi .ksub{font-size:10px;color:var(--mut);margin-top:4px}
 .tlogo{width:38px;height:25px;flex:none;display:flex;align-items:center;margin-right:2px}
-.tlogo svg{width:100%;height:100%}
+.tlogo svg,.tlogo img{width:100%;height:100%;object-fit:contain}
 .tbico{width:38px;height:38px;flex:none;display:flex;align-items:center;justify-content:center;
   background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--txt);cursor:pointer;
   transition:transform .16s var(--ease-out),border-color .2s}
@@ -185,6 +185,7 @@ button{font-family:var(--font)}
 .chitem .chdel:hover{color:var(--bad)}
 .chhello{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;height:100%;min-height:230px;padding:20px}
 .chhello svg{width:64px;height:40px;margin-bottom:6px}
+.chhello img{width:96px;margin-bottom:6px}
 .chhello b{font-size:24px;font-weight:850;letter-spacing:-.02em}
 .chhello span{font-size:14px;color:var(--txt)}
 .chhello .note{font-size:12px}
@@ -989,7 +990,7 @@ body.a11y .screen .tg{ font-size:13px !important; }
   .nav{width:86px;padding:14px 10px 16px;align-items:center}
   .nav:before,.nav:after{display:none}
   .navlogo{display:flex;width:44px;height:30px;margin:2px 0 14px;align-items:center;justify-content:center}
-  .navlogo svg{width:100%;height:100%}
+  .navlogo svg,.navlogo img{width:100%;height:100%;object-fit:contain}
   .nav button,.nav button.navmain{flex:none;width:54px;max-width:54px;height:48px;flex-direction:column;justify-content:center;align-items:center;
     gap:0;padding:0;margin-top:6px;border-radius:14px;font-size:0;box-shadow:none;background:none;color:rgba(255,255,255,.62)}
   .nav button>span:not(.nbadge),.nav button.navmain>span:not(.nbadge){display:none}
@@ -1206,7 +1207,7 @@ window.CFG = {
     { min:601, max:800, key:'maquinaria', area:'Maquinaria',       icon:'', accent:'#0e9e8e', accent2:'#3fd6c4',
       greet:'¡Equipo de Maquinaria! Aquí aprendes a operar las máquinas con seguridad: empezando por el Tabulador 7 y 8, y el Banbury.' },
     { min:900, max:919, key:'rrhh',       area:'Recursos Humanos',  icon:'', accent:'#5b6cf0', accent2:'#8b8ff7', admin:true, dash:'rrhh',
-      greet:'Panel de RRHH: avance, focos rojos, capacitación, quejas/reportes, vacaciones y puntos de toda la planta.' },
+      greet:'Panel general: avance, focos rojos, capacitación, quejas/reportes y vacaciones de toda la planta.' },
     /* --- Responsables de área (un dashboard por área; misma key/color que su área) --- */
     { min:920, max:929, key:'almacen',    area:'Almacén',           icon:'', accent:'#c4161c', accent2:'#ff5a4e', admin:true, dash:'resp',
       greet:'Panel del Responsable de Almacén: el control, el avance y los reportes de tu área.' },
@@ -2712,10 +2713,19 @@ var IC_DL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wid
 var IC_IMG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 16l-5.5-5.5L7 19"/></svg>';
 var IC_DOCS='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8h7l3.5 3.5V21H8z"/><path d="M15 8v3.5h3.5"/><path d="M16 5H6v13"/></svg>';
 var IC_TRASH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9.5 7V4.5h5V7"/><path d="M6.5 7l1 12.5h9l1-12.5"/><path d="M10.5 11v5.5M13.5 11v5.5"/></svg>';
-/* la marca de HB (dos rombos) — pedido de Carlos: el logo SIEMPRE arriba-izquierda */
-var HB_MARK='<svg viewBox="0 0 54 32" xmlns="http://www.w3.org/2000/svg" aria-label="Hules Banda">'+
-  '<path d="M15 2 28 16 15 30 2 16Z" fill="var(--accent2)"/>'+
-  '<path d="M39 2 52 16 39 30 26 16Z" fill="var(--accent2)" opacity=".45"/></svg>';
+/* la marca de HB — pedido de Carlos (20-ago): EL LOGO REAL de Hules Banda (el
+   mismo de la pantalla de arranque), no el dibujo de dos rombos. Se lee del
+   <img> del login para no duplicar los bytes; los rombos quedan de respaldo
+   por si ese elemento faltara. */
+var HB_MARK=(function(){
+  try{
+    var el=document.querySelector('.loginlogo');
+    if(el && el.src) return '<img src="'+el.src+'" alt="Hules Banda" style="width:100%;height:100%;object-fit:contain">';
+  }catch(e){}
+  return '<svg viewBox="0 0 54 32" xmlns="http://www.w3.org/2000/svg" aria-label="Hules Banda">'+
+    '<path d="M15 2 28 16 15 30 2 16Z" fill="var(--accent2)"/>'+
+    '<path d="M39 2 52 16 39 30 26 16Z" fill="var(--accent2)" opacity=".45"/></svg>';
+})();
 function renderTop(name){
   var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='prod'||name==='manto');
   var left=$('topLeft');
@@ -3941,7 +3951,7 @@ function permAdminBlock(){
   }
   h+='</div>';
   // Guía de acción para RRHH (acordeón por foco)
-  h+='<div class="panel"><div class="hd"><div><div class="eyebrow">Guía RRHH</div><b>Qué hacer por cada foco</b></div></div>';
+  h+='<div class="panel"><div class="hd"><div><div class="eyebrow">Guía</div><b>Qué hacer por cada foco</b></div></div>';
   P.focos.forEach(function(f){
     var g=P.guiaRRHH.focos[f.k]; if(!g) return;
     var open=(_pmGuia===f.k);
@@ -4948,7 +4958,7 @@ function sendChat(){
    Responsable de Área: un responsable por cada área (Almacén, Inventario, Producción, Calidad, Comercial, Maquinaria).
    Los operativos ven su propio "tablero" (Inicio: puntos/avance) + Mensajes.
    ============================================================================ */
-function dashLabel(){ return S.dash==='ceo'?'Dirección':(S.dash==='resp'?'Mi Área':'RRHH'); }
+function dashLabel(){ return S.dash==='ceo'?'Dirección':(S.dash==='resp'?'Mi Área':'Panel'); }
 function renderDash(){
   if(_adminScr==='personal' && S.admin) return renderPersonal();
   if(S.dash==='ceo') return renderCEO();
@@ -4973,7 +4983,7 @@ function perFilter(v){ _perFilter=(v||''); renderPersonal(); }
 function renderPersonal(){
   var list=DBC.adminList, h='';
   h+='<button class="back" style="margin-bottom:12px" onclick="closePersonal()">‹ Personas</button>';
-  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">RRHH · acceso total</div><b style="font-size:20px">Gestión de personal</b>'+
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Acceso total</div><b style="font-size:20px">Gestión de personal</b>'+
      '<div class="note" style="margin-top:3px">Altas de nuevo ingreso, bajas y permisos. Cada ID que agregues podrá hacer su Primer ingreso.</div></div>'+
      '<span class="chipst">'+(list?list.length:'…')+'</span></div></div>';
   /* ---- ALTA ---- */
@@ -5297,7 +5307,7 @@ function renderFicha(emp){
 }
 
 /* Tablero compartido por RRHH y Dirección (acceso total, idéntico; solo cambia la etiqueta). */
-function renderHR(){ managerDash('RRHH'); }
+function renderHR(){ managerDash('Panel general'); }   /* pedido 20-ago: nada de RRHH en el tablero */
 /* HUB por botones (V3.6 Sesión 9, pedido de Carlos): el tablero ya NO es un scroll
    largo — es un hub de cuadros 3D; cada sección vive en su propia página (_mgrPage).
    mgrTab() se conserva porque el Centinela y ligas viejas la llaman: mapea al hub. */

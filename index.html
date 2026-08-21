@@ -145,7 +145,7 @@ button{font-family:var(--font)}
 #mz-prev .mzt, #mzp-prev .mzt, #mzpg-prev .mzt{min-width:0}
 #mz-prev .mzt td:first-child, #mzp-prev .mzt td:first-child{white-space:normal;word-break:break-word}
 #mzpg-prev .mzt td:nth-child(3){white-space:normal;word-break:break-word}
-#s-mezrec .mzt{min-width:0}
+#s-mezrec .mzt, #mz-hist .mzt, #mz-band .mzt{min-width:0}
 #s-mezrec .mzt td:first-child{white-space:normal;word-break:break-word}
 @media (hover:hover){.mzt tbody tr:hover td,.mzt tr:hover td{background:rgba(255,255,255,.02)}}
 .delta{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;padding:3px 8px;border-radius:20px;font-variant-numeric:tabular-nums}
@@ -885,6 +885,10 @@ body.a11y .screen .icoa svg{ width:23px !important; height:23px !important; }
    para no taparle la foto */
 body.a11y .screen .icoa.mini{ width:32px !important; height:32px !important; }
 body.a11y .screen .icoa.mini svg{ width:17px !important; height:17px !important; }
+/* los formularios de captura y los chips de cotejo también crecen (revisión 20-ago) */
+body.a11y .screen input, body.a11y .screen select, body.a11y .screen textarea,
+body.a11y .screen label{ font-size:15.5px !important; }
+body.a11y .screen .tg{ font-size:13px !important; }
 /* ===== Beeper (alarma de llamada) ===== */
 .nav button span{white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;display:block}
 
@@ -2665,8 +2669,8 @@ function show(name){
   /* Invitaciones (citas): se puede llegar desde el Inicio, desde el tablero o desde
      Noticias — el menú de abajo se ilumina donde el usuario venía (_invitFrom). */
   if(name==='invit') navKey=_invitFrom||'home';
-  if(name==='pedir') navKey=(S&&(S.admin||S.mando))?'hr':'home';       // Pedir reparación / Tus reparaciones
-  if(name==='pedidos') navKey='hr';                                     // inbox de Mantenimiento
+  if(name==='pedir') navKey=(window._pedFrom==='manto')?'planta':((S&&(S.admin||S.mando))?'hr':'home');   // Pedir reparación
+  if(name==='pedidos') navKey=(window._pedFrom==='manto')?'planta':'hr';                                   // inbox de Mantenimiento
   if(name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') navKey='planta';
   if(name==='planta'||name==='manto'||name==='prod'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab') navKey='planta';  // todo lo de Planta
   if(navKey==='home' && S && S.admin && S.dash!=='resp') navKey='hr';   // dashboard general: su Inicio es el tablero
@@ -2716,7 +2720,7 @@ function renderTop(name){
   var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='prod'||name==='manto');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? ('go(\'hr\')') : name==='pedir' ? ('go(\''+((S.admin||S.mando)?'hr':'home')+'\')') : (name==='prod'||name==='manto') ? 'go(\'planta\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? (window._pedFrom==='manto'?'go(\'manto\')':'go(\'hr\')') : name==='pedir' ? (window._pedFrom==='manto'?'go(\'manto\')':('go(\''+((S.admin||S.mando)?'hr':'home')+'\')')) : (name==='prod'||name==='manto') ? 'go(\'planta\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
     left.innerHTML='<span class="tlogo" aria-hidden="true">'+HB_MARK+'</span><button class="back" onclick="'+backTo+'">‹ Atrás</button>';
     left.classList.remove('who');
   }else{
@@ -4126,7 +4130,7 @@ function ic3(kind){ var p=ICON3D[kind]||ICON3D.msg; return iso3d(p[0],p[1]); }
 /* tile del home: cuadro con ícono 3D + título + subtítulo, lleva a su página */
 function htile(onclick,kind,title,sub,opts){ opts=opts||{};
   var tc=opts.tc||({cap:'#8b5cf6',recibo:'#e73b2f',news:'#e0902a',msg:'#3b82f6',premios:'#0e9e8e',ai:'#e73b2f',edu:'#22c55e',encuestas:'#8b5cf6',cal:'#e0902a',docs:'#3b82f6',dia:'#0e9e8e',deptos:'#e0902a',personas:'#8b5cf6',focos:'#e73b2f',operacion:'#3b82f6',pend:'#e0902a',rep:'#e73b2f'}[kind]||'var(--accent)');
-  return '<div class="htile'+(opts.wide?' wide':'')+(opts.cls?' '+opts.cls:'')+'" role="button" tabindex="0" onkeydown="_kb(event)" style="--tc:'+tc+'" onclick="'+onclick+'">'+
+  return '<div class="htile'+(opts.wide?' wide':'')+(opts.cls?' '+opts.cls:'')+'" role="button" tabindex="0"'+(opts.cls&&opts.cls.indexOf('pronto')>-1?' aria-disabled="true"':'')+' onkeydown="_kb(event)" style="--tc:'+tc+'" onclick="'+onclick+'">'+
     (opts.cnt?'<span class="cnt">'+opts.cnt+'</span>':'')+
     '<div class="iso">'+ic3(kind)+'</div>'+
     '<div style="'+(opts.wide?'flex:1;min-width:0':'')+'"><b>'+esc(title)+'</b>'+(sub?'<div class="note">'+esc(sub)+'</div>':'')+'</div>'+
@@ -9461,18 +9465,25 @@ function sbLoad(tbl, cb){
      documentos la lista saldría incompleta y nadie se enteraría. Se pide de
      1,000 en 1,000 hasta que venga una página corta. */
   var PASO=1000, filas=[];
+  clearTimeout(_sbRcT[tbl]);                        /* fuera recargas ya en cola */
+  window._sbCargando=window._sbCargando||{};
+  _sbCargando[tbl]=true;
   function pagina(desde){
     SB.from(tbl).select('data').order('ts',{ascending:true}).range(desde, desde+PASO-1).then(function(r){
-      if(r.error || !r.data){ if(cb) cb(); return; }
+      if(r.error || !r.data){ _sbCargando[tbl]=false; if(cb) cb(); return; }
       for(var i=0;i<r.data.length;i++) filas.push(r.data[i].data);
       if(r.data.length===PASO){ pagina(desde+PASO); return; }
       DBC[tbl]=filas; try{ lsSet('hb_'+tbl, DBC[tbl]); }catch(e){}
+      _sbCargando[tbl]=false;
+      /* si llegó un evento en vivo A MEDIA carga, la página vieja lo pudo pisar:
+         una recarga agrupada lo empareja (revisión 20-ago) */
+      if(window._sbSucio && _sbSucio[tbl]){ _sbSucio[tbl]=false; sbRecargaAgrupada(tbl); }
       if(tbl==='msgs') msgNotifyCheck();   // avisar si llegó un mensaje para mí
       sbRerender();
       if(cb) cb();
-    }, function(){ if(cb) cb(); });
+    }, function(){ _sbCargando[tbl]=false; if(cb) cb(); });
   }
-  try{ pagina(0); }catch(e){ if(cb) cb(); }
+  try{ pagina(0); }catch(e){ _sbCargando[tbl]=false; if(cb) cb(); }
 }
 /* ===== NOTIFICACIÓN de mensaje nuevo: toast dentro de la app + notificación del
    sistema (si diste permiso y la app está en segundo plano). ===== */
@@ -9525,7 +9536,10 @@ function sbSubscribe(tbl){
          evento: UNA carga completa para emparejar. La primera suscripción no
          recarga: el login ya cargó. */
       window._rtVez=window._rtVez||{};
-      if(estado==='SUBSCRIBED' && window._rtVez[tbl]) sbLoad(tbl);
+      /* al reconectar, con JITTER: si vuelve la señal de la planta, 505 teléfonos
+         recargando el mismo segundo era una estampida (revisión 20-ago) */
+      if(estado==='SUBSCRIBED' && window._rtVez[tbl])
+        setTimeout(function(){ sbLoad(tbl); }, 800+Math.floor(Math.random()*7000));
       if(estado==='SUBSCRIBED') window._rtVez[tbl]=true;
     });
   }catch(e){}
@@ -9538,6 +9552,9 @@ function sbSubscribe(tbl){
 function sbAplica(tbl, p){
   try{
     var tipo=p && (p.eventType || p.event), arr=DBC[tbl]||[];
+    /* a media carga completa: no pelear con las páginas — se anota y al final
+       de la carga viene UNA recarga agrupada */
+    if(window._sbCargando && _sbCargando[tbl]){ (window._sbSucio=window._sbSucio||{})[tbl]=true; return; }
     if(tipo==='DELETE'){
       var idv=p.old && p.old.id;
       if(idv==null){ sbRecargaAgrupada(tbl); return; }   // sin id no hay cómo: recarga agrupada
@@ -9551,7 +9568,8 @@ function sbAplica(tbl, p){
       DBC[tbl]=arr;
     }
     sbCacheLuego(tbl);
-    if(tbl==='msgs') msgNotifyCheck();
+    /* solo un INSERT es mensaje nuevo: un UPDATE ajeno disparaba avisos falsos */
+    if(tbl==='msgs' && tipo==='INSERT') msgNotifyCheck();
     sbRerender();
   }catch(e){ sbRecargaAgrupada(tbl); }
 }
@@ -9768,14 +9786,14 @@ function renderMantoHub(){
     '<span style="flex:none">'+speakBtn('Mantenimiento. Aquí se piden las reparaciones de las máquinas y se ve en qué van.')+'</span></div></div>';
   h+='<div class="sec-t">Tu trabajo aquí<span class="ln"></span></div><div class="tgrid">';
   //  pedir reparación: lo puede hacer cualquiera que trabaje con una máquina
-  h+=htile("renderPedir()",'rep','Pedir reparación','Reporta una máquina, con foto');
+  h+=htile("window._pedFrom='manto';renderPedir()",'rep','Pedir reparación','Reporta una máquina, con foto');
   //  el técnico ve lo que trae asignado
   var esTec=false; try{ esTec=pedEsTecnico(); }catch(e){}
-  if(esTec) h+=htile("renderMisRep()",'pend','Tus reparaciones','Lo que traes asignado y su avance');
+  if(esTec) h+=htile("window._pedFrom='manto';renderMisRep()",'pend','Tus reparaciones','Lo que traes asignado y su avance');
   //  el responsable del área y acceso total ven la bandeja completa
   if(S.admin||S.mando){
     var pn=0; try{ pn=pedNuevosN()||0; }catch(e){}
-    h+=htile("renderPedidos()",'operacion','Órdenes de trabajo','Asignar, seguir y cerrar',{cnt:pn||''});
+    h+=htile("window._pedFrom='manto';renderPedidos()",'operacion','Órdenes de trabajo','Asignar, seguir y cerrar',{cnt:pn||''});
   }
   h+='</div>';
   $('s-manto').innerHTML=h; show('manto');
@@ -9876,7 +9894,7 @@ function mzCapPaint(){
        /* regla de Alejandro (20-ago): la corrida SOLO la llevan HNA-9, MRY-900 y
           SRY-95; el resto de los compuestos no la usa. Se le recuerda a Gustavo
           aqui mismo para que no ande adivinando en el ensayo. */
-       '<div class="note" style="font-size:10px;margin-top:2px">Solo HNA-9, MRY-900 y SRY-95</div></div>'+
+       '<div class="note" style="font-size:11.5px;margin-top:2px">Solo HNA-9, MRY-900 y SRY-95</div></div>'+
      '<div style="flex:1;min-width:90px">'+mzInp('mzc-mez','Mezclas','inputmode="numeric"')+'</div>'+
      '<div style="flex:1;min-width:90px">'+mzInp('mzc-quem','Quemadas','inputmode="numeric"')+'</div>'+
      '<div style="flex:1;min-width:110px">'+mzInp('mzc-op','Nº operador','inputmode="numeric"')+'</div></div>'+
@@ -10062,6 +10080,8 @@ function mzXCada(x,tag,fn){ var es=x.getElementsByTagName('*');
   for(var i=0;i<es.length;i++) if(es[i].localName===tag) fn(es[i]); }
 async function mzXlsxHojas(z){
   var wb=await z.lee('xl/workbook.xml'); if(!wb) throw new Error('sin workbook');
+  /* Excel de Mac viejo cuenta las fechas desde 1904: sin esto saldrían corridas ~4 años */
+  window._mzXlsx1904 = /date1904\s*=\s*"(1|true)"/i.test(wb);
   var rl=await z.lee('xl/_rels/workbook.xml.rels')||'';
   var mapa={};
   mzXCada(mzXml(rl),'Relationship',function(e){
@@ -10101,14 +10121,16 @@ async function mzXlsxEstilosFecha(z){
 function mzXlsxCol(ref){ var m=/^([A-Z]+)/.exec(ref||''); if(!m) return -1;
   var c=0; for(var i=0;i<m[1].length;i++) c=c*26+(m[1].charCodeAt(i)-64); return c-1; }
 function mzXlsxFecha(nser){ if(!(nser>0)) return '';
+  if(window._mzXlsx1904) nser+=1462;   /* 1904 → 1900 */
   var d=new Date(Math.round((nser-25569)*86400000));
   return d.getUTCFullYear()+'-'+('0'+(d.getUTCMonth()+1)).slice(-2)+'-'+('0'+d.getUTCDate()).slice(-2); }
 async function mzXlsxATsv(z, ruta, textos, estFecha){
   var t=await z.lee(ruta); if(!t) throw new Error('no pude abrir esa hoja');
   if(t.length>40000000) throw new Error('esa hoja es demasiado grande');
   var filas=[];
+  var _cortada=false;
   mzXCada(mzXml(t),'row',function(row){
-    if(filas.length>6000) return;
+    if(filas.length>6000){ _cortada=true; return; }
     var celdas=[];
     for(var i=0;i<row.children.length;i++){
       var c=row.children[i]; if(c.localName!=='c') continue;
@@ -10120,7 +10142,11 @@ async function mzXlsxATsv(z, ruta, textos, estFecha){
       else if(tipo==='inlineStr') v=isEl?isEl.textContent:'';
       else if(tipo==='str') v=ve||'';
       else if(tipo==='b') v=(ve==='1'?'SI':'NO');
-      else if(ve!=null && ve!==''){ v=(st!=null && estFecha[+st]) ? mzXlsxFecha(+ve) : String(+ve); }
+      else if(tipo==='e') v='';                     /* celda con #ERROR: vacía, no 'NaN' */
+      else if(ve!=null && ve!==''){
+        var _nm=+ve;
+        v=!isFinite(_nm) ? '' : (st!=null && estFecha[+st]) ? mzXlsxFecha(_nm) : String(_nm);
+      }
       while(celdas.length<col) celdas.push('');
       celdas[col]=String(v).replace(/[\t\r\n]+/g,' ').trim();
     }
@@ -10128,7 +10154,7 @@ async function mzXlsxATsv(z, ruta, textos, estFecha){
   });
   /* fuera renglones vacíos del final */
   while(filas.length && !filas[filas.length-1].replace(/\t/g,'')) filas.pop();
-  return filas.join('\n');
+  return { tsv: filas.join('\n'), cortada: _cortada };
 }
 /* la puerta de entrada: abre el xlsx, y si trae varias hojas pregunta cuál */
 function mzXlsxLee(f, avisa, cb, contId){
@@ -10143,7 +10169,9 @@ function mzXlsxLee(f, avisa, cb, contId){
     var estF=await mzXlsxEstilosFecha(z);
     async function abre(h){
       avisa('Leyendo la hoja «'+h.nombre+'»…');
-      cb(await mzXlsxATsv(z,h.ruta,textos,estF), f.name+' · hoja '+h.nombre);
+      var res=await mzXlsxATsv(z,h.ruta,textos,estF);
+      /* el corte se DICE, nunca en silencio: una hoja anual perdería la cola */
+      cb(res.tsv, f.name+' · hoja '+h.nombre+(res.cortada?' — ⚠ CORTADA: solo leí los primeros 6,000 renglones':''));
     }
     if(hojas.length===1){ await abre(hojas[0]); return; }
     /* varias hojas: que la persona escoja cuál (el Excel real trae 30) */
@@ -10199,6 +10227,20 @@ function mzArchivoTexto(f, avisa, cb, contId){
 }
 function mzCsvATsv(txt){
   txt=String(txt||'').replace(/^\uFEFF/,'');            /* Excel escribe BOM */
+  /* Si YA viene con tabuladores (el lector de .xlsx entrega TSV), NO se aplican
+     reglas de comillas: una comilla de pulgadas (PERFIL 3") se tragaba los
+     tabuladores y fusionaba columnas (revisión 20-ago). En TSV la comilla es
+     texto normal. */
+  if(txt.indexOf('\t')>-1){
+    return txt.split(/\r?\n/).map(function(ln){
+      return ln.split('\t').map(function(c){
+        c=c.trim();
+        if(c.length>1 && c.charAt(0)==='"' && c.charAt(c.length-1)==='"')
+          c=c.slice(1,-1).replace(/""/g,'"');
+        return c.trim();
+      }).join('\t');
+    }).join('\n');
+  }
   var lns=txt.split(/\r?\n/);
   /* ¿con qué separa? Excel en español guarda con punto y coma. Se cuenta
      FUERA de las comillas, en el primer renglón con contenido. */
@@ -10247,6 +10289,12 @@ function mzArchivoLee(inp){
     }, 'mz-prev');
 }
 var _mzFilas=null;
+/* '43.0' con parseInt(replace no-dígitos) se volvía 430: los decimales se
+   redondean, no se pegan (revisión 20-ago) */
+function mzEntero(v){
+  var f=parseFloat(String(v==null?'':v).trim().replace(',','.').replace(/[^0-9.\\-]/g,''));
+  return isFinite(f)?Math.round(f):NaN;
+}
 function mzNorm(t){ return String(t||'').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim(); }
 function mzColL(i){ var t=''; do{ t=String.fromCharCode(65+(i%26))+t; i=Math.floor(i/26)-1; }while(i>=0); return t; }
 function mzFechaCelda(v){
@@ -10320,7 +10368,7 @@ function mzPegaPrev(){
   if(map){
     for(var r=hi+1;r<crudas.length;r++){
       var c=crudas[r];
-      var mez=parseInt(String(c[map.mez]||'').replace(/[^0-9]/g,''),10);
+      var mez=mzEntero(c[map.mez]);
       var comp='', letra=null;
       if(map.comp!=null) comp=c[map.comp]||'';
       if(!comp && map.lote!=null){
@@ -10336,8 +10384,8 @@ function mzPegaPrev(){
       if(map.turno!=null){ var tt=mzTurnoCelda(c[map.turno]); if(tt) t=tt; }
       if(map.bb!=null){ var bn=parseInt(String(c[map.bb]||'').replace(/[^0-9]/g,''),10); if(bn>=1&&bn<=5) b=bn; }
       var fila={fecha:f, turno:t, banbury:b, compuesto_txt:comp, letra:letra||null,
-        num_corrida:(map.corr!=null?parseInt(String(c[map.corr]||'').replace(/[^0-9]/g,''),10)||null:null),
-        mezclas:mez, quemadas:(map.quem!=null?parseInt(String(c[map.quem]||'').replace(/[^0-9]/g,''),10)||0:0)};
+        num_corrida:(map.corr!=null?(mzEntero(c[map.corr])||null):null),
+        mezclas:mez, quemadas:(map.quem!=null?(mzEntero(c[map.quem])||0):0)};
       if(map.op!=null){ var on=parseInt(String(c[map.op]||'').replace(/[^0-9]/g,''),10); if(on>0) fila.operador_n=on; }
       filas.push(fila);
     }
@@ -10346,11 +10394,11 @@ function mzPegaPrev(){
     crudas.forEach(function(c){
       var comp=(c[0]||'').trim(); if(!comp) return;
       if(/compuesto|lote/i.test(comp)) return;
-      var mez=parseInt((c[3]||'').replace(/[^0-9]/g,''),10);
+      var mez=mzEntero(c[3]);
       if(!(mez>=0)){ malas++; return; }
       filas.push({fecha:_mzF, turno:_mzT, banbury:_mzB, compuesto_txt:comp,
-        letra:(c[1]||'').trim()||null, num_corrida:parseInt((c[2]||'').replace(/[^0-9]/g,''),10)||null,
-        mezclas:mez, quemadas:parseInt((c[4]||'').replace(/[^0-9]/g,''),10)||0});
+        letra:(c[1]||'').trim()||null, num_corrida:mzEntero(c[2])||null,
+        mezclas:mez, quemadas:mzEntero(c[4])||0});
     });
   }
   if(!filas.length){ alert('No pude leer renglones. Revisa que la hoja traiga encabezados (COMPUESTO o LOTE, y MEZCLAS) o que las columnas vayan en el orden indicado.'); return; }
@@ -10714,10 +10762,10 @@ function mzProgPrev(tsv,nombre){
     if(!ln.trim()) return;
     var c=ln.split('\t');
     if(/turno|banbury|compuesto/i.test(c[0]||'')) return;          /* encabezado */
-    var t=parseInt((c[0]||'').replace(/[^0-9]/g,''),10);
-    var b=parseInt((c[1]||'').replace(/[^0-9]/g,''),10);
+    var t=mzEntero(c[0]);
+    var b=mzEntero(c[1]);
     var comp=(c[2]||'').trim();
-    var mez=parseInt((c[4]||'').replace(/[^0-9]/g,''),10);
+    var mez=mzEntero(c[4]);
     if(!(t>=1&&t<=3) || !(b>=1&&b<=5) || !comp || !(mez>0)){ malas++; return; }
     filas.push({turno:t, banbury:b, compuesto:comp, letra:(c[3]||'').trim()||null, mezclas_prog:mez});
   });
@@ -11578,7 +11626,7 @@ function renderMezDesg(tema){
     _mzDesg=x; mzDesgPaint(); },function(e){ $('s-mezdesg').innerHTML='<div class="card"><b>'+esc(mzErr(null,e))+'</b></div>'; });
 }
 function mzTh(a){ return '<tr>'+a.map(function(t){ return '<th>'+t+'</th>'; }).join('')+'</tr>'; }
-function mzTd(a,click){ return '<tr'+(click?' onclick="'+click+'" style="cursor:pointer"':'')+'>'+a.map(function(t){
+function mzTd(a,click){ return '<tr'+(click?' role="button" tabindex="0" onkeydown="_kb(event)" onclick="'+click+'" style="cursor:pointer"':'')+'>'+a.map(function(t){
   return '<td>'+t+'</td>'; }).join('')+'</tr>'; }
 function mzTabla(head,rows){ return '<div style="overflow-x:auto;margin-top:8px"><table class="mzt">'+mzTh(head)+rows.join('')+'</table></div>'; }
 function mzDesgPaint(){
@@ -11850,13 +11898,18 @@ function mzPrePrev(){
 }
 function mzPreImporta(){
   if(!_mzPreFilas||!_mzPreFilas.length) return;
-  SB.rpc('hb_mez_precios_import',{p_filas:_mzPreFilas}).then(function(r){ var x=r&&r.data;
+  if(window._mzPreImportando) return;             /* candado de reentrada */
+  window._mzPreImportando=true;
+  var _lote=_mzPreFilas.slice(); _mzPreFilas=null;
+  var pv=$('mzp-prev'); if(pv) pv.innerHTML='<div class="note" style="margin:8px 0">Guardando…</div>';
+  SB.rpc('hb_mez_precios_import',{p_filas:_lote}).then(function(r){ var x=r&&r.data;
+    window._mzPreImportando=false;
     if(x&&x.ok){
       var er=(x.errores||[]);
       alert('Listo: '+x.guardados+' precios guardados'+(x.materiales_nuevos?(' · '+x.materiales_nuevos+' materiales nuevos'):'')+
             (er.length?('\n\nNo entraron '+er.length+':\n'+er.slice(0,5).map(function(e){ return '· '+(e.codigo||('fila '+e.fila))+': '+e.error; }).join('\n')):''));
-      _mzPreFilas=null; $('mzp-form').innerHTML=''; renderMezPrecios();
-    } else alert(mzErr(x)); },function(e){ alert(mzErr(null,e)); });
+      $('mzp-form').innerHTML=''; renderMezPrecios();
+    } else alert(mzErr(x)); },function(e){ window._mzPreImportando=false; alert(mzErr(null,e)); });
 }
 function mzPreHist(cod){
   SB.rpc('hb_mez_precio_historia',{p_codigo:cod}).then(function(r){ var x=r&&r.data;
@@ -12444,7 +12497,9 @@ function mzBandAsigna(i,txt){
   if(!confirm('¿Asignar «'+txt+'» a '+c.nombre+(letra?(' versión '+letra):'')+'?\n\nSe corrigen TODOS sus renglones.')) return;
   SB.rpc('hb_mez_bandeja_asigna',{p_txt:txt,p_cid:c.id,p_letra:letra||null}).then(function(r){ var x=r&&r.data;
     if(x&&x.ok){ flash('✓ '+x.corridas+(x.corridas===1?' corrida corregida':' corridas corregidas'));
-      $('mz-band').classList.add('hide'); mzBandTog(); mzLoadDia(mzCapPaint); }
+      /* primero repintar la bitácora, DESPUÉS reabrir la bandeja fresca (si no,
+         el repintado la recreaba vacía y oculta a media carga) */
+      mzLoadDia(function(){ mzCapPaint(); mzBandTog(); }); }
     else alert(mzErr(x)); },function(){ alert(mzErr()); });
 }
 function mzHistTog(){

@@ -10208,6 +10208,20 @@ var _mzFx=null, _mzFxT=0, _mzDesg=null, _mzDesgTema='produccion', _mzCompId=null
 /* ---- números EXACTOS (regla de Carlos): miles con coma, decimales pedidos ---- */
 function mzN(v,dec){ if(v==null||isNaN(v)) return '—';
   return Number(v).toLocaleString('es-MX',{minimumFractionDigits:dec||0,maximumFractionDigits:(dec==null?0:dec)}); }
+/* ===== QUIÉN VE DINERO (decisión de Carlos, 21-ago-2026) =====
+   · mzVeDinero()   = acceso total. TODO el dinero: costeo de producción, costo
+                      por mezcla, precio de venta, utilidad.
+   · mzVeDineroMp() = acceso total + quien esté en la lista de costos (Josué
+                      Posadas, de COSTOS): SOLO lo de materia prima — precios de
+                      MP, el semáforo con su costo, y la tasa del dólar con la que
+                      se valúa esa materia prima.
+   El capturista (Gustavo) ve sus gráficos SIN un solo peso: "todo el valor
+   monetario que esté ahí que salga escondido".
+   La autoridad real es del servidor (hb_es_admin / hb_es_mez_costos y, desde
+   v3_50, el tema 'costos' del desglose es solo de acceso total); esto es para
+   que la pantalla ni lo pinte. ===== */
+function mzVeDinero(){ return !!(S && S.admin); }
+function mzVeDineroMp(){ return !!(S && (S.admin || S.mezCostos)); }
 function mzMonTag(c){ return ' <span class="mon">'+c+'</span>'; }
 function mzMx(v,dec){ if(v==null||isNaN(v)) return '—';
   if(Math.abs(v)>=1e6) return '<span title="$'+mzN(v,2)+' MXN">$'+mzN(v/1e6,2)+' M</span>'+mzMonTag('MXN');
@@ -11928,8 +11942,12 @@ function mzFicha(cid){
 
 /* ---------- TABLERO DE DIRECCIÓN (acceso total) ---------- */
 function renderMezTab(){
-  if(!(S.admin||(S.mando&&S.mezCap))){ alert('Solo dirección y jefatura de producción.'); return; }
-  mzFxLoad(1);   /* al abrir Gráficos SIEMPRE se refresca el dólar (pedido de Carlos) */
+  /* Gustavo (capturista) SÍ entra a sus gráficos — antes el cuadro se le pintaba
+     y al tocarlo le salía "Solo dirección y jefatura": el permiso del cuadro y el
+     de la pantalla no coincidían. El servidor ya permitía admin ∨ capturista, y
+     hb_mez_tablero no manda dinero. */
+  if(!(S.admin||S.mezCap||(S.mando&&S.mezCap))){ alert('Solo dirección, jefatura de producción y los capturistas de mezclado.'); return; }
+  if(mzVeDineroMp()) mzFxLoad(1);   /* el dólar solo para quien ve dinero */
   var hoy=mxToday();
   if(!_mztD1){ /* default: los últimos 31 días (si el mes va empezando, aún se ve el pasado) */
     var d0=new Date(hoy+'T12:00:00'); d0.setDate(d0.getDate()-30);
@@ -12119,7 +12137,7 @@ function mzTabPaint(x){
      kpi('produccion','Corridas', mzN(t.corridas||0), null)+
      kpi('merma','Quemadas', mzN(t.quemadas||0), 'var(--bad)','merma y calidad')+
      kpi('eficiencia','Paros', mzN((x.tm_top||[]).reduce(function(a,c){ return a+(+c.minutos||0); },0))+' min', 'var(--warn)','eficiencia')+
-     (S.admin?kpi('costos','Costo de materia prima','ver','var(--ok)','costos y utilidad'):
+     (mzVeDinero()?kpi('costos','Costo de materia prima','ver','var(--ok)','costos y utilidad'):
        '<div class="card"><div class="note">En bandeja</div><b style="font-size:22px;color:var(--warn)">'+mzN(t.pendientes||0)+'</b></div>')+
      '</div>';
   /* LA META DE ANA: un solo número, y la gráfica lo dibuja */
@@ -12340,10 +12358,10 @@ function mzDesgPaint(){
   h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'+
      '<div><b style="font-size:15px">'+esc(MZ_TEMAS[x.tema]||x.tema)+'</b>'+
      '<div class="note" style="margin-top:2px">Del '+esc(x.desde)+' al '+esc(x.hasta)+' · '+x.dias+' días'+
-     (x.fx?(' · tasa DOF $'+mzN(x.fx,4)):'')+'</div></div>'+
+     ((x.fx&&mzVeDineroMp())?(' · tasa DOF $'+mzN(x.fx,4)):'')+'</div></div>'+
      '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
      Object.keys(MZ_TEMAS).map(function(k){
-       if(k==='costos'&&!x.admin) return '';
+       if(k==='costos'&&!(x.admin&&mzVeDinero())) return '';
        return '<button class="btn'+(k===x.tema?'':' ghost')+'" style="margin:0;width:auto;padding:7px 11px;font-size:11.5px" onclick="renderMezDesg(\''+k+'\')">'+MZ_TEMAS[k]+'</button>'; }).join('')+
      '<button class="btn ghost" style="margin:0;width:auto;padding:7px 11px;font-size:11.5px" onclick="mzRawDe(\''+x.tema+'\')">🔎 Corrida por corrida</button>'+
      '<button class="btn ghost" style="margin:0;width:auto;padding:7px 11px;font-size:11.5px" onclick="mzExcel(_mztD1,_mztD2)">⬇ Excel</button></div></div></div>';
@@ -12709,7 +12727,7 @@ function mzCierrePinta(tipo,d1,d2,res){
    '.ft{margin-top:22px;border-top:1px solid #e5e7eb;padding-top:7px;font-size:9.5px;color:#9ca3af;display:flex;justify-content:space-between}'+
    '@media print{.noprint{display:none}}</style></head><body>'+
    '<div class="hd"><div><h1>'+tit+'</h1><div class="sub">Hules Banda · del '+d1+' al '+d2+
-     (p.fx?(' · tasa DOF $'+mzN(p.fx,4)):'')+'</div></div><div class="sub">Generado el '+hoy_txt()+'</div></div>'+
+     ((p.fx&&mzVeDineroMp())?(' · tasa DOF $'+mzN(p.fx,4)):'')+'</div></div><div class="sub">Generado el '+hoy_txt()+'</div></div>'+
    '<div class="noprint" style="margin-bottom:14px"><button onclick="window.print()" style="padding:9px 16px;border:0;border-radius:8px;background:#cc1a1f;color:#fff;font-size:13px;cursor:pointer">Imprimir o guardar como PDF</button>'+
    ' <span class="sub">En el diálogo elige “Guardar como PDF”.</span></div>'+
    '<div class="kpis">'+

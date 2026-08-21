@@ -190,8 +190,9 @@ button{font-family:var(--font)}
 .chhello{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;height:100%;min-height:230px;padding:20px}
 .chhello svg{width:64px;height:40px;margin-bottom:6px}
 .chhello img{width:96px;margin-bottom:6px}
-.chgema{display:block;margin-bottom:4px;filter:drop-shadow(0 10px 22px rgba(231,59,47,.38)) drop-shadow(0 2px 6px rgba(0,0,0,.35))}
-.chgema svg{width:78px;height:47px;display:block}
+.chdupla{display:flex;align-items:flex-end;justify-content:center;margin-bottom:10px}
+.chdupla .chbandi{width:auto;height:84px;margin:0 -13px 0 0;transform:rotate(9deg);transform-origin:82% 96%;position:relative;z-index:1;filter:drop-shadow(0 10px 20px rgba(0,0,0,.45))}
+.chdupla .chlogo{width:auto;height:38px;max-width:150px;object-fit:contain;margin:0 0 5px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.4))}
 .chhello b{font-size:24px;font-weight:850;letter-spacing:-.02em}
 .chhello span{font-size:14px;color:var(--txt)}
 .chhello .note{font-size:12px}
@@ -208,6 +209,9 @@ button{font-family:var(--font)}
   .chatwrap .composer,.chatwrap .msgs,.chatwrap .chips{width:100%}
   /* el riel ya trae el logo: no duplicarlo en el HUD de escritorio */
   #topLeft .tlogo{display:none}
+}
+@media (max-width:999px){
+  #nav-docs{display:none}
 }
 .icoa{width:38px;height:38px;flex:none;display:inline-flex;align-items:center;justify-content:center;
   background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--txt);cursor:pointer;
@@ -892,6 +896,70 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .access .topic .t b,.access .lvl-card .t b{font-size:18px}
 .access .lvcard b{font-size:16.5px}.access .lvcard span{font-size:12.5px}.access .cbody .ct b{font-size:17px}
 /* ===== Modo accesible GLOBAL: texto grande + negritas en TODA la app ===== */
+/* etiqueta chiquita de moneda (20-ago): todo dinero dice MXN o USD */
+.mon{font-size:9.5px;font-weight:800;color:var(--mut);letter-spacing:.4px;margin-left:2px;vertical-align:baseline}
+body.a11y .mon{font-size:12px !important}
+/* ---- Mensajería de dos paneles (20-ago, foto Threema) ---- */
+.msjh{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.msjrow{display:flex;align-items:center;gap:11px;width:100%;background:none;border:none;border-radius:12px;padding:10px 8px;font-family:inherit;color:var(--txt);cursor:pointer;text-align:left;min-width:0}
+.msjrow:hover{background:color-mix(in srgb,var(--txt) 5%,transparent)}
+.msjrow.on{background:var(--card)}
+.msjrow .mt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.msjrow .mt b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msjrow .mt span{font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msjrow .mm{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+.msjrow .tm{font-size:10.5px;color:var(--mut);font-weight:700}
+.msjrow .fxi{width:44px;height:44px;border-radius:13px;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:18px;flex:none}
+.msjfx{display:flex;flex-direction:column}
+.msjnada{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:60dvh;text-align:center}
+.msjnada span{font-size:42px}
+@media (min-width:1000px){
+  body.msjdual #main{display:flex;align-items:stretch}
+  body.msjdual #s-msgs{column-count:1;flex:none;width:398px;margin-left:224px;max-width:none;border-right:1px solid var(--line);height:100dvh;overflow-y:auto;padding:24px 20px 40px;position:sticky;top:0}
+  body.msjdual #s-thread{flex:1;min-width:0;max-width:none;margin-left:0;display:flex;flex-direction:column;height:100dvh;overflow:hidden;padding:20px 30px 14px}
+  body.msjdual #s-thread .msgs{flex:1;min-height:0;overflow-y:auto}
+  body.msjdual #s-thread .chathead,body.msjdual #s-thread .composer,body.msjdual #s-thread .thfind{flex:none}
+  body.msjdual .top .back{display:none}
+}
+body.a11y .msjrow .mt b{font-size:16.5px !important}
+body.a11y .msjrow .mt span{font-size:14.5px !important}
+body.a11y .msjrow .tm{font-size:12.5px !important}
+body.a11y .msjnada b{font-size:20px !important}
+/* ---- Calendario estilo agenda (20-ago): escritorio a dos columnas ---- */
+.calrow{display:flex;align-items:center;gap:9px;width:100%;background:none;border:1px solid transparent;border-radius:10px;padding:9px 10px;font-family:inherit;font-size:13.5px;font-weight:700;color:var(--txt);cursor:pointer;text-align:left;margin-bottom:2px}
+.calrow:hover{background:color-mix(in srgb,var(--txt) 5%,transparent)}
+.calrow.on{background:var(--card);border-color:var(--line)}
+.calrow .cdot{width:10px;height:10px;border-radius:3px;flex:none}
+.calrow .cnum{margin-left:auto;font-size:11.5px;color:var(--mut);font-weight:800}
+.calbig{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.calbig .wd{font-size:10.5px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;padding:2px 4px}
+.calbig .dcb{min-height:80px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:3px;align-items:stretch;cursor:pointer;font-family:inherit;color:var(--txt);text-align:left;min-width:0;overflow:hidden;transition:border-color .15s var(--ease-out)}
+.calbig .dcb:hover{border-color:color-mix(in srgb,var(--txt) 25%,transparent)}
+.calbig .dcb.fuera{opacity:.3;cursor:default;background:transparent;border-color:transparent}
+.calbig .dcb.sel{border-color:var(--accent2)}
+.calbig .dn{font-size:12px;font-weight:800;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none}
+.calbig .dcb.hoy .dn{background:var(--accent);color:#fff}
+.calbig .evc{font-size:10.5px;font-weight:700;line-height:1.25;padding:2.5px 6px;border-radius:6px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;display:block}
+.calbig .evmas{font-size:10px;color:var(--mut);font-weight:800;padding:0 4px}
+.calwrap{display:block}
+@media (min-width:1000px){
+  .calwrap{display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px;align-items:start}
+  .calside{position:sticky;top:14px;max-height:calc(100vh - 28px);overflow:auto;padding-right:2px}
+}
+body.a11y .calrow{font-size:16px !important}
+body.a11y .calbig .evc{font-size:13px !important}
+body.a11y .calbig .dn{font-size:14px !important}
+body.a11y .calbig .evmas{font-size:12.5px !important}
+.hbav-velo{position:fixed;inset:0;background:rgba(10,13,20,.55);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:12000;padding:18px}
+.hbav-velo.on{display:flex}
+.hbav{background:var(--card);border:1px solid var(--line);border-radius:16px;max-width:430px;width:100%;padding:18px 18px 16px;box-shadow:0 18px 60px rgba(0,0,0,.4)}
+.hbav-top{display:flex;align-items:center;gap:8px;font-weight:800;font-size:11.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--mut);margin-bottom:10px}
+.hbav-logo{height:15px;width:auto}
+.hbav-txt{font-size:14.5px;line-height:1.55;white-space:pre-line;color:var(--txt);word-break:break-word}
+.hbav-b{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+.hbav-b .btn{display:inline-block;width:auto;min-width:92px;padding:11px 18px;font-size:14px}
+body.a11y .hbav-txt{font-size:18px !important;font-weight:600 !important;line-height:1.55 !important}
+body.a11y .hbav-b .btn{font-size:17px !important;padding:13px 20px !important}
 body.a11y .screen p, body.a11y .screen li, body.a11y .screen .note, body.a11y .screen .opt span, body.a11y .screen .bub{ font-size:15.5px !important; font-weight:600 !important; line-height:1.5 !important; }
 body.a11y .screen .note{ color:#d4d7df !important; }
 body.a11y .screen b{ font-weight:800 !important; }
@@ -2152,6 +2220,41 @@ function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').repla
 function imgSrc(u){ u=String(u||''); if(!/^(data:image\/|https:\/\/)/i.test(u)) return ''; return u.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function bandi(cls){ return ''; }   /* mascota retirada: la app es corporativa, sin personaje */
 function flash(t){ var f=$('flash'); f.textContent=t; f.classList.add('show'); clearTimeout(f._t); f._t=setTimeout(function(){f.classList.remove('show');},2100); }
+/* ==== Aviso del sistema (pedido 20-ago): sustituye el confirm() del navegador
+   por un cuadrito propio con Sí / No. hbConfirm(msg, alDecirSi).
+   Las funciones viejas eran sincronas; el truco de la banderita las deja igual:
+   la primera llamada muestra el aviso y se detiene; al decir Sí se rellama a la
+   misma funcion con la banderita puesta (hbSiC) y hbOkC la consume una sola vez. */
+var _hbCok={};
+function hbOkC(k){ if(_hbCok[k]){ delete _hbCok[k]; return true; } return false; }
+function hbSiC(k){ _hbCok[k]=true; }
+var _hbAvisoSi=null;
+function hbConfirm(msg,alSi,opts){
+  opts=opts||{}; _hbAvisoSi=alSi||null;
+  var v=$('hbAviso');
+  if(!v){
+    v=document.createElement('div'); v.id='hbAviso'; v.className='hbav-velo';
+    v.innerHTML='<div class="hbav" role="alertdialog" aria-modal="true" aria-labelledby="hbav-txt">'+
+      '<div class="hbav-top"><img class="hbav-logo" alt="" onerror="this.style.display=\'none\'"><span>Aviso del sistema</span></div>'+
+      '<div id="hbav-txt" class="hbav-txt"></div>'+
+      '<div class="hbav-b"><button type="button" class="btn ghost" id="hbav-no" onclick="hbAvisoCierra(false)">No</button>'+
+      '<button type="button" class="btn" id="hbav-si" onclick="hbAvisoCierra(true)">Sí</button></div></div>';
+    document.body.appendChild(v);
+    v.addEventListener('click',function(e){ if(e.target===v) hbAvisoCierra(false); });
+    document.addEventListener('keydown',function(e){ if(v.classList.contains('on')&&e.key==='Escape') hbAvisoCierra(false); });
+  }
+  try{ var lg=document.querySelector('.loginlogo'); var im=v.querySelector('.hbav-logo'); if(lg&&im&&lg.src) im.src=lg.src; }catch(e){}
+  v.querySelector('#hbav-txt').textContent=msg;
+  v.querySelector('#hbav-si').textContent=opts.si||'Sí';
+  v.querySelector('#hbav-no').textContent=opts.no||'No';
+  v.classList.add('on');
+  try{ v.querySelector('#hbav-no').focus(); }catch(e){}
+}
+function hbAvisoCierra(si){
+  var v=$('hbAviso'); if(v) v.classList.remove('on');
+  var f=_hbAvisoSi; _hbAvisoSi=null;
+  if(si && f) f();
+}
 
 /* ---------- estado en memoria (progreso del usuario se guarda en el dispositivo) ---------- */
 var S = null;          // sesión actual
@@ -2587,7 +2690,7 @@ function showTyc(onAccept){
 function closeTyc(){ var m=$('tycModal'); if(m){ m.classList.add('hide'); m.innerHTML=''; } lgBusy(false); }
 function resetLoginUI(){ location.reload(); }
 function resetProgress(){
-  if(!confirm('¿Reiniciar tu progreso (puntos, cursos y canjes)? No se puede deshacer.')) return;
+  if(!hbOkC('resetProgress')){ hbConfirm('¿Reiniciar tu progreso (puntos, cursos y canjes)? No se puede deshacer.', function(){ hbSiC('resetProgress'); resetProgress(); }); return; }
   try{ localStorage.removeItem('hb_'+S.emp); }catch(e){}
   S.points=0; S.streak=0; S.done={}; S.attempts={}; S.best={}; S.redeemed={}; S.watched={};
   flash('Progreso reiniciado'); renderHome();
@@ -2663,9 +2766,15 @@ function buildNav(){
   // El dashboard general NO lleva el círculo: su Inicio es el propio tablero.
   var mid=Math.floor(others.length/2);
   var items = esDashGral ? others : others.slice(0,mid).concat([home]).concat(others.slice(mid));
+  /* Documentos como TAB del riel (pedido 20-ago): para todos, SOLO escritorio
+     (#nav-docs se oculta en celular por CSS para no saturar la barra de abajo;
+     en celular sigue el cuadro/el menú ☰). Va al FINAL para no mover el círculo
+     del centro en el teléfono. */
+  items.push(['docs','Documentos','<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h8l4 4v16H6z"/><path d="M14 2v4h4M9 13h6M9 17h4"/></svg>']);
   $('nav').innerHTML = '<span class="navlogo" aria-hidden="true">'+HB_MARK+'</span>'+items.map(function(it){
     var main=(it[0]==='home')?' class="navmain"':'';
-    return '<button id="nav-'+it[0]+'"'+main+' title="'+it[1]+'" onclick="go(\''+it[0]+'\')">'+it[2]+'<span>'+it[1]+'</span></button>';
+    var accion=(it[0]==='docs')?"window._docFrom='tab';_docReset();renderDocs()":("go('"+it[0]+"')");
+    return '<button id="nav-'+it[0]+'"'+main+' title="'+it[1]+'" onclick="'+accion+'">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
 var SCREENS=['planta','manto','mezrec','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp','mezcierres','mezprecios','mezsem'];
@@ -2694,8 +2803,9 @@ function show(name){
   if(name==='pedidos') navKey=(window._pedFrom==='manto')?'planta':'hr';                                   // inbox de Mantenimiento
   if(name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') navKey='planta';
   if(name==='planta'||name==='manto'||name==='prod'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab') navKey='planta';  // todo lo de Planta
+  if(name==='docs' && window._docFrom==='tab') navKey='docs';           // abierto desde el tab del riel
   if(navKey==='home' && S && S.admin && S.dash!=='resp') navKey='hr';   // dashboard general: su Inicio es el tablero
-  ['home','msgs','rewards','chat','hr','clases','news','buzon','planta'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
+  ['home','msgs','rewards','chat','hr','clases','news','buzon','planta','docs'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
   renderTop(name);
   // ANTI-PARPADEO: la animación de entrada y el scroll-al-tope SOLO al cambiar de
   // pantalla. Los re-pintados en vivo (datos nuevos) actualizan sin "flash" ni brincos.
@@ -2704,6 +2814,7 @@ function show(name){
     var el=$('s-'+name); if(el){ el.classList.remove('fade'); void el.offsetWidth; el.classList.add('fade'); }
   }
   if(typeof updateMsgBadge==='function') updateMsgBadge();
+  try{ if(typeof msjSync==='function') msjSync(); }catch(e){}
 }
 function go(name){
   _adminScr=null; _fichaEmp=null;   // salir de sub-pantallas (personal / ficha) al usar el menú
@@ -2737,23 +2848,9 @@ var IC_TRASH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
    HB facetados como gema — luz desde arriba-izquierda, 4 caras por rombo con
    los rojos de la marca, brillo especular y halo suave. Sin fondo. Solo se usa
    en el saludo del chat; el HUD y el riel llevan el logo real. */
-var HB_GEMA='<svg viewBox="0 0 110 66" xmlns="http://www.w3.org/2000/svg" aria-label="Hules Banda">'+
-  /* rombo de atrás (más apagado, medio tapado) */
-  '<g opacity=".55">'+
-    '<polygon points="76,4 50,33 74,29" fill="#f2695b"/>'+
-    '<polygon points="76,4 102,33 74,29" fill="#d43a2c"/>'+
-    '<polygon points="50,33 76,62 74,29" fill="#9c2317"/>'+
-    '<polygon points="102,33 76,62 74,29" fill="#6f120a"/>'+
-  '</g>'+
-  /* rombo de enfrente */
-  '<polygon points="34,2 6,33 32,28" fill="#ff8274"/>'+
-  '<polygon points="34,2 62,33 32,28" fill="#ef4a38"/>'+
-  '<polygon points="6,33 34,64 32,28" fill="#c22619"/>'+
-  '<polygon points="62,33 34,64 32,28" fill="#8e150c"/>'+
-  /* brillo especular */
-  '<polygon points="34,6 41,14 34,17 30,12" fill="#fff" opacity=".38"/>'+
-  '<polygon points="76,8 81,14 76,17 73,12" fill="#fff" opacity=".22"/>'+
-'</svg>';
+/* El Bandi 3D real (recorte HD sin fondo) para el saludo del Asistente —
+   pedido 20-ago: fuera la gema, Bandi arrecostado junto al logo. */
+var BANDI_3D='data:image/png;base64,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';
 /* la marca de HB — pedido de Carlos (20-ago): EL LOGO REAL de Hules Banda (el
    mismo de la pantalla de arranque), no el dibujo de dos rombos. Se lee del
    <img> del login para no duplicar los bytes; los rombos quedan de respaldo
@@ -2768,7 +2865,7 @@ var HB_MARK=(function(){
     '<path d="M39 2 52 16 39 30 26 16Z" fill="var(--accent2)" opacity=".45"/></svg>';
 })();
 function renderTop(name){
-  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='prod'||name==='manto');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='prod'||name==='manto') && !(name==='docs' && window._docFrom==='tab');
   var left=$('topLeft');
   if(sub){
     var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? (window._pedFrom==='manto'?'go(\'manto\')':'go(\'hr\')') : name==='pedir' ? (window._pedFrom==='manto'?'go(\'manto\')':('go(\''+((S.admin||S.mando)?'hr':'home')+'\')')) : (name==='prod'||name==='manto') ? 'go(\'planta\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
@@ -2792,6 +2889,8 @@ function renderTop(name){
         '<span style="min-width:0;text-align:left"><b style="display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(_pn||S.area)+'</b>'+
         '<span class="note" style="font-size:10.5px">#'+(''+S.emp).padStart(3,'0')+' · Mi perfil ›</span></span></button>'+
       (S.admin?'':'<div class="tmrow"><span class="note">Tus puntos</span><span class="ptchip">0 pts</span></div>')+
+      '<button class="tmit" onclick="topMenuCierra();docsHome()"><span class="tbico" style="pointer-events:none">'+IC2.doc+'</span>'+
+        '<span style="text-align:left"><b style="font-size:13px">Documentos</b><span class="note" style="display:block;font-size:10.5px">La base documental</span></span></button>'+
       '<button class="tmit" onclick="toggleAcc();topMenuCierra()"><span class="tbico" style="pointer-events:none">'+EYE+'</span>'+
         '<span style="text-align:left"><b style="font-size:13px">Texto grande</b><span class="note" style="display:block;font-size:10.5px">'+(S&&S.accessible?'Encendido':'Apagado')+'</span></span></button>'+
       '<button class="tmit tmout" onclick="logout()"><b style="font-size:13px">Salir</b></button>'+
@@ -3012,7 +3111,7 @@ function calendarBlock(){
    Calendar (aceptar/rechazar; al aceptar aparece en el de ambos). Los eventos de
    ÁREA los publica el responsable; los GENERALES, acceso total/RRHH. Sin correr
    v3_9 cae a demo local ('hb_eventos'). Reemplaza al viejo 'hb_events' (deuda kv). ===== */
-var _calOff=0, _evEdit=null, _calLayer=null, _calDay=null, _evInv=[], _evTry=0;
+var _calOff=0, _evEdit=null, _calLayer=null, _calDay=null, _evInv=[], _evTry=0, _evFormOpen=false;
 var _evFecha=null;   /* fecha precargada cuando agregas desde un día del calendario */
 function evV3(){ return !!(V3_ON && S && Array.isArray(DBC.eventos)); }
 function evGet(){ return evV3()? (DBC.eventos||[]) : lsGet('hb_eventos'); }
@@ -3083,7 +3182,7 @@ function evForLayer(layer){
 function evVisibles(){ return evForLayer('personal').concat(evForLayer('area')).concat(evForLayer('general')); }
 
 /* ---------- navegación pantalla ---------- */
-function openCal(){ _calOff=0; _evEdit=null; _calDay=null; _calLayer=null; _evInv=[]; _evFecha=null; renderCal(); }
+function openCal(){ _calOff=0; _evEdit=null; _calDay=null; _calLayer=null; _evInv=[]; _evFecha=null; _evFormOpen=false; renderCal(); }
 function calNav(d){ _calOff+=d; _calDay=null; renderCal(); }   /* el día abierto no existe en otro mes */
 /* ---------- TOCAR UN DÍA (Sesión 15, pedido de Carlos) ----------
    Tocas la fecha en la cuadrícula y se abre el desglose de ESE día: lo que hay
@@ -3167,7 +3266,7 @@ function calDayBlock(iso){
     '<span style="color:var(--accent2);cursor:pointer;text-decoration:underline" role="button" tabindex="0" onkeydown="_kb(event)" onclick="openInvit()">Verlas ›</span></div>';
   return h+'</div>';
 }
-function calLayerGo(l){ _calLayer=l; _evEdit=null; _calDay=null; _evInv=[]; _evFecha=null; renderCal(); window.scrollTo(0,0); }
+function calLayerGo(l){ _calLayer=l; _evEdit=null; _calDay=null; _evInv=[]; _evFecha=null; _evFormOpen=false; renderCal(); window.scrollTo(0,0); }
 function calEdit(id){ _evEdit=id; var e=evGet().filter(function(x){return x.id===id;})[0]; if(e){ _calLayer=e.scope; _evInv=(e.invites||[]).map(function(i){return {n:+i.n,nombre:i.nombre};}); } renderCal(); var t=$('evTitle2'); if(t) t.focus(); }
 
 function evEstadoTag(st){ var m={aceptado:['Aceptó','var(--ok)'],rechazado:['No irá','var(--bad)'],pendiente:['Pendiente','var(--mut)']}[st]||['',''];
@@ -3198,6 +3297,23 @@ function evRow(e){
   return h+'</div>';
 }
 
+/* ---------- CALENDARIO (rediseño 20-ago, fotos de Carlos: estilo agenda) ----------
+   ESCRITORIO: dos columnas — a la izquierda calendarios de colores, Invitaciones,
+   el día abierto y Próximos; a la derecha el MES COMPLETO en grande, sin scroll,
+   con los eventos de las TRES capas pintados de su color dentro de cada día.
+   CELULAR: compacto como antes, con [＋ Nuevo evento] [Invitaciones] en botones.
+   Mismas funciones: capas, tocar un día, invitaciones, crear/editar/quitar. */
+var CAL_LCOL={personal:'var(--accent)',area:'#e0902a',general:'#0e9e8e'};
+function calEsc(){ try{ return window.innerWidth>=1000; }catch(e){ return false; } }
+function calHoy(){ _calOff=0; _calDay=null; renderCal(); }
+function calNuevo(){
+  if(!calCanCreate(_calLayer)){
+    flash(_calLayer==='general'?'Los eventos generales los publica Recursos Humanos / Dirección':'Los eventos de tu área los publica tu responsable');
+    return;
+  }
+  _evFormOpen=true; _evEdit=null; renderCal();
+  setTimeout(function(){ var t=$('evTitle2'); if(t){ try{ t.scrollIntoView({block:'center'}); t.focus(); }catch(e){} } },40);
+}
 function renderCal(){
   if(sbReady() && Date.now()-(window._lastLoadEv||0)>4000){ window._lastLoadEv=Date.now(); evLoad(); }
   var layers=calLayers();
@@ -3206,58 +3322,110 @@ function renderCal(){
   var base=new Date(); base.setDate(1); base.setMonth(base.getMonth()+_calOff);
   var y=base.getFullYear(), m=base.getMonth();
   var now=new Date(), ty=now.getFullYear(), tm=now.getMonth(), td=now.getDate();
-  var evs=evForLayer(_calLayer).slice().sort(function(a,b){ return (a.fecha||'')<(b.fecha||'')?-1:1; });
-  var byDay={}; evs.forEach(function(e){ var p=(e.fecha||'').split('-'); if(+p[0]===y&&(+p[1]-1)===m) byDay[+p[2]]=(byDay[+p[2]]||[]).concat(e); });
-  var first=new Date(y,m,1).getDay(), dim=new Date(y,m+1,0).getDate();
-  var pendN=evInvitPend().length;
-  var subT={personal:'Tus eventos y tus invitaciones.',area:'Los eventos de tu área ('+esc(S?S.area:'')+').',general:'Los eventos de toda la planta.'}[_calLayer];
-  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Calendario</div><b style="font-size:20px">Calendario</b><p class="note" style="margin:4px 0 0;max-width:260px">'+subT+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
-  // toggle de capas
-  h+='<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">'+layers.map(function(l){
-    var badge=(l[0]==='personal'&&pendN)?' <span class="cnt" style="position:static;margin-left:5px">'+pendN+'</span>':'';
-    return '<button class="btn'+(_calLayer===l[0]?'':' ghost')+'" style="margin:0;padding:9px 14px;font-size:13px;width:auto" onclick="calLayerGo(\''+l[0]+'\')">'+l[1]+badge+'</button>';
-  }).join('')+
-  /* Invitaciones vive DENTRO del calendario (pedido de Carlos 19-ago) */
-  '<button class="btn ghost" style="margin:0 0 0 auto;padding:9px 14px;font-size:13px;width:auto" onclick="openInvit()">Invitaciones'+(pendN?' <span class="cnt" style="position:static;margin-left:5px">'+pendN+'</span>':'')+'</button></div>';
-  /* CITAS dentro del Calendario (Sesión 15, Carlos: "el de citas que esté en el
-     apartado de calendario"). Si hay invitaciones sin contestar, el botón grita. */
-  h+= pendN
-    ? '<button class="btn" style="margin:0 0 12px" onclick="openInvit()">📩 Tienes '+pendN+' invitación'+(pendN===1?'':'es')+' por responder ›</button>'
-    : '<button class="btn ghost" style="margin:0 0 12px" onclick="openInvit()">＋ Pedir una reunión · Invitaciones ›</button>';
-  // cuadrícula TOCABLE: cada día abre su desglose (Sesión 15)
-  h+='<div class="panel"><div class="line" style="border:none;padding:0 0 8px"><button class="back" style="padding:6px 12px" onclick="calNav(-1)" aria-label="Mes anterior">‹</button><b style="flex:1;text-align:center;font-size:15px">'+MESL[m]+' '+y+'</b><button class="back" style="padding:6px 12px" onclick="calNav(1)" aria-label="Mes siguiente">›</button></div>'+
-     '<div class="cal" style="padding:0;border:none;background:transparent"><div class="calg">';
-  ['D','L','M','M','J','V','S'].forEach(function(w){ h+='<div class="wd">'+w+'</div>'; });
-  for(var i=0;i<first;i++) h+='<div class="dc mut"></div>';
-  var mesIso=y+'-'+('0'+(m+1)).slice(-2);
-  for(var dd=1;dd<=dim;dd++){
-    var iso=mesIso+'-'+('0'+dd).slice(-2);
-    var cls='dc'+((dd===td&&y===ty&&m===tm)?' today':(byDay[dd]?' has':''))+(_calDay===iso?' sel':'');
-    var cuantos=(byDay[dd]||[]).length;
-    var etq=dd+' de '+MESL[m]+(cuantos?(' · '+cuantos+(cuantos===1?' evento':' eventos')):' · sin eventos')+'. Toca para ver y editar este día.';
-    h+='<button type="button" class="'+cls+'" onclick="calDayGo(\''+iso+'\')" aria-label="'+escA(etq)+'">'+dd+(cuantos?'<span class="ev"></span>':'')+'</button>';
-  }
-  h+='</div></div>';
-  h+='<p class="note" style="margin:9px 2px 0;text-align:center">Toca un día para ver, agregar o quitar lo de esa fecha.</p></div>';
-  // desglose del día tocado
-  if(_calDay) h+=calDayBlock(_calDay);
-  // formulario (si puede crear en esta capa)
-  if(calCanCreate(_calLayer)) h+=evForm();
-  else if(_calLayer==='general') h+='<div class="note" style="margin:0 2px 10px">Los eventos generales los publica Recursos Humanos / Dirección.</div>';
-  else if(_calLayer==='area' && !calDash()) h+='<div class="note" style="margin:0 2px 10px">Los eventos de tu área los publica tu responsable.</div>';
-  // eventos del mes + próximos
-  var monthEvs=evs.filter(function(e){ var p=(e.fecha||'').split('-'); return +p[0]===y&&(+p[1]-1)===m; });
-  h+='<div class="sec-t">'+({personal:'Personal',area:'De tu área',general:'De la planta'}[_calLayer])+' · '+MESL[m]+'<span class="ln"></span></div>';
-  if(!monthEvs.length) h+='<div class="card"><div class="note">Sin eventos este mes en esta vista.</div></div>';
-  monthEvs.forEach(function(e){ h+=evRow(e); });
   var todayIso=ty+'-'+('0'+(tm+1)).slice(-2)+'-'+('0'+td).slice(-2);
+  var evs=evForLayer(_calLayer).slice().sort(function(a,b){ return (a.fecha||'')<(b.fecha||'')?-1:1; });
+  var first=new Date(y,m,1).getDay(), dim=new Date(y,m+1,0).getDate();
+  var mesIso=y+'-'+('0'+(m+1)).slice(-2);
+  var pendN=evInvitPend().length;
+  var formVis=(_evFormOpen||_evEdit||_evFecha)&&calCanCreate(_calLayer);
   var futuros=evs.filter(function(e){ return (e.fecha||'')>=todayIso; });
-  h+='<div class="sec-t">Próximos<span class="ln"></span></div>';
-  if(!futuros.length) h+='<div class="card"><div class="note">No hay próximos eventos aquí.</div></div>';
-  futuros.forEach(function(e){ h+=evRow(e); });
+  var nomCapa={personal:'Personal',area:'De tu área',general:'De la planta'}[_calLayer];
+  var h;
+  if(calEsc()){
+    /* ============ ESCRITORIO ============ */
+    var todos=evVisibles(), byAll={};
+    todos.forEach(function(e){ var p=(e.fecha||'').split('-'); if(+p[0]===y&&(+p[1]-1)===m){ var d=+p[2]; (byAll[d]=byAll[d]||[]).push(e); } });
+    Object.keys(byAll).forEach(function(k){ byAll[k].sort(function(a,b){ return (a.hora||'99')<(b.hora||'99')?-1:1; }); });
+    h='<div class="calwrap"><aside class="calside">';
+    h+='<div style="margin-bottom:12px"><div class="eyebrow">Calendario</div><b style="font-size:20px">Calendario</b></div>';
+    h+='<button class="btn" style="margin:0 0 10px" onclick="calNuevo()">＋ Nuevo evento</button>';
+    if(pendN) h+='<button class="btn ghost" style="margin:0 0 10px;border-color:color-mix(in srgb,var(--accent) 45%,transparent)" onclick="openInvit()">📩 '+pendN+' invitación'+(pendN===1?'':'es')+' por responder ›</button>';
+    h+='<div class="sec-t">Calendarios<span class="ln"></span></div>';
+    h+=layers.map(function(l){
+      var nfut=evForLayer(l[0]).filter(function(e){ return (e.fecha||'')>=todayIso; }).length;
+      return '<button class="calrow'+(_calLayer===l[0]?' on':'')+'" onclick="calLayerGo(\''+l[0]+'\')"><span class="cdot" style="background:'+CAL_LCOL[l[0]]+'"></span>'+l[1]+(nfut?'<span class="cnum">'+nfut+'</span>':'')+'</button>';
+    }).join('');
+    h+='<button class="calrow" onclick="openInvit()"><span class="cdot" style="background:var(--mut)"></span>Invitaciones'+(pendN?'<span class="cnum" style="color:var(--accent)">'+pendN+'</span>':'')+'</button>';
+    if(_calDay) h+=calDayBlock(_calDay);
+    if(formVis) h+=evForm();
+    h+='<div class="sec-t">Próximos · '+nomCapa+'<span class="ln"></span></div>';
+    if(!futuros.length) h+='<div class="card"><div class="note">No hay próximos eventos aquí.</div></div>';
+    futuros.slice(0,5).forEach(function(e){ h+=evRow(e); });
+    if(futuros.length>5) h+='<p class="note" style="margin:6px 2px 0">Y '+(futuros.length-5)+' más adelante.</p>';
+    h+='</aside><div class="calmain">';
+    h+='<div class="line" style="border:none;padding:0 0 10px;gap:8px"><b style="font-size:19px;text-transform:capitalize">'+MESL[m]+' '+y+'</b><span style="flex:1"></span>'+
+       '<button class="back" style="padding:6px 12px" onclick="calNav(-1)" aria-label="Mes anterior">‹</button>'+
+       '<button class="back" style="padding:6px 12px" onclick="calHoy()">hoy</button>'+
+       '<button class="back" style="padding:6px 12px" onclick="calNav(1)" aria-label="Mes siguiente">›</button></div>';
+    h+='<div class="calbig">';
+    ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'].forEach(function(w){ h+='<div class="wd">'+w+'</div>'; });
+    for(var i=0;i<first;i++) h+='<div class="dcb fuera" aria-hidden="true"></div>';
+    for(var dd=1;dd<=dim;dd++){
+      var iso=mesIso+'-'+('0'+dd).slice(-2);
+      var lista=byAll[dd]||[], hoyEs=(dd===td&&y===ty&&m===tm);
+      var etq=dd+' de '+MESL[m]+(lista.length?(' · '+lista.length+(lista.length===1?' evento':' eventos')):' · sin eventos')+'. Toca para ver y editar este día.';
+      h+='<button type="button" class="dcb'+(hoyEs?' hoy':'')+(_calDay===iso?' sel':'')+'" onclick="calDayGo(\''+iso+'\')" aria-label="'+escA(etq)+'">'+
+         '<span class="dn">'+dd+'</span>';
+      lista.slice(0,2).forEach(function(e){ h+='<span class="evc" style="background:'+CAL_LCOL[e.scope]+'">'+(e.hora?e.hora+' ':'')+esc(e.titulo||'')+'</span>'; });
+      if(lista.length>2) h+='<span class="evmas">+'+(lista.length-2)+' más</span>';
+      h+='</button>';
+    }
+    h+='</div><p class="note" style="margin:10px 2px 0">Toca un día para ver, agregar o quitar lo de esa fecha. Cada color es un calendario.</p></div></div>';
+  } else {
+    /* ============ CELULAR ============ */
+    var byDay={}; evs.forEach(function(e){ var p=(e.fecha||'').split('-'); if(+p[0]===y&&(+p[1]-1)===m) byDay[+p[2]]=(byDay[+p[2]]||[]).concat(e); });
+    var subT={personal:'Tus eventos y tus invitaciones.',area:'Los eventos de tu área ('+esc(S?S.area:'')+').',general:'Los eventos de toda la planta.'}[_calLayer];
+    h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Calendario</div><b style="font-size:20px">Calendario</b><p class="note" style="margin:4px 0 0;max-width:260px">'+subT+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
+    // capas
+    h+='<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">'+layers.map(function(l){
+      return '<button class="btn'+(_calLayer===l[0]?'':' ghost')+'" style="margin:0;padding:9px 14px;font-size:13px;width:auto" onclick="calLayerGo(\''+l[0]+'\')"><span class="cdot" style="display:inline-block;width:8px;height:8px;border-radius:3px;background:'+(_calLayer===l[0]?'#fff':CAL_LCOL[l[0]])+';margin-right:6px"></span>'+l[1]+'</button>';
+    }).join('')+'</div>';
+    // los DOS botones del pedido (foto): Nuevo evento + Invitaciones
+    h+='<div style="display:flex;gap:8px;margin-bottom:12px">'+
+       '<button class="btn" style="margin:0;flex:1" onclick="calNuevo()">＋ Nuevo evento</button>'+
+       '<button class="btn'+(pendN?'':' ghost')+'" style="margin:0;flex:1" onclick="openInvit()">📩 Invitaciones'+(pendN?' <span class="cnt" style="position:static;margin-left:5px">'+pendN+'</span>':'')+'</button></div>';
+    // cuadrícula TOCABLE: cada día abre su desglose (Sesión 15)
+    h+='<div class="panel"><div class="line" style="border:none;padding:0 0 8px"><button class="back" style="padding:6px 12px" onclick="calNav(-1)" aria-label="Mes anterior">‹</button><b style="flex:1;text-align:center;font-size:15px">'+MESL[m]+' '+y+'</b><button class="back" style="padding:6px 12px" onclick="calNav(1)" aria-label="Mes siguiente">›</button></div>'+
+       '<div class="cal" style="padding:0;border:none;background:transparent"><div class="calg">';
+    ['D','L','M','M','J','V','S'].forEach(function(w){ h+='<div class="wd">'+w+'</div>'; });
+    for(var i2=0;i2<first;i2++) h+='<div class="dc mut"></div>';
+    for(var d2=1;d2<=dim;d2++){
+      var iso2=mesIso+'-'+('0'+d2).slice(-2);
+      var cls='dc'+((d2===td&&y===ty&&m===tm)?' today':(byDay[d2]?' has':''))+(_calDay===iso2?' sel':'');
+      var cuantos=(byDay[d2]||[]).length;
+      var etq2=d2+' de '+MESL[m]+(cuantos?(' · '+cuantos+(cuantos===1?' evento':' eventos')):' · sin eventos')+'. Toca para ver y editar este día.';
+      h+='<button type="button" class="'+cls+'" onclick="calDayGo(\''+iso2+'\')" aria-label="'+escA(etq2)+'">'+d2+(cuantos?'<span class="ev"></span>':'')+'</button>';
+    }
+    h+='</div></div>';
+    h+='<p class="note" style="margin:9px 2px 0;text-align:center">Toca un día para ver, agregar o quitar lo de esa fecha.</p></div>';
+    if(_calDay) h+=calDayBlock(_calDay);
+    if(formVis) h+=evForm();
+    else if(_calLayer==='general' && !calCanCreate('general')) h+='<div class="note" style="margin:0 2px 10px">Los eventos generales los publica Recursos Humanos / Dirección.</div>';
+    else if(_calLayer==='area' && !calDash()) h+='<div class="note" style="margin:0 2px 10px">Los eventos de tu área los publica tu responsable.</div>';
+    var monthEvs=evs.filter(function(e){ var p=(e.fecha||'').split('-'); return +p[0]===y&&(+p[1]-1)===m; });
+    h+='<div class="sec-t">'+nomCapa+' · '+MESL[m]+'<span class="ln"></span></div>';
+    if(!monthEvs.length) h+='<div class="card"><div class="note">Sin eventos este mes en esta vista.</div></div>';
+    monthEvs.forEach(function(e){ h+=evRow(e); });
+    h+='<div class="sec-t">Próximos<span class="ln"></span></div>';
+    if(!futuros.length) h+='<div class="card"><div class="note">No hay próximos eventos aquí.</div></div>';
+    futuros.forEach(function(e){ h+=evRow(e); });
+  }
   $('s-cal').innerHTML=h; show('cal');
   var t=$('evTitle2'); if(_evEdit && t) t.focus();
 }
+/* si la ventana cruza el corte de escritorio, el calendario se reacomoda solo
+   (sin pisar lo que estés escribiendo) */
+window.addEventListener('resize', function(){
+  clearTimeout(window._calRz);
+  window._calRz=setTimeout(function(){
+    var esc2=calEsc();
+    if(window._calEra===esc2) return; window._calEra=esc2;
+    if(_screen==='cal' && !_evComposing()) renderCal();
+    if(_screen==='msgs' && !_msgsPage) renderMsgs();
+    else if(_screen==='thread' && _curConv && !_viewRO){ if(esc2){ renderMsjEsc(); } else { openConv(_curConv); } }
+    try{ if(typeof msjSync==='function') msjSync(); }catch(e){}
+  },220);
+});
 
 /* ¿el usuario está redactando un evento? (evita que un repintado en vivo le borre
    el título/fecha/nota a medio escribir; los chips de invitados viven en _evInv y sí sobreviven) */
@@ -3281,7 +3449,7 @@ function evForm(){
     (esPersonal&&!ed?'<div class="eyebrow">Privado</div>':'')+
     '<b style="font-size:17px">'+(ed?'Modificar':titLbl)+'</b>'+
     (esPersonal&&!ed?'<p class="note" style="margin:3px 0 0;max-width:270px">Solo tú lo ves. Si invitas a alguien y acepta, les aparece a los dos.</p>':'')+
-    '</div>'+(ed?'<button class="back" style="padding:6px 10px" onclick="_evEdit=null;_evInv=[];_evFecha=null;renderCal()">Cancelar</button>':'')+'</div>'+
+    '</div>'+'<button class="back" style="padding:6px 10px" onclick="_evEdit=null;_evInv=[];_evFecha=null;_evFormOpen=false;renderCal()">Cancelar</button>'+'</div>'+
     '<input id="evTitle2" class="fin" placeholder="'+(esPersonal?'Ej. Cita con el doctor, junta, recordatorio…':'Ej. Junta de seguridad, día de pago')+'" autocomplete="off" value="'+escA(ed?ed.titulo:'')+'" style="margin:0 0 8px">'+
     '<div style="display:flex;gap:8px"><input id="evDate2" class="fin" type="date" value="'+escA(ed?ed.fecha:(_evFecha||''))+'" style="flex:1"><input id="evHora2" class="fin" type="time" value="'+escA(ed?ed.hora:'')+'" style="flex:1"></div>'+
     '<input id="evLugar2" class="fin" style="margin-top:8px" maxlength="140" placeholder="Lugar (opcional)" value="'+escA(ed?ed.lugar:'')+'">'+
@@ -3325,14 +3493,14 @@ function evSave(){
       a.push({ id:'ev'+Date.now(), scope:_calLayer, owner:me, ownerClave:S.clave||(''+me), ownerNombre:S.nombre||('Nº '+me),
         area:(_calLayer==='area'?deptoSlug(S.area):''), titulo:t, fecha:d, hora:datos.hora, lugar:datos.lugar, nota:datos.nota, invites:inv, ts:Date.now(), demo:(location.hash==='#demo') });
       flash('✓ Evento agregado'); }
-    lsSet('hb_eventos',a); _evEdit=null; _evInv=[]; _evFecha=null; renderCal(); return;
+    lsSet('hb_eventos',a); _evEdit=null; _evInv=[]; _evFecha=null; _evFormOpen=false; renderCal(); return;
   }
   if(!sbReady()){ flash('Sin conexión'); return; }
   var rpc=_evEdit? SB.rpc('hb_evento_editar',{p_id:_evEdit,p:datos}) : SB.rpc('hb_evento_alta',{p:datos});
   rpc.then(function(r){ var x=r&&r.data;
     if(r.error||!x||!x.ok){ flash(r.error?(_rpcFaltante(r.error)?'La función se está activando, intenta en un momento':(_rpcSinRed(r.error)?'Sin conexión':'No se pudo guardar')):((x&&x.error==='no_permiso')?'No puedes publicar en esta vista':'No se pudo guardar')); return; }
     var eid=_evEdit||(x.id), esPersonal=(_calLayer==='personal');
-    _evEdit=null; var inv=_evInv.slice(); _evInv=[]; _evFecha=null;
+    _evEdit=null; var inv=_evInv.slice(); _evInv=[]; _evFecha=null; _evFormOpen=false;
     var done=function(){ flash('✓ Guardado'); evLoad(function(){ if(_screen==='cal') renderCal(); }); };
     // Sincronizar invitados (crear o editar). hb_evento_invitar es idempotente y
     // CONSERVA el status de quien ya había respondido; solo los nuevos quedan 'pendiente'.
@@ -3342,7 +3510,7 @@ function evSave(){
 }
 function evDel(id){
   var e=evGet().filter(function(x){return x.id===id;})[0]||{};
-  if(!confirm('¿Quitar «'+(e.titulo||'')+'» del calendario?')) return;
+  if(!hbOkC('evDel')){ hbConfirm('¿Quitar «'+(e.titulo||'')+'» del calendario?', function(){ hbSiC('evDel'); evDel(id); }); return; }
   if(!V3_ON){ lsSet('hb_eventos', lsGet('hb_eventos').filter(function(x){return x.id!==id;})); if(_evEdit===id)_evEdit=null; flash('Evento quitado'); renderCal(); return; }
   if(!sbReady()){ flash('Sin conexión'); return; }
   SB.rpc('hb_evento_borrar',{p_id:id}).then(function(r){ var x=r&&r.data;
@@ -3451,8 +3619,8 @@ function citaCard(e, modo){
 function citaCancel(id){
   var e=evGet().filter(function(x){ return x.id===id; })[0]||{};
   var n=(e.invites||[]).length;
-  if(!confirm('¿Cancelar la reunión «'+(e.titulo||'')+'»?\n\nSe le quita del calendario a '+
-              (n===1?'la persona invitada':'las '+n+' personas invitadas')+'.')) return;
+  if(!hbOkC('citaCancel')){ hbConfirm('¿Cancelar la reunión «'+(e.titulo||'')+'»?\n\nSe le quita del calendario a '+
+              (n===1?'la persona invitada':'las '+n+' personas invitadas')+'.', function(){ hbSiC('citaCancel'); citaCancel(id); }); return; }
   if(!V3_ON){
     lsSet('hb_eventos', lsGet('hb_eventos').filter(function(x){ return x.id!==id; }));
     flash('Reunión cancelada'); if(_screen==='invit') renderInvit(); return;
@@ -4673,7 +4841,7 @@ function iaChNew(){
 function iaChGo(id){ _iaCh.cur=id; S.chat=iaChCur().msgs; renderChat(); }
 function iaChDel(id,ev){
   if(ev) ev.stopPropagation();
-  if(!confirm('¿Borrar este chat? No se puede recuperar.')) return;
+  if(!hbOkC('iaChDel')){ hbConfirm('¿Borrar este chat? No se puede recuperar.', function(){ hbSiC('iaChDel'); iaChDel(id); }); return; }
   _iaCh.list=_iaCh.list.filter(function(c){ return c.id!==id; });
   if(!_iaCh.list.length) _iaCh.list=[{id:Date.now(),t:'Nuevo chat',ts:Date.now(),msgs:[]}];
   if(_iaCh.cur===id) _iaCh.cur=_iaCh.list[0].id;
@@ -4706,7 +4874,6 @@ function renderChat(){
      (esAdmin?'<span class="chipst soloesc" id="iaGastoChip" title="Gasto de IA del mes (llaves API)">IA · $…</span>':'')+
      '<button class="icoa solocel" title="Nuevo chat" aria-label="Nuevo chat" onclick="iaChNew()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>';
   h+='<div class="msgs" id="msgs"></div>';
-  h+='<div class="chips" id="chips"></div>';
   h+='<div class="composer"><input id="chatIn" placeholder="Escríbele a Bandi…" autocomplete="off"><button class="send" onclick="sendChat()" aria-label="Enviar"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button></div>';
   h+='</div>';
   /* --- DERECHA (solo acceso total, escritorio): gasto y top de consumo --- */
@@ -4718,10 +4885,6 @@ function renderChat(){
   }
   h+='</div>';
   $('s-chat').innerHTML=h;
-  var sugg=(V3_ON && (S.admin||S.mando))
-    ? [(S.admin?'¿Cómo va la planta?':'¿Cómo va mi área?'),'¿Hay alertas pendientes?'].concat(bandiTotal()?['¿Qué documentos hay?']:[]).concat(['¿Qué es la banda de precurado?','¿Por qué renovar?'])
-    : ['¿Qué es la banda de precurado?','¿Llantas de camión por posición?','¿Cómo funciona una llanta?','¿Por qué renovar?','¿Quién es Bandamatic?'];
-  $('chips').innerHTML=sugg.map(function(s){return '<button class="chip2" onclick="quickAsk(this)">'+esc(s)+'</button>';}).join('');
   paintChat();
   var ci=$('chatIn'); if(ci){ ci.onkeydown=function(ev){ if(ev.key==='Enter') sendChat(); }; }
   if(esAdmin) iaPanelLoad();
@@ -4734,7 +4897,7 @@ function iaPanelLoad(){
   SB.rpc('hb_ia_gasto').then(function(r){ var x=r&&r.data; if(!(x&&x.ok)) return;
     var mes=x.mes||{}, chip=$('iaGastoChip'), g=$('iaGasto');
     if(chip) chip.textContent='IA · US$'+mzN(+mes.costo_usd||0,2)+' este mes';
-    if(g){ g.innerHTML='<b style="font-size:20px;color:var(--txt)">US$'+mzN(+mes.costo_usd||0,2)+'</b> <span class="note">('+mzMx(+mes.costo_mxn||0,2)+')</span>'+
+    if(g){ g.innerHTML='<b style="font-size:20px;color:var(--txt)">'+mzUs(+mes.costo_usd||0,2)+'</b> <span class="note">('+mzMx(+mes.costo_mxn||0,2)+')</span>'+
       '<div class="note" style="margin-top:6px">'+(x.proveedores||[]).map(function(p){
         return esc(p.proveedor)+': US$'+mzN(+p.gastado_usd||0,2)+' de US$'+mzN(+p.tope_usd||0,0)+(p.con_llave?'':' · sin llave');
       }).join('<br>')+'</div>'; }
@@ -4753,10 +4916,11 @@ function paintChat(){
   try{ iaChSync(); }catch(e){}
   if(!S.chat.length){
     var pila=hbNombrePila();
-    m.innerHTML='<div class="chhello"><span class="chgema" aria-hidden="true">'+HB_GEMA+'</span>'+
-      '<b>Hola'+(pila?', '+esc(pila):'')+' 👋</b>'+
+    var _lg=''; try{ var _le=document.querySelector('.loginlogo'); if(_le&&_le.src) _lg='<img class="chlogo" src="'+_le.src+'" alt="">'; }catch(e){}
+    m.innerHTML='<div class="chhello"><span class="chdupla" aria-hidden="true"><img class="chbandi" src="'+BANDI_3D+'" alt="">'+_lg+'</span>'+
+      '<b>Hola'+(pila?', '+esc(pila):'')+'</b>'+
       '<span>Bandi Asistente está aquí para ti.</span>'+
-      '<span class="note">Pregunta lo que necesites, o empieza con una sugerencia de abajo.</span></div>';
+      '<span class="note">Pregunta lo que necesites.</span></div>';
     return;
   }
   var h=S.chat.map(function(x){
@@ -4772,7 +4936,6 @@ function paintChat(){
   if(chatBusy) h+='<div class="m bot">'+bandi('b-sm')+'<div class="bub"><div class="typing"><i></i><i></i><i></i></div></div></div>';
   m.innerHTML=h; m.scrollTop=m.scrollHeight;
 }
-function quickAsk(btn){ $('chatIn').value=btn.textContent; sendChat(); }
 function setKey(){
   var k=window.prompt('Conecta la IA real (OpenAI '+CFG.api.model+') para respuestas más completas sobre llantas, hule, fábrica y capacitación .\n\nPega tu clave API de OpenAI (sk-...). Se guarda solo en este dispositivo. Déjalo vacío para usar la biblioteca local (sin internet, gratis).', HBKEY||'');
   if(k!==null){ HBKEY=(k||'').trim(); try{ if(HBKEY) localStorage.setItem('hb_key',HBKEY); else localStorage.removeItem('hb_key'); }catch(e){} flash(HBKEY?'IA real conectada':'Modo sin internet activado'); renderChat(); }
@@ -5102,19 +5265,19 @@ function perRol(clave,mando,admin){
 /* Acceso total (ver toda la planta): otorgar pide confirmación; nadie puede quitárselo a sí mismo */
 function perAdmin(clave,nombre,admin,mando){
   if(!admin && S && clave===S.clave){ flash('No puedes quitarte el acceso total a ti mismo'); return; }
-  if(admin && !confirm('¿Dar ACCESO TOTAL a '+nombre+' (clave '+clave+')? Podrá ver toda la información de la planta: avances, reportes, personal y tableros de todos los departamentos.')) return;
-  if(!admin && !confirm('¿Quitar el acceso total a '+nombre+'? Quedará como '+(mando?'responsable de su departamento':'trabajador normal')+'.')) return;
+  if(admin && !hbOkC('perAdmin')){ hbConfirm('¿Dar ACCESO TOTAL a '+nombre+' (clave '+clave+')? Podrá ver toda la información de la planta: avances, reportes, personal y tableros de todos los departamentos.', function(){ hbSiC('perAdmin'); perAdmin(clave,nombre,admin,mando); }); return; }
+  if(!admin && !hbOkC('perAdmin')){ hbConfirm('¿Quitar el acceso total a '+nombre+'? Quedará como '+(mando?'responsable de su departamento':'trabajador normal')+'.', function(){ hbSiC('perAdmin'); perAdmin(clave,nombre,admin,mando); }); return; }
   SB.rpc('hb_admin_rol',{p_clave:clave,p_mando:mando,p_admin:admin}).then(function(r){
     if(r.data&&r.data.ok){ burst(); flash(admin?('✓ '+nombre+' ya tiene acceso total'):'Acceso total retirado'); v3LoadAdminList(); }
     else flash('No se pudo: '+(PER_ERR[(r.data||{}).error]||(r.data&&r.data.error)||(r.error&&r.error.message)||'desconocido'));
   }, function(){ flash('Sin conexión con el servidor'); });
 }
 function perReset(clave){
-  if(!confirm('¿Reiniciar el acceso de '+clave+'? Podrá volver a hacer Primer ingreso. IMPORTANTE: además borra su usuario en Supabase → Authentication → Users ('+clave+'@ids.hulesbanda.com.mx) para que su PIN viejo deje de servir.')) return;
+  if(!hbOkC('perReset')){ hbConfirm('¿Reiniciar el acceso de '+clave+'? Podrá volver a hacer Primer ingreso. IMPORTANTE: además borra su usuario en Supabase → Authentication → Users ('+clave+'@ids.hulesbanda.com.mx) para que su PIN viejo deje de servir.', function(){ hbSiC('perReset'); perReset(clave); }); return; }
   SB.rpc('hb_admin_reset',{p_clave:clave}).then(function(r){ if(r.data&&r.data.ok){ flash('Acceso reiniciado. Recuerda borrar su usuario en Supabase (menú Authentication → Users).'); v3LoadAdminList(); } else flash('No se pudo'+((r.data&&PER_ERR[r.data.error])?': '+PER_ERR[r.data.error]:'')); });
 }
 function perBaja(clave,nombre){
-  if(!confirm('¿Dar de BAJA a '+nombre+' (clave '+clave+')? Se borra su ID, progreso y perfil. No se puede deshacer.')) return;
+  if(!hbOkC('perBaja')){ hbConfirm('¿Dar de BAJA a '+nombre+' (clave '+clave+')? Se borra su ID, progreso y perfil. No se puede deshacer.', function(){ hbSiC('perBaja'); perBaja(clave,nombre); }); return; }
   SB.rpc('hb_admin_baja',{p_clave:clave}).then(function(r){ var d=r&&r.data; if(d&&d.ok){ flash('Baja aplicada'); v3LoadAdminList(); } else flash(d&&PER_ERR[d.error]?PER_ERR[d.error]:'No se pudo'); });
 }
 function areaCount(key){ for(var i=0;i<CFG.ranges.length;i++){ var r=CFG.ranges[i]; if(r.key===key && !r.admin) return r.max-r.min+1; } return 0; }
@@ -5414,10 +5577,8 @@ function managerDash(role){
   h+='<div class="sec-t">Tu tablero<span class="ln"></span></div>';
   h+='<div class="tgrid">';
   h+=htile("mgrGo('hoy')",'dia','Hoy', (cenN?cenN+' acciones para hoy':'Sin pendientes')+' · horas', {wide:true, cnt:cenN||''});
-  h+=htile("mgrGo('deptos')",'deptos','Departamentos', DS?(DS.global+'% global · '+DS.list.length+' deptos'):'Avance por área');
   h+=htile("mgrGo('personas')",'personas','Personas', DS?(DS.reg+' registrados · permisos'):'Equipo, permisos y recibos');
   h+=htile("mgrGo('operacion')",'operacion','Operación', (unansN?unansN+' preguntas · ':'')+'buzón · directorio', {cnt:unansN||''});
-  h+=htile('docsHome()','docs','Documentos', 'Explora los documentos de cualquier área');
   h+=htile('openCal()','cal','Calendario', 'Personal · áreas · general');
   h+=htile('renderDia()','dia','Directorio', 'A quién llamar en la planta');
   h+='</div>';
@@ -5711,7 +5872,7 @@ function alertTime(t){ try{ var d=new Date(t); return d.toLocaleDateString('es-M
 function _qstatCacheSet(s){ try{ if(DBC.kv) DBC.kv['hb_qstats']=s; localStorage.setItem('hb_qstats',JSON.stringify(s)); }catch(e){} }
 function dismissAlert(i){
   var a=_HRAL[i]; if(!a) return;
-  if(!confirm('¿Marcar esta alerta como vista (archivar)?\n\nEmpleado #'+(''+a.emp).padStart(3,'0')+'\n«'+a.q+'»\n\nQuedará registrada en el reporte, pero saldrá de la lista de pendientes.')) return;
+  if(!hbOkC('dismissAlert')){ hbConfirm('¿Marcar esta alerta como vista (archivar)?\n\nEmpleado #'+(''+a.emp).padStart(3,'0')+'\n«'+a.q+'»\n\nQuedará registrada en el reporte, pero saldrá de la lista de pendientes.', function(){ hbSiC('dismissAlert'); dismissAlert(i); }); return; }
   if(V3_ON && sbReady()){
     SB.rpc('hb_qstat_resolve',{p_kind:'alert',p_dato:{t:a.t,emp:a.emp,q:a.q}}).then(function(r){
       if(r && r.error && _rpcFaltante(r.error)) return _dismissAlertLocal(a);
@@ -5731,7 +5892,7 @@ function _dismissAlertLocal(a){
 }
 function markAnswered(i){
   var u=_HRUN[i]; if(!u) return;
-  if(!confirm('¿Marcar como atendida?\n\n«'+u.q+'»\n\nDespués agrega la respuesta autorizada a la biblioteca del Asistente (CFG.kb) para que la conteste.')) return;
+  if(!hbOkC('markAnswered')){ hbConfirm('¿Marcar como atendida?\n\n«'+u.q+'»\n\nDespués agrega la respuesta autorizada a la biblioteca del Asistente (CFG.kb) para que la conteste.', function(){ hbSiC('markAnswered'); markAnswered(i); }); return; }
   if(V3_ON && sbReady()){
     SB.rpc('hb_qstat_resolve',{p_kind:'unans',p_dato:{key:u.key}}).then(function(r){
       if(r && r.error && _rpcFaltante(r.error)) return _markAnsweredLocal(u);
@@ -5921,7 +6082,7 @@ function postNews(){
   });
   _newsImg=null; _newsBack();
 }
-function delNews(id){ if(!confirm('¿Eliminar esta noticia?')) return; sbDelRec('news', id); newsSave(newsGet().filter(function(n){ return n.id!==id; })); _newsBack(); }
+function delNews(id){ if(!hbOkC('delNews')){ hbConfirm('¿Eliminar esta noticia?', function(){ hbSiC('delNews'); delNews(id); }); return; } sbDelRec('news', id); newsSave(newsGet().filter(function(n){ return n.id!==id; })); _newsBack(); }
 /* ===== Acuse "Enterado": el trabajador confirma que leyó (da puntos bajos 1 sola vez) y RRHH ve quién leyó.
    Demo: el acuse se guarda en la propia noticia (hb_news[].reads). En producción va al servidor. ===== */
 function hasRead(n){ var r=n.reads||[]; for(var j=0;j<r.length;j++){ if(r[j].emp===S.emp) return true; } return false; }
@@ -6919,7 +7080,7 @@ function recListPaint(){ var el=$('recListBox'); if(el) el.innerHTML=recListHTML
 function recDel(id){
   var d=null; recsGet().forEach(function(x){ if(x && x.id===id) d=x; });
   if(!d) return;
-  if(!confirm('¿Eliminar el recibo de '+(d.clave||'')+' ('+(d.periodo||'')+')? El trabajador dejará de verlo. No se puede deshacer.')) return;
+  if(!hbOkC('recDel')){ hbConfirm('¿Eliminar el recibo de '+(d.clave||'')+' ('+(d.periodo||'')+')? El trabajador dejará de verlo. No se puede deshacer.', function(){ hbSiC('recDel'); recDel(id); }); return; }
   // Borrar PRIMERO la fila (verificando el error); el PDF del Storage solo si la fila se fue.
   SB.from('recibos').delete().eq('id',id).then(function(r){
     if(r&&r.error){ flash('⚠ No se pudo eliminar: '+((r.error.message)||'error')); return; }
@@ -7511,11 +7672,11 @@ function pedTerminar(id){
   try{
     var p=pedsGet().filter(function(x){ return x&&x.id===id; })[0]||{};
     var m=String(p.maquina||'').toUpperCase().match(/BANBURY\s*#?\s*([1-5])/);
-    if(m && confirm('¿El BANBURY '+m[1]+' ya quedó FUNCIONANDO?\n\nSi dices que sí, se enciende en Producción para que vuelvan a programarlo.')){
+    if(m) hbConfirm('¿El BANBURY '+m[1]+' ya quedó FUNCIONANDO?\n\nSi dices que sí, se enciende en Producción para que vuelvan a programarlo.', function(){
       SB.rpc('hb_mez_banbury_set',{p_banbury:+m[1],p_estado:'activo'}).then(function(r){ var x=r&&r.data;
         if(x&&x.ok){ _mzCat=null; flash('✅ BANBURY '+m[1]+' marcado como funcionando en todo el sistema.'); }
         else alert((x&&x.detalle)||mzErr(x)); },function(e){ alert(mzErr(null,e)); });
-    }
+    });
   }catch(e){}
 }
 
@@ -7593,7 +7754,7 @@ function pedCardAdmin(p, cerrado){
 }
 function pedCancelar(id){
   var p=pedsGet().filter(function(x){ return x && x.id===id; })[0]||{};
-  if(!confirm('¿Cancelar el pedido #'+(p.folio||'')+'? No se puede reabrir.')) return;
+  if(!hbOkC('pedCancelar')){ hbConfirm('¿Cancelar el pedido #'+(p.folio||'')+'? No se puede reabrir.', function(){ hbSiC('pedCancelar'); pedCancelar(id); }); return; }
   var nota=prompt('¿Por qué se cancela? (opcional)'); if(nota===null) return;   // Cancelar en el prompt = no cancelar
   pedEstado(id,'cancelado',nota||'');
 }
@@ -7663,7 +7824,7 @@ function pedBanburysLoad(){
   },function(e){ el.innerHTML='<b style="font-size:15px">Banburys</b><div class="note" style="margin-top:4px">'+esc(mzErr(null,e))+'</div>'; });
 }
 function pedBanburySet(n,estado){
-  if(!confirm('¿Marcar el BANBURY '+n+' como '+(estado==='activo'?'FUNCIONANDO':'PARADO')+'?\n\nProducción lo verá al momento.')) return;
+  if(!hbOkC('pedBanburySet')){ hbConfirm('¿Marcar el BANBURY '+n+' como '+(estado==='activo'?'FUNCIONANDO':'PARADO')+'?\n\nProducción lo verá al momento.', function(){ hbSiC('pedBanburySet'); pedBanburySet(n,estado); }); return; }
   SB.rpc('hb_mez_banbury_set',{p_banbury:n,p_estado:estado}).then(function(r){ var x=r&&r.data;
     if(x&&x.ok){ _mzCat=null; pedBanburysLoad(); flash('Listo: BANBURY '+n+' '+(estado==='activo'?'funcionando':'parado')+'.'); }
     else alert((x&&x.detalle)||mzErr(x)); },function(e){ alert(mzErr(null,e)); });
@@ -7892,7 +8053,7 @@ function pfFotoLoad(inp){
     img.src=e.target.result; };
   rd.readAsDataURL(f);
 }
-function pfFotoDel(){ if(!confirm('¿Quitar tu foto de perfil? Tendrás que volver a subirla.')) return;
+function pfFotoDel(){ if(!hbOkC('pfFotoDel')){ hbConfirm('¿Quitar tu foto de perfil? Tendrás que volver a subirla.', function(){ hbSiC('pfFotoDel'); pfFotoDel(); }); return; }
   var p=profGet(S.emp); delete p.foto; profSaveServer(p,'Foto eliminada'); renderTop(_screen); renderPerfil(); }
 function savePin(){
   var p=profGet(S.emp);
@@ -7927,7 +8088,7 @@ function savePinV3(){
     SB.rpc('hb_cambiar_pin',{p_pin:n1}).then(function(){ burst(); flash('PIN cambiado. Úsalo la próxima vez que entres.'); renderPerfil(); });
   }, function(){ flash('Sin conexión: intenta más tarde'); });
 }
-function delPin(){ if(!confirm('¿Quitar tu PIN? Podrás entrar solo con tu número.')) return; var p=profGet(S.emp); delete p.pin; profSave(S.emp,p); flash('PIN eliminado'); renderPerfil(); }
+function delPin(){ if(!hbOkC('delPin')){ hbConfirm('¿Quitar tu PIN? Podrás entrar solo con tu número.', function(){ hbSiC('delPin'); delPin(); }); return; } var p=profGet(S.emp); delete p.pin; profSave(S.emp,p); flash('PIN eliminado'); renderPerfil(); }
 
 /* ============================================================================
    MENSAJES (chat interno) — RRHH · grupo de área · directos por ID (estilo BBM)
@@ -8120,6 +8281,7 @@ function renderMsgs(){
   pubRefreshSeen();   // trae fotos/datos nuevos que otros hayan cambiado (throttle 12s)
   if(sbReady() && Date.now()-(window._lastLoadMsgs||0)>4000){ window._lastLoadMsgs=Date.now(); sbLoad('msgs'); }
   if(_msgsPage) return msgsPage_();   // página interna del hub (chats activos / personal / equipo / planta)
+  if(calEsc()) return renderMsjEsc();  // ESCRITORIO (20-ago): messenger de dos paneles, foto de Carlos
   var h='';
   // Rol de mensajería: 'resp'=híbrido/responsable (hace funciones + ve SU área);
   // 'total'=acceso total (ve el back-end de TODO); 'trab'=trabajador (solo hace).
@@ -8228,6 +8390,90 @@ function qcSend(){
 }
 /* ===== HUB de Mensajes: páginas internas (misma regla del tablero: cuadro→info) ===== */
 var _msgsPage=null;   // null = hub · 'activos'|'personal' (trabajador) · 'equipo' (mando) · 'planta' (admin)
+/* ===== MENSAJES EN ESCRITORIO (rediseño 20-ago, foto Threema de Carlos) =====
+   Dos paneles: IZQUIERDA los chats recientes (Grupo y RRHH fijos arriba), un
+   buscador, el ＋ para chat nuevo y las funciones del rol; DERECHA el chat
+   abierto, que ya NO se come la pantalla completa. En celular no cambia nada. */
+var _msjNew=false, _msjQ='';
+function msjHora(ts){
+  if(!ts) return '';
+  var d=new Date(ts), n=new Date();
+  if(d.toDateString()===n.toDateString()) return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+  if(d.toDateString()===new Date(n.getTime()-864e5).toDateString()) return 'ayer';
+  return d.getDate()+' '+(MESES[d.getMonth()]||'');
+}
+function msjRow(conv){
+  var last=convLast(conv), un=convUnread(conv);
+  var prev=last? ((last.from===S.emp?'Tú: ':'')+(last.text?last.text:(last.img?'📷 Foto':''))) : 'Sin mensajes aún';
+  return '<button type="button" class="msjrow'+(_curConv===conv?' on':'')+'" onclick="openConv(\''+jsAttr(conv)+'\')">'+chanAvatar(conv)+
+    '<span class="mt"><b>'+esc(convTitle(conv))+'</b><span>'+esc(prev)+'</span></span>'+
+    '<span class="mm">'+(last?'<span class="tm">'+msjHora(last.ts)+'</span>':'')+(un?'<span class="cnt" style="position:static">'+un+'</span>':'')+'</span></button>';
+}
+function msjFx(fn,emoji,titulo,sub,cnt){
+  return '<button type="button" class="msjrow" onclick="'+fn+'"><span class="fxi">'+emoji+'</span><span class="mt"><b>'+titulo+'</b><span>'+sub+'</span></span>'+(cnt?'<span class="cnt" style="position:static">'+cnt+'</span>':'')+'</button>';
+}
+function msjListHTML(){
+  var out=[], vist={};
+  var fijos=[]; if(myGroup()) fijos.push(gConv(myGroup())); fijos.push(rConv(S.emp));
+  if(S.dash==='resp') fijos.push(cConv(S.emp));
+  fijos.forEach(function(c){ vist[c]=1; out.push(c); });
+  myActiveConvs().forEach(function(c){ if(!vist[c]){ vist[c]=1; out.push(c); } });
+  if(_msjQ){ var q=_norm(_msjQ); out=out.filter(function(c){ return _norm(convTitle(c)).indexOf(q)>=0; }); }
+  if(!out.length) return '<div class="card"><div class="note">'+(_msjQ?'Ningún chat con ese nombre.':'Aún no tienes chats. Abre uno con el ＋ de arriba.')+'</div></div>';
+  return out.map(msjRow).join('');
+}
+function msjListRefresh(){ var el=$('msjList'); if(el) el.innerHTML=msjListHTML(); }
+function msjFilter(v){ _msjQ=v||''; msjListRefresh(); }
+function msjNewTog(){
+  _msjNew=!_msjNew; renderMsjEsc();
+  if(_msjNew) setTimeout(function(){ var i=$('qcSearch'); if(i) i.focus(); },40);
+}
+function msjVacio(){
+  var st=$('s-thread'); if(!st) return;
+  st.innerHTML='<div class="msjnada"><span aria-hidden="true">💬</span><b>Escoge un chat</b><p class="note" style="margin:0">O empieza uno nuevo con el ＋ de la izquierda.</p></div>';
+}
+function msjSync(){
+  var dual = calEsc() && !_msgsPage && !_viewRO && (_screen==='msgs'||_screen==='thread');
+  document.body.classList.toggle('msjdual', !!dual);
+  if(dual){ var a=$('s-msgs'), b=$('s-thread'); if(a) a.classList.remove('hide'); if(b) b.classList.remove('hide'); }
+}
+function renderMsjEsc(){
+  var rol = (S.dash==='resp') ? 'resp' : ((S.admin) ? 'total' : 'trab');
+  var h='<div class="msjh"><b style="font-size:20px">Mensajes</b><span style="flex:1"></span>'+
+    '<button class="icoa" title="Nuevo chat" aria-label="Nuevo chat" onclick="msjNewTog()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>';
+  h+='<div class="search" style="margin:0 0 10px">'+SEARCH_SVG+'<input id="msjFind" placeholder="Buscar chat…" autocomplete="off" oninput="msjFilter(this.value)" value="'+escA(_msjQ)+'"></div>';
+  if(_msjNew) h+=qchatBox('');
+  h+='<div id="msjList">'+msjListHTML()+'</div>';
+  h+='<div class="sec-t" style="margin-top:16px">Funciones<span class="ln"></span></div><div class="msjfx">';
+  if(rol==='total'){
+    var tot=0; try{ var nn={}; msgsGet().forEach(function(m){ nn[m.conv]=1; }); tot=Object.keys(nn).length; }catch(e){}
+    var vacN=0,quejN=0;
+    try{ vacN=leaveGet().filter(function(r){return r.status==='pendiente';}).length; }catch(e){}
+    try{ quejN=reportsGet().filter(function(r){return r.status==='pendiente';}).length; }catch(e){}
+    h+=msjFx("msgsGo('planta')",'🏭','Chats de la planta', tot?(tot+' conversaciones · monitoreo'):'Monitoreo de líneas');
+    h+=msjFx("wcReset();renderWConvs()",'👀','Conversaciones de trabajadores','Revisión · solo lectura');
+    h+=msjFx("msgsGo('vacadm')",'🏖️','Vacaciones', vacN?(vacN+' por revisar'):'Quién pide · aprobar', vacN);
+    h+=msjFx("msgsGo('quejadm')",'📢','Quejas y reportes', quejN?(quejN+' por revisar'):'Buzón · atender', quejN);
+  } else if(rol==='resp'){
+    var pre='j:'+myGroup()+':', seen={}; msgsGet().forEach(function(m){ if(m.conv.indexOf(pre)===0) seen[m.conv]=1; });
+    var ks=Object.keys(seen).length;
+    var vacA=0,quejA=0;
+    try{ vacA=leaveGet().filter(function(r){return r.status==='pendiente'&&(r.area||'')===S.area;}).length; }catch(e){}
+    try{ quejA=reportsGet().filter(function(r){return r.status==='pendiente'&&(r.area||'')===S.area;}).length; }catch(e){}
+    h+=msjFx("msgsGo('equipo')",'👥','Tu equipo te escribe', ks?(ks+(ks===1?' conversación':' conversaciones')):'Sin mensajes aún');
+    h+=msjFx("msgsGo('vacadm')",'🏖️','Vacaciones de tu área', vacA?(vacA+' por revisar'):'Ver quién pide', vacA);
+    h+=msjFx("msgsGo('quejadm')",'📢','Quejas de tu área', quejA?(quejA+' por revisar'):'Ver reportes', quejA);
+    h+=msjFx('renderVacaciones()','✈️','Pedir vacaciones','Tu solicitud');
+    h+=msjFx('renderQuejas()','💡','Mandar queja / reporte','Ideas que dan puntos');
+  } else {
+    h+=msjFx('renderVacaciones()','🏖️','Vacaciones','Días y solicitudes');
+    h+=msjFx('renderQuejas()','📢','Quejas y reportes','Ideas que dan puntos');
+  }
+  h+='</div>';
+  $('s-msgs').innerHTML=h; show('msgs');
+  if(_curConv && !_viewRO && !window._msjPintando){ window._msjPintando=1; try{ openConv(_curConv); }finally{ window._msjPintando=0; } }
+  else msjVacio();
+}
 function msgsGo(p){ _msgsPage=p; renderMsgs(); window.scrollTo(0,0); }
 function msgsBack(){ _msgsPage=null; renderMsgs(); window.scrollTo(0,0); }
 function myActiveConvs(){   // directos + líneas/grupo CON historial, lo más reciente primero
@@ -8653,6 +8899,13 @@ function openConv(conv){
     if(_draft) ci.value=_draft;                    // no perder lo tecleado en re-pintados en vivo
     if(_hadFocus || !_draft) ci.focus(); }
   var tf=$('thFind'); if(tf && _findFocus){ tf.focus(); tf.setSelectionRange(tf.value.length,tf.value.length); }   // conservar el foco del buscador de monitoreo
+  /* modo dual (escritorio): la lista de la izquierda refleja el chat abierto y
+     los no-leídos; si llegaste aquí sin lista (p. ej. desde una notificación),
+     se pinta completa una sola vez. */
+  if(document.body.classList.contains('msjdual')){
+    if($('msjList')) msjListRefresh();
+    else if(!window._msjPintando){ window._msjPintando=1; try{ renderMsjEsc(); }finally{ window._msjPintando=0; } }
+  }
 }
 function reopenThread(){ if(!_curConv){ renderMsgs(); return; } if(_viewRO){ openConvRO(_curConv); } else { openConv(_curConv); } }
 /* Buscador dentro de un chat en MONITOREO (solo lectura): filtra los mensajes por
@@ -8783,13 +9036,13 @@ function nomAdminBlock(){
   return h;
 }
 function abrirNom(){
-  if(!confirm('¿Abrir una nueva aplicación anónima de la NOM-035?\n\nA todos los trabajadores les aparecerá el cuestionario en su pantalla de Inicio.')) return;
+  if(!hbOkC('abrirNom')){ hbConfirm('¿Abrir una nueva aplicación anónima de la NOM-035?\n\nA todos los trabajadores les aparecerá el cuestionario en su pantalla de Inicio.', function(){ hbSiC('abrirNom'); abrirNom(); }); return; }
   var st=nomGet(); st.current={ id:'c'+(st.history.length+1)+'-'+nomTotalQ(), opened:true, n:0, cats:{} }; nomSave(st);
   flash('Aplicación NOM-035 abierta'); renderDash();
 }
 function cerrarNom(){
   var st=nomGet(); if(!st.current) return;
-  if(!confirm('¿Cerrar la aplicación y guardar el resultado en el historial?')) return;
+  if(!hbOkC('cerrarNom')){ hbConfirm('¿Cerrar la aplicación y guardar el resultado en el historial?', function(){ hbSiC('cerrarNom'); cerrarNom(); }); return; }
   var c=st.current, tot=0,totm=0, byCat={};
   NOM_CATS.forEach(function(cat){ var cc=(c.cats||{})[cat.k]||{s:0,m:0}; var p=cc.m?cc.s/cc.m:0; byCat[cat.k]=nomPctLevel(p); tot+=cc.s; totm+=cc.m; });
   st.history.unshift({ id:c.id, label:'Aplicación reciente', n:c.n||0, level:nomPctLevel(totm?tot/totm:0), byCat:byCat });
@@ -8845,7 +9098,7 @@ function finAdd(){
   }, function(){ flash('Sin conexión'); });
 }
 function finDel(clave){
-  if(!confirm('¿Quitar a '+clave+' del grupo financiero? Dejará de ver los documentos de costos.')) return;
+  if(!hbOkC('finDel')){ hbConfirm('¿Quitar a '+clave+' del grupo financiero? Dejará de ver los documentos de costos.', function(){ hbSiC('finDel'); finDel(clave); }); return; }
   SB.rpc('hb_fin_del',{p_clave:clave}).then(function(r){
     var d=r&&r.data;
     if(r.error || !d || d.ok===false){ flash('No se pudo quitar: '+((d&&d.error==='no_te_quites')?'no puedes quitarte a ti mismo':((d&&d.error)||'intenta de nuevo'))); return; }
@@ -9419,7 +9672,7 @@ function docDel(id){
   var d=null; docsGet().forEach(function(x){ if(x.id===id) d=x; });
   if(!d) return;
   if(!canManageThisDoc(d)){ flash('Solo puedes borrar documentos de tu área'); return; }
-  if(!confirm('¿Borrar «'+d.titulo+'»? Nadie podrá abrirlo más. No se puede deshacer.')) return;
+  if(!hbOkC('docDel')){ hbConfirm('¿Borrar «'+d.titulo+'»? Nadie podrá abrirlo más. No se puede deshacer.', function(){ hbSiC('docDel'); docDel(id); }); return; }
   try{ SB.storage.from('docs').remove([d.path]).then(function(){}); }catch(e){}
   SB.from('docs').delete().eq('id',id).then(function(r){
     if(r&&r.error){ flash('No se pudo borrar: '+r.error.message); return; }
@@ -9697,8 +9950,13 @@ var _mzFx=null, _mzFxT=0, _mzDesg=null, _mzDesgTema='produccion', _mzCompId=null
 /* ---- números EXACTOS (regla de Carlos): miles con coma, decimales pedidos ---- */
 function mzN(v,dec){ if(v==null||isNaN(v)) return '—';
   return Number(v).toLocaleString('es-MX',{minimumFractionDigits:dec||0,maximumFractionDigits:(dec==null?0:dec)}); }
-function mzMx(v,dec){ return v==null||isNaN(v)?'—':('$'+mzN(v,dec==null?2:dec)); }
-function mzUs(v,dec){ return v==null||isNaN(v)?'—':('US$'+mzN(v,dec==null?2:dec)); }
+function mzMonTag(c){ return ' <span class="mon">'+c+'</span>'; }
+function mzMx(v,dec){ if(v==null||isNaN(v)) return '—';
+  if(Math.abs(v)>=1e6) return '<span title="$'+mzN(v,2)+' MXN">$'+mzN(v/1e6,2)+' M</span>'+mzMonTag('MXN');
+  return '$'+mzN(v,dec==null?2:dec)+mzMonTag('MXN'); }
+function mzUs(v,dec){ if(v==null||isNaN(v)) return '—';
+  if(Math.abs(v)>=1e6) return '<span title="$'+mzN(v,2)+' USD">$'+mzN(v/1e6,2)+' M</span>'+mzMonTag('USD');
+  return '$'+mzN(v,dec==null?2:dec)+mzMonTag('USD'); }
 function mzPct(a,b){ if(!b) return '—'; return mzN(a/b*100,1)+'%'; }
 function mzDelta(hoy,antes){  /* comparativo como chip (lenguaje de la referencia) */
   if(antes==null||!antes) return '<span class="note">sin comparativo</span>';
@@ -10043,17 +10301,17 @@ function mzAddCorrida(){
     if(x&&x.ok){ _mzEditId=null; mzLoadDia(mzCapPaint); }
     else if(x&&x.error==='duplicado'){
       /* candado v3_27: la misma corrida dos veces no pasa sin preguntar */
-      if(confirm('Ya hay una corrida IDÉNTICA capturada en esta fecha, turno y banbury.\n\n¿De verdad hubo otra corrida igual y quieres guardarla también?')){
+      hbConfirm('Ya hay una corrida IDÉNTICA capturada en esta fecha, turno y banbury.\n\n¿De verdad hubo otra corrida igual y quieres guardarla también?', function(){
         p.forzar=true;
         SB.rpc('hb_mez_corrida_alta',{p:p}).then(function(r2){ var y=r2&&r2.data;
           if(y&&y.ok) mzLoadDia(mzCapPaint); else alert(mzErr(y)); },function(){ alert(mzErr()); });
-      }
+      });
     } else alert(mzErr(x)); };
   if(_mzEditId) SB.rpc('hb_mez_corrida_edit',{p_id:_mzEditId,p:p}).then(fin,function(){ alert(mzErr()); });
   else SB.rpc('hb_mez_corrida_alta',{p:p}).then(fin,function(){ alert(mzErr()); });
 }
 function mzDelCorrida(id){
-  if(!confirm('¿Quitar este renglón de la bitácora?')) return;
+  if(!hbOkC('mzDelCorrida')){ hbConfirm('¿Quitar este renglón de la bitácora?', function(){ hbSiC('mzDelCorrida'); mzDelCorrida(id); }); return; }
   SB.rpc('hb_mez_corrida_borra',{p_id:id}).then(function(r){ var x=r&&r.data;
     if(x&&x.ok) mzLoadDia(mzCapPaint); else alert(mzErr(x)); },function(){ alert(mzErr()); });
 }
@@ -10070,7 +10328,7 @@ function mzAddTm(){
 }
 /* ---- un paro sin folio se vuelve Orden de Trabajo con un toque (v3_23) ---- */
 function mzTmPedido(id,causa,bb){
-  if(!confirm('Se va a crear una orden de trabajo en Mantenimiento por:\n\n'+causa+'\nBanbury '+bb+'\n\n¿La mandamos?')) return;
+  if(!hbOkC('mzTmPedido')){ hbConfirm('Se va a crear una orden de trabajo en Mantenimiento por:\n\n'+causa+'\nBanbury '+bb+'\n\n¿La mandamos?', function(){ hbSiC('mzTmPedido'); mzTmPedido(id,causa,bb); }); return; }
   var d=prompt('Cuenta qué pasó (lo verá Mantenimiento):', causa+' en el Banbury '+bb+'.');
   if(d===null) return;
   SB.rpc('hb_mez_tm_a_pedido',{p_id:id, p_maquina:'BANBURY '+bb, p_descr:d, p_tipo:'mecanico'})
@@ -10079,7 +10337,7 @@ function mzTmPedido(id,causa,bb){
       else alert((x&&x.detalle)||mzErr(x)); },function(e){ alert(mzErr(null,e)); });
 }
 function mzDelTm(id){
-  if(!confirm('¿Quitar este paro?')) return;
+  if(!hbOkC('mzDelTm')){ hbConfirm('¿Quitar este paro?', function(){ hbSiC('mzDelTm'); mzDelTm(id); }); return; }
   SB.rpc('hb_mez_tm_borra',{p_id:id}).then(function(r){ var x=r&&r.data;
     if(x&&x.ok) mzLoadDia(mzCapPaint); else alert(mzErr(x)); },function(){ alert(mzErr()); });
 }
@@ -10625,7 +10883,7 @@ function mzFotoManda(du,tipo){
   },function(e){ if(caja) caja.innerHTML='<div class="card" style="margin:10px 0"><b style="color:var(--warn)">'+esc(mzErr(null,e))+'</b></div>'; });
 }
 function mzND(v){ return (v==null||v==='')?'<span style="color:var(--warn);font-weight:700">no disponible</span>':esc(String(v)); }
-function mzFotoCosto(y){ return (y&&y.costo_mxn!=null)?('<div class="note" style="margin-top:6px">La lectura costó '+mzMx(y.costo_mxn,2)+' MXN.</div>'):''; }
+function mzFotoCosto(y){ return (y&&y.costo_mxn!=null)?('<div class="note" style="margin-top:6px">La lectura costó '+mzMx(y.costo_mxn,2)+'.</div>'):''; }
 var _mzFotoY=null;
 /* v3_29: la LIBRETA REAL (foto de Carlos 19-ago) trae UNA página por turno con
    las 5 columnas de banburys. Este pintor la muestra por banbury, VERIFICA las
@@ -10998,7 +11256,7 @@ function mzAddProg(){
     if(x&&x.ok) mzLoadDia(mzProgPaint); else alert(mzErr(x)); },function(){ alert(mzErr()); });
 }
 function mzDelProg(id){
-  if(!confirm('¿Quitar del programa?')) return;
+  if(!hbOkC('mzDelProg')){ hbConfirm('¿Quitar del programa?', function(){ hbSiC('mzDelProg'); mzDelProg(id); }); return; }
   SB.rpc('hb_mez_programa_borra',{p_id:id}).then(function(r){ var x=r&&r.data;
     if(x&&x.ok) mzLoadDia(mzProgPaint); else alert(mzErr(x)); },function(){ alert(mzErr()); });
 }
@@ -11187,7 +11445,7 @@ function mzRnGuarda(nombre){
   if(!ings.length){ alert('Captura al menos un ingrediente con sus kilos.'); return; }
   var peso=($('mzrn-peso').value||'').trim().replace(',','.');
   var vig=$('mzrn-vig').checked;
-  if(!confirm('¿Guardar la versión «'+letra+'» de '+nombre+' con '+ings.length+' ingredientes'+(vig?' y VOLVERLA LA VIGENTE':' (queda como piloto)')+'?')) return;
+  if(!hbOkC('mzRnGuarda')){ hbConfirm('¿Guardar la versión «'+letra+'» de '+nombre+' con '+ings.length+' ingredientes'+(vig?' y VOLVERLA LA VIGENTE':' (queda como piloto)')+'?', function(){ hbSiC('mzRnGuarda'); mzRnGuarda(nombre); }); return; }
   SB.rpc('hb_mez_version_alta',{p:{cid:window._mzRnCid, letra:letra,
       folio:($('mzrn-folio').value||'').trim(), fecha:($('mzrn-fecha').value||'')||null,
       peso_total:peso||null, vigente:vig, ingredientes:ings}}).then(function(r){ var x=r&&r.data;
@@ -11202,7 +11460,7 @@ function mzRecConfirma(vid,cid){
     function(){ alert(mzErr()); });
 }
 function mzRecVigente(cid,vid,letra){
-  if(!confirm('¿Volver VIGENTE la versión «'+(letra||vid)+'»?\n\nDesde ese momento los kilos y el costeo de las corridas nuevas usan esa receta. Queda registrado quién lo cambió.')) return;
+  if(!hbOkC('mzRecVigente')){ hbConfirm('¿Volver VIGENTE la versión «'+(letra||vid)+'»?\n\nDesde ese momento los kilos y el costeo de las corridas nuevas usan esa receta. Queda registrado quién lo cambió.', function(){ hbSiC('mzRecVigente'); mzRecVigente(cid,vid,letra); }); return; }
   SB.rpc('hb_mez_vigente_set',{p_cid:cid,p_vid:vid}).then(function(r){ var x=r&&r.data;
     if(x&&x.ok){ flash('✓ Vigente cambiada'); renderMezRecDet(cid); } else alert(mzErr(x)); },
     function(){ alert(mzErr()); });
@@ -12212,8 +12470,8 @@ function mzFixManual(){
 function mzArranque(){
   /* v3_27: el borrado va POR FECHA (todo lo anterior al 1-sep-2026), ya no por
      el sello de práctica — no importa a qué hora se apriete el botón */
-  if(!confirm('ARRANQUE EN CERO: se borra TODO lo capturado ANTES del 1 de septiembre de 2026 (la práctica de julio y agosto) y se apaga el modo práctica.\n\nLo capturado del 1-sep en adelante queda a salvo, sin importar la hora. ¿Seguro?')) return;
-  if(!confirm('Segunda confirmación: esto es el arranque oficial. ¿Adelante?')) return;
+  if(!hbOkC('mzArranque1')){ hbConfirm('ARRANQUE EN CERO: se borra TODO lo capturado ANTES del 1 de septiembre de 2026 (la práctica de julio y agosto) y se apaga el modo práctica.\n\nLo capturado del 1-sep en adelante queda a salvo, sin importar la hora. ¿Seguro?', function(){ hbSiC('mzArranque1'); mzArranque(); }); return; }
+  if(!hbOkC('mzArranque2')){ hbConfirm('Segunda confirmación: esto es el arranque oficial. ¿Adelante?', function(){ hbSiC('mzArranque1'); hbSiC('mzArranque2'); mzArranque(); }); return; }
   SB.rpc('hb_mez_arranque').then(function(r){ var x=r&&r.data;
     if(x&&x.ok){ _mzCat=null; alert('Listo. Corte: '+(x.corte||'2026-09-01')+'. Se borraron '+x.corridas_borradas+' corridas, '+x.tm_borrados+' paros y '+x.programa_borrado+' del programa. El sistema arranca en cero.'); renderMezTab(); }
     else alert((x&&x.detalle)||mzErr(x)); },function(){ alert(mzErr()); });
@@ -12585,7 +12843,7 @@ function mzBandAsigna(i,txt){
   if(!nom){ alert('Escribe el compuesto.'); return; }
   var c=(_mzCat&&_mzCat.compuestos||[]).filter(function(x){ return x.nombre.toUpperCase().trim()===nom.toUpperCase(); })[0];
   if(!c){ alert('«'+nom+'» no está en el catálogo. Escoge uno de la lista.'); return; }
-  if(!confirm('¿Asignar «'+txt+'» a '+c.nombre+(letra?(' versión '+letra):'')+'?\n\nSe corrigen TODOS sus renglones.')) return;
+  if(!hbOkC('mzBandAsigna')){ hbConfirm('¿Asignar «'+txt+'» a '+c.nombre+(letra?(' versión '+letra):'')+'?\n\nSe corrigen TODOS sus renglones.', function(){ hbSiC('mzBandAsigna'); mzBandAsigna(i,txt); }); return; }
   SB.rpc('hb_mez_bandeja_asigna',{p_txt:txt,p_cid:c.id,p_letra:letra||null}).then(function(r){ var x=r&&r.data;
     if(x&&x.ok){ flash('✓ '+x.corridas+(x.corridas===1?' corrida corregida':' corridas corregidas'));
       /* primero repintar la bitácora, DESPUÉS reabrir la bandeja fresca (si no,
@@ -12636,7 +12894,7 @@ function mzHistPaint(x){
 function mzHistAbre(f){
   /* mismo guardián que el resto: un renglón a medio teclear no se pisa sin
      preguntar, y una corrección abierta jamás viaja al otro día */
-  if(!mzFormVacio() && !confirm('Tienes algo a medio capturar y se va a perder al cambiar de día. ¿Continuar?')) return;
+  if(!mzFormVacio() && !hbOkC('mzHistAbre')){ hbConfirm('Tienes algo a medio capturar y se va a perder al cambiar de día. ¿Continuar?', function(){ hbSiC('mzHistAbre'); mzHistAbre(f); }); return; }
   _mzEditId=null;
   var el=$('mz-hist'); if(el) el.classList.add('hide');
   mzSetF(f);                      /* cambia el día y recarga la bitácora */

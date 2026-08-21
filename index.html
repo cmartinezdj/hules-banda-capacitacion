@@ -725,6 +725,8 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .dfhead .ft span{display:block;font-size:11.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
 .dfhead .chev{flex:none;color:var(--mut);font-size:11px;font-weight:900;transition:transform .18s var(--ease-out)}
 .dfhead.abierto .chev{transform:rotate(180deg)}
+.dcrumb{display:none;gap:5px;flex-wrap:wrap;align-items:center;padding:0 2px 4px}
+@media (min-width:1000px){ .dcrumb{display:flex} }
 .dfup{flex:none;width:34px;height:34px;border-radius:11px;border:1px solid var(--line);background:var(--panel);color:var(--txt);font-weight:900;cursor:pointer;font-size:16px;line-height:1;padding:0}
 /* MÓDULO de subir documento (ya no vive desplegado en la pantalla) */
 .dupvelo{position:fixed;inset:0;background:rgba(10,13,20,.6);backdrop-filter:blur(3px);display:none;z-index:11500;padding:16px;overflow-y:auto}
@@ -9253,10 +9255,10 @@ var _docFrom=null;    // pantalla de origen (para el botón "Atrás" de Document
 var _docDepto=null;   // área elegida por el acceso total (sobrevive repintados en vivo)
 function _docReset(){ _docUpOpen=false; _docFoldOpen=false; _docGridMax=18; _docFoldAll={}; _docArea=null; _docCat=null; _docSub=null; _docBita=false; _docFin=false; _docShr=false; _dvDept=null; _docQ=''; _docQMax=60; }
 function docsHome(){ _docFrom=_screen; _docReset(); renderDocs(); }
-function docGoArea(a){ _docArea=a; _docCat=null; _docSub=null; _docShr=false; _docGridMax=18; docRecPush(); _docFoldCierra(); renderDocs(); window.scrollTo(0,0); }
-function docGoCat(c){ _docCat=c; _docSub=null; _docGridMax=18; docRecPush(); _docFoldCierra(); renderDocs(); window.scrollTo(0,0); }
-function docGoSub(s){ _docSub=s; _docGridMax=18; docRecPush(); _docFoldCierra(); renderDocs(); window.scrollTo(0,0); }
-function docUpTo(l){ if(l==='root'){ _docReset(); } else if(l==='area'){ _docCat=null; _docSub=null; } else if(l==='cat'){ _docSub=null; } _docFoldCierra(); renderDocs(); window.scrollTo(0,0); }
+function docGoArea(a){ _docArea=a; _docCat=null; _docSub=null; _docShr=false; _docGridMax=18; docRecPush(); _docFoldAuto(); renderDocs(); window.scrollTo(0,0); }
+function docGoCat(c){ _docCat=c; _docSub=null; _docGridMax=18; docRecPush(); _docFoldAuto(); renderDocs(); window.scrollTo(0,0); }
+function docGoSub(s){ _docSub=s; _docGridMax=18; docRecPush(); _docFoldAuto(); renderDocs(); window.scrollTo(0,0); }
+function docUpTo(l){ if(l==='root'){ _docReset(); } else if(l==='area'){ _docCat=null; _docSub=null; } else if(l==='cat'){ _docSub=null; } _docFoldAuto(); renderDocs(); window.scrollTo(0,0); }
 function docAclSet(m){
   if(m==='financiero' && !_finOn){ flash('No estás en el grupo financiero'); return; }   // el servidor lo re-valida igual
   _docAcl=m;
@@ -9305,7 +9307,7 @@ function _docEsCompartido(d){
   return (d.deptoSlug||deptoSlug(d.depto||'')) !== deptoSlug(S.area||'');
 }
 function _docCompartidos(){ return docsGet().filter(_docEsCompartido); }
-function docShrGo(v){ _docShr=v; _docCat=null; _docSub=null; _docGridMax=18; _docFoldCierra(); renderDocs(); window.scrollTo(0,0); }
+function docShrGo(v){ _docShr=v; _docCat=null; _docSub=null; _docGridMax=18; _docFoldAuto(); renderDocs(); window.scrollTo(0,0); }
 /* documentos "en alcance" según el explorador (para admin, filtra por el área abierta) */
 function _docScope(){
   var list=docsGet().slice();
@@ -9573,9 +9575,30 @@ var _docGridMax=18;      /* cuántos archivos se pintan (con Ver más) */
 var _docUpOpen=false;    /* el módulo de subir arranca cerrado */
 var _docFoldOpen=false;  /* en el teléfono las carpetas arrancan plegadas */
 function docFoldTog(){ _docFoldOpen=!_docFoldOpen; renderDocs(); }
-/* al escoger una carpeta en el teléfono, la lista se pliega sola: para eso la
-   tocaste — para ver los archivos, no para seguir viendo carpetas */
-function _docFoldCierra(){ if(!calEsc()) _docFoldOpen=false; }
+/* ¿de donde estoy parado, cuelgan más carpetas? (para saber si el desplegable
+   del teléfono todavía sirve de algo) */
+function _docHayHijos(){
+  if(_docShr) return false;
+  if(docIsTotal() && _docArea==null) return docsGet().length>0;      // las áreas
+  var scope=_docScope();
+  if(_docCat==null){                                                  // las carpetas
+    var vc={}, n=0;
+    scope.forEach(function(d){ var k=_docCat0(d); if(!vc[k]){ vc[k]=1; n++; } });
+    return n>0;
+  }
+  if(_docSub==null){                                                  // las subcarpetas
+    var vs={}, m=0;
+    scope.forEach(function(d){ if(_docCat0(d)!==_docCat) return; var x=_docSub0(d); if(x && !vs[x]){ vs[x]=1; m++; } });
+    return m>0;
+  }
+  return false;                                                       // ya es el último nivel
+}
+/* REGLA DEL DESPLEGABLE EN EL TELÉFONO (pedido de Carlos, 21-ago):
+   mientras todavía haya carpetas o subcarpetas que escoger, la lista se queda
+   ABIERTA (para seguir bajando de un toque); en cuanto entras a la última —ya no
+   cuelga nada— se CIERRA sola, porque ahí ya solo estorba y lo que quieres ver
+   son los archivos. En escritorio no aplica: ahí siempre está a la vista. */
+function _docFoldAuto(){ if(!calEsc()) _docFoldOpen=_docHayHijos(); }
 /* subir UN nivel (el ‹ de la cabecera plegada) */
 function docUpUno(){
   if(_docShr){ docShrGo(false); return; }
@@ -9611,7 +9634,7 @@ function docRecPush(){
 function docRecGo(i){
   var it=_docRecs()[i]; if(!it) return;
   _docShr=false; _docArea=it.a||null; _docCat=it.c||null; _docSub=it.s||null;
-  _docGridMax=18; _docFoldCierra(); renderDocs(); window.scrollTo(0,0);
+  _docGridMax=18; _docFoldAuto(); renderDocs(); window.scrollTo(0,0);
 }
 
 /* ---- un renglón de carpeta ---- */
@@ -9623,7 +9646,7 @@ function docFolderRow(txt,sub,on,accion){
 }
 function docFolderBloque(titulo,rows){
   if(!rows.length) return '';
-  var tope=calEsc()?8:4;
+  var tope=8;   /* mismo tope en los dos: el desplegable se cierra solo (ver _docFoldAuto) */
   var todas=!!_docFoldAll[titulo], ver=todas?rows:rows.slice(0,tope);
   var h='<div class="dfsec">'+esc(titulo)+'<span class="ln"></span></div>'+ver.join('');
   if(rows.length>tope) h+='<button type="button" class="dfmas" onclick="docFoldMas(\''+jsAttr(titulo)+'\')">'+
@@ -9654,7 +9677,7 @@ function docFolderPane(){
     if(_docCat!=null) crumbs.push('<button class="chip2" onclick="docUpTo(\'cat\')">'+esc(_docCat)+'</button>');
     if(_docSub!=null) crumbs.push('<button class="chip2" style="pointer-events:none">'+esc(_docSub)+'</button>');
   }
-  h+='<div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:0 2px 4px">'+crumbs.join('<span class="note">›</span>')+'</div>';
+  h+='<div class="dcrumb">'+crumbs.join('<span class="note">›</span>')+'</div>';
 
   if(_docShr && !docIsTotal()){
     h+=docFolderBloque('Carpeta',[docFolderRow('Compartidos conmigo', _docCuenta(_docCompartidos().length), true, 'docShrGo(false)')]);

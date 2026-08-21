@@ -710,12 +710,58 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .dres .dresa{position:absolute;top:8px;right:8px;display:flex;gap:2px;align-items:center}
 .dres .dresa .speak{position:static;width:30px;height:30px}
 .dres .dmore{position:static;width:30px;height:30px}
+/* ===== DOCUMENTOS estilo gestor de archivos (21-ago, referencia de Carlos):
+   carpetas en columna a la izquierda, archivos como íconos grandes a la derecha,
+   en el negro y rojo de Hules Banda. Sin panel de "última actividad". ===== */
+.dwrap{display:block}
+.dfold{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 12px;margin-bottom:14px}
+.dfsec{display:flex;align-items:center;gap:8px;padding:10px 4px 8px;font-size:10.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--mut)}
+.dfsec .ln{flex:1;height:1px;background:var(--line)}
+.dfrow{display:flex;align-items:center;gap:11px;width:100%;background:none;border:1px solid transparent;border-radius:12px;padding:9px 10px;cursor:pointer;font-family:inherit;color:var(--txt);text-align:left;min-width:0;margin-bottom:2px}
+@media (hover:hover){.dfrow:hover{background:color-mix(in srgb,var(--txt) 6%,transparent)}}
+.dfrow.on{background:color-mix(in srgb,var(--accent) 15%,var(--card));border-color:color-mix(in srgb,var(--accent) 42%,var(--line))}
+.dfrow .fic{width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:10px;background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent2)}
+.dfrow.on .fic{background:var(--accent);color:#fff}
+.dfrow .fic svg{width:19px;height:19px}
+.dfrow .ft{flex:1;min-width:0}
+.dfrow .ft b{display:block;font-size:13.5px;font-weight:800;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dfrow .ft span{font-size:11px;color:var(--mut)}
+.dfrow .fgo{flex:none;color:var(--mut);font-weight:900;font-size:15px}
+.dfmas{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:none;border:none;color:var(--mut);font-family:inherit;font-size:11.5px;font-weight:800;padding:8px;cursor:pointer}
+@media (hover:hover){.dfmas:hover{color:var(--txt)}}
+/* archivos recientes: fila de chips arriba (como "Recent Files" de la referencia) */
+.drecent{display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 2px}
+.dchip{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:13px;background:var(--panel);padding:9px 12px;cursor:pointer;min-width:0;max-width:238px;font-family:inherit;color:var(--txt);text-align:left}
+@media (hover:hover){.dchip:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}}
+.dchip .dfic{width:22px;height:28px;flex:none}
+.dchip .ct{min-width:0}
+.dchip .ct b{display:block;font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dchip .ct span{font-size:10.5px;color:var(--mut)}
+/* el cuadro punteado de "agrega un archivo nuevo aquí" */
+.dnew{border:1.5px dashed var(--line);border-radius:14px;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:100%;cursor:pointer;color:var(--mut);font-family:inherit;font-size:11.5px;font-weight:700;text-align:center;padding:14px;line-height:1.35}
+@media (hover:hover){.dnew:hover{border-color:color-mix(in srgb,var(--accent) 50%,var(--line));color:var(--txt)}}
+.dnew .plus{width:36px;height:36px;border-radius:50%;flex:none;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent2);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:800;line-height:1}
+@media (min-width:1000px){
+  .dwrap{display:grid;grid-template-columns:302px minmax(0,1fr);gap:18px;align-items:start}
+  .dfold{position:sticky;top:14px;max-height:calc(100vh - 28px);overflow:auto;margin-bottom:0}
+}
+body.a11y .dfrow .ft b{font-size:16px !important}
+body.a11y .dfrow .ft span{font-size:13px !important}
+body.a11y .dfsec{font-size:12.5px !important}
+body.a11y .dfmas{font-size:13.5px !important}
+body.a11y .dchip .ct b{font-size:14.5px !important}
+body.a11y .dchip .ct span{font-size:12.5px !important}
+body.a11y .dnew{font-size:14px !important}
 /* ===== Documentos: cuadrícula de íconos con miniatura (estilo Finder) ===== */
-.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:12px;margin:6px 0 4px}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(152px,1fr));gap:13px;margin:6px 0 4px}
 .dcard{position:relative;border:1px solid var(--line);border-radius:14px;background:var(--panel);cursor:pointer;padding:8px 8px 9px;text-align:center;transition:transform .13s var(--ease-out),border-color .2s var(--ease-out)}
 .dcard:active{transform:scale(.97)}
 @media (hover:hover){.dcard:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent) 45%,var(--line));box-shadow:0 12px 28px rgba(0,0,0,.32)}}
-.dthumb{position:relative;height:84px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.05);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+.dthumb{position:relative;height:106px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.05);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+/* cuando es un ÍCONO (no una miniatura de foto) va suelto sobre la tarjeta, como
+   en la referencia: nada de cuadrito gris detrás */
+.dthumb.ic{background:none;border:none;border-radius:0}
+.dfic{display:block}
 .dthumb img{width:100%;height:100%;object-fit:cover;display:block}
 .dbadge{width:46px;height:58px;border-radius:7px;position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16)}
 .dbadge:before{content:'';position:absolute;top:0;right:0;width:14px;height:14px;border-radius:0 7px 0 8px;background:var(--panel);border-left:1px solid rgba(255,255,255,.16);border-bottom:1px solid rgba(255,255,255,.16)}
@@ -3423,6 +3469,7 @@ window.addEventListener('resize', function(){
     var esc2=calEsc();
     if(window._calEra===esc2) return; window._calEra=esc2;
     if(_screen==='cal' && !_evComposing()) renderCal();
+    if(_screen==='docs' && !_docBuscando()) renderDocs();
     if(_screen==='msgs' && !_msgsPage) renderMsgs();
     else if(_screen==='thread' && _curConv && !_viewRO){ if(esc2){ renderMsjEsc(); } else { openConv(_curConv); } }
     try{ if(typeof msjSync==='function') msjSync(); }catch(e){}
@@ -9173,11 +9220,11 @@ var _docAcl='depto';               // alcance que elige el ACCESO TOTAL al subir
 var _docArea=null, _docCat=null, _docSub=null;
 var _docFrom=null;    // pantalla de origen (para el botón "Atrás" de Documentos)
 var _docDepto=null;   // área elegida por el acceso total (sobrevive repintados en vivo)
-function _docReset(){ _docArea=null; _docCat=null; _docSub=null; _docBita=false; _docFin=false; _docShr=false; _dvDept=null; _docQ=''; _docQMax=60; }
+function _docReset(){ _docUpOpen=false; _docGridMax=18; _docFoldAll={}; _docArea=null; _docCat=null; _docSub=null; _docBita=false; _docFin=false; _docShr=false; _dvDept=null; _docQ=''; _docQMax=60; }
 function docsHome(){ _docFrom=_screen; _docReset(); renderDocs(); }
-function docGoArea(a){ _docArea=a; _docCat=null; _docSub=null; renderDocs(); window.scrollTo(0,0); }
-function docGoCat(c){ _docCat=c; _docSub=null; renderDocs(); window.scrollTo(0,0); }
-function docGoSub(s){ _docSub=s; renderDocs(); window.scrollTo(0,0); }
+function docGoArea(a){ _docArea=a; _docCat=null; _docSub=null; _docShr=false; _docGridMax=18; docRecPush(); renderDocs(); window.scrollTo(0,0); }
+function docGoCat(c){ _docCat=c; _docSub=null; _docGridMax=18; docRecPush(); renderDocs(); window.scrollTo(0,0); }
+function docGoSub(s){ _docSub=s; _docGridMax=18; docRecPush(); renderDocs(); window.scrollTo(0,0); }
 function docUpTo(l){ if(l==='root'){ _docReset(); } else if(l==='area'){ _docCat=null; _docSub=null; } else if(l==='cat'){ _docSub=null; } renderDocs(); window.scrollTo(0,0); }
 function docAclSet(m){
   if(m==='financiero' && !_finOn){ flash('No estás en el grupo financiero'); return; }   // el servidor lo re-valida igual
@@ -9292,10 +9339,9 @@ function docBuscaInput(v){
 function docBuscaPinta(){
   var body=$('docBody'); if(!body) return;
   var manage=canDocManage();
-  body.innerHTML = _docBuscando() ? docBuscaResultados()
-                 : ((manage?docUploadForm():'')+docExplorer());
+  body.innerHTML = _docBuscando() ? docBuscaResultados() : docFilesPane();
   var x=$('docQx'); if(x) x.style.display=(_docQ?'':'none');
-  if(!_docBuscando() && manage) docFormInit();
+  if(!_docBuscando() && manage && _docUpOpen) docFormInit();
   docThumbsFetch();
 }
 function docBuscaLimpia(){
@@ -9322,7 +9368,6 @@ function docBuscaBox(){
 function docResRowHTML(d){
   var kind=docKind(d);
   var kb=Math.max(1,Math.round((d.size||0)/1024)), sz=(kb>=1024?(Math.round(kb/102.4)/10+' MB'):(kb+' KB'));
-  var lbl = kind==='PowerPoint'?'PPT':(kind==='Imagen'?'IMG':(kind==='Texto'?'TXT':(kind==='Archivo'?'DOC':kind.toUpperCase())));
   /* la carpeta donde vive: el área solo se nombra cuando NO es la propia (acceso
      total o documento compartido); al trabajador su área no le dice nada nuevo */
   var ruta=[(docIsTotal()||_docEsCompartido(d))?(d.depto||''):'', _docCat0(d), _docSub0(d)]
@@ -9333,8 +9378,7 @@ function docResRowHTML(d){
   else if(_acl.mode==='ids' && docIsTotal()) extras='<br>IDs: '+esc((_acl.ids||[]).join(', ')||'—');
   else if(_docEsCompartido(d)) extras='<br><b style="color:var(--accent2)">Compartido contigo</b>';
   var cached=_docThumbs[d.id];
-  var icono=(_docIsImg(d)&&cached)?('<img src="'+imgSrc(cached)+'" alt="">')
-           :('<b style="background:'+_docTypeColor(kind)+'">'+lbl+'</b>');
+  var icono=(_docIsImg(d)&&cached)?('<img src="'+imgSrc(cached)+'" alt="">'):docFileIcon(kind,44);
   var h='<div class="dres" role="button" tabindex="0" onkeydown="_kb(event)" onclick="docOpen(\''+jsAttr(d.id)+'\')" aria-label="Ver documento: '+escA(d.titulo)+'">';
   h+='<span class="dresi"'+(_docIsImg(d)?(' data-dth="'+escA(d.id)+'"'):'')+'>'+icono+'</span>';
   h+='<div class="dresb"><div class="dresn">'+esc(d.titulo)+'</div>'+
@@ -9379,7 +9423,12 @@ function renderDocs(){
           : docIsResp() ? ('Manuales y procesos de tu área ('+esc(S.area)+'). Puedes subir, ver, descargar y borrar los de tu área.')
           : 'Manuales y procesos de tu área. Aquí ves y descargas lo autorizado para ti.';
   var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">'+(docIsTotal()?'Panel':(docIsResp()?'Documentos de mi área':'Documentos'))+'</div><b style="font-size:20px">Documentos</b><p class="note" style="margin:4px 0 0;max-width:290px">'+sub+'</p></div><span class="status"><span class="d"></span>En línea</span></div></div>';
-  if(V3_ON && !_finLoaded) finLoad(function(){ if(_screen==='docs') renderDocs(); });   // ¿estoy en el grupo financiero? lo dice el servidor
+  /* ¿estoy en el grupo financiero? lo dice el servidor. OJO el `sbReady()`: sin
+     conexión finLoad contesta el callback AL INSTANTE y sin marcar _finLoaded,
+     así que sin ese candado esto se llamaba a sí mismo hasta tronar la pila y
+     Documentos no abría estando offline (bug encontrado el 21-ago). Cuando la
+     conexión vuelva, el siguiente repintado lo consulta. */
+  if(V3_ON && !_finLoaded && sbReady()) finLoad(function(){ if(_screen==='docs') renderDocs(); });
   // Toggle Documentos / Bitácora (+ Grupo financiero solo para la 0917)
   if(manage) h+='<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">'+
     '<button class="btn'+((_docBita||_docFin)?' ghost':'')+'" style="margin:0;padding:9px 14px;font-size:13px;width:auto" onclick="docBitaGo(false)">Documentos</button>'+
@@ -9399,10 +9448,16 @@ function renderDocs(){
      para no cerrarle el teclado a media palabra. Mientras se busca, el formulario
      de subir se esconde: así los resultados salen pegados a la caja y no 600 px
      más abajo. */
+  /* Dos paneles: carpetas a la izquierda, archivos a la derecha (referencia de
+     Carlos). El BUSCADOR vive fuera de `docBody` para que un repintado no le
+     cierre el teclado a media palabra; `docBody` solo trae los archivos (o los
+     resultados de la búsqueda). El panel de carpetas se repinta al navegar. */
   h+=docBuscaBox();
-  h+='<div id="docBody">'+(_docBuscando()?docBuscaResultados():((manage?docUploadForm():'')+docExplorer()))+'</div>';
+  h+='<div class="dwrap">'+docFolderPane()+
+     '<div class="dmain"><div id="docBody">'+(_docBuscando()?docBuscaResultados():docFilesPane())+'</div></div>'+
+     '</div>';
   $('s-docs').innerHTML=h; show('docs');
-  if(manage && !_docBuscando()) docFormInit();
+  if(manage && !_docBuscando() && _docUpOpen) docFormInit();
   docThumbsFetch();   /* miniaturas de imagen en lote (cacheadas; no toca la bitácora) */
 }
 /* formulario de subida — acceso total (cualquier área/alcance) o responsable (SU área, alcance fijo) */
@@ -9448,83 +9503,171 @@ function docUploadForm(){
   return h;
 }
 function docFormInit(){ if(docIsTotal()) docAclSet(_docAcl); }
-/* EXPLORADOR visual: (admin) carpetas por área → categorías → subcarpetas → archivos */
-function docExplorer(){
-  var h='';
-  /* CARPETA "Documentos compartidos" (permiso especial, v3_14): lo que otras áreas
-     me compartieron por mi clave. Solo consulta; vive aparte de lo de mi área. */
-  if(_docShr && !docIsTotal()){
-    var shr=_docCompartidos();
-    h+='<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:2px 0 12px">'+
-       '<button class="chip2" onclick="docShrGo(false)">‹ Documentos</button>'+
-       '<span class="note">›</span><button class="chip2" style="pointer-events:none">Documentos compartidos</button></div>';
-    h+='<div class="sec-t">Compartidos conmigo · '+shr.length+'<span class="ln"></span></div>';
-    if(!shr.length) return h+'<div class="card"><div class="note">Nadie te ha compartido documentos todavía.</div></div>';
-    h+='<div class="dgrid">';
-    shr.sort(function(a,b){ return (b.ts||0)-(a.ts||0); }).forEach(function(d){ h+=docCardHTML(d); });
-    return h+'</div>';
-  }
-  if(docIsTotal() && _docArea==null){
-    var full=docsGet();
-    if(!full.length) return '<div class="card"><div class="note">Aún no hay documentos. Sube el primero.</div></div>';
-    var byA={}, aOrder=[];
-    full.forEach(function(d){ var a=d.depto||'GENERAL'; if(byA[a]==null){ byA[a]=0; aOrder.push(a); } byA[a]++; });
-    aOrder.sort();
-    h+='<div class="sec-t">Carpetas por área<span class="ln"></span></div><div class="arogrid">';
-    h+=aOrder.map(function(a){ return '<div class="arocard" role="button" tabindex="0" onkeydown="_kb(event)" onclick="docGoArea(\''+jsAttr(a)+'\')"><div><div class="an">'+esc(a)+'</div><div class="as">'+byA[a]+' documento'+(byA[a]===1?'':'s')+'</div></div><span class="abadge">Abrir ›</span></div>'; }).join('');
-    return h+'</div>';
-  }
-  // migas de pan
+/* ============================================================================
+   EXPLORADOR DE DOCUMENTOS estilo gestor de archivos (21-ago-2026, referencia
+   que mandó Carlos). Dos paneles:
+     · IZQUIERDA (.dfold): las CARPETAS en renglones — áreas (acceso total),
+       carpetas, subcarpetas, la carpeta de compartidos y las carpetas recientes.
+       La carpeta abierta se queda marcada en rojo. Cada bloque muestra 8 y trae
+       su "Ver más" (como el Show More de la referencia).
+     · DERECHA (.dmain): los archivos como ÍCONOS grandes (hoja con la esquina
+       doblada, del color de su tipo), con los recientes en una fila de chips
+       arriba, el buscador (que vive fuera para no cerrar el teclado) y el cuadro
+       punteado para subir uno nuevo.
+   NO hay panel de "última actividad": Carlos lo quitó a propósito.
+   Todo lo de antes sigue igual por debajo: permisos, bitácora, subir, borrar,
+   compartidos y buscador — esto solo cambia cómo se ve y cómo se navega.
+   ============================================================================ */
+var _docFoldAll={};      /* qué bloques de carpetas están "ver todas" */
+var _docGridMax=18;      /* cuántos archivos se pintan (con Ver más) */
+var _docUpOpen=false;    /* el formulario de subir arranca cerrado */
+function docFoldMas(k){ _docFoldAll[k]=!_docFoldAll[k]; renderDocs(); }
+function docGridMas(){ _docGridMax+=18; renderDocs(); }
+function docUpTog(){ _docUpOpen=!_docUpOpen; renderDocs();
+  if(_docUpOpen) setTimeout(function(){ var t=$('docTitle'); if(t){ try{ t.scrollIntoView({block:'center'}); t.focus(); }catch(e){} } },40); }
+
+/* ---- carpetas recientes (el "Recent Folder" de la referencia) ---- */
+function _docRecs(){ var a=lsGet('hb_docrec'); return Array.isArray(a)?a:[]; }
+function docRecPush(){
+  if(_docCat==null && _docArea==null) return;
+  var it={a:_docArea, c:_docCat, s:_docSub};
+  it.t=[_docSub||'', _docCat||'', _docArea||''].filter(function(x){return !!x;})[0]||'';
+  it.r=[docIsTotal()?(_docArea||''):'', _docCat||'', _docSub||''].filter(function(x){return !!x;}).join(' › ');
+  if(!it.t) return;
+  var key=function(x){ return (x.a||'')+'|'+(x.c||'')+'|'+(x.s||''); };
+  var out=_docRecs().filter(function(x){ return key(x)!==key(it); });
+  out.unshift(it);
+  lsSet('hb_docrec', out.slice(0,8));
+}
+function docRecGo(i){
+  var it=_docRecs()[i]; if(!it) return;
+  _docShr=false; _docArea=it.a||null; _docCat=it.c||null; _docSub=it.s||null;
+  renderDocs(); window.scrollTo(0,0);
+}
+
+/* ---- un renglón de carpeta ---- */
+function docFolderRow(txt,sub,on,accion){
+  return '<button type="button" class="dfrow'+(on?' on':'')+'" onclick="'+accion+'">'+
+    '<span class="fic">'+DOC_FOLDER_SVG+'</span>'+
+    '<span class="ft"><b>'+esc(txt)+'</b><span>'+esc(sub)+'</span></span>'+
+    '<span class="fgo" aria-hidden="true">›</span></button>';
+}
+function docFolderBloque(titulo,rows){
+  if(!rows.length) return '';
+  var tope=calEsc()?8:4;
+  var todas=!!_docFoldAll[titulo], ver=todas?rows:rows.slice(0,tope);
+  var h='<div class="dfsec">'+esc(titulo)+'<span class="ln"></span></div>'+ver.join('');
+  if(rows.length>tope) h+='<button type="button" class="dfmas" onclick="docFoldMas(\''+jsAttr(titulo)+'\')">'+
+    (todas?'▲ Ver menos':('▼ Ver más ('+(rows.length-tope)+')'))+'</button>';
+  return h;
+}
+/* cuántos documentos hay debajo de una carpeta */
+function _docCuenta(n){ return n+' documento'+(n===1?'':'s'); }
+
+function docFolderPane(){
+  var h='<aside class="dfold" id="docFold">';
+  /* migas de pan: dónde estoy parado y cómo subir */
   var crumbs=['<button class="chip2" onclick="docUpTo(\'root\')">Documentos</button>'];
-  if(docIsTotal() && _docArea!=null) crumbs.push('<button class="chip2" onclick="docUpTo(\'area\')">'+esc(_docArea)+'</button>');
-  if(_docCat!=null) crumbs.push('<button class="chip2" onclick="docUpTo(\'cat\')">'+esc(_docCat)+'</button>');
-  if(_docSub!=null) crumbs.push('<button class="chip2" style="pointer-events:none">'+esc(_docSub)+'</button>');
-  h+='<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:2px 0 12px">'+crumbs.join('<span class="note">›</span>')+'</div>';
-  var scope=_docScope();
-  // carpeta de COMPARTIDOS CONMIGO (permiso especial): se ofrece en el primer nivel
-  var _shrN=(!docIsTotal() && _docCat==null)?_docCompartidos().length:0;
-  var _shrCard=_shrN?('<div class="arocard" role="button" tabindex="0" onkeydown="_kb(event)" onclick="docShrGo(true)" style="border-color:color-mix(in srgb,var(--accent) 45%,var(--line))"><div><div class="an">Documentos compartidos</div><div class="as">'+_shrN+' de otras áreas</div></div><span class="abadge">Abrir ›</span></div>'):'';
-  if(!scope.length){
-    if(_shrCard) return h+'<div class="sec-t">Carpetas<span class="ln"></span></div><div class="arogrid">'+_shrCard+'</div>';
-    return h+'<div class="card"><div class="note">'+(canDocManage()?'Aún no hay documentos aquí. Sube el primero con el formulario de arriba.':'Aún no hay documentos autorizados para ti.')+'</div></div>';
+  if(_docShr) crumbs.push('<button class="chip2" style="pointer-events:none">Compartidos</button>');
+  else{
+    if(docIsTotal() && _docArea!=null) crumbs.push('<button class="chip2" onclick="docUpTo(\'area\')">'+esc(_docArea)+'</button>');
+    if(_docCat!=null) crumbs.push('<button class="chip2" onclick="docUpTo(\'cat\')">'+esc(_docCat)+'</button>');
+    if(_docSub!=null) crumbs.push('<button class="chip2" style="pointer-events:none">'+esc(_docSub)+'</button>');
   }
-  // nivel CATEGORÍA
-  if(_docCat==null){
+  h+='<div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:0 2px 4px">'+crumbs.join('<span class="note">›</span>')+'</div>';
+
+  if(_docShr && !docIsTotal()){
+    h+=docFolderBloque('Carpeta',[docFolderRow('Compartidos conmigo', _docCuenta(_docCompartidos().length), true, 'docShrGo(false)')]);
+    h+='<button type="button" class="dfmas" onclick="docShrGo(false)">‹ Volver a mis carpetas</button>';
+    return h+'</aside>';
+  }
+  var todos=docsGet();
+  /* ÁREAS (solo acceso total) */
+  if(docIsTotal()){
+    var byA={}, aOrder=[];
+    todos.forEach(function(d){ var a=d.depto||'GENERAL'; if(byA[a]==null){ byA[a]=0; aOrder.push(a); } byA[a]++; });
+    aOrder.sort();
+    h+=docFolderBloque('Áreas', aOrder.map(function(a){
+      return docFolderRow(a, _docCuenta(byA[a]), _docArea===a, "docGoArea('"+jsAttr(a)+"')");
+    }));
+  }
+  var scope=_docScope();
+  /* CARPETAS (categorías) del área abierta — o de mi área si no soy acceso total */
+  if(!docIsTotal() || _docArea!=null){
     var byC={}, cOrder=[];
     scope.forEach(function(d){ var c=_docCat0(d); if(byC[c]==null){ byC[c]=0; cOrder.push(c); } byC[c]++; });
     cOrder.sort();
-    h+='<div class="sec-t">Categorías<span class="ln"></span></div><div class="arogrid">';
-    h+=cOrder.map(function(c){ return '<div class="arocard" role="button" tabindex="0" onkeydown="_kb(event)" onclick="docGoCat(\''+jsAttr(c)+'\')"><div><div class="an">'+esc(c)+'</div><div class="as">'+byC[c]+' documento'+(byC[c]===1?'':'s')+'</div></div><span class="abadge">Abrir ›</span></div>'; }).join('');
-    return h+_shrCard+'</div>';
-  }
-  var inCat=scope.filter(function(d){ return _docCat0(d)===_docCat; });
-  // nivel SUBCATEGORÍA (+ archivos sueltos de la categoría)
-  if(_docSub==null){
-    var subsMap={}, sOrder=[], loose=[];
-    inCat.forEach(function(d){ var s=_docSub0(d); if(s){ if(subsMap[s]==null){ subsMap[s]=0; sOrder.push(s); } subsMap[s]++; } else loose.push(d); });
-    sOrder.sort();
-    if(sOrder.length){
-      h+='<div class="sec-t">Subcarpetas<span class="ln"></span></div><div class="arogrid">';
-      h+=sOrder.map(function(s){ return '<div class="arocard" role="button" tabindex="0" onkeydown="_kb(event)" onclick="docGoSub(\''+jsAttr(s)+'\')"><div><div class="an">'+esc(s)+'</div><div class="as">'+subsMap[s]+' documento'+(subsMap[s]===1?'':'s')+'</div></div><span class="abadge">Abrir ›</span></div>'; }).join('');
-      h+='</div>';
+    h+=docFolderBloque('Carpetas', cOrder.map(function(c){
+      return docFolderRow(c, _docCuenta(byC[c]), _docCat===c, "docGoCat('"+jsAttr(c)+"')");
+    }));
+    /* SUBCARPETAS de la carpeta abierta */
+    if(_docCat!=null){
+      var inCat=scope.filter(function(d){ return _docCat0(d)===_docCat; });
+      var byS={}, sOrder=[];
+      inCat.forEach(function(d){ var x=_docSub0(d); if(x){ if(byS[x]==null){ byS[x]=0; sOrder.push(x); } byS[x]++; } });
+      sOrder.sort();
+      h+=docFolderBloque('Subcarpetas', sOrder.map(function(x){
+        return docFolderRow(x, _docCuenta(byS[x]), _docSub===x, "docGoSub('"+jsAttr(x)+"')");
+      }));
     }
-    if(loose.length){
-      h+='<div class="sec-t">Documentos<span class="ln"></span></div><div class="dgrid">';
-      loose.sort(function(a,b){ return (b.ts||0)-(a.ts||0); }).forEach(function(d){ h+=docCardHTML(d); });
-      h+='</div>';
-    }
-    if(!sOrder.length && !loose.length) h+='<div class="card"><div class="note">Sin documentos en esta categoría.</div></div>';
-    return h;
   }
-  // archivos de la subcategoría
-  var inSub=inCat.filter(function(d){ return _docSub0(d)===_docSub; });
-  h+='<div class="sec-t">Documentos<span class="ln"></span></div>';
-  if(!inSub.length) h+='<div class="card"><div class="note">Sin documentos aquí.</div></div>';
+  /* la carpeta de COMPARTIDOS CONMIGO (permiso especial) */
+  var shrN=(!docIsTotal())?_docCompartidos().length:0;
+  if(shrN) h+=docFolderBloque('Compartidos', [docFolderRow('Documentos compartidos', shrN+' de otras áreas', false, 'docShrGo(true)')]);
+  /* CARPETAS RECIENTES */
+  var recs=_docRecs();
+  if(recs.length) h+=docFolderBloque('Recientes', recs.map(function(it,i){
+    return docFolderRow(it.t, it.r, false, 'docRecGo('+i+')');
+  }));
+  return h+'</aside>';
+}
+
+/* ---- los archivos que caen donde estoy parado (incluye subcarpetas) ---- */
+function _docFilesAqui(){
+  var list;
+  if(_docShr && !docIsTotal()) list=_docCompartidos().slice();
   else{
-    h+='<div class="dgrid">';
-    inSub.sort(function(a,b){ return (b.ts||0)-(a.ts||0); }).forEach(function(d){ h+=docCardHTML(d); });
+    list=_docScope();
+    if(_docCat!=null) list=list.filter(function(d){ return _docCat0(d)===_docCat; });
+    if(_docSub!=null) list=list.filter(function(d){ return _docSub0(d)===_docSub; });
+  }
+  return list.sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
+}
+function docFilesPane(){
+  var manage=canDocManage(), h='';
+  /* subir: un botón, y el formulario completo solo cuando se pide */
+  if(manage){
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+
+       '<button class="btn'+(_docUpOpen?' ghost':'')+'" style="margin:0;width:auto;padding:10px 15px;font-size:13px" onclick="docUpTog()">'+
+       (_docUpOpen?'✕ Cerrar':'＋ Subir documento')+'</button></div>';
+    if(_docUpOpen) h+=docUploadForm();
+  }
+  var files=_docFilesAqui();
+  if(!files.length){
+    var vacio = manage ? 'Aquí todavía no hay documentos. Súbelos con el botón de arriba.'
+                       : 'Aquí todavía no hay documentos autorizados para ti.';
+    return h+'<div class="card"><div class="note">'+vacio+'</div></div>';
+  }
+  /* RECIENTES: los 4 últimos, en chips (como la referencia) */
+  if(files.length>4){
+    h+='<div class="dfsec" style="padding-left:2px">Recientes<span class="ln"></span></div><div class="drecent">';
+    files.slice(0,4).forEach(function(d){
+      var kb=Math.max(1,Math.round((d.size||0)/1024)), sz=(kb>=1024?(Math.round(kb/102.4)/10+' MB'):(kb+' KB'));
+      h+='<button type="button" class="dchip" onclick="docOpen(\''+jsAttr(d.id)+'\')" title="'+escA(d.titulo)+'">'+
+         docFileIcon(docKind(d),28)+'<span class="ct"><b>'+esc(d.titulo)+'</b><span>'+sz+'</span></span></button>';
+    });
     h+='</div>';
   }
+  h+='<div class="dfsec" style="padding-left:2px">Archivos · '+files.length+'<span class="ln"></span></div>';
+  var ver=files.slice(0,_docGridMax);
+  h+='<div class="dgrid">';
+  ver.forEach(function(d){ h+=docCardHTML(d); });
+  if(manage && ver.length>=files.length){
+    h+='<button type="button" class="dnew" onclick="docUpTog()"><span class="plus" aria-hidden="true">＋</span>'+
+       'Puedes subir o crear<br>un archivo nuevo aquí</button>';
+  }
+  h+='</div>';
+  if(files.length>ver.length) h+='<button class="btn ghost" style="margin:13px 0 0" onclick="docGridMas()">Ver más ('+(files.length-ver.length)+' faltan)</button>';
   return h;
 }
 /* ===== Documento como ÍCONO con miniatura (estilo Finder) =====
@@ -9533,7 +9676,18 @@ function docExplorer(){
 var _docMenuId=null;            /* id del doc con el menú ⋯ abierto */
 var _docThumbs={};              /* id -> liga firmada de la miniatura (solo imágenes) */
 var _docThumbExp=0;             /* caducidad del lote de ligas (50 min) */
-function _docTypeColor(k){ return k==='PDF'?'#e73b2f':k==='Word'?'#2a7de1':k==='Excel'?'#22c55e':k==='PowerPoint'?'#ff8a3d':k==='Imagen'?'#8a63d2':'#6b7280'; }
+function _docTypeColor(k){ return k==='PDF'?'#e73b2f':k==='Word'?'#2a7de1':k==='Excel'?'#22c55e':k==='PowerPoint'?'#ff8a3d':k==='Imagen'?'#8a63d2':'#9aa1ae'; }
+function _docLbl(k){ return k==='PowerPoint'?'PPT':(k==='Imagen'?'IMG':(k==='Texto'?'TXT':(k==='Archivo'?'DOC':k.toUpperCase()))); }
+/* HOJA con la esquina doblada, del color de su tipo (referencia de Carlos, 21-ago).
+   El PDF sale en el rojo de Hules Banda. `alto` en px; el ancho sale a escala. */
+function docFileIcon(kind,alto){
+  var c=_docTypeColor(kind), lbl=_docLbl(kind), H=alto||72, W=Math.round(H*0.8);
+  return '<svg class="dfic" viewBox="0 0 48 60" width="'+W+'" height="'+H+'" aria-hidden="true" focusable="false">'+
+    '<path d="M7 1.6h20.6L46.4 20.4v34a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V5.6a4 4 0 0 1 4-4z" fill="'+c+'" fill-opacity=".15" stroke="'+c+'" stroke-width="2.2" stroke-linejoin="round"/>'+
+    '<path d="M27.6 1.6v14.8a4 4 0 0 0 4 4h14.8" fill="none" stroke="'+c+'" stroke-width="2.2" stroke-linejoin="round"/>'+
+    '<text x="24.5" y="46" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="800" letter-spacing=".4" fill="'+c+'">'+lbl+'</text></svg>';
+}
+var DOC_FOLDER_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5A2 2 0 0 1 5 5.5h3.6a2 2 0 0 1 1.6.8l1 1.2H19a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
 function _docIsImg(d){ return docKind(d)==='Imagen'; }
 function docCardHTML(d){
   var kind=docKind(d);
@@ -9545,16 +9699,16 @@ function docCardHTML(d){
   else if(docIsTotal()){ meta+='<br>'+(_acl.mode==='all'?'Toda la planta':(_acl.mode==='ids'?('IDs: '+esc((_acl.ids||[]).join(', ')||'—')):esc(d.depto||'su área'))); }
   // al dueño le avisamos que este documento lo compartió con alguien más
   if(!_shared && _nEx && canDocManage()) meta+='<br>Compartido con '+_nEx+' persona'+(_nEx===1?'':'s');
-  var lbl = kind==='PowerPoint'?'PPT':(kind==='Imagen'?'IMG':(kind==='Texto'?'TXT':(kind==='Archivo'?'DOC':kind.toUpperCase())));
-  var badge='<span class="dbadge"><b style="background:'+_docTypeColor(kind)+'">'+lbl+'</b></span>';
-  var cached=_docThumbs[d.id];
-  var inner=(_docIsImg(d)&&cached)?('<img src="'+imgSrc(cached)+'" alt="">'):badge;
+  var cached=_docThumbs[d.id], esFoto=(_docIsImg(d)&&cached);
+  var inner=esFoto?('<img src="'+imgSrc(cached)+'" alt="">'):docFileIcon(kind,74);
   var h='<div class="dcard" role="button" tabindex="0" onkeydown="_kb(event)" onclick="docOpen(\''+jsAttr(d.id)+'\')" aria-label="Ver documento: '+escA(d.titulo)+'">';
   h+='<span class="dspk">'+speakBtn('Documento: '+d.titulo)+'</span>';
   if(canDocManage()) h+='<button class="dmore" onclick="event.stopPropagation();docMenu(\''+jsAttr(d.id)+'\')" aria-label="Más acciones">⋯</button>';
   // el ÁREA se ve SOBRE la miniatura (antes de abrir): imprescindible en los compartidos
-  var areaLbl=(_shared||docIsTotal())?(d.depto||''):'';
-  h+='<span class="dthumb"'+(_docIsImg(d)?(' data-dth="'+escA(d.id)+'"'):'')+'>'+inner+
+  /* la franja del área solo tiene sentido SOBRE una miniatura de foto; encima de
+     un ícono suelto se veía como una mancha (y el área ya va en el meta de abajo) */
+  var areaLbl=(esFoto&&(_shared||docIsTotal()))?(d.depto||''):'';
+  h+='<span class="dthumb'+(esFoto?'':' ic')+'"'+(_docIsImg(d)?(' data-dth="'+escA(d.id)+'"'):'')+'>'+inner+
      (areaLbl?('<span class="darea">'+esc(areaLbl)+'</span>'):'')+'</span>';
   h+='<div class="dname">'+esc(d.titulo)+'</div><div class="dmeta">'+meta+'</div>';
   if(_docMenuId===d.id && canDocManage()){

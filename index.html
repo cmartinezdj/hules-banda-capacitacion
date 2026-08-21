@@ -4175,7 +4175,7 @@ function renderHome(){
   // calendario por Noticias. Ahora los trae en su Inicio, uno debajo del otro.
   h+=htile('openCal()','cal','Calendario', 'Tus citas · tu área · la planta');
   // PRODUCCIÓN (v3_17): la bitácora de mezclado — solo capturistas/técnico
-  if(S.admin||S.mezCap||S.mezTec) h+=htile("go('planta')",'operacion','Planta','Los departamentos: producción, mantenimiento y lo que sigue',{wide:true});
+  if(S.admin||S.mezCap||S.mezTec||S.mezCostos) h+=htile("go('planta')",'operacion','Planta','Los departamentos: producción, mantenimiento y lo que sigue',{wide:true});
   // Pedir reparación / Tus reparaciones (V3.11): la Orden de Trabajo digital
   try{
     if(pedEsTecnico()){ var _nA=pedAsigMios().filter(function(p){ return ['asignado','reparando'].indexOf(p.estado)>-1; }).length;
@@ -7363,7 +7363,8 @@ function pedSubmit(){
       estado:'nuevo', tsSol:Date.now(), demo:(location.hash==='#demo') };
     for(var k in datos) rec[k]=datos[k];
     a.unshift(rec); lsSet('hb_pedidos',a);
-    _pedFormReset(); flash('✓ Pedido #'+folio+' enviado a Mantenimiento'); renderPedir(); return;
+    var _conFotos=_pedFotos.length;
+    _pedFormReset(); flash('✓ Pedido #'+folio+' enviado (demo)'+(_conFotos?' — las fotos no viajan en el demo':'')); renderPedir(); return;
   }
   if(!sbReady()){ if(st) st.textContent=''; flash('Sin conexión: necesitas internet para mandar tu pedido'); return; }
   // ---- REAL: RPC alta (folio del servidor) → PDF → subir → adjuntar ----
@@ -9473,6 +9474,11 @@ function sbLoad(tbl, cb){
       if(r.error || !r.data){ _sbCargando[tbl]=false; if(cb) cb(); return; }
       for(var i=0;i<r.data.length;i++) filas.push(r.data[i].data);
       if(r.data.length===PASO){ pagina(desde+PASO); return; }
+      /* seguro: si un cambio a media paginación movió una fila de página, podría
+         venir dos veces — se queda la ÚLTIMA copia de cada id */
+      var vistos={};
+      for(var k=filas.length-1;k>=0;k--){ var idd=filas[k]&&filas[k].id;
+        if(idd!=null){ if(vistos[idd]){ filas.splice(k,1); } else vistos[idd]=1; } }
       DBC[tbl]=filas; try{ lsSet('hb_'+tbl, DBC[tbl]); }catch(e){}
       _sbCargando[tbl]=false;
       /* si llegó un evento en vivo A MEDIA carga, la página vieja lo pudo pisar:
@@ -9756,7 +9762,9 @@ function renderPlanta(){
   //  1 · PRODUCCIÓN (área produccion: banburys, pathex, extruido, calandrias…)
   h+=htile("go('prod')",'operacion','Producción','Bitácora, cédula y gráficos del mezclado');
   //  2 · MANTENIMIENTO (área maquinaria: mantenimiento, montacarguistas)
-  var pn=0; try{ pn=pedNuevosN()||0; }catch(e){}
+  /* el badge solo para quien ve la bandeja del ÁREA: para un capturista,
+     pedNuevosN() cuenta SUS pedidos y el número confundía (revisión 20-ago) */
+  var pn=0; try{ if(S.admin||S.mando) pn=pedNuevosN()||0; }catch(e){}
   h+=htile("go('manto')",'rep','Mantenimiento','Órdenes de trabajo y reparaciones',{cnt:pn||''});
   h+='</div>';
 
@@ -10455,27 +10463,44 @@ function mzPegaPrev(){
 }
 function mzImporta(){
   if(!_mzFilas||!_mzFilas.length) return;
-  /* el servidor acepta 500 por llamada: se manda por TANDAS y se suma el resultado */
+  /* CANDADO de reentrada (revisión 20-ago): sin esto, un doble tap lanzaba DOS
+     cadenas concurrentes y el candado del servidor no las ve entre sí */
+  if(window._mzImportando) return;
+  window._mzImportando=true;
   var todas=_mzFilas.slice(), i=0, TANDA=450;
+  _mzFilas=null;                                  /* nadie re-manda lo mismo */
   var tot={insertadas:0,a_bandeja:0,duplicadas:0,errores:[]};
   var pv=$('mz-prev');
+  if(pv) pv.innerHTML='<div class="note" style="margin:8px 0">Guardando…</div>';
   function fin(){
+    window._mzImportando=false;
     alert('Listo: '+tot.insertadas+' guardados'+
       (tot.a_bandeja?(' · '+tot.a_bandeja+' fuera de catálogo (bandeja)'):'')+
-      (tot.duplicadas?(' · '+tot.duplicadas+' repetidos NO se guardaron (ya estaban capturados)'):'')+
+      (tot.duplicadas?(' · '+tot.duplicadas+' repetidos NO se guardaron (ya estaban capturados o venían dobles en el archivo)'):'')+
       (tot.errores.length?(' · '+tot.errores.length+' con error'):''));
-    _mzFilas=null; $('mz-paste').classList.add('hide'); mzLoadDia(mzCapPaint);
+    $('mz-paste').classList.add('hide'); mzLoadDia(mzCapPaint);
+  }
+  /* si la señal se cae a MEDIA subida: lo guardado ya quedó, y lo que falta se
+     reintenta con un botón, sin volver a subir el archivo (los repetidos los
+     frena el servidor de todos modos) */
+  function falla(msg){
+    window._mzImportando=false;
+    _mzFilas=todas.slice(Math.max(0,i-TANDA));    /* la tanda fallida + lo restante */
+    if(pv) pv.innerHTML='<div class="note" style="margin:8px 0;color:var(--warn)">Se cortó a la mitad: '+
+      tot.insertadas+' ya quedaron guardados; faltan '+_mzFilas.length+'.</div>'+
+      '<button class="btn" style="margin:6px 0 0" onclick="mzImporta()">Reintentar lo que falta</button>';
+    alert(msg+'\n\nLo ya guardado quedó. Toca «Reintentar lo que falta».');
   }
   function paso(){
     if(i>=todas.length){ fin(); return; }
     var lote=todas.slice(i,i+TANDA); i+=TANDA;
-    if(pv && todas.length>TANDA) pv.innerHTML='<div class="note" style="margin:8px 0">Guardando… '+Math.min(i,todas.length)+' de '+todas.length+' renglones.</div>';
+    if(pv) pv.innerHTML='<div class="note" style="margin:8px 0">Guardando… '+Math.min(i,todas.length)+' de '+todas.length+' renglones.</div>';
     SB.rpc('hb_mez_import',{p_filas:lote}).then(function(r){ var x=r&&r.data;
       if(x&&x.ok){
         tot.insertadas+=x.insertadas||0; tot.a_bandeja+=x.a_bandeja||0; tot.duplicadas+=x.duplicadas||0;
         (x.errores||[]).forEach(function(e){ tot.errores.push(e); });
         paso();
-      } else alert(mzErr(x)); },function(){ alert(mzErr()); });
+      } else falla(mzErr(x)); },function(){ falla(mzErr()); });
   }
   paso();
 }
@@ -10784,25 +10809,32 @@ function mzProgPrev(tsv,nombre){
 }
 function mzProgImporta(){
   var filas=_mzProgFilas; if(!filas||!filas.length) return;
-  var f=_mzF, i=0, oks=0, errs=0;
+  if(window._mzProgImportando) return;            /* candado de reentrada */
+  window._mzProgImportando=true;
+  _mzProgFilas=null;                              /* nadie re-manda lo mismo */
+  var f=_mzF, i=0, oks=0, errs=0, dups=0;
   var pv=$('mzpg-prev');
+  if(pv) pv.innerHTML='<div class="note" style="margin:8px 0">Guardando…</div>';
   function uno(){
-    if(i>=filas.length){ _mzProgFilas=null;
-      alert('Listo: '+oks+' renglones programados'+(errs?(' · '+errs+' con error'):''));
+    if(i>=filas.length){ window._mzProgImportando=false;
+      alert('Listo: '+oks+' renglones programados'+(dups?(' · '+dups+' repetidos NO se guardaron (ya estaban programados)'):'')+(errs?(' · '+errs+' con error'):''));
       if(pv) pv.innerHTML=''; mzLoadDia(mzProgPaint); return; }
     var p=filas[i++];
     var cat=(_mzCat&&_mzCat.compuestos||[]).filter(function(c){ return c.nombre.toUpperCase().trim()===String(p.compuesto).toUpperCase().trim(); })[0];
     SB.rpc('hb_mez_programa_alta',{p:{fecha:f,turno:p.turno,banbury:p.banbury,
       compuesto_id:cat?cat.id:null, compuesto_txt:cat?null:p.compuesto,
       letra:p.letra||null, mezclas_prog:p.mezclas_prog}}).then(function(r){
-        var x=r&&r.data; if(x&&x.ok) oks++; else errs++; uno();
+        var x=r&&r.data;
+        if(x&&x.ok) oks++; else if(x&&x.error==='duplicado') dups++; else errs++;
+        uno();
       },function(){ errs++; uno(); });
   }
-  if(!sbReady()){ alert('Sin conexión: la cédula se guarda en el servidor.'); return; }
+  if(!sbReady()){ window._mzProgImportando=false; alert('Sin conexión: la cédula se guarda en el servidor.'); return; }
   uno();
 }
 function mzFotoGuardaCed(){
   var y=_mzFotoY; if(!y) return;
+  _mzFotoY=null;   /* candado: un solo guardado por lectura */
   var d=y.datos||{}, f=d.fecha||_mzF;
   /* la hoja es de UN turno y UN banbury: si no se leyeron, se usan los de arriba */
   var tt=(d.turno>=1&&d.turno<=3)?d.turno:_mzT, bb=(d.banbury>=1&&d.banbury<=5)?d.banbury:_mzB;
@@ -12543,6 +12575,10 @@ function mzHistPaint(x){
   el.innerHTML=h;
 }
 function mzHistAbre(f){
+  /* mismo guardián que el resto: un renglón a medio teclear no se pisa sin
+     preguntar, y una corrección abierta jamás viaja al otro día */
+  if(!mzFormVacio() && !confirm('Tienes algo a medio capturar y se va a perder al cambiar de día. ¿Continuar?')) return;
+  _mzEditId=null;
   var el=$('mz-hist'); if(el) el.classList.add('hide');
   mzSetF(f);                      /* cambia el día y recarga la bitácora */
   flash('Bitácora del '+mzFechaBonita(f));

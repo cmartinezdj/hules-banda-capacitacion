@@ -2363,6 +2363,9 @@ function hbConfirm(msg,alSi,opts){
   v.querySelector('#hbav-txt').textContent=msg;
   v.querySelector('#hbav-si').textContent=opts.si||'Sí';
   v.querySelector('#hbav-no').textContent=opts.no||'No';
+  /* opts.solo: aviso de una sola salida (no es una pregunta, es una noticia).
+     Sin esto, un mensaje informativo salía con un botón «No» que no significa nada. */
+  v.querySelector('#hbav-no').style.display = opts.solo ? 'none' : '';
   v.classList.add('on');
   try{ v.querySelector('#hbav-no').focus(); }catch(e){}
 }
@@ -10575,7 +10578,48 @@ function mzLoadDia(cb){
     _mzDia=(x&&x.ok)?x:{corridas:[],tm:[],programa:[]}; cb(); },function(){ _mzDia={corridas:[],tm:[],programa:[]}; cb(); });
 }
 function mzInp(id,ph,extra){ return '<input id="'+id+'" placeholder="'+ph+'" '+(extra||'')+' style="width:100%;padding:10px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'; }
-function mzBanner(){ return (_mzCat&&_mzCat.practica)?'<div class="card" style="border-color:color-mix(in srgb,var(--warn) 45%,transparent);background:color-mix(in srgb,var(--warn) 9%,transparent);margin-bottom:12px"><b style="color:var(--warn);font-size:13px">Modo práctica</b><div class="note" style="margin-top:3px">Todo lo capturado en agosto es ensayo y se borra. El 1 de septiembre el sistema arranca en cero (regla de dirección).</div></div>':''; }
+function mzBanner(){ return (_mzCat&&_mzCat.practica)?'<div class="card" style="border-color:color-mix(in srgb,var(--warn) 45%,transparent);background:color-mix(in srgb,var(--warn) 9%,transparent);margin-bottom:12px"><b style="color:var(--warn);font-size:13px">Periodo de prueba</b><div class="note" style="margin-top:3px">Lo que se captura hoy queda marcado como <b>prueba</b> y se conserva como historia — ya no se borra. <b>Del 1 de septiembre en adelante</b> lo que entre es real y definitivo, y se captura directo aquí (decisión de dirección, 24-ago).</div></div>':''; }
+
+/* ===== «Esto trae datos de prueba» =========================================
+   Julio y agosto se quedan en el sistema como historia (decisión de Carlos,
+   24-ago: ya no se borra nada). Pero quien vea esos meses tiene que saber que
+   son de prueba — sobre todo DESPUÉS del 1 de septiembre, cuando el
+   interruptor global se apague y los dos periodos convivan en la misma suma.
+   Por eso el aviso se decide POR RANGO, no por el interruptor. */
+var _mzPrac={};
+/* OJO: el callback se llama SOLO cuando el dato acaba de llegar del servidor.
+   Si también se llamara con el valor ya cacheado, y el callback repinta la
+   pantalla (que vuelve a pedir el rango), sería recursión infinita — el mismo
+   error que tumbaba Documentos sin señal. */
+function mzPracCarga(d1,d2,cb){
+  var k=(d1||'')+'|'+(d2||'');
+  if(!d1||!d2||!(V3_ON&&sbReady()&&SB)) return;
+  if(_mzPrac[k]!==undefined) return;          /* ya está: nada que repintar */
+  _mzPrac[k]=null;                            /* marca "pedido en vuelo" */
+  SB.rpc('hb_mez_practica_rango',{p_d1:d1,p_d2:d2}).then(function(r){
+    var x=r&&r.data; if(!(x&&x.ok)) return;
+    _mzPrac[k]=x; if(cb) cb(x);
+  },function(){});
+}
+function mzSelloPrueba(d1,d2){
+  var x=_mzPrac[(d1||'')+'|'+(d2||'')];
+  if(!x || !x.corridas_practica) return '';
+  var mezcla=(x.corridas_reales>0);   /* lo peligroso: reales y prueba revueltos */
+  var col=mezcla?'var(--bad)':'var(--warn)';
+  return '<div class="card" style="border-color:color-mix(in srgb,'+col+' 45%,transparent);'+
+    'background:color-mix(in srgb,'+col+' 9%,transparent);margin-bottom:12px">'+
+    '<b style="color:'+col+';font-size:13px">'+(mezcla?'Ojo: hay datos de prueba revueltos':'Datos de prueba')+'</b>'+
+    '<div class="note" style="margin-top:3px">'+
+    (mezcla
+      ? ('Estos números suman <b>'+mzN(x.corridas_reales)+' corridas reales</b> con <b>'+
+         mzN(x.corridas_practica)+' de prueba</b> ('+mzN(x.mezclas_practica)+' mezclas del '+
+         esc(x.desde_practica||'')+' al '+esc(x.hasta_practica||'')+'). Para ver solo lo real, '+
+         'mueve el rango a partir del 1 de septiembre.')
+      : ('Lo que estás viendo es del <b>periodo de prueba</b> ('+esc(x.desde_practica||'')+' al '+
+         esc(x.hasta_practica||'')+'): sirve para comparar, pero no es información definitiva. '+
+         'Lo real empieza el 1 de septiembre.'))+
+    '</div></div>';
+}
 
 /* ---------- HUB de Producción ---------- */
 /* ============================================================================
@@ -10765,7 +10809,11 @@ function mzCapPaint(){
      '<button class="btn" style="margin:0;flex:1" onclick="mzAddCorrida()">'+(_mzEditId?'Guardar cambios':'＋ Agregar al turno')+'</button></div></div>';
   /* tiempo muerto */
   h+='<div class="sec-t">Tiempo muerto · T'+_mzT+' · BB'+_mzB+'<span class="ln"></span></div>';
-  if(!tms.length) h+='<div class="card"><div class="note">Sin paros capturados en este turno.</div></div>';
+  /* los paros solo se podían capturar de uno en uno: agosto entero quedó en
+     cero. Con esto se puede pasar una bitácora de papel de una sentada. */
+  h+='<div id="mztm-form"></div>';
+  if(!tms.length) h+='<div class="card"><div class="note">Sin paros capturados en este turno.'+
+     ((S.admin||S.mezCap)?' <button class="btn ghost" style="margin:8px 0 0;width:auto;padding:8px 12px;font-size:12px" onclick="mzTmPegar()">Pegar paros desde Excel</button>':'')+'</div></div>';
   tms.forEach(function(t){
     var cn=t.causa||t.causa_txt||'¿?';
     h+='<div class="card" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">'+
@@ -11864,7 +11912,12 @@ function mzRecPaint(soloLista){
       '<span style="flex:none">'+speakBtn('Recetas. Aquí el laboratorio confirma qué versión de cada fórmula es la vigente.')+'</span></div>'+
       '<div class="note" style="margin-top:6px"><b>'+conf+' de '+reales.length+'</b> familias con receta real confirmadas.</div>'+
       '<input value="'+escA(_mzRecQ)+'" placeholder="Buscar familia o compuesto…" oninput="mzRecBusca(this.value)" '+
-        'style="width:100%;margin-top:10px;padding:9px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px"></div>'+
+        'style="width:100%;margin-top:10px;padding:9px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+      /* el tiempo de ciclo no tenía por dónde entrar: sin él no hay con qué
+         comparar la velocidad real de la planta (24-ago) */
+      ((S.admin||S.mezCap)?('<button class="btn ghost" style="margin:9px 0 0;width:auto;padding:9px 13px;font-size:12.5px" onclick="mzCicPegar()">⏱ Cargar tiempos de ciclo</button>'):'')+
+      '</div>'+
+      '<div id="mzrec-form"></div>'+
       '<div id="mzrec-lista"></div>';
     $('s-mezrec').innerHTML=h; show('mezrec');
   }
@@ -12484,11 +12537,13 @@ function mzRangoAplica(){
 }
 function mzTabPaint(x){
   window._mzTabX=x;
+  mzPracCarga(_mztD1,_mztD2,function(){ if(_screen==='meztab'&&window._mzTabX) mzTabPaint(window._mzTabX); });
   var hoy=mxToday(), t=x.totales||{};
   var hace7=(function(){ var d=new Date(hoy+'T12:00:00'); d.setDate(d.getDate()-6); return d.toISOString().slice(0,10); })();
   var h='';
-  if(x.practica) h+='<div class="card" style="border-color:color-mix(in srgb,var(--warn) 45%,transparent);background:color-mix(in srgb,var(--warn) 9%,transparent);margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><b style="color:var(--warn);font-size:13px">Modo práctica activo</b><div class="note" style="margin-top:2px">Lo que ves es julio cargado de ensayo. El botón borra las prácticas y arranca en cero.</div></div>'+
-      (S.admin?'<button class="btn ghost" style="margin:0;width:auto;padding:9px 12px;font-size:12px;color:var(--bad)" onclick="mzArranque()">Arranque 1-sep</button>':'')+'</div></div>';
+  h+=mzSelloPrueba(_mztD1,_mztD2);
+  if(x.practica) h+='<div class="card" style="border-color:color-mix(in srgb,var(--warn) 45%,transparent);background:color-mix(in srgb,var(--warn) 9%,transparent);margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><b style="color:var(--warn);font-size:13px">Modo práctica activo</b><div class="note" style="margin-top:2px">Lo que se capture hoy queda marcado como prueba y <b>se conserva</b>. El botón solo abre el periodo real: <b>no borra nada</b>.</div></div>'+
+      (S.admin?'<button class="btn ghost" style="margin:0;width:auto;padding:9px 12px;font-size:12px" onclick="mzArranque()">Abrir el periodo real</button>':'')+'</div></div>';
   h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">'+
      '<b style="font-size:14px;flex:1;min-width:130px">Gráficos · Mezclado</b>'+
      mzRangoCtl()+
@@ -13115,6 +13170,8 @@ function mzRawMas(){ _mzRawF.salta=(_mzRaw&&_mzRaw.filas?_mzRaw.filas.length:0);
 function mzRawTurno(t){ return t==1?'1º':(t==2?'2º':(t==3?'3º':(t||'—'))); }
 function mzRawPinta(){
   var x=_mzRaw, filas=x.filas||[], h='';
+  mzPracCarga(x.desde,x.hasta,function(){ if(_screen==='mezraw'&&_mzRaw) mzRawPinta(); });
+  h+=mzSelloPrueba(x.desde,x.hasta);
   var chip=function(campo,val,txt){
     var on=(String(_mzRawF[campo]==null?'':_mzRawF[campo])===String(val==null?'':val));
     return '<button class="btn'+(on?'':' ghost')+'" style="margin:0;width:auto;padding:7px 11px;font-size:11.5px" '+
@@ -13183,6 +13240,8 @@ function mzRawPinta(){
 }
 function mzDesgPaint(){
   var x=_mzDesg, t=x.tot||{}, ta=x.tot_ant||{}, ty=x.tot_ay||{}, h='';
+  mzPracCarga(x.desde,x.hasta,function(){ if(_screen==='mezdesg'&&_mzDesg) mzDesgPaint(); });
+  h+=mzSelloPrueba(x.desde,x.hasta);
   h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'+
      '<div><b style="font-size:15px">'+esc(MZ_TEMAS[x.tema]||x.tema)+'</b>'+
      '<div class="note" style="margin-top:2px">Del '+esc(x.desde)+' al '+esc(x.hasta)+' · '+x.dias+' días'+
@@ -13425,6 +13484,157 @@ function mzPreGuardar(){
     else alert((x&&x.detalle)||mzErr(x)); },function(e){ alert(mzErr(null,e)); });
 }
 var _mzPreFilas=null;
+/* ===========================================================================
+   DOS PUERTAS DE ENTRADA (24-ago) · Al revisar qué pasaría cuando lleguen las
+   respuestas, salió que dos datos NO tenían por dónde entrar al sistema:
+     · el tiempo de ciclo (laboratorio) — el que enciende el gráfico de Ritmo
+     · los paros en masa — solo se podían capturar de uno en uno
+   Las dos siguen el patrón probado de precios: pegar, PREVISUALIZAR COMPLETO,
+   y hasta entonces guardar. Nada entra sin que un humano lo haya visto.
+   =========================================================================== */
+var _mzCicFilas=null, _mzTmFilas=null;
+
+function mzCicPegar(){
+  var el=$('mzrec-form'); if(!el) return;
+  if(el.innerHTML.indexOf('mzcic-tsv')>-1){ el.innerHTML=''; return; }
+  el.innerHTML='<div class="card" style="margin-bottom:12px;border-style:dashed">'+
+    '<b style="font-size:13px">Pegar tiempos de ciclo desde Excel</b>'+
+    '<div class="note" style="margin-top:4px">Columnas en este orden: <b>COMPUESTO · CICLO (min) · TEMPERATURA · LETRA</b>. '+
+    'La temperatura y la letra pueden ir vacías; sin letra se aplica a la versión <b>vigente</b>.</div>'+
+    '<textarea id="mzcic-tsv" rows="6" style="width:100%;margin-top:8px;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:12.5px" placeholder="MP-GY\t4.5\t150\nHNA-9\t5.25"></textarea>'+
+    '<div style="display:flex;gap:7px;align-items:center;margin-top:9px">'+
+      '<span class="note" style="flex:1;min-width:0" id="mzcic-arch">…o sube el archivo directo: <b>Excel (.xlsx)</b> o CSV.</span>'+
+      '<label class="icoa" style="cursor:pointer" title="Subir el Excel de tiempos de ciclo" aria-label="Subir el Excel de tiempos de ciclo">'+IC2.doc+
+        '<input type="file" accept=".xlsx,.xlsm,.csv,.tsv,.txt" style="display:none" onchange="mzCicArchivo(this)"></label></div>'+
+    '<div id="mzcic-prev"></div>'+
+    '<button class="btn ghost" style="margin:10px 0 0" onclick="mzCicPrev()">Previsualizar</button></div>';
+}
+function mzCicArchivo(inp){
+  var f=(inp&&inp.files)?inp.files[0]:null; if(inp) inp.value=''; if(!f) return;
+  var av=$('mzcic-arch'); if(av) av.textContent='Leyendo '+f.name+'…';
+  mzArchivoTexto(f, function(msg){ if(av) av.innerHTML='<span style="color:var(--warn)">'+esc(msg)+'</span>'; },
+    function(txt){ var ta=$('mzcic-tsv'); if(!ta) return;
+      ta.value=mzCsvATsv(txt);
+      if(av) av.textContent='Listo: '+f.name+'. Revisa y dale Previsualizar.'; });
+}
+function mzCicPrev(){
+  var txt=($('mzcic-tsv').value||'').trim();
+  if(!txt){ alert('Pega primero los renglones.'); return; }
+  var filas=[], malas=0;
+  txt.split(/\r?\n/).forEach(function(ln){
+    if(!ln.trim()) return;
+    var c=ln.split('\t'); if(c.length<2) c=ln.split(/;|,(?=\s*\S)/);
+    var nom=(c[0]||'').trim();
+    if(!nom || /compuesto|producto|clave/i.test(nom)) return;
+    var ci=String(c[1]||'').replace(/[^\d.,]/g,'');
+    if(/,\d{1,2}$/.test(ci) && ci.indexOf('.')<0) ci=ci.replace(',','.'); else ci=ci.replace(/,/g,'');
+    var temp=(c[2]||'').trim(), letra=(c[3]||'').trim();
+    if(!ci && !temp){ malas++; return; }
+    if(ci && !(parseFloat(ci)>0)){ malas++; return; }
+    filas.push({compuesto:nom, ciclo_min:ci||'', temp:temp||'', letra:letra||''});
+  });
+  if(!filas.length){ alert('No pude leer renglones. Revisa el orden de las columnas.'); return; }
+  _mzCicFilas=filas;
+  $('mzcic-prev').innerHTML='<div class="note" style="margin-top:8px"><b>'+filas.length+' renglones</b>'+
+      (malas?(' · <span style="color:var(--warn)">'+malas+' no se leyeron</span>'):'')+'</div>'+
+    mzTabla(['Compuesto','Ciclo (min)','Temp.','Versión'],
+      filas.map(function(f){ return mzTd([esc(f.compuesto),
+        f.ciclo_min?('<b>'+esc(f.ciclo_min)+'</b>'):'<span class="note">—</span>',
+        esc(f.temp)||'<span class="note">—</span>',
+        esc(f.letra)||'<span class="note">la vigente</span>']); }))+
+    '<div class="note" style="margin-top:7px">El ciclo es lo que <b>dice la receta</b> que debe tardar una mezcla. Con él, el sistema puede comparar la velocidad real de la planta contra la receta.</div>'+
+    '<button class="btn" style="margin:10px 0 0" onclick="mzCicImporta()">Guardar los '+filas.length+'</button>';
+}
+function mzCicImporta(){
+  if(!_mzCicFilas||!_mzCicFilas.length || window._mzCicGuardando) return;
+  window._mzCicGuardando=true;
+  var lote=_mzCicFilas.slice(); _mzCicFilas=null;
+  var pv=$('mzcic-prev'); if(pv) pv.innerHTML='<div class="note" style="margin:8px 0">Guardando…</div>';
+  SB.rpc('hb_mez_ciclos_import',{p:lote}).then(function(r){ var x=r&&r.data;
+    window._mzCicGuardando=false;
+    if(!(x&&x.ok)){ if(pv) pv.innerHTML=''; alert((x&&x.detalle)||mzErr(x)); return; }
+    var msg='✓ '+x.aplicados+' aplicados. Ya son '+x.con_ciclo+' de '+x.vigentes+' recetas con tiempo de ciclo.';
+    if(pv) pv.innerHTML='<div class="note" style="margin-top:8px;color:var(--ok)">'+esc(msg)+'</div>'+
+      (x.sin_empatar? ('<div class="note" style="margin-top:6px;color:var(--warn)"><b>'+x.sin_empatar+' no empataron</b> — no se les inventó nada:</div>'+
+        mzTabla(['Compuesto','Versión','Por qué'], (x.pendientes||[]).map(function(q){
+          return mzTd([esc(q.compuesto||''), esc(q.letra||'—'), esc(q.motivo||'')]); }))) : '');
+    flash(msg); renderMezRec();
+  },function(){ window._mzCicGuardando=false; alert(mzErr()); });
+}
+
+function mzTmPegar(){
+  var el=$('mztm-form'); if(!el) return;
+  if(el.innerHTML.indexOf('mztm-tsv')>-1){ el.innerHTML=''; return; }
+  el.innerHTML='<div class="card" style="margin-bottom:12px;border-style:dashed">'+
+    '<b style="font-size:13px">Pegar paros desde Excel</b>'+
+    '<div class="note" style="margin-top:4px">Columnas en este orden: <b>FECHA · TURNO · BANBURY · CAUSA · MINUTOS · FOLIO</b>. '+
+    'El folio puede ir vacío. <b>La causa tiene que ser una de la lista oficial</b> — igual que al capturar a mano.</div>'+
+    '<textarea id="mztm-tsv" rows="6" style="width:100%;margin-top:8px;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:12.5px" placeholder="2026-08-03\t1\t2\tFALLA ELECTRICA\t45"></textarea>'+
+    '<div style="display:flex;gap:7px;align-items:center;margin-top:9px">'+
+      '<span class="note" style="flex:1;min-width:0" id="mztm-arch">…o sube el archivo directo: <b>Excel (.xlsx)</b> o CSV.</span>'+
+      '<label class="icoa" style="cursor:pointer" title="Subir el Excel de paros" aria-label="Subir el Excel de paros">'+IC2.doc+
+        '<input type="file" accept=".xlsx,.xlsm,.csv,.tsv,.txt" style="display:none" onchange="mzTmArchivo(this)"></label></div>'+
+    '<div id="mztm-prev"></div>'+
+    '<button class="btn ghost" style="margin:10px 0 0" onclick="mzTmPrev()">Previsualizar</button></div>';
+}
+function mzTmArchivo(inp){
+  var f=(inp&&inp.files)?inp.files[0]:null; if(inp) inp.value=''; if(!f) return;
+  var av=$('mztm-arch'); if(av) av.textContent='Leyendo '+f.name+'…';
+  mzArchivoTexto(f, function(msg){ if(av) av.innerHTML='<span style="color:var(--warn)">'+esc(msg)+'</span>'; },
+    function(txt){ var ta=$('mztm-tsv'); if(!ta) return;
+      ta.value=mzCsvATsv(txt);
+      if(av) av.textContent='Listo: '+f.name+'. Revisa y dale Previsualizar.'; });
+}
+function mzTmPrev(){
+  var txt=($('mztm-tsv').value||'').trim();
+  if(!txt){ alert('Pega primero los renglones.'); return; }
+  var filas=[], malas=0;
+  txt.split(/\r?\n/).forEach(function(ln){
+    if(!ln.trim()) return;
+    var c=ln.split('\t'); if(c.length<3) c=ln.split(/;|,(?=\s*\S)/);
+    var f=(c[0]||'').trim();
+    if(!f || /fecha/i.test(f)) return;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(f)){
+      var m=f.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      f = m ? (m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2)) : '';
+    }
+    var tu=parseInt(c[1],10), bb=parseInt(c[2],10);
+    var cau=(c[3]||'').trim();
+    var mn=String(c[4]||'').replace(/[^\d.,]/g,'').replace(',','.');
+    if(!f || !(tu>=1&&tu<=3) || !cau || !(parseFloat(mn)>0)){ malas++; return; }
+    filas.push({fecha:f, turno:tu, banbury:bb||null, causa:cau, minutos:mn, folio:(c[5]||'').trim()||''});
+  });
+  if(!filas.length){ alert('No pude leer renglones. Revisa el orden de las columnas.'); return; }
+  _mzTmFilas=filas;
+  var tot=filas.reduce(function(a,f){ return a+parseFloat(f.minutos||0); },0);
+  $('mztm-prev').innerHTML='<div class="note" style="margin-top:8px"><b>'+filas.length+' paros</b> · '+
+      mzN(tot)+' minutos ('+mzN(tot/60,1)+' horas)'+
+      (malas?(' · <span style="color:var(--warn)">'+malas+' renglones no se leyeron</span>'):'')+'</div>'+
+    mzTabla(['Fecha','Turno','BB','Causa','Minutos','Folio'],
+      filas.map(function(f){ return mzTd([esc(f.fecha),'T'+f.turno,'BB'+(f.banbury||'—'),
+        esc(f.causa),'<b>'+esc(f.minutos)+'</b>', esc(f.folio)||'<span class="note">—</span>']); }))+
+    '<div class="note" style="margin-top:7px">Un paro idéntico que ya esté capturado <b>no se duplica</b>. Y si una causa no está en la lista oficial, ese renglón no entra y te lo digo.</div>'+
+    '<button class="btn" style="margin:10px 0 0" onclick="mzTmImporta()">Guardar los '+filas.length+' paros</button>';
+}
+function mzTmImporta(){
+  if(!_mzTmFilas||!_mzTmFilas.length || window._mzTmGuardando) return;
+  window._mzTmGuardando=true;
+  var lote=_mzTmFilas.slice(); _mzTmFilas=null;
+  var pv=$('mztm-prev'); if(pv) pv.innerHTML='<div class="note" style="margin:8px 0">Guardando…</div>';
+  SB.rpc('hb_mez_tm_import',{p:lote}).then(function(r){ var x=r&&r.data;
+    window._mzTmGuardando=false;
+    if(!(x&&x.ok)){ if(pv) pv.innerHTML=''; alert((x&&x.detalle)||mzErr(x)); return; }
+    var msg='✓ '+x.nuevos+' paros nuevos'+(x.repetidos?' · '+x.repetidos+' ya estaban':'');
+    if(pv) pv.innerHTML='<div class="note" style="margin-top:8px;color:var(--ok)">'+esc(msg)+'</div>'+
+      (x.sin_empatar? ('<div class="note" style="margin-top:6px;color:var(--warn)"><b>'+x.sin_empatar+' no entraron</b> — nada se inventó:</div>'+
+        mzTabla(['Renglón','Por qué'], (x.pendientes||[]).map(function(q){
+          var r0=q.renglon||{};
+          return mzTd([esc((r0.fecha||'')+' · T'+(r0.turno||'?')+' · '+(r0.causa||'')),
+                       esc(q.motivo||'')]); }))) : '');
+    flash(msg); _mzPrac={};
+  },function(){ window._mzTmGuardando=false; alert(mzErr()); });
+}
+
 function mzPrePegar(){
   var el=$('mzp-form'); if(!el) return;
   if(el.innerHTML.indexOf('mzp-tsv')>-1){ el.innerHTML=''; return; }
@@ -13796,7 +14006,9 @@ function mzCompRitmo(real, teor){
 }
 function mzCompPaint(x){
   window._mzCompX=x;
+  mzPracCarga(_mztD1,_mztD2,function(){ if(_screen==='mezcomp'&&window._mzCompX) mzCompPaint(window._mzCompX); });
   var c=x.compuesto, p=x.produccion||{}, hi=x.historico||{}, co=x.costo, h='';
+  h+=mzSelloPrueba(_mztD1,_mztD2);
   h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
      '<div><b style="font-size:18px">'+esc(c.nombre)+'</b><div class="note" style="margin-top:2px">Familia '+esc(c.familia)+' · '+esc(c.tipo)+
      ' · del '+esc(_mztD1)+' al '+esc(_mztD2)+'</div></div>'+speakBtn('Ficha completa de '+c.nombre)+'</div></div>';
@@ -13962,12 +14174,16 @@ function mzFixManual(){
     if(x&&x.ok){ renderMezTab(); } else alert(mzErr(x)); },function(){ alert(mzErr()); });
 }
 function mzArranque(){
-  /* v3_27: el borrado va POR FECHA (todo lo anterior al 1-sep-2026), ya no por
-     el sello de práctica — no importa a qué hora se apriete el botón */
-  if(!hbOkC('mzArranque1')){ hbConfirm('ARRANQUE EN CERO: se borra TODO lo capturado ANTES del 1 de septiembre de 2026 (la práctica de julio y agosto) y se apaga el modo práctica.\n\nLo capturado del 1-sep en adelante queda a salvo, sin importar la hora. ¿Seguro?', function(){ hbSiC('mzArranque1'); mzArranque(); }); return; }
-  if(!hbOkC('mzArranque2')){ hbConfirm('Segunda confirmación: esto es el arranque oficial. ¿Adelante?', function(){ hbSiC('mzArranque1'); hbSiC('mzArranque2'); mzArranque(); }); return; }
+  /* 24-ago: ya NO borra. Decisión de Carlos — julio y agosto se conservan como
+     historia y el sistema avisa cuando alguien los ve. Esto solo apaga el modo
+     práctica para que lo nuevo entre como real. El candado de verdad está en el
+     servidor (v3_63): aunque alguien abra una app vieja guardada en su celular,
+     la función ya no puede borrar. */
+  if(!hbOkC('mzArranque1')){ hbConfirm('ABRIR EL PERIODO REAL\n\nDe aquí en adelante, todo lo que se capture entra como información REAL y definitiva.\n\nJulio y agosto NO se borran: se quedan como historia y el sistema avisará que son de prueba cada vez que alguien los vea.\n\n¿Adelante?', function(){ hbSiC('mzArranque1'); mzArranque(); }); return; }
   SB.rpc('hb_mez_arranque').then(function(r){ var x=r&&r.data;
-    if(x&&x.ok){ _mzCat=null; alert('Listo. Corte: '+(x.corte||'2026-09-01')+'. Se borraron '+x.corridas_borradas+' corridas, '+x.tm_borrados+' paros y '+x.programa_borrado+' del programa. El sistema arranca en cero.'); renderMezTab(); }
+    if(x&&x.ok){ _mzCat=null; _mzPrac={};
+      hbConfirm('Listo. Desde el '+(x.corte||'2026-09-01')+' todo lo que se capture es real.\n\nSe conservaron '+mzN(x.corridas_conservadas||0)+' corridas y '+mzN(x.tm_conservados||0)+' paros del periodo de prueba.', null, {si:'Entendido', solo:true});
+      renderMezTab(); }
     else alert((x&&x.detalle)||mzErr(x)); },function(){ alert(mzErr()); });
 }
 

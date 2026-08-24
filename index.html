@@ -10297,7 +10297,12 @@ function mzFxLoad(forzar){
   SB.rpc('hb_mez_fx_actual').then(function(r){ var x=r&&r.data;
     if(x&&x.ok){ _mzFx=x; mzFxPinta(); } },function(){});
 }
-var MZ_ORG=[['tubuladora_precurado','Tubuladora precurado'],['tubuladora_cojin','Tubuladora cojín'],['banbury','Banbury'],['laboratorio','Laboratorio'],['otro','Otro']];
+/* De dónde viene el material que se reprocesa. Estas TRES son las que usa
+   producción de verdad — Alejandro (24-ago): están en la columna ÁREA de la
+   pestaña «Datos Generales» de su Excel. La lista anterior no salía de la
+   planta y por eso nunca se usó. El catálogo ya trae el área de cada compuesto
+   (area_origen), así que la captura la propone sola. */
+var MZ_ORG=[['MEZCLADO','Mezclado'],['PRENSADO / EXTRUIDO','Prensado / extruido'],['LABORATORIO','Laboratorio']];
 function mzOrgTxt(k){ for(var i=0;i<MZ_ORG.length;i++) if(MZ_ORG[i][0]===k) return MZ_ORG[i][1]; return k==='sin_origen'?'Sin origen':(k||''); }
 var _mzRTt=null;
 function mzCambioVivo(){
@@ -10574,16 +10579,18 @@ function mzCapPaint(){
      '<div id="mzc-res"></div></div>'+
      '<div style="display:flex;gap:7px;margin-top:8px;flex-wrap:wrap">'+
      '<div style="flex:1;min-width:80px">'+mzInp('mzc-letra','Versión (letra)')+'</div>'+
-     '<div style="flex:1;min-width:80px">'+mzInp('mzc-corr','Nº corrida','inputmode="numeric"')+
-       /* regla de Alejandro (20-ago): la corrida SOLO la llevan HNA-9, MRY-900 y
-          SRY-95; el resto de los compuestos no la usa. Se le recuerda a Gustavo
-          aqui mismo para que no ande adivinando en el ensayo. */
-       '<div class="note" style="font-size:11.5px;margin-top:2px">Solo HNA-9, MRY-900 y SRY-95</div></div>'+
+     /* regla de Alejandro (24-ago, corrige lo dicho el 20): «el número de corrida
+        solo aplica para SRY-95, el resto de los compuestos no tienen número de
+        corrida». Por eso el campo ni aparece salvo en los que lo llevan — lo dice
+        el catálogo (pide_corrida), no una lista escrita a mano aquí. */
+     '<div id="mzc-corrwrap" class="hide" style="flex:1;min-width:80px">'+mzInp('mzc-corr','Nº corrida','inputmode="numeric"')+
+       '<div class="note" style="font-size:11.5px;margin-top:2px">Solo este compuesto lo lleva</div></div>'+
      '<div style="flex:1;min-width:90px">'+mzInp('mzc-mez','Mezclas','inputmode="numeric"')+'</div>'+
      '<div style="flex:1;min-width:90px">'+mzInp('mzc-quem','Quemadas','inputmode="numeric"')+'</div>'+
      '<div style="flex:1;min-width:110px">'+mzInp('mzc-op','Nº operador','inputmode="numeric"')+'</div></div>'+
      '<div style="display:flex;gap:14px;margin-top:9px;flex-wrap:wrap;align-items:center;font-size:13px">'+
-     '<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="mzc-rep" onchange="$(\'mzc-orgwrap\').classList.toggle(\'hide\',!this.checked)"> Es reproceso</label>'+
+     '<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="mzc-rep" onchange="$(\'mzc-orgwrap\').classList.toggle(\'hide\',!this.checked);mzCompAjusta()"> Es reproceso</label>'+
+     '<span id="mzc-orglbl" class="note">viene de:</span>'+
      '<span id="mzc-orgwrap" class="hide"><select id="mzc-org" style="padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:12.5px">'+
      MZ_ORG.map(function(o){ return '<option value="'+o[0]+'">'+o[1]+'</option>'; }).join('')+'</select></span>'+
      '<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="mzc-exp"> Prueba EXP</label></div>'+
@@ -10631,6 +10638,21 @@ function mzSetComp(id){
   _mzSel=c; $('mzc-comp').value=c.nombre;
   var sug=(c.letras||[]).length?('Letras vigentes: '+c.letras.join(', ')):'';
   $('mzc-res').innerHTML=sug?'<div class="note" style="margin-top:6px">'+esc(sug)+'</div>':'';
+  mzCompAjusta();
+}
+/* Ajusta el formulario al compuesto elegido (Alejandro, 24-ago):
+   · el Nº de corrida SOLO lo lleva SRY-95 → para el resto ni se muestra
+   · si es reproceso, el ÁREA de donde viene ya la sabe el catálogo: se propone
+     sola y el capturista solo confirma o corrige. */
+function mzCompAjusta(){
+  var c=_mzSel;
+  var cw=$('mzc-corrwrap');
+  if(cw) cw.classList.toggle('hide', !(c && c.pide_corrida));
+  if(c && !c.pide_corrida){ var ci=$('mzc-corr'); if(ci) ci.value=''; }
+  var og=$('mzc-org');
+  if(og && c && c.area_origen){
+    for(var i=0;i<og.options.length;i++){ if(og.options[i].value===c.area_origen){ og.selectedIndex=i; break; } }
+  }
 }
 function mzBuscaCausa(q){
   _mzCauSel=null; var res=$('mzt-res'); if(!res) return;

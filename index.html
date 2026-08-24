@@ -12106,6 +12106,9 @@ function mzTabRango(d1,d2){ _mztD1=d1; _mztD2=d2; renderMezTab(); }
 var MZ_COL=['#e73b2f','#cc1a1f','#ffbf47','#7d0d11','#8a8f9c','#3b82f6','#22c55e','#8b5cf6','#0e9e8e','#f472b6'];
 function mzGT(key,def){ try{ return localStorage.getItem('mzg_'+key)||def; }catch(e){ return def; } }
 function mzGrafTipo(key,v){ try{ localStorage.setItem('mzg_'+key,v); }catch(e){}
+  /* repinta la pantalla donde está el gráfico (antes siempre el tablero: en la
+     ficha del compuesto el selector no habría hecho nada visible) */
+  if(_screen==='mezcomp' && window._mzCompX) return mzCompPaint(window._mzCompX);
   if(window._mzTabX) mzTabPaint(window._mzTabX); }
 function mzTitulo(txt,key,ops,def){ var cur=mzGT(key,def);
   return '<div style="display:flex;align-items:center;gap:8px"><b style="font-size:13px">'+txt+'</b>'+
@@ -12159,8 +12162,10 @@ function mzArea(dias,maxD){  /* área bajo la curva */
   return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;margin-top:9px" role="img" aria-label="Gráfico de área">'+
     '<path d="'+area+'" fill="rgba(204,26,31,.28)"/><polyline points="'+poly+'" fill="none" stroke="#cc1a1f" stroke-width="2.2"/>'+tops+labs+'</svg>'; }
 var MZ_OPS_CAT=[['barras','Barras'],['columnas','Columnas'],['pastel','Pastel'],['dona','Dona'],['tabla','Tabla']];
-function mzCatGraf(key,items,unidad,barrasHtml){  /* render de un gráfico categórico según el tipo elegido */
-  var t=mzGT(key,'barras');
+function mzCatGraf(key,items,unidad,barrasHtml,def){  /* render de un gráfico categórico según el tipo elegido */
+  /* `def` tiene que ser el MISMO que se le pasó a mzTitulo: si no, el selector
+     dice una cosa y se pinta otra (pasó con las donas de la ficha, 24-ago). */
+  var t=mzGT(key, def||'barras');
   if(t==='pastel') return mzPie(items,false);
   if(t==='dona')   return mzPie(items,true);
   if(t==='columnas') return mzCols(items);
@@ -13416,7 +13421,73 @@ function renderMezComp(cid,nom){
     if(!(x&&x.ok)){ $('s-mezcomp').innerHTML='<div class="card"><b>'+esc(mzErr(x))+'</b></div>'; return; }
     mzCompPaint(x); },function(e){ $('s-mezcomp').innerHTML='<div class="card"><b>'+esc(mzErr(null,e))+'</b></div>'; });
 }
+/* ============================================================================
+   GRÁFICOS DE LA FICHA DEL COMPUESTO (24-ago, pedido de Carlos: «datos en
+   gráficos más visuales»). Todo sale de lo que la ficha YA trae — no se inventa
+   ni un número:
+     · Producción por día      ← por_dia
+     · Ritmo real vs la receta ← velocidad contra el ciclo de la versión vigente
+     · Dónde se corre          ← por_banbury (banbury y turno)
+     · De qué está hecho       ← receta agrupada por sección (kilos)
+     · A dónde se va el dinero ← receta con precio (solo dirección)
+   ============================================================================ */
+function mzCompBarras(items, unidad, color){
+  var max=1; items.forEach(function(i){ if((i.v||0)>max) max=i.v; });
+  return '<div style="margin-top:9px">'+items.map(function(i,k){
+    var pc=Math.max(2, Math.round((i.v||0)/max*100));
+    return '<div style="display:flex;align-items:center;gap:9px;margin-bottom:7px">'+
+      '<span class="note" style="width:110px;flex:none;text-align:right;font-size:11.5px">'+esc(i.t)+'</span>'+
+      '<span style="flex:1;height:14px;border-radius:7px;background:var(--card2);overflow:hidden;min-width:0">'+
+        '<span style="display:block;height:14px;border-radius:7px;background:'+(color||MZ_COL[k%MZ_COL.length])+';width:'+pc+'%"></span></span>'+
+      '<b style="width:88px;flex:none;font-size:12px;font-variant-numeric:tabular-nums">'+mzN(i.v, i.dec||0)+
+        '<span class="note" style="font-size:10px"> '+esc(unidad||'')+'</span></b></div>';
+  }).join('')+'</div>';
+}
+/* Producción por día, con las quemadas marcadas encima */
+function mzCompDias(pd){
+  if(!pd.length) return '<div class="note" style="margin-top:6px">Sin corridas en el rango.</div>';
+  var max=1; pd.forEach(function(d){ if((d.mezclas||0)>max) max=d.mezclas; });
+  var W=640,H=150,PT=16,PB=20,n=pd.length;
+  var an=Math.max(3,(W-16)/n-3), x0=8;
+  var barras='', etiq='', paso=Math.ceil(n/14);
+  pd.forEach(function(d,i){
+    var m=+d.mezclas||0, q=+d.quemadas||0;
+    var alto=(H-PT-PB)*(m/max), x=x0+i*((W-16)/n), y=H-PB-alto;
+    barras+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+an.toFixed(1)+'" height="'+Math.max(1,alto).toFixed(1)+'" rx="2" fill="'+(m===max?'#e73b2f':'#cc1a1f')+'"/>';
+    if(q>0){ var aq=Math.max(2,(H-PT-PB)*(q/max));
+      barras+='<rect x="'+x.toFixed(1)+'" y="'+(y-aq-2).toFixed(1)+'" width="'+an.toFixed(1)+'" height="'+aq.toFixed(1)+'" rx="2" fill="#ffbf47"/>'; }
+    if(m===max) etiq+='<text x="'+(x+an/2).toFixed(1)+'" y="'+(y-5).toFixed(1)+'" text-anchor="middle" font-size="10.5" fill="#e73b2f" font-weight="700">'+mzN(m)+'</text>';
+    if(i%paso===0||i===n-1) etiq+='<text x="'+(x+an/2).toFixed(1)+'" y="'+(H-5)+'" text-anchor="middle" font-size="9" fill="#8a8f9c">'+(+String(d.fecha).slice(8,10))+'</text>';
+  });
+  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;margin-top:9px" role="img" aria-label="Mezclas por día">'+barras+etiq+'</svg>'+
+    '<div class="note" style="font-size:11px">Cada barra es un día. En <span style="color:#ffbf47">amarillo</span>, las quemadas.</div>';
+}
+/* El ritmo real contra el que dice la receta — el dato que más dice de un compuesto */
+function mzCompRitmo(real, teor){
+  if(real==null || !teor) return '';
+  var max=Math.max(real,teor)*1.15;
+  var fila=function(t,v,col,nota){
+    var pc=Math.max(3, Math.round(v/max*100));
+    return '<div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">'+
+      '<span class="note" style="width:96px;flex:none;text-align:right;font-size:11.5px">'+t+'</span>'+
+      '<span style="flex:1;height:18px;border-radius:9px;background:var(--card2);overflow:hidden;min-width:0">'+
+        '<span style="display:block;height:18px;border-radius:9px;background:'+col+';width:'+pc+'%"></span></span>'+
+      '<b style="width:96px;flex:none;font-size:12.5px;font-variant-numeric:tabular-nums">'+mzN(v,2)+'<span class="note" style="font-size:10px"> min</span></b></div>'+
+      (nota?('<div class="note" style="font-size:11px;margin:-4px 0 8px 105px">'+nota+'</div>'):'');
+  };
+  var dif=real-teor, pc=teor?Math.round(dif/teor*100):0;
+  var msg = dif>0.05
+    ? ('Cada mezcla tarda <b style="color:var(--warn)">'+mzN(dif,2)+' min más</b> de lo que dice la receta — un <b>'+mzN(Math.abs(pc),0)+'% más lenta</b>.')
+    : (dif<-0.05 ? ('Va <b style="color:var(--ok)">'+mzN(Math.abs(dif),2)+' min más rápido</b> que la receta.')
+                 : 'Va justo al ritmo de la receta.');
+  return '<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Ritmo: lo real contra la receta</b>'+
+    '<div style="margin-top:10px">'+
+      fila('En la planta', real, 'var(--data)','')+
+      fila('Dice la receta', teor, 'var(--barmut)','')+
+    '</div><div class="note" style="line-height:1.55">'+msg+'</div></div>';
+}
 function mzCompPaint(x){
+  window._mzCompX=x;
   var c=x.compuesto, p=x.produccion||{}, hi=x.historico||{}, co=x.costo, h='';
   h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
      '<div><b style="font-size:18px">'+esc(c.nombre)+'</b><div class="note" style="margin-top:2px">Familia '+esc(c.familia)+' · '+esc(c.tipo)+
@@ -13427,6 +13498,40 @@ function mzCompPaint(x){
      '<div class="card"><div class="note">Quemadas</div><b style="font-size:20px;color:var(--bad)">'+mzN(p.quemadas)+'</b><div class="note">'+mzPct(p.quemadas,p.mezclas)+'</div></div>'+
      '<div class="card"><div class="note">Velocidad real</div><b style="font-size:20px">'+(x.velocidad!=null?mzN(x.velocidad,2):'—')+'</b><div class="note">min por mezcla</div></div>'+
      '<div class="card"><div class="note">Histórico total</div><b style="font-size:20px">'+mzN(hi.mezclas)+'</b><div class="note">'+esc(hi.desde||'—')+' → '+esc(hi.hasta||'—')+'</div></div></div>';
+  /* ---- GRÁFICOS (pedido de Carlos 24-ago) ---- */
+  var pd=(x.por_dia||[]);
+  if(pd.length){
+    h+='<div class="card" style="margin-bottom:12px">'+
+       mzTitulo('Producción por día','cmpdia',[['barras','Barras'],['linea','Línea']],'barras')+
+       (mzGT('cmpdia','barras')==='linea'
+         ? mzLinea(pd, Math.max.apply(null,pd.map(function(d){ return +d.mezclas||0; }).concat([1])))
+         : mzCompDias(pd))+
+       '</div>';
+  }
+  /* el ritmo real contra el ciclo de la versión vigente */
+  var vVig=(x.versiones||[]).filter(function(v){ return v.estado==='vigente'; })[0];
+  if(x.velocidad!=null && vVig && vVig.ciclo_min) h+=mzCompRitmo(+x.velocidad, +vVig.ciclo_min);
+  var pb=x.por_banbury||[];
+  if(pb.length){
+    /* dos vistas del mismo dato: por máquina y por turno */
+    var porBB={}, porTU={};
+    pb.forEach(function(r){
+      var b='BB '+(r.banbury||'?'), t=(r.turno==1?'1er':(r.turno==2?'2º':(r.turno==3?'3er':'?')))+' turno';
+      porBB[b]=(porBB[b]||0)+(+r.mezclas||0);
+      porTU[t]=(porTU[t]||0)+(+r.mezclas||0);
+    });
+    var itemsBB=Object.keys(porBB).sort().map(function(k){ return {t:k, v:porBB[k]}; });
+    var itemsTU=Object.keys(porTU).sort().map(function(k){ return {t:k, v:porTU[k]}; });
+    h+='<div class="card" style="margin-bottom:12px">'+
+       mzTitulo('En qué banbury se corre','cmpbb',[['barras','Barras'],['dona','Dona'],['pastel','Pastel']],'barras')+
+       mzCatGraf('cmpbb', itemsBB, 'mezclas', mzCompBarras(itemsBB,'mezclas'), 'barras')+
+       '</div>';
+    h+='<div class="card" style="margin-bottom:12px">'+
+       mzTitulo('En qué turno se corre','cmptu',[['barras','Barras'],['dona','Dona'],['pastel','Pastel']],'dona')+
+       mzCatGraf('cmptu', itemsTU, 'mezclas', mzCompBarras(itemsTU,'mezclas'), 'dona')+
+       '</div>';
+  }
+
   if(x.admin){
     if(co&&co.ok&&co.fx){
       var ct=x.costo_total;
@@ -13459,7 +13564,48 @@ function mzCompPaint(x){
      mzTabla(['Versión','Folio','Fecha','Estado','Peso kg','Ciclo min'],
       vs.map(function(v){ return mzTd(['<b'+(v.estado==='vigente'?' style="color:var(--data)"':'')+'>'+esc(v.letra)+'</b>'+(v.es_exp?' <span class="note">EXP</span>':'')+(v.es_tr?' <span class="note">TR</span>':'')+(v.es_r?' <span class="note">R</span>':''),
         esc(v.folio||'—'),esc(v.fecha||'—'),esc(v.estado),v.peso?mzN(v.peso,3):'—',v.ciclo_min?mzN(v.ciclo_min,2):'—']); }))+'</div>';
+  /* ---- de qué está hecho: la receta en proporción, por sección ---- */
   if((x.receta||[]).length){
+    var SECN={hules:'Hules',pigmentos:'Pigmentos',negros_cargas:'Negros y cargas',
+              aceites:'Aceites',acelerantes:'Acelerantes',otro:'Otros'};
+    var porSec={}, totKg=0;
+    x.receta.forEach(function(i){
+      var kg=+i.kg||0; if(kg<=0) return;
+      var sc=SECN[i.seccion]||(i.seccion||'Otros');
+      porSec[sc]=(porSec[sc]||0)+kg; totKg+=kg;
+    });
+    var itemsSec=Object.keys(porSec).map(function(k){ return {t:k, v:porSec[k], dec:1}; })
+                       .sort(function(a,b){ return b.v-a.v; });
+    if(itemsSec.length){
+      h+='<div class="card" style="margin-bottom:12px">'+
+         mzTitulo('De qué está hecho','cmpsec',[['dona','Dona'],['pastel','Pastel'],['barras','Barras']],'dona')+
+         mzCatGraf('cmpsec', itemsSec, 'kg', mzCompBarras(itemsSec,'kg'), 'dona')+
+         '<div class="note" style="font-size:11px;margin-top:6px">Sobre '+mzN(totKg,1)+' kg de una mezcla.</div>'+
+         '</div>';
+    }
+    /* ---- a dónde se va el dinero: qué ingredientes se llevan el costo ---- */
+    if(x.admin && co && co.ok && co.fx){
+      var gasto=[], sinPrecio=0;
+      x.receta.forEach(function(i){
+        var kg=+i.kg||0; if(kg<=0) return;
+        var pr=i.precio;
+        if(!pr || pr.precio==null){ if(!i.compuesto_ref && !i.es_recorte) sinPrecio++; return; }
+        var mxn=(+pr.precio)*(pr.moneda==='USD'?(+co.fx||0):1)*kg;
+        if(mxn>0) gasto.push({t:(i.material||i.nombre||'').slice(0,18), v:mxn, dec:0});
+      });
+      gasto.sort(function(a,b){ return b.v-a.v; });
+      var top=gasto.slice(0,8), resto=gasto.slice(8);
+      if(resto.length){ var rv=0; resto.forEach(function(g){ rv+=g.v; }); top.push({t:'Los demás', v:rv, dec:0}); }
+      if(top.length){
+        var totG=0; top.forEach(function(g){ totG+=g.v; });
+        h+='<div class="card" style="margin-bottom:12px;border-color:color-mix(in srgb,var(--data) 35%,transparent)">'+
+           mzTitulo('A dónde se va el dinero de una mezcla','cmpgas',[['barras','Barras'],['dona','Dona'],['pastel','Pastel']],'barras')+
+           mzCatGraf('cmpgas', top, 'MXN', mzCompBarras(top,'MXN'), 'barras')+
+           '<div class="note" style="font-size:11px;margin-top:6px">'+mzMx(totG,2)+' de materia prima por mezcla'+
+           (sinPrecio?(' · '+mzN(sinPrecio)+' ingrediente'+(sinPrecio===1?'':'s')+' sin precio, no entra'+(sinPrecio===1?'':'n')+' en la cuenta'):'')+'.</div>'+
+           '</div>';
+      }
+    }
     h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Receta de la versión vigente</b>'+
        mzTabla(['Ingrediente','Sección','Kg','Tolerancia'].concat(x.admin?['Precio']:[]),
         x.receta.map(function(i){
@@ -13468,9 +13614,6 @@ function mzCompPaint(x){
             esc((i.seccion||'').replace('_',' ')),i.kg!=null?mzN(i.kg,3):'—',
             (i.tol_min!=null?(mzN(i.tol_min,3)+' – '+mzN(i.tol_max,3)):'—')].concat(x.admin?[pr]:[])); }))+'</div>';
   }
-  var pb=x.por_banbury||[];
-  if(pb.length) h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Dónde se corre</b>'+
-     mzTabla(['Banbury','Turno','Mezclas'], pb.map(function(b){ return mzTd(['BB'+b.banbury,'T'+b.turno,mzN(b.mezclas)]); }))+'</div>';
   var cr=x.corridas||[];
   h+='<div class="card"><b style="font-size:13px">Corridas del periodo (dato crudo)</b>'+
      '<div class="note" style="margin-top:2px">Tal como se capturaron en la bitácora.</div>'+

@@ -10329,6 +10329,49 @@ function mezInit(){
 }
 /* ---- LA META DIARIA de Ana: un solo número que manda en la gráfica ---- */
 var _mzMeta=null;
+/* ============================================================================
+   CONTRA QUÉ SE COMPARA (respuesta de Ana, 24-ago: "que tenga todos los
+   comparativos pero con un botón o desplegable se cambie").
+   Tres bases: el MES ANTERIOR, el MISMO MES DEL AÑO PASADO, o LA META.
+   La elección se guarda en este aparato, así que cada quien deja puesta la suya.
+   Contra la meta solo tiene sentido en MEZCLAS —la meta es de mezclas al día—;
+   en kilos, reproceso y quemadas se dice "sin meta para este dato" en vez de
+   inventar un número.
+   ============================================================================ */
+var MZ_CMP={ant:'Mes anterior', ay:'Año pasado', meta:'Contra la meta'};
+var _mzCmp=(function(){ try{ var v=localStorage.getItem('hb_mzcmp'); return MZ_CMP[v]?v:'ant'; }catch(e){ return 'ant'; } })();
+function mzCmpGo(v){
+  if(!MZ_CMP[v]) return;
+  _mzCmp=v; try{ localStorage.setItem('hb_mzcmp',v); }catch(e){}
+  if(_screen==='mezdesg' && _mzDesg) mzDesgPaint();
+}
+function mzCmpBotones(){
+  return '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px">'+
+    '<span class="note" style="font-size:11.5px">Comparar contra:</span>'+
+    Object.keys(MZ_CMP).map(function(k){
+      return '<button class="btn'+(k===_mzCmp?'':' ghost')+'" style="margin:0;width:auto;padding:6px 11px;font-size:11.5px" onclick="mzCmpGo(\''+k+'\')">'+MZ_CMP[k]+'</button>';
+    }).join('')+'</div>';
+}
+/* cuántos días de producción trae el periodo (para la meta del periodo) */
+function _mzDiasProd(x){
+  var d=(x&&x.por_dia)||[];
+  return d.length || (x&&x.dias) || 0;
+}
+/* Un comparativo, ya con la base que la persona escogió. */
+function mzCmpChip(campo, x){
+  var t=x.tot||{}, ta=x.tot_ant||{}, ty=x.tot_ay||{};
+  var hoy=t[campo];
+  if(_mzCmp==='ay')  return mzDelta(hoy, ty[campo])+' <span class="note">vs año pasado</span>';
+  if(_mzCmp==='meta'){
+    if(campo!=='mezclas') return '<span class="note">sin meta para este dato</span>';
+    var m=(_mzMeta&&+_mzMeta.meta_dia)||0;
+    if(!m) return '<span class="note">falta fijar la meta</span>';
+    var dp=_mzDiasProd(x), base=m*dp;
+    if(!dp) return '<span class="note">sin días con producción</span>';
+    return mzDelta(hoy, base)+' <span class="note">vs la meta ('+mzN(m)+' × '+mzN(dp)+' día'+(dp===1?'':'s')+' = '+mzN(base)+')</span>';
+  }
+  return mzDelta(hoy, ta[campo])+' <span class="note">vs mes anterior</span>';
+}
 function mzMetaLoad(cb){
   SB.rpc('hb_mez_meta').then(function(r){ var x=r&&r.data;
     _mzMeta=(x&&x.ok)?x:null; if(cb) cb(); },function(){ if(cb) cb(); });
@@ -12287,6 +12330,9 @@ function renderMezDesg(tema){
   _mzDesgTema=tema||'produccion';
   if(!_mztD1){ var hoy=mxToday(); _mztD1=hoy.slice(0,8)+'01'; _mztD2=hoy; }
   $('s-mezdesg').innerHTML='<div class="card"><div class="note">Cargando el desglose…</div></div>'; show('mezdesg');
+  /* la meta hace falta para el comparativo "contra la meta"; si se entró directo
+     al desglose sin pasar por el tablero, se pide aquí y se repinta al llegar */
+  if(!_mzMeta) mzMetaLoad(function(){ if(_screen==='mezdesg' && _mzDesg) mzDesgPaint(); });
   SB.rpc('hb_mez_desglose',{p_tema:_mzDesgTema,p_desde:_mztD1,p_hasta:_mztD2}).then(function(r){ var x=r&&r.data;
     if(r&&r.error){ $('s-mezdesg').innerHTML='<div class="card"><b>'+esc(mzErr(null,r.error))+'</b></div>'; return; }
     if(!(x&&x.ok)){ $('s-mezdesg').innerHTML='<div class="card"><b>'+esc(mzErr(x))+'</b></div>'; return; }
@@ -12405,20 +12451,19 @@ function mzDesgPaint(){
        return '<button class="btn'+(k===x.tema?'':' ghost')+'" style="margin:0;width:auto;padding:7px 11px;font-size:11.5px" onclick="renderMezDesg(\''+k+'\')">'+MZ_TEMAS[k]+'</button>'; }).join('')+
      '<button class="btn ghost" style="margin:0;width:auto;padding:7px 11px;font-size:11.5px" onclick="mzRawDe(\''+x.tema+'\')">🔎 Corrida por corrida</button>'+
      '<button class="btn ghost" style="margin:0;width:auto;padding:7px 11px;font-size:11.5px" onclick="mzExcel(_mztD1,_mztD2)">⬇ Excel</button></div></div></div>';
-  /* comparativos dobles (pedido de Carlos: ambas) */
+  /* el comparativo lo escoge quien mira (Ana, 24-ago): mes anterior, año pasado o la meta */
+  h+=mzCmpBotones();
   h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:12px">'+
      '<div class="card"><div class="note">Mezclas</div><b style="font-size:20px;color:var(--data)">'+mzN(t.mezclas)+'</b>'+
-       '<div style="margin-top:3px">'+mzDelta(t.mezclas,ta.mezclas)+' <span class="note">vs periodo anterior</span></div>'+
-       '<div>'+mzDelta(t.mezclas,ty.mezclas)+' <span class="note">vs año pasado</span></div></div>'+
+       '<div style="margin-top:3px">'+mzCmpChip('mezclas',x)+'</div></div>'+
      '<div class="card"><div class="note">Kilos</div><b style="font-size:20px">'+mzN(t.kg)+'</b>'+
-       '<div style="margin-top:3px">'+mzDelta(t.kg,ta.kg)+' <span class="note">vs anterior</span></div>'+
-       '<div>'+mzDelta(t.kg,ty.kg)+' <span class="note">vs año pasado</span></div></div>'+
+       '<div style="margin-top:3px">'+mzCmpChip('kg',x)+'</div></div>'+
      '<div class="card"><div class="note">Reproceso</div><b style="font-size:20px;color:var(--warn)">'+mzN(t.reproceso)+'</b>'+
        '<div class="note" style="margin-top:3px">'+mzPct(t.reproceso,t.mezclas)+' de lo producido</div>'+
-       '<div>'+mzDelta(t.reproceso,ta.reproceso)+' <span class="note">vs anterior</span></div></div>'+
+       '<div>'+mzCmpChip('reproceso',x)+'</div></div>'+
      '<div class="card"><div class="note">Quemadas</div><b style="font-size:20px;color:var(--bad)">'+mzN(t.quemadas)+'</b>'+
        '<div class="note" style="margin-top:3px">'+mzPct(t.quemadas,t.mezclas)+' de lo producido</div>'+
-       '<div>'+mzDelta(t.quemadas,ta.quemadas)+' <span class="note">vs anterior</span></div></div></div>';
+       '<div>'+mzCmpChip('quemadas',x)+'</div></div></div>';
 
   if(x.tema==='produccion'){
     var pc=x.por_compuesto||[];

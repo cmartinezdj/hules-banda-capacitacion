@@ -142,6 +142,8 @@ button{font-family:var(--font)}
 /* «Ordenar por…» de las tablas de Producción (pedido de Carlos, 24-ago).
    Toda clase nueva DEBE entrar también a body.a11y o el modo Texto grande
    se rompe en silencio. */
+.iasello{font-size:10.5px;color:var(--mut);letter-spacing:.03em;opacity:.85}
+body.a11y .iasello{font-size:13px !important}
 .mzord{display:inline-flex;align-items:center;gap:7px;margin-left:auto;flex:none}
 .mzord>span{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);white-space:nowrap}
 .mzord select{padding:5px 9px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:11.5px;max-width:200px;cursor:pointer}
@@ -5003,6 +5005,8 @@ function hbNombrePila(){
 }
 function renderChat(){
   iaChInit();
+  /* el perfil de IA (qué motor le toca, cuánto lleva gastado) se pide una vez */
+  if(_iaPerf===null && V3_ON && sbReady()) iaCargaPerfil(function(){ if(_screen==='chat') renderChat(); });
   var esAdmin=!!S.admin;
   var h='<div class="chatwrap'+(esAdmin?' conpanel':'')+'">';
   /* --- IZQUIERDA: los chats por tema --- */
@@ -5080,7 +5084,16 @@ function paintChat(){
         return '<button class="btn ghost" style="margin:0;width:auto;padding:9px 11px;font-size:12.5px;text-align:left" onclick="docOpen(\''+jsAttr(d.id)+'\')">'+esc(d.titulo)+(d.depto?' <span class="note">· '+esc(d.depto)+'</span>':'')+'</button>';
       }).join('')+'</div>';
     }
-    return '<div class="m bot">'+bandi('b-sm')+'<div class="bub">'+esc(x.content)+extra+'<div style="margin-top:7px">'+speakBtn(x.content)+'</div></div></div>';
+    /* sello honesto: cuándo contestó la IA (y no la biblioteca) y qué costó.
+       El costo solo se le enseña a quien puede ver dinero. */
+    var sello='';
+    if(x.ia){
+      var mot=(_iaPerf&&_iaPerf.motor_chat==='sonnet')?'Sonnet':'GPT mini';
+      sello='<span class="iasello">'+(x.bloqueada?'fuera de tema':'respondió '+mot)+
+            ((x.costo!=null&&mzVeDinero&&mzVeDinero())?(' · $'+Number(x.costo).toFixed(2)+' MXN'):'')+'</span>';
+    }
+    return '<div class="m bot">'+bandi('b-sm')+'<div class="bub">'+esc(x.content)+extra+
+      '<div style="margin-top:7px;display:flex;align-items:center;gap:9px;flex-wrap:wrap">'+speakBtn(x.content)+sello+'</div></div></div>';
   }).join('');
   if(chatBusy) h+='<div class="m bot">'+bandi('b-sm')+'<div class="bub"><div class="typing"><i></i><i></i><i></i></div></div></div>';
   m.innerHTML=h; m.scrollTop=m.scrollHeight;
@@ -5298,6 +5311,10 @@ function sendChat(){
     // ACCESO TOTAL: si la biblioteca no supo, buscar DOCUMENTOS (privados incluidos; RLS ya validó admin)
     if(dios){ var df=docFind(t);
       if(df){ logQ(df.topic,t,true); S.chat.push({role:'assistant',content:df.answer,docs:df.docs}); paintChat(); return; } }
+    /* IA (política de Carlos, 24-ago): entra AL FINAL, cuando la biblioteca y los
+       documentos ya no supieron. Así lo que ya está autorizado no cuesta un peso.
+       Solo la usa quien tiene motor asignado: responsables y dirección. */
+    if(_iaPerf && _iaPerf.motor_chat){ iaPregunta(t); return; }
     {
       logQ(null,t,false);
       S.chat.push({role:'assistant',content: dios
@@ -5306,6 +5323,114 @@ function sendChat(){
     }
     paintChat();
   }, 420);
+}
+
+/* ===========================================================================
+   ASISTENTE CON IA · la política que fijó Carlos (24-ago-2026)
+     · Trabajador   → nada de IA: contesta la biblioteca autorizada.
+     · Responsable  → GPT mini, abierto pero SOLO a temas de Hules Banda, y con
+                      acceso a lo que esa persona YA puede ver (sus documentos,
+                      su área, las cifras del módulo).
+     · Acceso total → Sonnet sin candado temático, con aviso cuando la tarea
+                      va a salir cara y la opción de llevársela a su propio Claude.
+   El servidor decide todo (hb_ia_chat); aquí solo se pregunta y se espera.
+   =========================================================================== */
+var _iaPerf=null, _iaEsperando=null;
+
+function iaCargaPerfil(cb){
+  if(!(V3_ON && sbReady() && SB)) { if(cb) cb(); return; }
+  SB.rpc('hb_ia_mi_perfil').then(function(r){
+    var x=r&&r.data; _iaPerf=(x&&x.ok)?x:null; if(cb) cb();
+  },function(){ if(cb) cb(); });
+}
+
+/* lo que huele a tarea larga y cara: vale la pena avisar antes de gastarlo */
+var IA_PESADO=/\b(pdf|presentaci[oó]n|power ?point|diapositiva|slide|excel|hoja de c[aá]lculo|documento (largo|completo)|reporte completo|manual completo|c[oó]digo|programa|aplicaci[oó]n|script|traduce todo|resume todo|libro)\b/i;
+
+function iaPregunta(t){
+  if(_iaPerf && _iaPerf.perfil==='acceso_total' && IA_PESADO.test(t)) return iaAvisoPesado(t);
+  iaEnvia(t);
+}
+
+/* el aviso de Carlos: "que te deje descargar el código para correrlo en tu
+   propio Claude, o continuar de igual manera con el motor del sistema" */
+function iaAvisoPesado(t){
+  chatBusy=false; paintChat();
+  var v=document.createElement('div'); v.className='hbav-velo'; v.id='iaav';
+  v.innerHTML='<div class="hbav" role="dialog" aria-modal="true" aria-label="Aviso de gasto">'+
+    '<div class="hbav-top"><img class="hbav-logo" alt="" onerror="this.style.display=\'none\'"><span>Aviso del sistema</span></div>'+
+    '<b style="font-size:16px;display:block;margin:9px 0 7px">Eso va a salir caro</b>'+
+    '<div class="note" style="line-height:1.55">Lo que pediste es una tarea larga (un documento, una '+
+    'presentación o código). Con el motor del sistema se puede hacer, pero <b>consume mucho</b> '+
+    'y el gasto lo paga la empresa.<br><br>Si la vas a repetir varias veces, sale mejor llevártela '+
+    'a tu propio Claude: te copio la instrucción completa y la pegas allá.</div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:15px">'+
+      '<button class="btn" style="margin:0;flex:1;min-width:160px" onclick="iaCopiaParaClaude()">Copiar para mi Claude</button>'+
+      '<button class="btn ghost" style="margin:0;flex:1;min-width:140px" onclick="iaAvisoCierra(true)">Hacerlo aquí de todos modos</button>'+
+      '<button class="btn ghost" style="margin:0;width:auto;padding:11px 15px" onclick="iaAvisoCierra(false)">Cancelar</button>'+
+    '</div></div>';
+  document.body.appendChild(v);
+  /* el velo solo se ve con la clase .on — sin ella el aviso queda en display:none
+     y el usuario no vería nada (se detectó al probarlo, 24-ago). */
+  try{ var lg=document.querySelector('.loginlogo'); var im=v.querySelector('.hbav-logo');
+       if(lg&&im&&lg.src) im.src=lg.src; }catch(e){}
+  v.classList.add('on');
+  v.addEventListener('click',function(e){ if(e.target===v) iaAvisoCierra(false); });
+  window._iaEsc=function(e){ if(e.key==='Escape') iaAvisoCierra(false); };
+  document.addEventListener('keydown', window._iaEsc);
+  window._iaPend=t;
+}
+function iaCopiaParaClaude(){
+  var t=window._iaPend||'';
+  var txt='Contexto: trabajo en Hules Banda, fábrica mexicana que fabrica bandas de hule '+
+          'precurado para renovación de llanta.\n\nLo que necesito:\n'+t;
+  var ok=function(){ flash('📋 Copiado. Pégalo en tu Claude.'); };
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok,ok);
+  else { var a=document.createElement('textarea'); a.value=txt; document.body.appendChild(a); a.select();
+         try{ document.execCommand('copy'); }catch(e){} a.remove(); ok(); }
+  iaAvisoCierra(false);
+}
+function iaAvisoCierra(seguir){
+  var v=$('iaav'); if(v) v.remove();
+  if(window._iaEsc){ document.removeEventListener('keydown',window._iaEsc); window._iaEsc=null; }
+  var t=window._iaPend; window._iaPend=null;
+  if(seguir && t) iaEnvia(t);
+}
+
+function iaEnvia(t){
+  if(!(V3_ON && sbReady() && SB)){
+    S.chat.push({role:'assistant',content:'Necesito conexión para contestar eso. Cuando vuelva la señal, pregúntame otra vez.'});
+    chatBusy=false; paintChat(); return;
+  }
+  chatBusy=true; _iaEsperando=true; paintChat();
+  /* solo los turnos de conversación, sin lo que puso la biblioteca */
+  var hist=(S.chat||[]).filter(function(m){ return m.role==='user'||m.role==='assistant'; })
+             .slice(-7,-1).map(function(m){ return {role:m.role,content:String(m.content||'').slice(0,1500)}; });
+  SB.rpc('hb_ia_chat',{p_pregunta:t,p_hist:hist}).then(function(r){
+    var x=r&&r.data;
+    if(!(x&&x.ok)){ iaFalla(x&&x.detalle); return; }
+    iaEspera(x.id, 0);
+  },function(){ iaFalla(); });
+}
+function iaFalla(msg){
+  chatBusy=false; _iaEsperando=null;
+  S.chat.push({role:'assistant',content: msg || 'No pude contestar eso ahorita. Inténtalo otra vez.'});
+  paintChat();
+}
+function iaEspera(id, intento){
+  if(intento > 60) return iaFalla('La respuesta tardó demasiado. Vuelve a preguntar.');
+  setTimeout(function(){
+    SB.rpc('hb_ia_chat_resultado',{p_id:id}).then(function(r){
+      var x=r&&r.data;
+      if(!(x&&x.ok)) return iaFalla(x&&x.detalle);
+      if(x.estado==='esperando') return iaEspera(id, intento+1);
+      chatBusy=false; _iaEsperando=null;
+      S.chat.push({role:'assistant', content:x.respuesta||'(sin respuesta)',
+                   ia:true, costo:x.costo_mxn, bloqueada:x.bloqueada});
+      paintChat();
+      if(_iaPerf) iaCargaPerfil();   /* refresca el gasto del mes */
+    },function(){ iaFalla(); });
+  }, intento===0 ? 900 : 1400);
 }
 
 /* ====================== TABLERO RRHH (solo admin) ====================== */

@@ -12795,6 +12795,45 @@ function mzCierrePinta(tipo,d1,d2,res){
       if(x.costeable!==false) kgCost+=(+x.kg||0); });
     costoKg=kgCost?costoTot/kgCost:null; }   /* entre kilos costeados, no totales (A1) */
   var paros=(e&&e.paros||[]).reduce(function(a,x){ return a+(+x.minutos||0); },0);
+
+  /* ===== MATEMÁTICAS PARA EL CONSEJO Y LA DIRECCIÓN (24-ago) =====
+     Todo lo de aquí sale de datos que YA tenemos. Lo que no se puede calcular
+     con lo que hay se dice al final, en su propia sección: no se aproxima. */
+  var dias=(p.por_dia||[]);                       // días CON producción capturada
+  var nd=dias.length;
+  var metaDia=(+p.meta_dia||0);
+  var metaPer=metaDia*nd;                          // la meta del periodo, contada solo en días trabajados
+  var metaPct=metaPer?(mez/metaPer*100):null;
+  var metaBrecha=metaPer?(mez-metaPer):null;
+  var diasOk=metaDia?dias.filter(function(d){ return (+d.mezclas||0)>=metaDia; }).length:0;
+  /* ritmo y variabilidad: el consejo pregunta "¿cuánto hacemos al día y qué tan parejo?" */
+  var prom=nd?(mez/nd):0;
+  var mejor=null, peor=null;
+  dias.forEach(function(d){
+    if(!mejor || (+d.mezclas||0)>(+mejor.mezclas||0)) mejor=d;
+    if(!peor  || (+d.mezclas||0)<(+peor.mezclas||0))  peor=d;
+  });
+  var promAnt=null, ndAnt=null;
+  if(ta && ta.mezclas!=null && p.dias_ant) { ndAnt=p.dias_ant; promAnt=ta.mezclas/p.dias_ant; }
+  var porCorrida=(t.corridas?(mez/t.corridas):null);          // tamaño promedio de corrida
+  var diasSinQuem=dias.filter(function(d){ return !(+d.quemadas||0); }).length;
+  /* eficiencia: los paros, dichos en algo que se entienda en una junta */
+  var parosH=paros/60;
+  var jm=(e&&+e.jornada_min)||0;
+  var parosJornadas=jm?(paros/jm):null;                       // "equivalen a N jornadas de un banbury"
+  var parosDia=nd?(paros/nd):null;
+  var parosVeces=(e&&e.paros||[]).reduce(function(a,x){ return a+(+x.veces||0); },0);
+  var parosFolio=(e&&e.paros||[]).reduce(function(a,x){ return a+(+x.con_folio||0); },0);
+  /* concentración: de qué tanto dependemos de pocos compuestos */
+  var pc=(p.por_compuesto||[]);
+  var top5=pc.slice(0,5).reduce(function(a,x){ return a+(+x.mezclas||0); },0);
+  var top5Pct=mez?(top5/mez*100):null;
+  var nComp=pc.length;
+  /* programa contra real (cuando Producción empiece a capturar la cédula) */
+  var cump=(e&&e.cumplimiento)||[];
+  var progTot=cump.reduce(function(a,x){ return a+(+x.programado||0); },0);
+  var realProg=cump.reduce(function(a,x){ return a+(+x.real||0); },0);
+
   var tit='Cierre de '+(tipo==='semana'?'semana':'mes')+' · Mezclado';
   var html='<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>'+tit+'</title><style>'+
    '@page{size:letter;margin:.7in}*{box-sizing:border-box;margin:0;padding:0}'+
@@ -12817,6 +12856,8 @@ function mzCierrePinta(tipo,d1,d2,res){
    ' <span class="sub">En el diálogo elige “Guardar como PDF”.</span></div>'+
    '<div class="kpis">'+
      '<div class="k"><b>'+mzN(mez)+'</b><span>mezclas</span></div>'+
+     (metaPct!=null?('<div class="k"><b>'+mzN(metaPct,1)+'%</b><span>de la meta del periodo</span></div>'):'')+
+     '<div class="k"><b>'+mzN(prom,0)+'</b><span>mezclas por día ('+mzN(nd)+' días)</span></div>'+
      '<div class="k"><b>'+mzN(kg)+'</b><span>kilos producidos</span></div>'+
      '<div class="k"><b>'+mzN(t.reproceso||0)+'</b><span>de reproceso ('+mzPct(t.reproceso||0,mez)+')</span></div>'+
      '<div class="k"><b>'+mzN(t.quemadas||0)+'</b><span>mezclas quemadas</span></div>'+
@@ -12828,6 +12869,41 @@ function mzCierrePinta(tipo,d1,d2,res){
      '<tr><td>Kilos</td><td class="n">'+mzN(kg)+'</td><td class="n">'+mzN(ta.kg)+'</td><td class="n">'+mzN(ty.kg)+'</td></tr>'+
      '<tr><td>Reproceso</td><td class="n">'+mzN(t.reproceso||0)+'</td><td class="n">'+mzN(ta.reproceso)+'</td><td class="n">'+mzN(ty.reproceso)+'</td></tr>'+
      '<tr><td>Quemadas</td><td class="n">'+mzN(t.quemadas||0)+'</td><td class="n">'+mzN(ta.quemadas)+'</td><td class="n">'+mzN(ty.quemadas)+'</td></tr></table>'+
+   /* ---- LA META (pedido de Carlos 24-ago: que el cierre la traiga) ---- */
+   (metaDia
+     ? ('<h2>Cumplimiento de la meta</h2><table>'+
+        '<tr><td>Meta fijada por dirección</td><td class="n"><b>'+mzN(metaDia)+'</b></td><td class="n mut">mezclas por día</td></tr>'+
+        '<tr><td>Meta del periodo</td><td class="n"><b>'+mzN(metaPer)+'</b></td><td class="n mut">'+mzN(metaDia)+' × '+mzN(nd)+' días con producción</td></tr>'+
+        '<tr><td>Producido</td><td class="n"><b>'+mzN(mez)+'</b></td><td class="n mut">'+(metaBrecha>=0?('+'+mzN(metaBrecha)+' sobre la meta'):(mzN(metaBrecha)+' abajo de la meta'))+'</td></tr>'+
+        '<tr><td><b>Cumplimiento</b></td><td class="n"><b>'+mzN(metaPct,1)+'%</b></td><td class="n mut">'+(metaPct>=100?'meta alcanzada':'falta '+mzN(100-metaPct,1)+' puntos')+'</td></tr>'+
+        '<tr><td>Días que se llegó a la meta</td><td class="n"><b>'+mzN(diasOk)+' de '+mzN(nd)+'</b></td><td class="n mut">'+mzPct(diasOk,nd)+' de los días</td></tr>'+
+        '</table>')
+     : '<h2>Cumplimiento de la meta</h2><p class="sub">Dirección todavía no fija la meta diaria. En cuanto la ponga, esta hoja mide el periodo contra ella.</p>')+
+
+   /* ---- RITMO: qué tan parejo salió el periodo ---- */
+   '<h2>Ritmo del periodo</h2><table>'+
+     '<tr><td>Promedio por día trabajado</td><td class="n"><b>'+mzN(prom,0)+'</b></td><td class="n mut">'+mzN(nd)+' días con producción</td></tr>'+
+     (mejor?('<tr><td>Mejor día</td><td class="n"><b>'+mzN(mejor.mezclas)+'</b></td><td class="n mut">'+esc(mejor.fecha||'')+'</td></tr>'):'')+
+     (peor?('<tr><td>Día más bajo</td><td class="n"><b>'+mzN(peor.mezclas)+'</b></td><td class="n mut">'+esc(peor.fecha||'')+'</td></tr>'):'')+
+     ((mejor&&peor&&(+peor.mezclas||0))?('<tr><td>Diferencia entre el mejor y el más bajo</td><td class="n"><b>'+mzN((+mejor.mezclas||0)-(+peor.mezclas||0))+'</b></td><td class="n mut">'+mzN(((+mejor.mezclas||0)/(+peor.mezclas||1)),1)+' veces</td></tr>'):'')+
+     (porCorrida?('<tr><td>Mezclas por corrida</td><td class="n"><b>'+mzN(porCorrida,1)+'</b></td><td class="n mut">'+mzN(t.corridas||0)+' corridas</td></tr>'):'')+
+     '<tr><td>Días sin ninguna quemada</td><td class="n"><b>'+mzN(diasSinQuem)+' de '+mzN(nd)+'</b></td><td class="n mut">'+mzPct(diasSinQuem,nd)+' de los días</td></tr>'+
+   '</table>'+
+
+   /* ---- CONCENTRACIÓN: de cuántos productos depende la planta ---- */
+   (nComp?('<h2>De qué depende la producción</h2><table>'+
+     '<tr><td>Compuestos distintos corridos</td><td class="n"><b>'+mzN(nComp)+'</b></td><td class="n mut">en el periodo</td></tr>'+
+     '<tr><td>Peso de los 5 más corridos</td><td class="n"><b>'+mzN(top5Pct,1)+'%</b></td><td class="n mut">'+mzN(top5)+' de '+mzN(mez)+' mezclas</td></tr>'+
+     '</table>'):'')+
+
+   /* ---- PROGRAMA CONTRA REAL: se enciende solo cuando se capture la cédula ---- */
+   (progTot
+     ? ('<h2>Programa contra real</h2><table>'+
+        '<tr><td>Programado</td><td class="n"><b>'+mzN(progTot)+'</b></td><td class="n mut">mezclas</td></tr>'+
+        '<tr><td>Real en lo programado</td><td class="n"><b>'+mzN(realProg)+'</b></td><td class="n mut">'+mzPct(realProg,progTot)+' de cumplimiento</td></tr>'+
+        '</table>')
+     : '')+
+
    '<h2>Los 10 compuestos más corridos</h2><table><tr><th>Compuesto</th><th class="n">Mezclas</th><th class="n">Kilos</th><th class="n">% del total</th>'+(c?'<th class="n">Costo total</th>':'')+'</tr>'+
      (p.por_compuesto||[]).slice(0,10).map(function(x){
        var cx=c?(c.por_compuesto||[]).filter(function(y){ return y.compuesto===x.compuesto; })[0]:null;
@@ -12835,9 +12911,26 @@ function mzCierrePinta(tipo,d1,d2,res){
          (c?('<td class="n">'+(cx?mzMx(cx.costo_total_mxn,2):'—')+'</td>'):'')+'</tr>'; }).join('')+'</table>'+
    '<h2>Reproceso por origen</h2><table><tr><th>Origen</th><th class="n">Mezclas</th><th class="n">Kilos</th><th class="n">%</th></tr>'+
      ((m&&m.reproceso_origen||[]).map(function(o){ return '<tr><td>'+esc(mzOrgTxt(o.origen))+'</td><td class="n">'+mzN(o.mezclas)+'</td><td class="n">'+mzN(o.kg)+'</td><td class="n">'+mzPct(o.mezclas,t.reproceso||0)+'</td></tr>'; }).join('')||'<tr><td colspan="4">Sin reproceso en el periodo.</td></tr>')+'</table>'+
-   '<h2>Paros · '+mzN(paros)+' minutos en total</h2><table><tr><th>Causa</th><th class="n">Minutos</th><th class="n">Veces</th><th class="n">Con folio</th></tr>'+
+   '<h2>Paros · '+mzN(paros)+' minutos ('+mzN(parosH,1)+' horas)</h2>'+
+   '<table>'+
+     '<tr><td>Veces que se paró</td><td class="n"><b>'+mzN(parosVeces)+'</b></td><td class="n mut">'+(parosDia!=null?(mzN(parosDia,0)+' min por día trabajado'):'')+'</td></tr>'+
+     (parosJornadas!=null?('<tr><td>Equivale a</td><td class="n"><b>'+mzN(parosJornadas,1)+'</b></td><td class="n mut">jornadas completas de un banbury ('+mzN(jm)+' min)</td></tr>'):'')+
+     '<tr><td>Paros con folio de mantenimiento</td><td class="n"><b>'+mzN(parosFolio)+' de '+mzN(parosVeces)+'</b></td><td class="n mut">'+mzPct(parosFolio,parosVeces)+' quedó documentado</td></tr>'+
+   '</table>'+
+   '<h2>Paros por causa</h2><table><tr><th>Causa</th><th class="n">Minutos</th><th class="n">Veces</th><th class="n">Con folio</th></tr>'+
      ((e&&e.paros||[]).slice(0,10).map(function(x){ return '<tr><td>'+esc(x.causa||'')+'</td><td class="n">'+mzN(x.minutos)+'</td><td class="n">'+mzN(x.veces)+'</td><td class="n">'+mzN(x.con_folio)+'</td></tr>'; }).join('')||'<tr><td colspan="4">Sin paros.</td></tr>')+'</table>'+
      ((e&&e.paros_sin_folio)?('<div class="sub" style="margin-top:5px">'+mzN(e.paros_sin_folio)+' paros quedaron sin folio de mantenimiento.</div>'):'')+
+   /* ---- LO QUE TODAVÍA NO SE PUEDE CALCULAR ----
+      Va en la hoja a propósito: si el consejo no ve un número, que sepa por qué
+      no está y qué haría falta, en vez de suponer que se nos olvidó. */
+   '<h2>Lo que esta hoja todavía no puede decir</h2><table>'+
+     '<tr><th>Dato</th><th>Qué haría falta</th></tr>'+
+     (progTot?'':'<tr><td>Cumplimiento del programa</td><td class="mut">Que Producción capture la cédula de programación; el comparativo se enciende solo.</td></tr>')+
+     '<tr><td>Utilidad y margen</td><td class="mut">Los precios de venta. Dirección los dejó fuera por ahora; el cálculo ya está hecho y se enciende el día que entren.</td></tr>'+
+     '<tr><td>Existencia y cobertura de materia prima</td><td class="mut">El inventario de almacén a una fecha de corte y los kilos de cada compra (hoy solo entra el precio).</td></tr>'+
+     '<tr><td>Costo por persona y por hora</td><td class="mut">Las horas trabajadas por turno. No están en el sistema.</td></tr>'+
+     (metaDia?'':'<tr><td>Cumplimiento de la meta</td><td class="mut">Que dirección fije la meta diaria de mezclas.</td></tr>')+
+   '</table>'+
    '<div class="ft"><span>Hules Banda · Sistema Integral · Módulo de Mezclado</span><span>Información confidencial</span></div>'+
    '</body></html>';
   var w=window.open('','_blank');

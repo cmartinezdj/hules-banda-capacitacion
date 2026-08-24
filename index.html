@@ -1350,6 +1350,7 @@ body.a11y .screen .tg{ font-size:13px !important; }
     <section id="s-mezsem" class="screen pad hide"></section>
     <section id="s-mezrec" class="screen pad hide"></section>
     <section id="s-mezraw" class="screen pad hide"></section>
+    <section id="s-iallaves" class="screen pad hide"></section>
   </main>
 
   <!-- ===================== NAV INFERIOR ===================== -->
@@ -2316,7 +2317,7 @@ window.CFG.permanencia = {
 <script>
 /* ---------- utilidades ---------- */
 function $(id){ return document.getElementById(id); }
-function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 /* URL de imagen SEGURA para atributos src: solo data:image/... o https, con comillas
    escapadas. Bloquea inyección por 'img' o 'foto' con onerror= (XSS almacenado). */
 function imgSrc(u){ u=String(u||''); if(!/^(data:image\/|https:\/\/)/i.test(u)) return ''; return u.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -2879,7 +2880,7 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'"'+main+' title="'+it[1]+'" onclick="'+accion+'">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['planta','manto','mezrec','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp','mezcierres','mezprecios','mezsem','mezraw'];
+var SCREENS=['planta','manto','mezrec','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp','mezcierres','mezprecios','mezsem','mezraw','iallaves'];
 var _prevShown=null;
 function show(name){
   var cambio = (name!==_prevShown);
@@ -2904,6 +2905,7 @@ function show(name){
   if(name==='pedir') navKey=(window._pedFrom==='manto')?'planta':((S&&(S.admin||S.mando))?'hr':'home');   // Pedir reparación
   if(name==='pedidos') navKey=(window._pedFrom==='manto')?'planta':'hr';                                   // inbox de Mantenimiento
   if(name==='mezraw') navKey='planta';
+  if(name==='iallaves') navKey='hr';
   if(name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') navKey='planta';
   if(name==='planta'||name==='manto'||name==='prod'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab') navKey='planta';  // todo lo de Planta
   if(name==='docs' && window._docFrom==='tab') navKey='docs';           // abierto desde el tab del riel
@@ -2986,10 +2988,10 @@ function hbQuienSoy(hayAtras){
   return b(largo);
 }
 function renderTop(name){
-  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='mezraw'||name==='prod'||name==='manto') && !(name==='docs' && window._docFrom==='tab');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='mezraw'||name==='iallaves'||name==='prod'||name==='manto') && !(name==='docs' && window._docFrom==='tab');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? (window._pedFrom==='manto'?'go(\'manto\')':'go(\'hr\')') : name==='pedir' ? (window._pedFrom==='manto'?'go(\'manto\')':('go(\''+((S.admin||S.mando)?'hr':'home')+'\')')) : (name==='prod'||name==='manto') ? 'go(\'planta\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='mezraw' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? (window._pedFrom==='manto'?'go(\'manto\')':'go(\'hr\')') : name==='pedir' ? (window._pedFrom==='manto'?'go(\'manto\')':('go(\''+((S.admin||S.mando)?'hr':'home')+'\')')) : (name==='prod'||name==='manto') ? 'go(\'planta\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='iallaves' ? 'go(\'hr\')' : name==='mezraw' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
     left.innerHTML='<span class="tlogo" aria-hidden="true">'+HB_MARK+'</span><button class="back" onclick="'+backTo+'">‹ Atrás</button>'+hbQuienSoy(true);
     left.classList.remove('who');
   }else{
@@ -3010,6 +3012,8 @@ function renderTop(name){
         '<span style="min-width:0;text-align:left"><b style="display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(_pn||S.area)+'</b>'+
         '<span class="note" style="font-size:10.5px">#'+(''+S.emp).padStart(3,'0')+' · Mi perfil ›</span></span></button>'+
       (S.admin?'':'<div class="tmrow"><span class="note">Tus puntos</span><span class="ptchip">0 pts</span></div>')+
+      (S && S.clave==='0917' ? '<button class="tmit" onclick="topMenuCierra();renderIALlaves()"><span class="tbico" style="pointer-events:none">🔑</span>'+
+        '<span style="text-align:left"><b style="font-size:13px">Llaves de IA</b><span class="note" style="display:block;font-size:10.5px">Encender el lector y el asistente</span></span></button>' : '')+
       '<button class="tmit" onclick="topMenuCierra();docsHome()"><span class="tbico" style="pointer-events:none">'+IC2.doc+'</span>'+
         '<span style="text-align:left"><b style="font-size:13px">Documentos</b><span class="note" style="display:block;font-size:10.5px">La base documental</span></span></button>'+
       '<button class="tmit" onclick="toggleAcc();topMenuCierra()"><span class="tbico" style="pointer-events:none">'+EYE+'</span>'+
@@ -12361,6 +12365,99 @@ function mzTh(a){ return '<tr>'+a.map(function(t){ return '<th>'+t+'</th>'; }).j
 function mzTd(a,click){ return '<tr'+(click?' role="button" tabindex="0" onkeydown="_kb(event)" onclick="'+click+'" style="cursor:pointer"':'')+'>'+a.map(function(t){
   return '<td>'+t+'</td>'; }).join('')+'</tr>'; }
 function mzTabla(head,rows){ return '<div style="overflow-x:auto;margin-top:8px"><table class="mzt">'+mzTh(head)+rows.join('')+'</table></div>'; }
+/* ============================================================================
+   LLAVES DE IA (solo la cuenta 0917) — 24-ago-2026
+   Aquí se pegan las dos llaves que encienden el sistema:
+     · OpenAI    → el lector de fotos (bitácoras y cédulas)
+     · Anthropic → el asistente que contesta con los datos de la planta
+   La llave se manda al servidor y NUNCA vuelve: de regreso solo llegan los
+   últimos 4 caracteres, para saber cuál está puesta sin revelarla. Borrarla
+   (dejar el campo vacío y guardar) apaga el gasto al instante.
+   ============================================================================ */
+var _iaEst=null;
+function renderIALlaves(){
+  if(!(S && S.clave==='0917')){ flash('Las llaves solo las maneja la cuenta 0917'); return; }
+  $('s-iallaves').innerHTML='<div class="card"><div class="note">Consultando…</div></div>'; show('iallaves');
+  SB.rpc('hb_ia_llaves_estado').then(function(r){ var x=r&&r.data;
+    if(!(x&&x.ok)){ $('s-iallaves').innerHTML='<div class="card"><b>'+esc((x&&x.detalle)||'No se pudo consultar')+'</b></div>'; return; }
+    _iaEst=x; iaLlavesPinta();
+  },function(){ $('s-iallaves').innerHTML='<div class="card"><b>Sin conexión</b></div>'; });
+}
+var IA_QUE={openai:{t:'OpenAI',p:'Lee las fotos',d:'El trabajador toma la foto de la bitácora o la cédula y el sistema llena los campos solos.',url:'platform.openai.com',pre:'sk-'},
+            anthropic:{t:'Anthropic',p:'Contesta preguntas',d:'Preguntarle al sistema en español y que responda con los datos reales de la planta.',url:'console.anthropic.com',pre:'sk-ant-'}};
+function iaLlavesPinta(){
+  var x=_iaEst;
+  var h='<div class="scr-h"><div style="flex:1;min-width:0"><div class="eyebrow">Sistemas</div>'+
+        '<h2>Llaves de IA</h2><p class="note" style="margin:4px 0 0">Con esto se encienden el lector de fotos y el asistente. '+
+        'La llave se guarda cifrada en el servidor y no vuelve a salir.</p></div></div>';
+  (x.proveedores||[]).forEach(function(p){
+    var q=IA_QUE[p.proveedor]||{t:p.proveedor,p:'',d:'',url:'',pre:''};
+    var id='iak_'+p.proveedor;
+    h+='<div class="panel" style="margin-bottom:12px">'+
+       '<div class="hd" style="align-items:flex-start"><div style="min-width:0">'+
+         '<b style="font-size:16px">'+esc(q.t)+'</b>'+
+         '<div class="note" style="margin-top:2px"><b>'+esc(q.p)+'</b> — '+esc(q.d)+'</div></div>'+
+         (p.cargada
+           ? '<span class="chipst" style="border-color:color-mix(in srgb,var(--ok) 45%,transparent);color:var(--ok)">Encendida</span>'
+           : '<span class="chipst mut">Apagada</span>')+
+       '</div>';
+    if(p.cargada){
+      h+='<div class="note" style="margin:2px 0 9px">Llave puesta'+(p.cola?(' <b>····'+esc(p.cola)+'</b>'):'')+
+         (p.desde?(' · desde el '+esc(fmtDate(new Date(+p.desde)))):'')+'.</div>'+
+         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px;margin-bottom:10px">'+
+         '<div class="card"><div class="note">Gasto del mes</div><b style="font-size:18px">'+mzUs(+p.gasto_mes||0,2)+'</b></div>'+
+         '<div class="card"><div class="note">Consultas</div><b style="font-size:18px">'+mzN(p.consultas_mes)+'</b></div>'+
+         '<div class="card"><div class="note">Tope mensual</div><b style="font-size:18px">'+mzUs(+p.tope_usd||0,0)+'</b>'+
+           '<div class="note" style="margin-top:3px">se corta solo</div></div>'+
+         '</div>'+
+         '<div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:10px">'+
+           '<input id="'+id+'_tope" class="fin" style="width:110px" inputmode="decimal" value="'+escA(p.tope_usd==null?'':String(p.tope_usd))+'">'+
+           '<button class="btn ghost" style="margin:0;width:auto;padding:9px 13px;font-size:12.5px" onclick="iaTopeSet(\''+p.proveedor+'\')">Cambiar tope</button>'+
+         '</div>';
+    }
+    (p.modelos||[]).forEach(function(m){
+      h+='<div class="note" style="font-size:11.5px">Modelo: <b>'+esc(m.modelo)+'</b> · '+mzUs(+m.entrada,2)+' por millón de entrada · '+mzUs(+m.salida,2)+' de salida</div>';
+    });
+    h+='<div class="note" style="margin:11px 0 4px">'+(p.cargada?'Cambiar la llave':'Pegar la llave')+
+       ' <span class="note">(se saca en '+esc(q.url)+', empieza con <b>'+esc(q.pre)+'</b>)</span></div>'+
+       '<input id="'+id+'" class="fin" type="password" autocomplete="off" spellcheck="false" placeholder="'+esc(q.pre)+'…">'+
+       '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:9px">'+
+         '<button class="btn" style="margin:0;width:auto;padding:10px 15px;font-size:13px" onclick="iaLlaveSet(\''+p.proveedor+'\')">Guardar llave</button>'+
+         (p.cargada?'<button class="btn ghost" style="margin:0;width:auto;padding:10px 15px;font-size:13px;color:var(--bad)" onclick="iaLlaveBorra(\''+p.proveedor+'\')">Quitar y apagar</button>':'')+
+       '</div></div>';
+  });
+  h+='<div class="card"><b style="font-size:13px">Cómo se cuida el gasto</b>'+
+     '<div class="note" style="margin-top:5px;line-height:1.6">El servidor lleva la cuenta de cada consulta y corta solo al llegar al tope. '+
+     'La llave nunca sale del servidor: ni el celular ni esta pantalla la ven. '+
+     'Para apagar todo, quita la llave — el gasto se detiene en ese momento.</div></div>';
+  $('s-iallaves').innerHTML=h;
+}
+function iaLlaveSet(prov){
+  var el=$('iak_'+prov), v=(el&&el.value||'').trim();
+  if(!v){ flash('Pega la llave primero'); return; }
+  if(v.length<20){ flash('Esa llave se ve incompleta'); return; }
+  SB.rpc('hb_ia_llave_set',{p_proveedor:prov,p_llave:v}).then(function(r){ var x=r&&r.data;
+    if(el) el.value='';                       /* que no se quede en pantalla */
+    if(x&&x.ok){ burst(); flash('✓ Llave guardada. Ya quedó encendido.'); renderIALlaves(); }
+    else flash((x&&x.detalle)||'No se pudo guardar');
+  },function(){ flash('Sin conexión'); });
+}
+function iaLlaveBorra(prov){
+  if(!hbOkC('iaLlaveBorra')){ hbConfirm('¿Quitar la llave de '+((IA_QUE[prov]||{}).t||prov)+'?\n\nSe apaga en este momento y deja de gastar.', function(){ hbSiC('iaLlaveBorra'); iaLlaveBorra(prov); }); return; }
+  SB.rpc('hb_ia_llave_set',{p_proveedor:prov,p_llave:''}).then(function(r){ var x=r&&r.data;
+    if(x&&x.ok){ flash('Llave quitada. Apagado.'); renderIALlaves(); }
+    else flash((x&&x.detalle)||'No se pudo quitar');
+  },function(){ flash('Sin conexión'); });
+}
+function iaTopeSet(prov){
+  var el=$('iak_'+prov+'_tope'), v=parseFloat((el&&el.value||'').replace(',','.'));
+  if(isNaN(v)){ flash('Escribe el tope en dólares'); return; }
+  SB.rpc('hb_ia_llave_tope',{p_proveedor:prov,p_tope:v}).then(function(r){ var x=r&&r.data;
+    if(x&&x.ok){ flash('✓ Tope actualizado'); renderIALlaves(); }
+    else flash((x&&x.detalle)||'No se pudo');
+  },function(){ flash('Sin conexión'); });
+}
+
 /* ============================================================================
    TABLA CRUDA · corrida por corrida (respuesta #6 de Ana, 21-ago: "quiero poder
    llegar hasta la tabla cruda: del número grande bajar hasta ver corrida por

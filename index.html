@@ -2652,9 +2652,21 @@ function esErrorCredencial(e){
 }
 
 /* PRIMER INGRESO: clave -> confirma quién eres -> T&C -> crea PIN -> registra */
+/* Terminar de conectar y SEGUIR SOLO (24-ago). Antes se le decía a la persona
+   "espera e intenta otra vez" — y si el conector tardaba, podía quedarse ahí.
+   Ahora la app espera hasta 12 s, reintenta la detección y, en cuanto hay
+   conexión, ejecuta sola lo que la persona ya había pedido. */
+function lgEspera(seguir, t){
+  t=t||0;
+  if(V3_ON){ lgSay(''); if(seguir) seguir(); return; }
+  if(t===0) v3Detect();
+  if(t>24){ lgSay('No logramos conectar con el servidor. Revisa tu internet y vuelve a intentar.',true); return; }
+  lgSay('Conectando'+new Array((t%3)+2).join('.')+' ');
+  setTimeout(function(){ lgEspera(seguir, t+1); }, 500);
+}
 function lgPrimer(){
   if(!sbReady()){ lgSay('No hay conexión con el servidor. Revisa tu internet e intenta de nuevo.',true); return; }
-  if(!V3_ON){ lgSay('El sistema se está activando (la base de datos aún no está lista). Espera un momento e intenta otra vez.',true); v3Detect(); return; }
+  if(!V3_ON){ lgEspera(lgPrimer); return; }
   var clave=claveNorm($('lgClave').value);
   if(!clave){ lgSay('Escribe tu número de colaborador.',true); return; }
   // fecha SIN formato fijo: solo importan los 8 números (día, mes y año en cualquier orden)
@@ -2724,7 +2736,7 @@ function lgRegistrar(clave, nac){
 /* MIEMBROS: clave + PIN -> entrar */
 function lgMiembro(){
   if(!sbReady()){ lgSay('No hay conexión con el servidor. Revisa tu internet.',true); return; }
-  if(!V3_ON){ lgSay('El sistema se está activando (la base de datos aún no está lista). Espera un momento e intenta otra vez.',true); v3Detect(); return; }
+  if(!V3_ON){ lgEspera(lgMiembro); return; }
   var clave=claveNorm($('lgClave').value), pin=($('lgPin').value||'').trim();
   if(!clave){ lgSay('Escribe tu número de colaborador.',true); return; }
   if(!/^[0-9]{4,6}$/.test(pin)){ lgSay('Escribe tu PIN.',true); return; }
@@ -13981,7 +13993,13 @@ function v3Detect(tries){
   tries=tries||0;
   if(location.hash==='#demo'){ V3_ON=false; var d=$('lgDemo'); if(d) d.style.display='';
     var c=$('lgChoose'); if(c) c.style.display='none'; try{ sbInit(); }catch(e){} return; }
-  if(!sbReady()){ return; }   // sin conexión: el login real se queda visible
+  if(!sbReady()){
+    /* el SDK carga con `defer`: al arrancar puede no estar listo TODAVÍA. Antes
+       aquí se rendía y V3_ON se quedaba en false para siempre — de ahí el falso
+       "la base de datos no está lista". Ahora espera y vuelve a intentar. */
+    if(tries<25) setTimeout(function(){ v3Detect(tries+1); }, 600);
+    return;
+  }
   SB.rpc('hb_v3').then(function(r){
     if(!r.error && r.data===true){ V3_ON=true; v3Restore(); }
     else if(tries<6){ setTimeout(function(){ v3Detect(tries+1); }, 2500); }

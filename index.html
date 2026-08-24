@@ -10450,7 +10450,16 @@ function mzFxLoad(forzar){
    pestaña «Datos Generales» de su Excel. La lista anterior no salía de la
    planta y por eso nunca se usó. El catálogo ya trae el área de cada compuesto
    (area_origen), así que la captura la propone sola. */
-var MZ_ORG=[['MEZCLADO','Mezclado'],['PRENSADO / EXTRUIDO','Prensado / extruido'],['LABORATORIO','Laboratorio']];
+/* BUG que salió el 24-ago: estas claves iban en MAYÚSCULAS ('MEZCLADO',
+   'PRENSADO / EXTRUIDO', 'LABORATORIO') y la tabla solo acepta
+   banbury | laboratorio | tubuladora_precurado | tubuladora_cojin | otro.
+   Ninguna pasaba el CHECK, así que en 19 días de captura NADIE pudo guardar
+   un reproceso: agosto tenía 0. Ahora son las claves reales de la base. */
+var MZ_ORG=[['banbury','Banbury (mezclado)'],
+            ['tubuladora_precurado','Tubuladora de precurado'],
+            ['tubuladora_cojin','Tubuladora de cojín'],
+            ['laboratorio','Laboratorio'],
+            ['otro','Otro']];
 function mzOrgTxt(k){ for(var i=0;i<MZ_ORG.length;i++) if(MZ_ORG[i][0]===k) return MZ_ORG[i][1]; return k==='sin_origen'?'Sin origen':(k||''); }
 var _mzRTt=null;
 function mzCambioVivo(){
@@ -10736,9 +10745,16 @@ function mzCapPaint(){
        '<div class="note" style="font-size:11.5px;margin-top:2px">Solo este compuesto lo lleva</div></div>'+
      '<div style="flex:1;min-width:90px">'+mzInp('mzc-mez','Mezclas','inputmode="numeric"')+'</div>'+
      '<div style="flex:1;min-width:90px">'+mzInp('mzc-quem','Quemadas','inputmode="numeric"')+'</div>'+
-     '<div style="flex:1;min-width:110px">'+mzInp('mzc-op','Nº operador','inputmode="numeric"')+'</div></div>'+
+     '<div style="flex:1;min-width:110px">'+mzInp('mzc-op','Nº operador','inputmode="numeric"')+'</div>'+
+     /* PASO: lo traía el Excel de julio y la pantalla nunca lo pidió, así que
+        agosto entero quedó sin él. Importa porque un compuesto pasa por MASTER
+        y DESPUÉS por FINAL: sin el paso, las mezclas se cuentan dos veces. */
+     '<div style="flex:1;min-width:130px">'+
+       '<select id="mzc-paso" aria-label="Paso de la mezcla" style="width:100%;padding:10px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+       MZ_PASOS.map(function(o){ return '<option value="'+o[0]+'">'+o[1]+'</option>'; }).join('')+
+       '</select></div></div>'+
      '<div style="display:flex;gap:14px;margin-top:9px;flex-wrap:wrap;align-items:center;font-size:13px">'+
-     '<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="mzc-rep" onchange="$(\'mzc-orgwrap\').classList.toggle(\'hide\',!this.checked);mzCompAjusta()"> Es reproceso</label>'+
+     '<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="mzc-rep" onchange="$(\'mzc-orgwrap\').classList.toggle(\'hide\',!this.checked);mzPasoRep(this.checked);mzCompAjusta()"> Es reproceso</label>'+
      '<span id="mzc-orglbl" class="note">viene de:</span>'+
      '<span id="mzc-orgwrap" class="hide"><select id="mzc-org" style="padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:12.5px">'+
      MZ_ORG.map(function(o){ return '<option value="'+o[0]+'">'+o[1]+'</option>'; }).join('')+'</select></span>'+
@@ -10815,6 +10831,15 @@ function mzSetCausa(id){
   var c=(_mzCat&&_mzCat.causas||[]).filter(function(x){ return x.id===id; })[0]; if(!c) return;
   _mzCauSel=c; $('mzt-causa').value=c.nombre; $('mzt-res').innerHTML='';
 }
+/* los pasos tal como venían escritos en el Excel de producción. REPROCESO no
+   se elige a mano: lo pone la casilla «Es reproceso» para que no se contradigan. */
+var MZ_PASOS=[['','Paso (sin marcar)'],['MASTER','Master'],['FINAL','Final'],
+              ['AÑEJADO','Añejado'],['DIRECTA','Directa'],['REPASADO','Repasado']];
+function mzPasoRep(esRep){
+  var sel=$('mzc-paso'); if(!sel) return;
+  if(esRep){ sel.dataset.prev=sel.value; sel.value=''; sel.disabled=true; }
+  else { sel.disabled=false; if(sel.dataset.prev) sel.value=sel.dataset.prev; }
+}
 function mzAddCorrida(){
   var comp=$('mzc-comp').value.trim();
   if(!_mzSel && !comp){ alert('Falta el compuesto.'); return; }
@@ -10825,6 +10850,7 @@ function mzAddCorrida(){
     letra:$('mzc-letra').value.trim()||null, num_corrida:parseInt($('mzc-corr').value,10)||null,
     mezclas:mez, quemadas:parseInt($('mzc-quem').value,10)||0,
     operador_n:parseInt($('mzc-op').value,10)||null,
+    paso:$('mzc-rep').checked?'REPROCESO':(($('mzc-paso')&&$('mzc-paso').value)||null),
     es_reproceso:$('mzc-rep').checked, origen:$('mzc-rep').checked?$('mzc-org').value:null,
     es_exp:$('mzc-exp').checked, nota:$('mzc-nota').value.trim()||null};
   var fin=function(r){ var x=r&&r.data;

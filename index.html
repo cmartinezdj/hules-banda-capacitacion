@@ -1351,6 +1351,7 @@ body.a11y .screen .tg{ font-size:13px !important; }
     <section id="s-mezrec" class="screen pad hide"></section>
     <section id="s-mezraw" class="screen pad hide"></section>
     <section id="s-iallaves" class="screen pad hide"></section>
+    <section id="s-mezalm" class="screen pad hide"></section>
   </main>
 
   <!-- ===================== NAV INFERIOR ===================== -->
@@ -2880,7 +2881,7 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'"'+main+' title="'+it[1]+'" onclick="'+accion+'">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['planta','manto','mezrec','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp','mezcierres','mezprecios','mezsem','mezraw','iallaves'];
+var SCREENS=['planta','manto','mezrec','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp','mezcierres','mezprecios','mezsem','mezraw','iallaves','mezalm'];
 var _prevShown=null;
 function show(name){
   var cambio = (name!==_prevShown);
@@ -2904,7 +2905,7 @@ function show(name){
   if(name==='invit') navKey=_invitFrom||'home';
   if(name==='pedir') navKey=(window._pedFrom==='manto')?'planta':((S&&(S.admin||S.mando))?'hr':'home');   // Pedir reparación
   if(name==='pedidos') navKey=(window._pedFrom==='manto')?'planta':'hr';                                   // inbox de Mantenimiento
-  if(name==='mezraw') navKey='planta';
+  if(name==='mezraw'||name==='mezalm') navKey='planta';
   if(name==='iallaves') navKey='hr';
   if(name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') navKey='planta';
   if(name==='planta'||name==='manto'||name==='prod'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab') navKey='planta';  // todo lo de Planta
@@ -2988,10 +2989,10 @@ function hbQuienSoy(hayAtras){
   return b(largo);
 }
 function renderTop(name){
-  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='mezraw'||name==='iallaves'||name==='prod'||name==='manto') && !(name==='docs' && window._docFrom==='tab');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='mezraw'||name==='mezalm'||name==='iallaves'||name==='prod'||name==='manto') && !(name==='docs' && window._docFrom==='tab');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? (window._pedFrom==='manto'?'go(\'manto\')':'go(\'hr\')') : name==='pedir' ? (window._pedFrom==='manto'?'go(\'manto\')':('go(\''+((S.admin||S.mando)?'hr':'home')+'\')')) : (name==='prod'||name==='manto') ? 'go(\'planta\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='iallaves' ? 'go(\'hr\')' : name==='mezraw' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? (window._pedFrom==='manto'?'go(\'manto\')':'go(\'hr\')') : name==='pedir' ? (window._pedFrom==='manto'?'go(\'manto\')':('go(\''+((S.admin||S.mando)?'hr':'home')+'\')')) : (name==='prod'||name==='manto') ? 'go(\'planta\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='mezalm' ? 'go(\'prod\')' : name==='iallaves' ? 'go(\'hr\')' : name==='mezraw' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
     left.innerHTML='<span class="tlogo" aria-hidden="true">'+HB_MARK+'</span><button class="back" onclick="'+backTo+'">‹ Atrás</button>'+hbQuienSoy(true);
     left.classList.remove('who');
   }else{
@@ -10508,6 +10509,7 @@ function renderMezHub(){
   if(veGraf||S.mezCap) h+=htile('renderMezTab()','deptos','Gráficos','Producción por día, paros y reproceso');
   if(veGraf) h+=htile('renderMezCierres()','pend','Cierres','Semana y mes listos para junta (PDF)');
   if(S.mezCostos) h+=htile('renderMezPrecios()','recibo','Precios de materia prima','Súbelos y el sistema recalcula desde esa fecha');
+  if(S.admin||S.mezCostos) h+=htile('renderMezAlm()','box','Almacén de materia prima','Entradas, claves por emparejar y existencia');
   if(S.admin||S.mezCostos||veGraf) h+=htile('renderMezSem()','deptos','Semáforo de materia prima','Qué se está consumiendo y qué no se ha comprado');
   if(S.mezTec||S.admin) h+=htile('renderMezAna()','focos','Analista de compuestos','Eficiencia, fallas e historial por compuesto');
   /* v3.44: la carpeta de recetas — Alejandro: "las fórmulas las sube el
@@ -12387,6 +12389,321 @@ function mzTh(a){ return '<tr>'+a.map(function(t){ return '<th>'+t+'</th>'; }).j
 function mzTd(a,click){ return '<tr'+(click?' role="button" tabindex="0" onkeydown="_kb(event)" onclick="'+click+'" style="cursor:pointer"':'')+'>'+a.map(function(t){
   return '<td>'+t+'</td>'; }).join('')+'</tr>'; }
 function mzTabla(head,rows){ return '<div style="overflow-x:auto;margin-top:8px"><table class="mzt">'+mzTh(head)+rows.join('')+'</table></div>'; }
+/* ============================================================================
+   ALMACÉN DE MATERIA PRIMA (24-ago-2026) — para Victoria / Josué / acceso total
+   Tres cosas en una pantalla:
+     1. ENTRADAS — subir el «Registro de proveedores» tal cual, con sus 12 hojas.
+        El mismo archivo se puede volver a subir cada mes: lo repetido NO se
+        duplica (llave fecha+clave+kg+lote+factura).
+     2. POR EMPAREJAR — las claves que el sistema no reconoció. Se le enseña una
+        vez y corrige todas las entradas de esa clave para siempre.
+     3. EXISTENCIA DE CORTE — el inventario físico de un día. Es lo único que
+        falta para que el «Restante» del semáforo se encienda.
+   ============================================================================ */
+var _almTab='entradas', _almDatos=null, _almPend=null, _almExis=null;
+var _almFilas=null, _almCorte=null;
+
+function renderMezAlm(){
+  if(!(S && (S.admin || S.mezCostos))){ flash('Solo almacén y dirección'); return; }
+  $('s-mezalm').innerHTML='<div class="card"><div class="note">Cargando…</div></div>'; show('mezalm');
+  mzAlmCarga();
+}
+function mzAlmTab(t){ _almTab=t; mzAlmPinta(); window.scrollTo(0,0); }
+function mzAlmCarga(){
+  var hoy=mxToday(), d1=hoy.slice(0,4)+'-01-01';
+  var pend=0;
+  SB.rpc('hb_mez_entradas',{p_desde:d1,p_hasta:hoy,p_filtro:{limite:40}}).then(function(r){
+    _almDatos=(r&&r.data&&r.data.ok)?r.data:null;
+    return SB.rpc('hb_mez_pendientes_mat');
+  }).then(function(r){
+    _almPend=(r&&r.data&&r.data.ok)?r.data:null;
+    return SB.rpc('hb_mez_existencias_lista',{p_fecha:null});
+  }).then(function(r){
+    _almExis=(r&&r.data&&r.data.ok)?r.data:null;
+    mzAlmPinta();
+  },function(){ $('s-mezalm').innerHTML='<div class="card"><b>Sin conexión</b></div>'; });
+}
+function mzAlmPinta(){
+  var d=_almDatos, p=_almPend, e=_almExis;
+  var h='<div class="scr-h"><div style="flex:1;min-width:0"><div class="eyebrow">Producción</div>'+
+    '<h2>Almacén de materia prima</h2>'+
+    '<p class="note" style="margin:4px 0 0">Lo que entra, lo que falta emparejar y el inventario de corte.</p></div></div>';
+  h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">'+
+     [['entradas','Entradas'],['pend','Por emparejar'+((p&&p.total)?(' ('+mzN(p.total)+')'):'')],['exis','Existencia de corte']]
+     .map(function(t){ return '<button class="btn'+(_almTab===t[0]?'':' ghost')+'" style="margin:0;width:auto;padding:9px 14px;font-size:13px" onclick="mzAlmTab(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+
+     '</div>';
+
+  if(_almTab==='entradas'){
+    h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin-bottom:12px">'+
+       '<div class="card"><div class="note">Entradas del año</div><b style="font-size:20px">'+mzN(d?d.total:0)+'</b></div>'+
+       '<div class="card"><div class="note">Kilos</div><b style="font-size:20px">'+mzN(d?d.kg:0)+'</b></div>'+
+       '<div class="card"><div class="note">Claves distintas</div><b style="font-size:20px">'+mzN(d?d.claves:0)+'</b></div>'+
+       '<div class="card"><div class="note">Sin material</div><b style="font-size:20px;color:'+((d&&d.sin_dueno)?'var(--warn)':'var(--ok)')+'">'+mzN(d?d.sin_dueno:0)+'</b></div>'+
+       '</div>';
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:14px">Subir el registro de almacén</b>'+
+       '<div class="note" style="margin-top:4px;line-height:1.55">El archivo de siempre («Registro de proveedores»), tal cual, con todas sus hojas. '+
+       'Se puede subir el mismo cada mes: lo que ya estaba <b>no se duplica</b>.</div>'+
+       '<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">'+
+         '<label class="btn" style="margin:0;width:auto;padding:10px 15px;font-size:13px;cursor:pointer">Escoger el Excel'+
+         '<input type="file" accept=".xlsx" style="display:none" onchange="mzAlmArchivo(this.files[0]);this.value=\'\'"></label>'+
+         '<span id="alm-aviso" class="note"></span></div>'+
+       '<div id="alm-prev"></div></div>';
+    var fl=(d&&d.filas)||[];
+    if(fl.length){
+      h+='<div class="card"><b style="font-size:13px">Últimas entradas</b>'+
+         mzTabla(['Cuándo','Clave','Material','Kilos','Proveedor','Lote / factura'],
+           fl.map(function(f){
+             return mzTd([esc(f.fecha),
+               '<b>'+esc(f.clave)+'</b>',
+               f.resuelto?esc(f.material||f.codigo||''):'<span class="note" style="color:var(--warn)">sin emparejar</span>',
+               mzN(f.kg)+' <span class="note">'+esc(f.unidad||'kg')+'</span>',
+               esc(f.proveedor||'—'),
+               '<span class="note">'+esc(f.lote||'—')+(f.factura?('<br>'+esc(f.factura)):'')+'</span>']);
+           }))+'</div>';
+    }
+  }
+
+  if(_almTab==='pend'){
+    var cl=(p&&p.claves)||[];
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:14px">Claves que el sistema no reconoció</b>'+
+       '<div class="note" style="margin-top:4px;line-height:1.55">Se le enseña <b>una vez</b> y corrige todas las entradas de esa clave, hoy y las que vengan. '+
+       'Si una clave no es materia prima (una devolución, una maquila), déjala así.</div></div>';
+    if(!cl.length) h+='<div class="card"><b style="font-size:14px">Todo emparejado</b><div class="note" style="margin-top:4px">No hay claves pendientes.</div></div>';
+    cl.forEach(function(c,i){
+      var id='alm_m_'+i;
+      h+='<div class="card" style="margin-bottom:9px">'+
+         '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:baseline;justify-content:space-between">'+
+           '<div style="min-width:0"><b style="font-size:15px">'+esc(c.clave)+'</b>'+
+           '<div class="note" style="margin-top:2px">'+mzN(c.veces)+' entrada'+(c.veces===1?'':'s')+' · '+mzN(c.kg)+' kg'+
+           (c.proveedor?(' · '+esc(c.proveedor)):'')+(c.ultima?(' · última '+esc(c.ultima)):'')+'</div></div></div>'+
+         '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:9px">'+
+           '<input id="'+id+'" class="fin" list="alm-mat-dl" style="flex:1;min-width:180px" placeholder="¿Qué material es? escribe el código o el nombre…">'+
+           '<button class="btn" style="margin:0;width:auto;padding:10px 14px;font-size:12.5px" onclick="mzAlmEmpareja(\''+id+'\',\''+jsAttr(c.clave)+'\')">Es este</button>'+
+         '</div></div>';
+    });
+    h+='<datalist id="alm-mat-dl"></datalist>';
+  }
+
+  if(_almTab==='exis'){
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:14px">Inventario físico de un día</b>'+
+       '<div class="note" style="margin-top:4px;line-height:1.55">Es lo único que falta para que el <b>«Restante»</b> del semáforo se encienda: '+
+       'cuánto hay de cada material a una fecha. De ahí en adelante el sistema suma las entradas y resta el consumo, solo.</div>'+
+       '<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">'+
+         '<span class="note">Fecha del corte</span>'+
+         '<input id="alm-fecha" class="fin" type="date" style="width:170px" value="'+escA((e&&e.fecha)||mxToday())+'">'+
+         '<label class="btn ghost" style="margin:0;width:auto;padding:10px 15px;font-size:13px;cursor:pointer">Subir el inventario'+
+         '<input type="file" accept=".xlsx,.csv,.txt" style="display:none" onchange="mzAlmExisArchivo(this.files[0]);this.value=\'\'"></label>'+
+         '<span id="alm-eaviso" class="note"></span></div>'+
+       '<div class="note" style="margin-top:7px">El archivo solo necesita dos columnas: <b>clave</b> y <b>kilos</b>.</div>'+
+       '<div id="alm-eprev"></div></div>';
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Capturar a mano</b>'+
+       '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:9px">'+
+         '<input id="alm-emat" class="fin" list="alm-mat-dl" style="flex:1;min-width:170px" placeholder="Material (código o nombre)">'+
+         '<input id="alm-ekg" class="fin" style="width:130px" inputmode="decimal" placeholder="Kilos">'+
+         '<button class="btn" style="margin:0;width:auto;padding:10px 14px;font-size:12.5px" onclick="mzAlmExisUno()">Guardar</button>'+
+       '</div></div><datalist id="alm-mat-dl"></datalist>';
+    var ef=(e&&e.filas)||[];
+    h+='<div class="card"><b style="font-size:13px">Capturado'+((e&&e.fecha)?(' al '+esc(e.fecha)):'')+' · '+mzN(e?e.total:0)+' materiales · '+mzN(e?e.kg:0)+' kg</b>';
+    if(!ef.length) h+='<div class="note" style="margin-top:6px">Todavía no hay inventario capturado. En cuanto lo suba almacén, el «Restante» se enciende solo.</div>';
+    else h+=mzTabla(['Material','Kilos'], ef.map(function(f){ return mzTd(['<b>'+esc(f.codigo)+'</b><div class="note" style="font-size:10px">'+esc(f.nombre||'')+'</div>', mzN(f.kg)]); }));
+    h+='</div>';
+  }
+  $('s-mezalm').innerHTML=h;
+  mzAlmMatDL();
+}
+/* la lista de materiales para los autocompletar */
+function mzAlmMatDL(){
+  var pinta=function(){
+    var dls=document.querySelectorAll('#s-mezalm datalist');
+    if(!dls.length || !window._mzMatLista) return;
+    var html=_mzMatLista.map(function(m){ return '<option value="'+escA(m.codigo)+'">'+esc(m.nombre||'')+'</option>'; }).join('');
+    [].forEach.call(dls, function(d){ d.innerHTML=html; });
+  };
+  if(window._mzMatLista) return pinta();
+  SB.rpc('hb_mez_materiales_lista').then(function(r){
+    var x=r&&r.data; window._mzMatLista=(x&&x.ok&&x.materiales)?x.materiales:[]; pinta();
+  },function(){});
+}
+function _almMatId(txt){
+  txt=(txt||'').trim(); if(!txt) return null;
+  var L=window._mzMatLista||[], t=txt.toUpperCase();
+  for(var i=0;i<L.length;i++) if((L[i].codigo||'').toUpperCase()===t) return L[i].id;
+  for(var j=0;j<L.length;j++) if((L[j].nombre||'').toUpperCase()===t) return L[j].id;
+  return null;
+}
+function mzAlmEmpareja(inputId, clave){
+  var v=($(inputId)||{}).value||'', mid=_almMatId(v);
+  if(!mid){ flash('Escoge un material de la lista'); return; }
+  SB.rpc('hb_mez_mat_alias_set',{p_txt:clave,p_mid:mid}).then(function(r){ var x=r&&r.data;
+    if(x&&x.ok){ burst(); flash('✓ Emparejado · '+mzN(x.entradas_corregidas)+' entradas corregidas'); mzAlmCarga(); }
+    else flash((x&&x.detalle)||'No se pudo');
+  },function(){ flash('Sin conexión'); });
+}
+function mzAlmExisUno(){
+  var v=($('alm-emat')||{}).value||'', kg=parseFloat((($('alm-ekg')||{}).value||'').replace(',','.'));
+  var f=($('alm-fecha')||{}).value||'';
+  var mid=_almMatId(v);
+  if(!mid){ flash('Escoge un material de la lista'); return; }
+  if(isNaN(kg)){ flash('Escribe los kilos'); return; }
+  if(!f){ flash('Pon la fecha del corte'); return; }
+  SB.rpc('hb_mez_existencia_set',{p:{fecha:f,material_id:mid,kg:kg}}).then(function(r){ var x=r&&r.data;
+    if(x&&x.ok){ flash('✓ Guardado'); $('alm-ekg').value=''; $('alm-emat').value=''; mzAlmCarga(); }
+    else flash((x&&x.detalle)||'No se pudo');
+  },function(){ flash('Sin conexión'); });
+}
+
+/* ---- leer el Excel de almacén: TODAS las hojas de un jalón ---- */
+function mzAlmAvisa(t){ var e=$('alm-aviso'); if(e) e.textContent=t||''; }
+function mzAlmArchivo(f){
+  if(!f) return;
+  if(!/\.xlsx$/i.test(f.name)){ mzAlmAvisa('Tiene que ser el Excel (.xlsx).'); return; }
+  if(f.size>10000000){ mzAlmAvisa('Ese archivo pesa demasiado (máximo 10 MB).'); return; }
+  mzAlmAvisa('Abriendo el archivo…');
+  (async function(){
+    var z=await mzZipAbre(f);
+    var hojas=await mzXlsxHojas(z);
+    var textos=await mzXlsxTextos(z);
+    var estF=await mzXlsxEstilosFecha(z);
+    var filas=[], hojasLeidas=0;
+    for(var i=0;i<hojas.length;i++){
+      mzAlmAvisa('Leyendo «'+hojas[i].nombre+'»… ('+(i+1)+' de '+hojas.length+')');
+      var res=await mzXlsxATsv(z,hojas[i].ruta,textos,estF);
+      var n=mzAlmParsea(res.tsv, filas);
+      if(n>0) hojasLeidas++;
+    }
+    if(!filas.length){ mzAlmAvisa('No encontré renglones con CLAVE y PROVEEDOR en ninguna hoja.'); return; }
+    _almFilas=filas;
+    mzAlmAvisa('');
+    mzAlmPrev(f.name, hojasLeidas, hojas.length);
+  })()['catch'](function(e){ mzAlmAvisa('No pude abrir ese Excel ('+(e&&e.message||'error')+').'); });
+}
+/* de una hoja en TSV a renglones de entrada. Los encabezados se comparan
+   NORMALIZADOS (mayúsculas y espacios colapsados): así no se pierde una columna
+   por venir escrita distinto en una hoja — fue justo lo que pasó con la factura. */
+function mzAlmParsea(tsv, acc){
+  var lin=(tsv||'').split('\n'), hdr=null, idx={}, n=0;
+  var norm=function(t){ return (t||'').toUpperCase().replace(/\s+/g,' ').trim(); };
+  for(var i=0;i<lin.length;i++){
+    var c=lin[i].split('\t');
+    if(!hdr){
+      var up=c.map(norm);
+      if(up.indexOf('CLAVE')>=0 && up.indexOf('PROVEEDOR')>=0){
+        hdr=up; up.forEach(function(t,j){ if(t && idx[t]==null) idx[t]=j; });
+      }
+      continue;
+    }
+    var g=function(){ for(var k=0;k<arguments.length;k++){ var j=idx[norm(arguments[k])]; if(j!=null && c[j]!=null) return String(c[j]).trim(); } return ''; };
+    var clave=g('CLAVE'); if(!clave) continue;
+    var fecha=g('FECHA');
+    var m=fecha.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if(!m){ var m2=fecha.match(/(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/); if(m2) fecha=m2[3]+'-'+('0'+m2[2]).slice(-2)+'-'+('0'+m2[1]).slice(-2); else continue; }
+    else fecha=m[0];
+    var kgTxt=g('KGM/LTS/PZS','KGM/LTS/PZ','KG'), kg=mzNum(kgTxt), uni=null;
+    if(kg==null && kgTxt) uni=kgTxt.slice(0,20);
+    acc.push({fecha:fecha, clave:clave.slice(0,60), kg:kg,
+              bultos:mzNum(g('BULTOS / TAMBOS / TARIMAS','TAMBOS / TARIMAS')),
+              unidad:uni, proveedor:g('PROVEEDOR').slice(0,120)||null,
+              lote:g('LOTE').slice(0,60)||null,
+              factura:g('No. DE FACTURA','FACTURA').slice(0,60)||null});
+    n++;
+  }
+  return n;
+}
+function mzNum(t){
+  t=(t||'').replace(/[^0-9.,-]/g,'');
+  if(!t) return null;
+  if(t.indexOf('.')<0 && /,\d{1,2}$/.test(t)) t=t.replace(',','.');
+  t=t.replace(/,/g,'');
+  var v=parseFloat(t); return isNaN(v)?null:v;
+}
+function mzAlmPrev(nombre, hojasLeidas, hojasTot){
+  var f=_almFilas||[], box=$('alm-prev'); if(!box) return;
+  var kg=0, sinKg=0; f.forEach(function(x){ if(x.kg) kg+=x.kg; else sinKg++; });
+  var fechas=f.map(function(x){ return x.fecha; }).sort();
+  box.innerHTML='<div class="card" style="margin-top:11px;border-style:dashed">'+
+    '<b style="font-size:14px">'+esc(nombre)+'</b>'+
+    '<div class="note" style="margin-top:4px">Leí <b>'+mzN(f.length)+'</b> entradas de '+mzN(hojasLeidas)+' hoja'+(hojasLeidas===1?'':'s')+
+    ' (de '+mzN(hojasTot)+'), del <b>'+esc(fechas[0]||'?')+'</b> al <b>'+esc(fechas[fechas.length-1]||'?')+'</b> · '+mzN(kg)+' kg'+
+    (sinKg?(' · '+mzN(sinKg)+' sin cantidad'):'')+'.</div>'+
+    '<div class="note" style="margin-top:4px">Lo que ya estaba no se vuelve a guardar.</div>'+
+    mzTabla(['Cuándo','Clave','Kilos','Proveedor','Lote / factura'],
+      f.slice(0,8).map(function(x){ return mzTd([esc(x.fecha),'<b>'+esc(x.clave)+'</b>',mzN(x.kg),
+        esc(x.proveedor||'—'),'<span class="note">'+esc(x.lote||'—')+(x.factura?('<br>'+esc(x.factura)):'')+'</span>']); }))+
+    '<button class="btn" style="margin-top:11px" onclick="mzAlmImporta()">Subir estas '+mzN(f.length)+' entradas</button></div>';
+}
+var _almSubiendo=false;
+function mzAlmImporta(){
+  if(_almSubiendo) return;
+  var f=_almFilas||[]; if(!f.length) return;
+  _almSubiendo=true;
+  var tot={nuevas:0,repetidas:0,malas:0,sin_dueno:0}, i=0;
+  var paso=function(){
+    if(i>=f.length){
+      _almSubiendo=false;
+      burst();
+      flash('✓ '+mzN(tot.nuevas)+' nuevas · '+mzN(tot.repetidas)+' ya estaban'+(tot.malas?(' · '+mzN(tot.malas)+' con problema'):''));
+      var b=$('alm-prev'); if(b) b.innerHTML='<div class="card" style="margin-top:11px"><b>Listo.</b>'+
+        '<div class="note" style="margin-top:4px">Se guardaron <b>'+mzN(tot.nuevas)+'</b> entradas nuevas; '+mzN(tot.repetidas)+' ya estaban.'+
+        (tot.sin_dueno?(' <b>'+mzN(tot.sin_dueno)+'</b> quedaron sin material: emparéjalas en la pestaña de arriba.'):'')+'</div></div>';
+      _almFilas=null; mzAlmCarga();
+      return;
+    }
+    var tanda=f.slice(i, i+500); i+=500;
+    mzAlmAvisa('Subiendo… '+mzN(Math.min(i,f.length))+' de '+mzN(f.length));
+    SB.rpc('hb_mez_entradas_import',{p_filas:tanda}).then(function(r){ var x=r&&r.data;
+      if(x&&x.ok){ tot.nuevas+=x.nuevas; tot.repetidas+=x.repetidas; tot.malas+=x.malas; tot.sin_dueno+=x.sin_dueno; paso(); }
+      else { _almSubiendo=false; mzAlmAvisa(''); flash((x&&x.detalle)||'No se pudo subir'); }
+    },function(){ _almSubiendo=false; mzAlmAvisa(''); flash('Sin conexión: se cortó a media subida'); });
+  };
+  paso();
+}
+/* ---- el inventario de corte, desde archivo (clave + kilos) ---- */
+function mzAlmExisArchivo(f){
+  if(!f) return;
+  var e=$('alm-eaviso'); var av=function(t){ if(e) e.textContent=t||''; };
+  var mete=function(tsv){
+    var lin=(tsv||'').split('\n'), filas=[];
+    lin.forEach(function(l){
+      var c=l.split(/\t|,|;/);
+      if(c.length<2) return;
+      var clave=(c[0]||'').trim(), kg=mzNum(c[1]);
+      if(!clave || kg==null) return;
+      if(/CLAVE|CODIGO|MATERIAL/i.test(clave)) return;   // encabezado
+      filas.push({clave:clave, kg:kg});
+    });
+    if(!filas.length){ av('No encontré renglones con clave y kilos.'); return; }
+    _almCorte=filas; av('');
+    var box=$('alm-eprev'); if(!box) return;
+    box.innerHTML='<div class="card" style="margin-top:11px;border-style:dashed"><b style="font-size:14px">'+esc(f.name)+'</b>'+
+      '<div class="note" style="margin-top:4px">Leí <b>'+mzN(filas.length)+'</b> materiales.</div>'+
+      mzTabla(['Clave','Kilos'], filas.slice(0,8).map(function(x){ return mzTd(['<b>'+esc(x.clave)+'</b>', mzN(x.kg)]); }))+
+      '<button class="btn" style="margin-top:11px" onclick="mzAlmExisImporta()">Guardar el inventario</button></div>';
+  };
+  if(/\.xlsx$/i.test(f.name)){
+    av('Abriendo…');
+    (async function(){
+      var z=await mzZipAbre(f); var hojas=await mzXlsxHojas(z);
+      var textos=await mzXlsxTextos(z); var estF=await mzXlsxEstilosFecha(z);
+      var res=await mzXlsxATsv(z,hojas[0].ruta,textos,estF);
+      mete(res.tsv);
+    })()['catch'](function(er){ av('No pude abrir ese Excel ('+(er&&er.message||'error')+').'); });
+  } else {
+    mzArchivoTexto(f, av, function(txt){ mete(txt); });
+  }
+}
+function mzAlmExisImporta(){
+  var f=_almCorte||[], fecha=($('alm-fecha')||{}).value||'';
+  if(!f.length) return;
+  if(!fecha){ flash('Pon la fecha del corte'); return; }
+  SB.rpc('hb_mez_existencias_import',{p_fecha:fecha,p_filas:f}).then(function(r){ var x=r&&r.data;
+    if(x&&x.ok){
+      burst();
+      flash('✓ '+mzN(x.guardados)+' materiales guardados'+(x.sin_material?(' · '+mzN(x.sin_material)+' sin reconocer'):''));
+      _almCorte=null; mzAlmCarga();
+    } else flash((x&&x.detalle)||'No se pudo guardar');
+  },function(){ flash('Sin conexión'); });
+}
+
 /* ============================================================================
    LLAVES DE IA (solo la cuenta 0917) — 24-ago-2026
    Aquí se pegan las dos llaves que encienden el sistema:

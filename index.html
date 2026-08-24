@@ -156,6 +156,18 @@ button{font-family:var(--font)}
 .kpi .knum{font-size:24px;font-weight:850;letter-spacing:-.02em;line-height:1.1;margin-top:4px;display:block;font-variant-numeric:tabular-nums}
 .kpi .ksub{font-size:10px;color:var(--mut);margin-top:4px}
 .tlogo{width:38px;height:25px;flex:none;display:flex;align-items:center;margin-right:2px}
+.tname.tn-largo{display:none}
+.tname.tn-corto{display:inline-block}
+@media (min-width:1000px){
+  .tname.tn-largo{display:inline-block}
+  .tname.tn-corto{display:none}
+}
+.tname{background:none;border:none;padding:0 2px;margin:0;font-family:inherit;font-size:13.5px;font-weight:800;
+  letter-spacing:-.01em;color:var(--txt);cursor:pointer;min-width:0;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;max-width:46vw;text-align:left}
+@media (hover:hover){.tname:hover{color:var(--accent2)}}
+.tname:focus-visible{outline:2px solid var(--accent2);outline-offset:2px;border-radius:6px}
+body.a11y .tname{font-size:16px !important}
 .tlogo svg,.tlogo img{width:100%;height:100%;object-fit:contain}
 .tbico{width:38px;height:38px;flex:none;display:flex;align-items:center;justify-content:center;
   background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--txt);cursor:pointer;
@@ -462,8 +474,15 @@ button{font-family:var(--font)}
 .chathead .t span{font-size:11.5px;color:var(--mut);display:flex;align-items:center;gap:6px;min-width:0}
 .chathead .t span em{font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .chathead .dotst{flex:none}
-/* solocel = solo en celular · soloesc = solo en escritorio */
+/* solocel = solo en celular · soloesc = solo en escritorio.
+   OJO: esta regla base vive DESPUÉS del @media de arriba, así que sin el media
+   propio de aquí abajo se comía al de escritorio y .soloesc no se veía NUNCA
+   (el chip del gasto de IA del Asistente estaba en ese caso). */
 .soloesc{display:none}
+@media (min-width:1000px){
+  .soloesc{display:inline-flex}
+  .solocel{display:none}
+}
 .dotst{width:8px;height:8px;border-radius:50%;background:var(--mut);box-shadow:0 0 0 3px rgba(255,255,255,.05)}
 .dotst.on{background:var(--ok);box-shadow:0 0 0 3px rgba(39,194,103,.18)}
 .keybtn{background:var(--card);border:1px solid var(--line);color:var(--txt);font-size:12px;font-weight:700;padding:9px 12px;border-radius:30px;cursor:pointer;display:flex;align-items:center;gap:6px}
@@ -2948,16 +2967,34 @@ var HB_MARK=(function(){
     '<path d="M15 2 28 16 15 30 2 16Z" fill="var(--accent2)"/>'+
     '<path d="M39 2 52 16 39 30 26 16Z" fill="var(--accent2)" opacity=".45"/></svg>';
 })();
+/* El NOMBRE de quien está usando el sistema, siempre a la vista junto al logo
+   (pedido de Carlos 24-ago). Se toca y abre tu perfil. Si el nombre todavía no
+   llega del servidor, se usa el del login; si tampoco, no se pinta nada — nunca
+   un nombre inventado. */
+function hbQuienSoy(hayAtras){
+  if(!S) return '';
+  var n='';
+  try{ n=(profGet(S.emp).nombre||'').trim(); }catch(e){}
+  if(!n) n=(S.nombre||'').trim();
+  if(!n) return '';
+  var largo=niceName(n), pila=largo.split(/\s+/)[0];
+  var b=function(txt,cls){ return '<button class="tname'+(cls?' '+cls:'')+'" onclick="renderPerfil()" title="Tu perfil">'+esc(txt)+'</button>'; };
+  /* En el TELÉFONO, cuando además está el botón «Atrás», el nombre completo se
+     partía a media palabra: ahí va solo el nombre de pila, entero y legible.
+     En escritorio (y en las pantallas principales) va completo. */
+  if(hayAtras) return b(largo,'tn-largo')+b(pila,'tn-corto');
+  return b(largo);
+}
 function renderTop(name){
   var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='mezraw'||name==='prod'||name==='manto') && !(name==='docs' && window._docFrom==='tab');
   var left=$('topLeft');
   if(sub){
     var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? (window._pedFrom==='manto'?'go(\'manto\')':'go(\'hr\')') : name==='pedir' ? (window._pedFrom==='manto'?'go(\'manto\')':('go(\''+((S.admin||S.mando)?'hr':'home')+'\')')) : (name==='prod'||name==='manto') ? 'go(\'planta\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='mezraw' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
-    left.innerHTML='<span class="tlogo" aria-hidden="true">'+HB_MARK+'</span><button class="back" onclick="'+backTo+'">‹ Atrás</button>';
+    left.innerHTML='<span class="tlogo" aria-hidden="true">'+HB_MARK+'</span><button class="back" onclick="'+backTo+'">‹ Atrás</button>'+hbQuienSoy(true);
     left.classList.remove('who');
   }else{
     left.classList.remove('who');
-    left.innerHTML='<span class="tlogo" aria-hidden="true">'+HB_MARK+'</span>';
+    left.innerHTML='<span class="tlogo" aria-hidden="true">'+HB_MARK+'</span>'+hbQuienSoy();
   }
   /* HUD de la referencia: [USD si acceso total] · campana (Mensajes) · menú ≡ */
   var BELL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>';
@@ -5648,8 +5685,11 @@ function managerDash(role){
   h+='<div class="scr-h dash-h"><div style="flex:1;min-width:0">'+
      '<div class="eyebrow">Hules Banda</div>'+
      '<h2>'+esc(role)+'</h2>'+
-     '<p>Toda la planta, en vivo.</p></div>'+
-     '<span class="status" style="margin-top:6px"><span class="d"></span>En línea</span></div>';
+     '<p>Toda la planta, en vivo.</p>'+
+     /* el "En línea" va PEGADO debajo del título (pedido de Carlos 24-ago):
+        colgado a la derecha del flex se veía suelto, hasta arriba y solo */
+     '<span class="status" style="margin-top:7px"><span class="d"></span>En línea</span>'+
+     '</div></div>';
   // ----- ALERTA DE SEGURIDAD: banda delgada, simétrica, a todo lo ancho → Focos -----
   if(ALERTS.length){
     h+='<div class="salert" role="button" tabindex="0" onkeydown="_kb(event)" onclick="mgrGo(\'focos-alertas\')">'+

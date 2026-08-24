@@ -139,6 +139,16 @@ button{font-family:var(--font)}
 .mzt td{padding:8px;font-size:12.5px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
 .mzt td+td{text-align:right}
 .mzt tr:last-child td{border-bottom:none}
+/* «Ordenar por…» de las tablas de Producción (pedido de Carlos, 24-ago).
+   Toda clase nueva DEBE entrar también a body.a11y o el modo Texto grande
+   se rompe en silencio. */
+.mzord{display:inline-flex;align-items:center;gap:7px;margin-left:auto;flex:none}
+.mzord>span{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);white-space:nowrap}
+.mzord select{padding:5px 9px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:11.5px;max-width:200px;cursor:pointer}
+.mzordfila{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+body.a11y .mzord>span{font-size:13px !important}
+body.a11y .mzord select{font-size:15px !important}
+@media(max-width:520px){ .mzord{margin-left:0} .mzord select{max-width:none;flex:1} .mzord{width:100%} }
 /* La previsualización del pegado/CSV se revisa EN UN TELÉFONO. El min-width de
    520px que necesitan las tablas de 7 columnas aquí sacaba de pantalla justo
    las columnas que hay que cotejar (mezclas y quemadas): se anula solo aquí. */
@@ -11911,7 +11921,27 @@ function mzSemPaint(){
      existencia física de corte; mientras, sigue diciendo que falta ese dato. */
   var cab = ve ? ['Materia prima','Usado en el periodo','Entró','Movimiento','Restante','Kg/día prom.','Costo de lo usado','Último precio','Cómo va']
                : ['Materia prima','Usado en el periodo','Entró','Movimiento','Restante','Kg/día prom.','Cómo va'];
-  h+='<div class="card"><b style="font-size:13px">Ordenados por lo que más se consume</b>'+
+  /* «Ordenar por…» del semáforo: lo que de verdad se pregunta uno frente a
+     esta tabla. El costo solo se ofrece a quien puede ver dinero. */
+  var opsSem=[['usado','Lo que más se consume'],['urgente','Lo más urgente'],
+              ['queda','Lo que menos queda'],['dia','Más kilos por día'],
+              ['entro','Lo que más entró'],['deficit','Mayor faltante frente a lo que entró'],
+              ['az','Materia prima (A-Z)']];
+  if(ve) opsSem.splice(4,0,['costo','Mayor costo de lo usado']);
+  mats=mzOrdAplica(mats,'sem','usado',{
+    usado:   mzCmpNum('kg_periodo'),
+    /* k: 0 = rojo, 1 = ámbar, 2 = bien. A igual color, primero el que más pesa. */
+    urgente: function(a,b){ var la=mzSemLuz(a,dias).k, lb=mzSemLuz(b,dias).k;
+               return la!==lb ? la-lb : (+b.kg_periodo||0)-(+a.kg_periodo||0); },
+    queda:   mzCmpNum('restante',true),
+    dia:     mzCmpNum('kg_por_dia'),
+    costo:   mzCmpNum('costo_mxn'),
+    entro:   mzCmpNum('kg_entrada'),
+    deficit: mzCmpNum('movimiento',true),
+    az:      mzCmpTxt('codigo')
+  });
+  h+='<div class="card"><div class="mzordfila"><b style="font-size:13px">Materias primas</b>'+
+     mzOrdBtn('sem',opsSem,'usado')+'</div>'+
      mzTabla(cab,
        mats.map(function(m){
          var l=mzSemLuz(m,dias);
@@ -12104,12 +12134,52 @@ function mzTabRango(d1,d2){ _mztD1=d1; _mztD2=d2; renderMezTab(); }
    desplegable junto al título (barras / pastel / línea); la elección se guarda
    POR GRÁFICO en este aparato. Patrón listo para extender al resto del sistema. */
 var MZ_COL=['#e73b2f','#cc1a1f','#ffbf47','#7d0d11','#8a8f9c','#3b82f6','#22c55e','#8b5cf6','#0e9e8e','#f472b6'];
+/* ===== «Ordenar por…» ======================================================
+   Cada tabla de Producción ofrece SOLO los criterios que tienen sentido para
+   ella (más mezclas, más dinero, lo que menos queda…). La elección se guarda
+   por tabla, como el tipo de gráfico, y la pantalla se repinta sola. */
+function mzOrd(key,def){ try{ return localStorage.getItem('mzo_'+key)||def; }catch(e){ return def; } }
+function mzOrdSet(key,v){ try{ localStorage.setItem('mzo_'+key,v); }catch(e){} mzRepinta(); }
+/* un solo lugar que sabe repintar la pantalla de mezclado en la que estamos */
+function mzRepinta(){
+  if(_screen==='mezcomp' && window._mzCompX) return mzCompPaint(window._mzCompX);
+  if(_screen==='mezsem'  && _mzSem)  return mzSemPaint();
+  if(_screen==='mezalm')             return mzAlmPinta();
+  if(_screen==='mezraw')             return mzRawPinta();
+  if(_screen==='mezprecios')         return mzPrePaint();
+  if(_screen==='mezdesg' && _mzDesg) return mzDesgPaint();
+  if(window._mzTabX)                 return mzTabPaint(window._mzTabX);
+}
+/* el desplegable. ops = [[clave,'Texto que lee la gente'],…] */
+function mzOrdBtn(key,ops,def){
+  var cur=mzOrd(key,def);
+  return '<label class="mzord"><span>Ordenar por</span>'+
+    '<select onchange="mzOrdSet(\''+key+'\',this.value)" aria-label="Ordenar la tabla">'+
+    ops.map(function(o){ return '<option value="'+o[0]+'"'+(cur===o[0]?' selected':'')+'>'+esc(o[1])+'</option>'; }).join('')+
+    '</select></label>';
+}
+/* ordena una COPIA (nunca el arreglo original: se repinta muchas veces) */
+function mzOrdAplica(arr,key,def,cmps){
+  var f=cmps[mzOrd(key,def)];
+  return f ? (arr||[]).slice().sort(f) : (arr||[]);
+}
+/* comparadores que se repiten. Los vacíos SIEMPRE al final: un dato que no
+   existe no puede encabezar una lista de «lo que más…». */
+function mzCmpNum(campo,asc){
+  return function(a,b){
+    var x=a[campo], y=b[campo];
+    var xv=(x==null||x===''), yv=(y==null||y==='');
+    if(xv&&yv) return 0; if(xv) return 1; if(yv) return -1;
+    return asc ? (+x)-(+y) : (+y)-(+x); };
+}
+function mzCmpTxt(campo){
+  return function(a,b){ return String(a[campo]==null?'':a[campo]).localeCompare(String(b[campo]==null?'':b[campo]),'es'); };
+}
 function mzGT(key,def){ try{ return localStorage.getItem('mzg_'+key)||def; }catch(e){ return def; } }
 function mzGrafTipo(key,v){ try{ localStorage.setItem('mzg_'+key,v); }catch(e){}
   /* repinta la pantalla donde está el gráfico (antes siempre el tablero: en la
      ficha del compuesto el selector no habría hecho nada visible) */
-  if(_screen==='mezcomp' && window._mzCompX) return mzCompPaint(window._mzCompX);
-  if(window._mzTabX) mzTabPaint(window._mzTabX); }
+  mzRepinta(); }
 function mzTitulo(txt,key,ops,def){ var cur=mzGT(key,def);
   return '<div style="display:flex;align-items:center;gap:8px"><b style="font-size:13px">'+txt+'</b>'+
     '<select onchange="mzGrafTipo(\''+key+'\',this.value)" aria-label="Tipo de gráfico" style="margin-left:auto;padding:4px 8px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--mut);font:inherit;font-size:11px">'+
@@ -12166,11 +12236,17 @@ function mzCatGraf(key,items,unidad,barrasHtml,def){  /* render de un gráfico c
   /* `def` tiene que ser el MISMO que se le pasó a mzTitulo: si no, el selector
      dice una cosa y se pinta otra (pasó con las donas de la ficha, 24-ago). */
   var t=mzGT(key, def||'barras');
-  if(t==='pastel') return mzPie(items,false);
-  if(t==='dona')   return mzPie(items,true);
-  if(t==='columnas') return mzCols(items);
-  if(t==='tabla')  return mzTablaG(items,unidad);
-  return barrasHtml; }
+  if(t!=='pastel' && t!=='dona' && t!=='columnas' && t!=='tabla') return barrasHtml;
+  /* la etiqueta viene en `l` (gráficos del tablero) o en `t` (ficha del
+     compuesto). Si no se normaliza, la dona sale con los colores y los
+     números pero SIN el nombre — pasó con turno y con secciones (24-ago). */
+  var it=(items||[]).map(function(i){
+    var et=(i.l!=null&&i.l!=='')?i.l:(i.t!=null?i.t:'');
+    return {l:et, t:et, v:i.v, dec:i.dec}; });
+  if(t==='pastel') return mzPie(it,false);
+  if(t==='dona')   return mzPie(it,true);
+  if(t==='columnas') return mzCols(it);
+  return mzTablaG(it,unidad); }
 function mzLinea(dias,maxD){
   var n=dias.length,W=640,H=150,PL=10,PR=10,PT=18,PB=18;
   var pts=dias.map(function(d,i){ var x=PL+i*(W-PL-PR)/Math.max(1,n-1);
@@ -12333,7 +12409,15 @@ function mzTabPaint(x){
   var tc=x.top_compuestos||[];
   if(tc.length){
     var maxC=tc[0].mezclas||1;
-    h+='<div class="card" style="margin-bottom:12px">'+mzTitulo('Los compuestos más corridos','top',MZ_OPS_CAT,'barras');
+    tc=mzOrdAplica(tc,'topo','mezclas',{
+      mezclas: mzCmpNum('mezclas'), kg: mzCmpNum('kg'), corridas: mzCmpNum('corridas'),
+      repro:   mzCmpNum('reproceso'), quemadas: mzCmpNum('quemadas'), az: mzCmpTxt('compuesto')
+    });
+    h+='<div class="card" style="margin-bottom:12px">'+mzTitulo('Los compuestos más corridos','top',MZ_OPS_CAT,'barras')+
+       '<div class="mzordfila" style="margin-top:7px;justify-content:flex-end">'+
+       mzOrdBtn('topo',[['mezclas','Más mezclas'],['kg','Más kilos'],['corridas','Más corridas'],
+                        ['repro','Más reproceso'],['quemadas','Más quemadas'],
+                        ['az','Compuesto (A-Z)']],'mezclas')+'</div>';
     h+=mzCatGraf('top', tc.map(function(c){ return {l:c.compuesto||'¿?', v:c.mezclas||0}; }), 'mezclas',
        tc.map(function(c){ return '<div style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:12px"><span>'+esc(c.compuesto||'¿?')+((c.reproceso||0)>0?' <span class="note">· '+c.reproceso+' de reproceso</span>':'')+'</span><span class="note">'+Number(c.mezclas||0).toLocaleString()+' mez</span></div>'+
        '<span style="display:block;height:7px;border-radius:4px;background:var(--data);opacity:.9;margin-top:3px;width:'+Math.max(3,Math.round((c.mezclas||0)/maxC*100))+'%"></span></div>'; }).join(''));
@@ -12373,7 +12457,15 @@ function mzTabPaint(x){
   });
   h+='</div>';
   var tmt=(x.tm_top||[]); var maxTm=1; tmt.forEach(function(c){ if(c.minutos>maxTm) maxTm=c.minutos; });
+  tmt=mzOrdAplica(tmt,'tmo','min',{
+    min:   mzCmpNum('minutos'), veces: mzCmpNum('veces'),
+    larga: function(a,b){ var pa=(a.veces?a.minutos/a.veces:0), pb=(b.veces?b.minutos/b.veces:0); return pb-pa; },
+    az:    mzCmpTxt('causa')
+  });
   h+='<div class="card">'+mzTitulo('Paros · las causas que más pegan','tm',MZ_OPS_CAT,'barras');
+  if(tmt.length) h+='<div class="mzordfila" style="margin-top:7px;justify-content:flex-end">'+
+    mzOrdBtn('tmo',[['min','Más minutos perdidos'],['veces','Más veces'],
+                    ['larga','La que más dura cada vez'],['az','Causa (A-Z)']],'min')+'</div>';
   if(!tmt.length) h+='<div class="note" style="margin-top:4px">Sin paros en el rango.</div>';
   else if(mzGT('tm','barras')!=='barras'){
     h+=mzCatGraf('tm', tmt.map(function(c){ return {l:c.causa||'¿?', v:Math.round(c.minutos)}; }), 'minutos', '');
@@ -12467,7 +12559,19 @@ function mzAlmPinta(){
        '<div id="alm-prev"></div></div>';
     var fl=(d&&d.filas)||[];
     if(fl.length){
-      h+='<div class="card"><b style="font-size:13px">Últimas entradas</b>'+
+      fl=mzOrdAplica(fl,'alm','reciente',{
+        reciente: function(a,b){ return String(b.fecha||'').localeCompare(String(a.fecha||'')); },
+        antigua:  function(a,b){ return String(a.fecha||'').localeCompare(String(b.fecha||'')); },
+        kg:       mzCmpNum('kg'),
+        sinemp:   function(a,b){ var ra=a.resuelto?1:0, rb=b.resuelto?1:0;
+                    return ra!==rb ? ra-rb : (+b.kg||0)-(+a.kg||0); },
+        prov:     mzCmpTxt('proveedor'),
+        az:       mzCmpTxt('clave')
+      });
+      h+='<div class="card"><div class="mzordfila"><b style="font-size:13px">Últimas entradas</b>'+
+         mzOrdBtn('alm',[['reciente','Más reciente'],['antigua','Más antigua'],['kg','Más kilos'],
+                         ['sinemp','Primero las que no empatan'],['prov','Proveedor (A-Z)'],
+                         ['az','Clave (A-Z)']],'reciente')+'</div>'+
          mzTabla(['Cuándo','Clave','Material','Kilos','Proveedor','Lote / factura'],
            fl.map(function(f){
              return mzTd([esc(f.fecha),
@@ -12890,6 +12994,17 @@ function mzRawPinta(){
        '<div class="note" style="margin-top:4px">Prueba con «Todas», otro banbury u otro rango de fechas.</div></div>';
     $('s-mezraw').innerHTML=h; return;
   }
+  /* «Ordenar por…»: ojo, ordena lo que YA se bajó, no las 1,404 del servidor.
+     Por eso la nota del pie lo dice cuando falta por cargar. */
+  filas=mzOrdAplica(filas,'raw','reciente',{
+    reciente: function(a,b){ return String(b.fecha||'').localeCompare(String(a.fecha||''))
+                                 || (b.turno||0)-(a.turno||0); },
+    antigua:  function(a,b){ return String(a.fecha||'').localeCompare(String(b.fecha||''))
+                                 || (a.turno||0)-(b.turno||0); },
+    mezclas:  mzCmpNum('mezclas'),
+    quemadas: mzCmpNum('quemadas'),
+    az:       mzCmpTxt('compuesto')
+  });
   var rows=filas.map(function(f){
     var quien = f.capturo ? esc(niceName(f.capturo))
               : (f.capturo_n ? ('Nº '+f.capturo_n)
@@ -12905,8 +13020,12 @@ function mzRawPinta(){
     return mzTd([esc(f.fecha)+'<div class="note" style="font-size:10px">'+mzRawTurno(f.turno)+' turno · BB '+(f.banbury||'—')+'</div>',
       comp, mzN(f.mezclas), (f.quemadas?('<span style="color:var(--bad)">'+mzN(f.quemadas)+'</span>'):'0'), marcas||'—', sello]);
   });
-  h+='<div class="card">'+mzTabla(['Cuándo se corrió','Compuesto','Mezclas','Quemadas','Marcas','Quién la capturó'], rows)+
+  h+='<div class="card"><div class="mzordfila" style="margin-bottom:2px"><b style="font-size:13px">Las corridas</b>'+
+     mzOrdBtn('raw',[['reciente','Más reciente'],['antigua','Más antigua'],['mezclas','Más mezclas'],
+                     ['quemadas','Más quemadas'],['az','Compuesto (A-Z)']],'reciente')+'</div>'+
+     mzTabla(['Cuándo se corrió','Compuesto','Mezclas','Quemadas','Marcas','Quién la capturó'], rows)+
      '<div class="note" style="margin-top:8px">Se ven <b>'+mzN(filas.length)+'</b> de '+mzN(x.total)+'.'+
+     (filas.length<x.total?' El orden se aplica sobre estas '+mzN(filas.length)+', no sobre todas — carga el resto con «Ver más».':'')+
      (x.sin_autor?(' '+mzN(x.sin_autor)+' de estas corridas entraron por importación de Excel y no guardaron quién las subió.'):'')+'</div></div>';
   if(filas.length<x.total) h+='<button class="btn ghost" style="margin:12px 0 0" onclick="mzRawMas()">Ver más ('+mzN(x.total-filas.length)+' faltan)</button>';
   $('s-mezraw').innerHTML=h;
@@ -12939,7 +13058,16 @@ function mzDesgPaint(){
 
   if(x.tema==='produccion'){
     var pc=x.por_compuesto||[];
-    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Por compuesto</b>'+
+    pc=mzOrdAplica(pc,'desgpc','mezclas',{
+      mezclas:  mzCmpNum('mezclas'),  kg:       mzCmpNum('kg'),
+      corridas: mzCmpNum('corridas'), dias:     mzCmpNum('dias'),
+      repro:    mzCmpNum('reproceso'),quemadas: mzCmpNum('quemadas'),
+      az:       mzCmpTxt('compuesto'),fam:      mzCmpTxt('familia')
+    });
+    h+='<div class="card" style="margin-bottom:12px"><div class="mzordfila"><b style="font-size:13px">Por compuesto</b>'+
+       mzOrdBtn('desgpc',[['mezclas','Más mezclas'],['kg','Más kilos'],['corridas','Más corridas'],
+                          ['dias','Más días corridos'],['repro','Más reproceso'],['quemadas','Más quemadas'],
+                          ['az','Compuesto (A-Z)'],['fam','Familia (A-Z)']],'mezclas')+'</div>'+
        '<div class="note" style="margin-top:2px">Toca un renglón para ver TODO de ese compuesto.</div>'+
        mzTabla(['Compuesto','Familia','Mezclas','Kilos','% del total','Corridas','Días','Reproceso','Quemadas'],
         pc.map(function(c){ return mzTd([esc(c.compuesto||'¿?'),esc(c.familia||'—'),mzN(c.mezclas),mzN(c.kg),
@@ -12975,7 +13103,16 @@ function mzDesgPaint(){
           conserva el precio de su día) */
        '<div class="card"><div class="note">Comprado en dólares</div><b style="font-size:20px;color:var(--warn)">'+mzUs(usdReal||totUs)+'</b>'+
          '<div class="note" style="margin-top:2px">+$1 al dólar ≈ '+mzMx(usdReal||totUs)+' más en este periodo</div></div></div>';
-    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Costo por compuesto — números exactos</b>'+
+    cc=mzOrdAplica(cc,'desgcc','gasto',{
+      gasto:  mzCmpNum('costo_total_mxn'), kilo:  mzCmpNum('costo_kg_mxn'),
+      barato: mzCmpNum('costo_kg_mxn',true), lote: mzCmpNum('costo_batch_mxn'),
+      mezclas:mzCmpNum('mezclas'),         kg:    mzCmpNum('kg'),
+      az:     mzCmpTxt('compuesto')
+    });
+    h+='<div class="card" style="margin-bottom:12px"><div class="mzordfila"><b style="font-size:13px">Costo por compuesto — números exactos</b>'+
+       mzOrdBtn('desgcc',[['gasto','Mayor gasto total'],['kilo','Más caro por kilo'],['barato','Más barato por kilo'],
+                          ['lote','Más caro por mezcla'],['mezclas','Más mezclas'],['kg','Más kilos'],
+                          ['az','Compuesto (A-Z)']],'gasto')+'</div>'+
        '<div class="note" style="margin-top:2px">Tasa DOF $'+mzN(x.fx,4)+' del '+esc(x.fx_fecha)+'. Toca un renglón para el detalle completo.</div>'+
        mzTabla(['Compuesto','Mezclas','$/kg MXN','$/kg USD','$/mezcla MXN','Costo total MXN','Costo total USD','% del gasto','Venta','Utilidad'],
         cc.map(function(c){
@@ -13060,6 +13197,22 @@ function renderMezPrecios(){
 function mzPreBuscar(v){ _mzPreQ=(v||'').trim(); renderMezPrecios(); }
 function mzPrePaint(){
   var x=_mzPre, ms=x.materiales||[], h='';
+  /* el % de cambio no viene del servidor: se calcula al pintar. Para poder
+     ORDENAR por él hay que tenerlo antes, así que se anota en cada renglón. */
+  ms.forEach(function(m){
+    m._dpc=(m.precio!=null && m.precio_previo!=null && +m.precio_previo>0)
+      ? (+m.precio - +m.precio_previo)/+m.precio_previo*100 : null; });
+  var msOrd=mzOrdAplica(ms,'pre','uso',{
+    uso:     function(a,b){ var ua=a.en_uso?0:1, ub=b.en_uso?0:1;
+               return ua!==ub ? ua-ub : String(a.codigo||'').localeCompare(String(b.codigo||''),'es'); },
+    caro:    mzCmpNum('precio_mxn'),
+    barato:  mzCmpNum('precio_mxn',true),
+    subio:   mzCmpNum('_dpc'),
+    bajo:    mzCmpNum('_dpc',true),
+    reciente:function(a,b){ return String(b.fecha||'').localeCompare(String(a.fecha||'')); },
+    compras: mzCmpNum('compras'),
+    az:      mzCmpTxt('codigo')
+  });
   var hoy=mxToday();
   h+='<div class="card" style="margin-bottom:12px"><b style="font-size:15px">Precios de materia prima</b>'+
      '<div class="note" style="margin-top:3px">Cuando subes un precio nuevo, <b>solo aplica de esa fecha en adelante</b>. Lo que ya se mezcló conserva el precio que tenía — el histórico nunca se toca.</div>'+
@@ -13071,10 +13224,14 @@ function mzPrePaint(){
      (x.fx?('<div class="note" style="margin-top:7px">Tasa de hoy para convertir dólares: $'+mzN(x.fx,4)+'</div>'):'')+
      '</div>';
   h+='<div id="mzp-form"></div>';
-  h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Materiales'+(_mzPreQ?(' · "'+esc(_mzPreQ)+'"'):'')+'</b>'+
-     '<div class="note" style="margin-top:2px">Primero los que usan las recetas vigentes. Toca uno para ver su historia.</div>'+
+  h+='<div class="card" style="margin-bottom:12px"><div class="mzordfila"><b style="font-size:13px">Materiales'+(_mzPreQ?(' · "'+esc(_mzPreQ)+'"'):'')+'</b>'+
+     mzOrdBtn('pre',[['uso','Primero los de receta vigente'],['caro','Más caro (en pesos)'],
+                     ['barato','Más barato (en pesos)'],['subio','El que más subió'],
+                     ['bajo','El que más bajó'],['reciente','Precio más reciente'],
+                     ['compras','Más compras'],['az','Material (A-Z)']],'uso')+'</div>'+
+     '<div class="note" style="margin-top:2px">Toca uno para ver su historia.</div>'+
      mzTabla(['Material','Precio','Moneda','En pesos','Desde','Cambio','Compras'],
-      ms.map(function(m){
+      msOrd.map(function(m){
         var d='—';
         if(m.precio!=null && m.precio_previo!=null && +m.precio_previo>0){
           var dd=(+m.precio - +m.precio_previo)/+m.precio_previo*100;
@@ -13436,7 +13593,7 @@ function mzCompBarras(items, unidad, color){
   return '<div style="margin-top:9px">'+items.map(function(i,k){
     var pc=Math.max(2, Math.round((i.v||0)/max*100));
     return '<div style="display:flex;align-items:center;gap:9px;margin-bottom:7px">'+
-      '<span class="note" style="width:110px;flex:none;text-align:right;font-size:11.5px">'+esc(i.t)+'</span>'+
+      '<span class="note" style="width:110px;flex:none;text-align:right;font-size:11.5px">'+esc(i.t!=null&&i.t!==''?i.t:(i.l||''))+'</span>'+
       '<span style="flex:1;height:14px;border-radius:7px;background:var(--card2);overflow:hidden;min-width:0">'+
         '<span style="display:block;height:14px;border-radius:7px;background:'+(color||MZ_COL[k%MZ_COL.length])+';width:'+pc+'%"></span></span>'+
       '<b style="width:88px;flex:none;font-size:12px;font-variant-numeric:tabular-nums">'+mzN(i.v, i.dec||0)+
@@ -13606,16 +13763,38 @@ function mzCompPaint(x){
            '</div>';
       }
     }
-    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Receta de la versión vigente</b>'+
+    var opsRec=[['orden','Orden de la cédula'],['kg','Más kilos'],['poco','Menos kilos'],
+                ['sec','Sección'],['az','Ingrediente (A-Z)']];
+    if(x.admin) opsRec.splice(3,0,['caro','Más caro por kilo']);
+    var recOrd=mzOrdAplica(x.receta,'cmprec','orden',{
+      orden: function(a,b){ return (a.orden||0)-(b.orden||0); },
+      kg:    mzCmpNum('kg'), poco: mzCmpNum('kg',true),
+      caro:  function(a,b){ var pa=a.precio?+a.precio.precio:null, pb=b.precio?+b.precio.precio:null;
+               if(pa==null&&pb==null) return 0; if(pa==null) return 1; if(pb==null) return -1; return pb-pa; },
+      sec:   function(a,b){ return String(a.seccion||'').localeCompare(String(b.seccion||''),'es')
+                                 || (b.kg||0)-(a.kg||0); },
+      az:    mzCmpTxt('nombre')
+    });
+    h+='<div class="card" style="margin-bottom:12px"><div class="mzordfila"><b style="font-size:13px">Receta de la versión vigente</b>'+
+       mzOrdBtn('cmprec',opsRec,'orden')+'</div>'+
        mzTabla(['Ingrediente','Sección','Kg','Tolerancia'].concat(x.admin?['Precio']:[]),
-        x.receta.map(function(i){
+        recOrd.map(function(i){
           var pr=i.precio? (mzN(i.precio.precio,4)+' '+esc(i.precio.moneda)) : (i.es_recorte?'<span class="note">recorte</span>':(i.compuesto_ref?'<span class="note">de la casa</span>':'<span class="note">sin precio</span>'));
           return mzTd([esc(i.nombre)+(i.compuesto_ref?' <span class="note">→ '+esc(i.compuesto_ref)+'</span>':''),
             esc((i.seccion||'').replace('_',' ')),i.kg!=null?mzN(i.kg,3):'—',
             (i.tol_min!=null?(mzN(i.tol_min,3)+' – '+mzN(i.tol_max,3)):'—')].concat(x.admin?[pr]:[])); }))+'</div>';
   }
   var cr=x.corridas||[];
-  h+='<div class="card"><b style="font-size:13px">Corridas del periodo (dato crudo)</b>'+
+  cr=mzOrdAplica(cr,'cmpcr','reciente',{
+    reciente: function(a,b){ return String(b.fecha||'').localeCompare(String(a.fecha||''))||(b.turno||0)-(a.turno||0); },
+    antigua:  function(a,b){ return String(a.fecha||'').localeCompare(String(b.fecha||''))||(a.turno||0)-(b.turno||0); },
+    mezclas:  mzCmpNum('mezclas'), quemadas: mzCmpNum('quemadas'),
+    bb:       function(a,b){ return (a.banbury||0)-(b.banbury||0)||(a.turno||0)-(b.turno||0); },
+    op:       mzCmpNum('operador_n',true)
+  });
+  h+='<div class="card"><div class="mzordfila"><b style="font-size:13px">Corridas del periodo (dato crudo)</b>'+
+     mzOrdBtn('cmpcr',[['reciente','Más reciente'],['antigua','Más antigua'],['mezclas','Más mezclas'],
+                       ['quemadas','Más quemadas'],['bb','Banbury y turno'],['op','Nº de operador']],'reciente')+'</div>'+
      '<div class="note" style="margin-top:2px">Tal como se capturaron en la bitácora.</div>'+
      (cr.length? mzTabla(['Fecha','Turno','BB','Versión','Corrida','Mezclas','Quem.','Reproceso','Operador'],
       cr.map(function(r){ return mzTd([esc(r.fecha),'T'+r.turno,'BB'+r.banbury,esc(r.letra||'—'),

@@ -5059,13 +5059,22 @@ function iaPanelLoad(){
       }).join('<br>')+'</div>'; }
   },function(){});
   SB.rpc('hb_ia_top').then(function(r){ var x=r&&r.data; var t=$('iaTop'); if(!t) return;
-    if(!(x&&x.ok)){ t.innerHTML='Se enciende al correr el parche v3_34.'; return; }
-    t.innerHTML=(x.top&&x.top.length)?x.top.map(function(p,i){
-      return '<div style="display:flex;justify-content:space-between;gap:8px;margin-top:6px;font-size:12px">'+
-        '<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(i+1)+'. '+esc(niceName(p.nombre||('#'+p.n)))+'</span>'+
-        '<b style="flex:none;font-variant-numeric:tabular-nums">US$'+mzN(+p.usd||0,2)+'</b></div>';
-    }).join(''):'Sin consumo este mes.';
-  },function(){ var t=$('iaTop'); if(t) t.innerHTML='Se enciende al correr el parche v3_34.'; });
+    if(!(x&&x.ok)){ t.innerHTML='<span class="note">No disponible.</span>'; return; }
+    /* quién gastó, cuánto EN PESOS y en qué se le fue (pedido de Carlos, 24-ago) */
+    t.innerHTML=(x.top&&x.top.length)?(x.top.map(function(p,i){
+      var det=[]; if(p.preguntas) det.push(p.preguntas+' preg.');
+                  if(p.fotos)     det.push(p.fotos+' fotos');
+                  if(p.bloqueadas)det.push(p.bloqueadas+' bloqueadas');
+      return '<div style="display:flex;justify-content:space-between;gap:9px;align-items:flex-start;margin-top:8px;font-size:12px">'+
+        '<span style="min-width:0;flex:1">'+(i+1)+'. '+esc(niceName(p.nombre||('#'+p.n)))+
+          (det.length?('<div class="note" style="font-size:10.5px;margin-top:1px">'+det.join(' · ')+
+             (p.motor?(' · '+esc(p.motor)):'')+'</div>'):'')+'</span>'+
+        '<b style="flex:none;font-variant-numeric:tabular-nums">'+mzMx(+p.mxn||0,2)+'</b></div>';
+    }).join('')+
+      '<div style="display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid var(--line);font-size:12.5px">'+
+      '<b>Total del mes</b><b style="font-variant-numeric:tabular-nums">'+mzMx(+x.total_mxn||0,2)+'</b></div>')
+      :'<span class="note">Nadie la ha usado este mes.</span>';
+  },function(){ var t=$('iaTop'); if(t) t.innerHTML='<span class="note">No disponible.</span>'; });
 }
 function paintChat(){
   var m=$('msgs'); if(!m) return;
@@ -5351,25 +5360,47 @@ function iaCargaPerfil(cb){
 var IA_PESADO=/\b(pdf|presentaci[oó]n|power ?point|diapositiva|slide|excel|hoja de c[aá]lculo|documento (largo|completo)|reporte completo|manual completo|c[oó]digo|programa|aplicaci[oó]n|script|traduce todo|resume todo|libro)\b/i;
 
 function iaPregunta(t){
-  if(_iaPerf && _iaPerf.perfil==='acceso_total' && IA_PESADO.test(t)) return iaAvisoPesado(t);
-  iaEnvia(t);
+  /* el servidor estima el gasto ANTES de mandar (hb_ia_estimar): así el aviso
+     dice un número en pesos y no solo «va a salir caro». La estimación la
+     hacemos nosotros con los precios de la tabla — no la pide a nadie. */
+  if(!(V3_ON && sbReady() && SB)) return iaEnvia(t);
+  SB.rpc('hb_ia_estimar',{p_pregunta:t}).then(function(r){
+    var e=r&&r.data;
+    if(e && e.ok && e.pesado) return iaAvisoPesado(t, e);
+    iaEnvia(t);
+  }, function(){ iaEnvia(t); });   /* si la estimación falla, no se estorba */
 }
 
 /* el aviso de Carlos: "que te deje descargar el código para correrlo en tu
    propio Claude, o continuar de igual manera con el motor del sistema" */
-function iaAvisoPesado(t){
+function iaAvisoPesado(t, est){
   chatBusy=false; paintChat();
+  var total=(_iaPerf && _iaPerf.perfil==='acceso_total');
+  var pes=function(n){ return '$'+Number(n||0).toFixed(2); };
+  var cuanto = est
+    ? ('<div style="margin:12px 0;padding:12px 14px;border-radius:12px;background:var(--card2)">'+
+       '<div class="note" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase">Lo que costaría</div>'+
+       '<b style="font-size:22px;color:var(--data);display:block;margin-top:2px">'+
+         pes(est.mxn_min)+' – '+pes(est.mxn_max)+' <span style="font-size:12px;font-weight:600;color:var(--mut)">MXN</span></b>'+
+       '<div class="note" style="margin-top:5px;font-size:11.5px">Con '+esc(est.modelo||'')+
+         '. Es un cálculo aproximado — el costo exacto se sabe al terminar.</div>'+
+       (est.mi_gasto_mxn!=null
+         ? ('<div class="note" style="margin-top:6px;font-size:11.5px">Llevas <b>'+pes(est.mi_gasto_mxn)+'</b> este mes'+
+            (est.mi_tope_mxn!=null?(' de un tope de <b>'+pes(est.mi_tope_mxn)+'</b>'):' (tu cuenta no tiene tope)')+'.</div>')
+         : '')+
+       '</div>')
+    : '';
   var v=document.createElement('div'); v.className='hbav-velo'; v.id='iaav';
   v.innerHTML='<div class="hbav" role="dialog" aria-modal="true" aria-label="Aviso de gasto">'+
     '<div class="hbav-top"><img class="hbav-logo" alt="" onerror="this.style.display=\'none\'"><span>Aviso del sistema</span></div>'+
-    '<b style="font-size:16px;display:block;margin:9px 0 7px">Eso va a salir caro</b>'+
-    '<div class="note" style="line-height:1.55">Lo que pediste es una tarea larga (un documento, una '+
-    'presentación o código). Con el motor del sistema se puede hacer, pero <b>consume mucho</b> '+
-    'y el gasto lo paga la empresa.<br><br>Si la vas a repetir varias veces, sale mejor llevártela '+
-    'a tu propio Claude: te copio la instrucción completa y la pegas allá.</div>'+
+    '<b style="font-size:16px;display:block;margin:9px 0 7px">Esto va a consumir bastante</b>'+
+    '<div class="note" style="line-height:1.55">Lo que pediste es una tarea larga — un documento, una '+
+    'presentación o código. Se puede hacer, pero el gasto lo paga la empresa.</div>'+
+    cuanto+
+    (total?'<div class="note" style="line-height:1.55">Si la vas a repetir varias veces, sale mejor llevártela a tu propio Claude: te copio la instrucción completa y la pegas allá.</div>':'')+
     '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:15px">'+
-      '<button class="btn" style="margin:0;flex:1;min-width:160px" onclick="iaCopiaParaClaude()">Copiar para mi Claude</button>'+
-      '<button class="btn ghost" style="margin:0;flex:1;min-width:140px" onclick="iaAvisoCierra(true)">Hacerlo aquí de todos modos</button>'+
+      (total?'<button class="btn" style="margin:0;flex:1;min-width:160px" onclick="iaCopiaParaClaude()">Copiar para mi Claude</button>':'')+
+      '<button class="btn'+(total?' ghost':'')+'" style="margin:0;flex:1;min-width:140px" onclick="iaAvisoCierra(true)">'+(total?'Hacerlo aquí de todos modos':'Adelante')+'</button>'+
       '<button class="btn ghost" style="margin:0;width:auto;padding:11px 15px" onclick="iaAvisoCierra(false)">Cancelar</button>'+
     '</div></div>';
   document.body.appendChild(v);
@@ -5431,7 +5462,10 @@ function iaEspera(id, intento){
       S.chat.push({role:'assistant', content:x.respuesta||'(sin respuesta)',
                    ia:true, costo:x.costo_mxn, bloqueada:x.bloqueada});
       paintChat();
-      if(_iaPerf) iaCargaPerfil();   /* refresca el gasto del mes */
+      /* el gasto se actualiza solo: el perfil de quien preguntó y, si está
+         abierto el tablero de IA, también el consumo por persona */
+      if(_iaPerf){ _iaPerf=null; iaCargaPerfil(); }
+      if($('iaTop') && typeof iaPanelLoad==='function') iaPanelLoad();
     },function(){ iaFalla(); });
   }, intento===0 ? 900 : 1400);
 }

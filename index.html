@@ -1360,6 +1360,7 @@ body.a11y .screen .tg{ font-size:13px !important; }
     <section id="s-manto"   class="screen pad hide"></section>
     <section id="s-prod"    class="screen pad hide"></section>
     <section id="s-mezcap"  class="screen pad hide"></section>
+    <section id="s-alim"    class="screen pad hide"></section>
     <section id="s-mezprog" class="screen pad hide"></section>
     <section id="s-mezana"  class="screen pad hide"></section>
     <section id="s-meztab"  class="screen pad hide"></section>
@@ -3133,6 +3134,160 @@ function show(name){
   if(typeof updateMsgBadge==='function') updateMsgBadge();
   try{ if(typeof msjSync==='function') msjSync(); }catch(e){}
 }
+/* ===========================================================================
+   ALIMENTAR EL SISTEMA (25-ago-2026)
+   Un solo lugar para meterle información al sistema. Reemplaza los dos módulos
+   de foto (bitácora y cédula): Carlos los probó con la letra real de la planta
+   y la IA no la lee bien —viene sucia y poco clara—, y un número mal leído es
+   un número inventado. Hules Banda trabaja en Excel, así que el Excel manda.
+
+   Dos caminos, y en los dos SE VE ANTES DE GUARDAR:
+     · Excel/CSV → el sistema reconoce el formato, enseña los renglones que
+       entendió y DICE A DÓNDE van a entrar. Nada de IA: solo casa encabezados;
+       los números salen tal cual venían.
+     · PDF/PowerPoint/Word/imagen → se ve el documento de verdad (el navegador
+       ya sabe mostrarlo) y se guarda en su carpeta con sus permisos.
+   =========================================================================== */
+var _alimF=null, _alimTipo=null, _alimURL=null;
+
+function alimLimpia(){
+  if(_alimURL){ try{ URL.revokeObjectURL(_alimURL); }catch(e){} _alimURL=null; }
+  _alimF=null; _alimTipo=null; _mzFmt=null;
+}
+function alimTipoDe(f){
+  var n=(f.name||'').toLowerCase();
+  if(/\.(xlsx|xlsm|xls|csv|tsv)$/.test(n)) return 'hoja';
+  if(/\.pdf$/.test(n)) return 'pdf';
+  if(/\.(png|jpe?g|gif|webp|heic)$/.test(n)) return 'imagen';
+  return 'doc';
+}
+function renderAlim(){
+  var h='<div class="card" style="margin-bottom:12px"><div class="hd" style="align-items:flex-start"><div>'+
+    '<div class="eyebrow">Producción</div><b style="font-size:17px">Alimentar el sistema</b>'+
+    '<div class="note" style="margin-top:3px;line-height:1.5">Sube tu Excel del día, un PDF, una presentación o un documento. '+
+    'Antes de guardar vas a <b>ver lo que estás subiendo</b> y a dónde va a entrar.</div></div>'+
+    '<span style="flex:none">'+speakBtn('Alimentar el sistema. Aquí subes tu Excel o tus documentos, los revisas, y hasta entonces se guardan.')+'</span></div>'+
+    '<label class="btn" style="margin-top:12px;display:block;text-align:center;cursor:pointer">Escoger archivo'+
+      '<input type="file" accept=".xlsx,.xlsm,.xls,.csv,.tsv,.pdf,.ppt,.pptx,.doc,.docx,.png,.jpg,.jpeg" '+
+      'style="display:none" onchange="alimEscoge(this)"></label>'+
+    '<div class="note" style="margin-top:8px;text-align:center">Excel · CSV · PDF · PowerPoint · Word · imagen</div>'+
+    '</div><div id="alim-cuerpo"></div>';
+  $('s-alim').innerHTML=h; show('alim');
+}
+function alimEscoge(inp){
+  var f=(inp&&inp.files)?inp.files[0]:null; if(inp) inp.value='';
+  if(!f) return;
+  alimLimpia();
+  _alimF=f; _alimTipo=alimTipoDe(f);
+  var c=$('alim-cuerpo'); if(!c) return;
+  if(f.size > 25000000){
+    c.innerHTML='<div class="card"><b style="color:var(--warn)">Ese archivo pesa demasiado</b>'+
+      '<div class="note" style="margin-top:3px">El máximo son 25 MB. Si es un Excel, guarda solo la hoja que vas a subir.</div></div>';
+    return;
+  }
+  c.innerHTML='<div class="card"><div class="note">Abriendo '+esc(f.name)+'…</div></div>';
+  if(_alimTipo==='hoja') alimHoja(f); else alimDoc(f);
+}
+
+/* ---------------- camino EXCEL: reconocer, enseñar y guardar -------------- */
+function alimHoja(f){
+  var c=$('alim-cuerpo');
+  var avisa=function(m){ c.innerHTML='<div class="card"><b style="color:var(--warn)">No se pudo leer</b>'+
+    '<div class="note" style="margin-top:3px">'+esc(m)+'</div></div>'; };
+  mzArchivoTexto(f, avisa, function(txt, comoSeLlama){
+    var tsv=mzCsvATsv(txt);
+    var crudas=tsv.split(/\r?\n/).slice(0,30).map(function(l){ return l.split('\t'); });
+    c.innerHTML='<div class="card"><div class="note">Revisando el formato…</div></div>';
+    mzFormatoPide(crudas, function(fmt){
+      var cab='<div class="card" style="margin-bottom:12px"><b style="font-size:14px">'+esc(f.name)+'</b>'+
+        (comoSeLlama&&comoSeLlama!==f.name?('<div class="note" style="margin-top:2px">'+esc(comoSeLlama)+'</div>'):'')+'</div>';
+      if(!fmt){
+        c.innerHTML=cab+'<div class="card" style="border-color:color-mix(in srgb,var(--warn) 45%,transparent);'+
+          'background:color-mix(in srgb,var(--warn) 9%,transparent)">'+
+          '<b style="font-size:13px;color:var(--warn)">No reconocí este formato</b>'+
+          '<div class="note" style="margin-top:4px;line-height:1.55">Para que entre solo, Carlos tiene que registrar '+
+          'este Excel una vez: le manda el archivo y de ahí en adelante lo reconoce.<br>'+
+          'Mientras, se puede subir desde la pantalla de captura acomodando las columnas a mano.</div></div>';
+        return;
+      }
+      /* el previsualizador de siempre, ya con el formato reconocido */
+      c.innerHTML=cab+'<div class="card"><textarea id="mz-tsv" style="display:none"></textarea>'+
+        '<div id="mz-prev"></div></div>';
+      $('mz-tsv').value=tsv;
+      mzPegaPrev();
+    });
+  }, 'alim-cuerpo');
+}
+
+/* ---------------- camino DOCUMENTO: verlo de verdad antes de subir -------- */
+function alimDoc(f){
+  var c=$('alim-cuerpo');
+  if(!_alimTipo) _alimTipo=alimTipoDe(f);   /* que no dependa de quién la llamó */
+  if(!_alimURL) _alimURL=URL.createObjectURL(f);
+  var deptos=Object.keys(DEPTO_AREA).sort();
+  var miDep=String((S&&S.depto)||'').toUpperCase();
+  var kb=Math.round(f.size/1024);
+  /* el navegador ya sabe enseñar PDFs e imágenes: la vista previa es el
+     documento DE VERDAD, no una descripción de él */
+  var vista='';
+  if(_alimTipo==='pdf'){
+    vista='<iframe src="'+_alimURL+'#toolbar=0" title="Vista previa del documento" '+
+      'style="width:100%;height:60vh;min-height:340px;border:1px solid var(--line);border-radius:12px;background:#fff"></iframe>';
+  } else if(_alimTipo==='imagen'){
+    vista='<img src="'+_alimURL+'" alt="Vista previa" style="max-width:100%;border-radius:12px;border:1px solid var(--line)">';
+  } else {
+    vista='<div class="card" style="text-align:center;padding:26px">'+IC2.doc+
+      '<div class="note" style="margin-top:8px">Este tipo de archivo no se puede ver aquí, pero se sube igual '+
+      'y quien lo abra lo descarga.</div></div>';
+  }
+  c.innerHTML='<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start">'+
+      '<div style="min-width:0"><b style="font-size:14px">'+esc(f.name)+'</b>'+
+      '<div class="note" style="margin-top:2px">'+kb.toLocaleString()+' KB · '+esc(f.type||'archivo')+'</div></div>'+
+      '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="alimCancela()">Cambiar archivo</button>'+
+      '</div><div style="margin-top:10px">'+vista+'</div></div>'+
+    '<div class="card"><b style="font-size:13px">¿Dónde lo guardo?</b>'+
+      '<label class="note" style="display:block;margin:10px 0 3px">Nombre del documento</label>'+
+      '<input id="alim-tit" value="'+escA(f.name.replace(/\.[^.]+$/,''))+'" style="width:100%;padding:10px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+      '<label class="note" style="display:block;margin:10px 0 3px">Área</label>'+
+      '<select id="alim-dep" style="width:100%;padding:10px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+        deptos.map(function(d){ return '<option value="'+escA(d)+'"'+(d===miDep?' selected':'')+'>'+esc(d)+'</option>'; }).join('')+'</select>'+
+      '<label class="note" style="display:block;margin:10px 0 3px">Carpeta</label>'+
+      '<input id="alim-cat" placeholder="Ej. Instrucciones de trabajo" style="width:100%;padding:10px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+      '<label class="note" style="display:block;margin:10px 0 3px">¿Quién lo puede abrir?</label>'+
+      '<select id="alim-acl" style="width:100%;padding:10px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+        '<option value="depto">Solo su área</option><option value="all">Toda la planta</option></select>'+
+      '<div id="alim-msg" class="note" style="margin-top:10px"></div>'+
+      '<button class="btn" style="margin-top:12px" onclick="alimGuardaDoc()">Guardar el documento</button>'+
+    '</div>';
+}
+function alimCancela(){ alimLimpia(); var c=$('alim-cuerpo'); if(c) c.innerHTML=''; }
+function alimGuardaDoc(){
+  var f=_alimF; if(!f) return;
+  var t=($('alim-tit').value||'').trim(), dep=$('alim-dep').value,
+      cat=($('alim-cat').value||'').trim()||'General', modo=$('alim-acl').value;
+  var msg=$('alim-msg');
+  if(t.length<3){ if(msg) msg.innerHTML='<span style="color:var(--warn)">Ponle un nombre al documento.</span>'; return; }
+  if(!(V3_ON&&sbReady()&&SB)){ if(msg) msg.innerHTML='<span style="color:var(--warn)">Necesitas conexión para subirlo.</span>'; return; }
+  if(window._alimSubiendo) return; window._alimSubiendo=true;
+  if(msg) msg.textContent='Subiendo…';
+  var slug=deptoSlug(dep)||'general';
+  var path=slug+'/'+Date.now()+'-'+f.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+  SB.storage.from('docs').upload(path, f, {contentType:(f.type||'application/octet-stream'), upsert:false})
+    .then(function(r){
+      if(r.error){ window._alimSubiendo=false;
+        if(msg) msg.innerHTML='<span style="color:var(--warn)">No se subió: '+esc(r.error.message||'error')+'</span>'; return; }
+      var rec={ id:'doc'+Date.now(), titulo:t, depto:dep, deptoSlug:slug, cat:cat, sub:null,
+                acl:{mode:modo}, path:path, mime:(f.type||''), size:f.size, by:(S.clave||''), ts:Date.now() };
+      SB.from('docs').upsert({id:rec.id, data:rec, ts:rec.ts}).then(function(r2){
+        window._alimSubiendo=false;
+        if(r2&&r2.error){ try{ SB.storage.from('docs').remove([path]); }catch(e){}
+          if(msg) msg.innerHTML='<span style="color:var(--warn)">No quedó registrado: '+esc(r2.error.message)+'</span>'; return; }
+        flash('✓ Documento guardado en '+cat);
+        alimCancela(); sbLoad('docs');
+      });
+    },function(e){ window._alimSubiendo=false;
+      if(msg) msg.innerHTML='<span style="color:var(--warn)">'+esc(mzErr(null,e))+'</span>'; });
+}
 function go(name){
   _adminScr=null; _fichaEmp=null;   // salir de sub-pantallas (personal / ficha) al usar el menú
   _mgrPage=null; _respPage=null;    // el tab del tablero siempre regresa al HUB
@@ -3143,6 +3298,7 @@ function go(name){
   if(name==='planta') return renderPlanta();
   if(name==='manto') return renderMantoHub();
   if(name==='prod') return renderMezHub();
+  if(name==='alim') return renderAlim();
   if(name==='rewards') return renderRewards();
   if(name==='chat') return renderChat();
   if(name==='hr') return renderDash();
@@ -11036,6 +11192,7 @@ function renderMezHub(){
   var veGraf = S.admin || (S.mando && S.mezCap);
   h+='<div class="sec-t">Tu trabajo aquí<span class="ln"></span></div><div class="tgrid">';
   if(S.mezCap){
+    h+=htile("go('alim')",'docs','Alimentar el sistema','Sube tu Excel del día, PDFs y documentos — los revisas antes de guardar',{wide:true});
     h+=htile('renderMezCap()','operacion','Bitácora de turno','Captura corridas, quemadas y paros');
     h+=htile('renderMezProg()','pend','Programación','La cédula: qué se corre y cuánto');
   }
@@ -11077,7 +11234,7 @@ function mzCapPaint(){
      '<input type="date" value="'+esc(_mzF)+'" onchange="mzSetF(this.value)" style="padding:9px 10px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">';
   [1,2,3].forEach(function(t){ h+='<button class="btn'+(t===_mzT?'':' ghost')+'" style="margin:0;width:auto;padding:9px 14px" onclick="mzSetT('+t+')">Turno '+t+'</button>'; });
   h+='<span style="flex:1"></span>'+
-     '<button class="icoa" title="Subir foto de la bitácora" aria-label="Subir foto de la bitácora" onclick="mzFoto(\'bitacora\')">'+IC_CAM+'</button>'+
+
      '<button class="icoa" title="Pegar de Excel" aria-label="Pegar de Excel" onclick="mzPasteTog()">'+IC_CLIP+'</button>'+
      '<button class="btn ghost" style="margin:0;width:auto;padding:9px 14px;font-size:13px" title="Renglones fuera de catálogo por asignar" onclick="mzBandTog()">Bandeja</button>'+
      '<button class="btn ghost" style="margin:0;width:auto;padding:9px 14px;font-size:13px" title="Ver las últimas 100 bitácoras" onclick="mzHistTog()">Historial</button></div>'+
@@ -12285,7 +12442,7 @@ function mzProgPaint(){
      '<span style="display:flex;gap:7px;flex:none">'+
        '<label class="icoa" style="cursor:pointer" title="Subir el Excel o CSV de la cédula" aria-label="Subir el Excel o CSV de la cédula">'+IC2.doc+
          '<input type="file" accept=".xlsx,.xlsm,.csv,.tsv,.txt" style="display:none" onchange="mzProgArchivo(this)"></label>'+
-       '<button class="icoa" title="Subir foto de la cédula" aria-label="Subir foto de la cédula" onclick="mzFoto(\'cedula\')">'+IC_CAM+'</button>'+
+
      '</span></div>'+
      '<div id="mzpg-prev"></div>'+
      '<div style="display:flex;gap:7px;margin-top:8px;flex-wrap:wrap">'+
@@ -14128,7 +14285,7 @@ function mzPreArchivo(inp){
 }
 function mzPrePrev(){
   var txt=($('mzp-tsv').value||'').trim(); if(!txt){ alert('Pega primero los renglones.'); return; }
-  var crear=$('mzp-crear').checked, filas=[], malas=0;
+  var crear=$('mzp-crear').checked, filas=[], malas=0, raras=0;
   txt.split(/\r?\n/).forEach(function(ln){
     if(!ln.trim()) return;
     var c=ln.split('\t'); if(c.length<2) c=ln.split(/;|,(?=\s*\S)/);
@@ -14145,7 +14302,21 @@ function mzPrePrev(){
     var mon=(c[2]||'').trim().toUpperCase();
     mon=(mon.indexOf('US')>-1||mon.indexOf('DL')>-1||mon==='$US')?'USD':'MXN';
     var f=(c[3]||'').trim(); if(f&&!/^\d{4}-\d{2}-\d{2}$/.test(f)){ var m=f.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); f=m?(m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2)):''; }
-    filas.push({codigo:cod, precio:pr, moneda:mon, fecha:f||mxToday(), proveedor:(c[4]||'').trim()||null, crear:crear});
+    var _f = f||mxToday();
+    /* 25-ago: Josué subió dos precios HOY y quedaron fechados un año atrás
+       (2025 en vez de 2026). Con un material sin histórico no se nota, pero en
+       uno que ya tiene precios el nuevo caería ANTES del viejo y el sistema
+       costearía con el precio vencido, sin avisar. Se marcan para que la
+       persona los vea antes de guardar. */
+    var _hoy = mxToday(), _rara = false;
+    try{
+      var _d1=new Date(_f+'T12:00:00'), _d0=new Date(_hoy+'T12:00:00');
+      var _difDias=Math.round((_d0-_d1)/86400000);
+      _rara = (_difDias < -1) || (_difDias > 180);
+      if(_rara) raras++;
+    }catch(e){}
+    filas.push({codigo:cod, precio:pr, moneda:mon, fecha:_f, rara:_rara,
+                proveedor:(c[4]||'').trim()||null, crear:crear});
   });
   if(!filas.length){ alert('No pude leer renglones. Revisa el orden de las columnas.'); return; }
   _mzPreFilas=filas;
@@ -14153,9 +14324,16 @@ function mzPrePrev(){
      revisar contra su Excel — misma lección que la bitácora */
   $('mzp-prev').innerHTML='<div class="note" style="margin-top:8px"><b>'+filas.length+' precios</b>'+
       (malas?(' · <span style="color:var(--warn)">'+malas+' renglones no se leyeron</span>'):'')+'</div>'+
+    (raras?('<div class="card" style="margin-top:8px;border-color:color-mix(in srgb,var(--warn) 50%,transparent);'+
+      'background:color-mix(in srgb,var(--warn) 9%,transparent)"><b style="font-size:13px;color:var(--warn)">'+
+      'Revisa '+raras+(raras===1?' fecha':' fechas')+'</b><div class="note" style="margin-top:3px;line-height:1.5">'+
+      (raras===1?'Hay un precio con fecha':'Hay precios con fechas')+' de hace más de 6 meses o en el futuro '+
+      '(van marcadas abajo). Ojo con el año: escribir «25» en vez de «2025» o «2026» cambia el precio de lugar en la '+
+      'historia, y el sistema podría costear con el vencido.</div></div>'):'')+
     mzTabla(['Material','Precio','Mon.','Fecha'],
       filas.map(function(f){ return mzTd([esc(f.codigo)+(f.proveedor?'<div class="note">'+esc(f.proveedor)+'</div>':''),
-        '<b>'+mzN(f.precio,4)+'</b>', esc(f.moneda), esc(f.fecha)]); }))+
+        '<b>'+mzN(f.precio,4)+'</b>', esc(f.moneda),
+        (f.rara?('<span style="color:var(--warn)">⚠ '+esc(f.fecha)+'</span>'):esc(f.fecha))]); }))+
     '<div class="note" style="margin-top:7px">Revisa que los precios y las monedas cuadren con tu archivo. Un precio en la moneda equivocada descuadra el costeo desde esa fecha.</div>'+
     '<button class="btn" style="margin:10px 0 0" onclick="mzPreImporta()">Guardar los '+filas.length+' precios</button>';
 }

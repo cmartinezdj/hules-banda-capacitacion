@@ -144,6 +144,14 @@ button{font-family:var(--font)}
    se rompe en silencio. */
 .iasello{font-size:10.5px;color:var(--mut);letter-spacing:.03em;opacity:.85}
 body.a11y .iasello{font-size:13px !important}
+/* El botón de voz que está sonando se marca, para que se vea cuál parar
+   (pedido de Carlos 24-ago: antes no se podía pausar). */
+.speak.sonando{color:var(--data);background:color-mix(in srgb,var(--data) 16%,transparent);border-color:color-mix(in srgb,var(--data) 45%,transparent)}
+.bigbtn.sonando{border-color:var(--data);color:var(--data)}
+@keyframes spkpulso{0%,100%{opacity:1}50%{opacity:.45}}
+.speak.sonando svg,.bigbtn.sonando{animation:spkpulso 1.1s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){.speak.sonando svg,.bigbtn.sonando{animation:none}}
+body.a11y .speak.sonando{outline:2px solid var(--data);outline-offset:2px}
 .mzord{display:inline-flex;align-items:center;gap:7px;margin-left:auto;flex:none}
 .mzord>span{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);white-space:nowrap}
 .mzord select{padding:5px 9px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:11.5px;max-width:200px;cursor:pointer}
@@ -2345,6 +2353,177 @@ var _hbCok={};
 function hbOkC(k){ if(_hbCok[k]){ delete _hbCok[k]; return true; } return false; }
 function hbSiC(k){ _hbCok[k]=true; }
 var _hbAvisoSi=null;
+/* ===== Excels con OTRO formato ============================================
+   Ley de oro de Carlos (24-ago): «algunas van a subir excels con formatos
+   diferentes y va a necesitar que quede bien».
+
+   Cómo funciona, y por qué así:
+     1) Primero se intenta casar los encabezados SIN IA, por sinónimos. Es
+        instantáneo y gratis, y resuelve la mayoría.
+     2) Si algo no empata, se le pregunta al motor — pero SOLO por los
+        encabezados (una línea de texto). Los NÚMEROS jamás pasan por la IA:
+        los saca el código, celda por celda. Un modelo puede equivocarse en un
+        dígito y aquí eso descuadra el costeo de toda la planta.
+     3) El mapeo se le ENSEÑA a la persona antes de guardar, y lo puede
+        corregir a mano.
+   =========================================================================== */
+var MZ_SINON={
+  fecha:     ['fecha','f entrada','fecha entrada','f. entrada','fecha de compra','date','date received','dia','día'],
+  clave:     ['clave','codigo','código','material','clave del material','item','item code','producto','mp'],
+  kg:        ['kg','kilos','kilogramos','cantidad','cant','qty','peso','kgs'],
+  lote:      ['lote','batch','lot'],
+  factura:   ['factura','no factura','no. factura','num factura','invoice','remision','remisión'],
+  proveedor: ['proveedor','provee','supplier','supplier name','vendedor'],
+  precio:    ['precio','costo','importe','price','cost','unitario','p unitario'],
+  moneda:    ['moneda','divisa','currency','mon'],
+  compuesto: ['compuesto','formula','fórmula','producto','clave'],
+  ciclo_min: ['ciclo','ciclo min','tiempo ciclo','tiempo de ciclo','minutos','min','cycle'],
+  temp:      ['temp','temperatura','temp descarga','temperatura de descarga'],
+  letra:     ['letra','version','versión','rev','revision'],
+  turno:     ['turno','shift'],
+  banbury:   ['banbury','bb','maquina','máquina'],
+  causa:     ['causa','motivo','falla','razon','razón'],
+  minutos:   ['minutos','min','tiempo','duracion','duración'],
+  folio:     ['folio','ot','orden','no orden']
+};
+function mzNorm(t){ return String(t==null?'':t).toLowerCase()
+  .normalize('NFD').replace(/[̀-ͯ]/g,'')
+  .replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim(); }
+
+/* intento sin IA: devuelve {mapa:{campo:col}, faltan:[campos]} */
+function mzMapaLocal(cols, campos){
+  var mapa={}, usadas={};
+  campos.forEach(function(c){
+    var syn=(MZ_SINON[c]||[c]).map(mzNorm);
+    for(var i=0;i<cols.length;i++){
+      if(usadas[i]) continue;
+      var h=mzNorm(cols[i]); if(!h) continue;
+      if(syn.indexOf(h)>-1){ mapa[c]=i; usadas[i]=1; return; }
+    }
+    /* segunda pasada, más floja: que el encabezado CONTENGA el sinónimo */
+    for(var j=0;j<cols.length;j++){
+      if(usadas[j]) continue;
+      var h2=mzNorm(cols[j]); if(h2.length<2) continue;
+      for(var k=0;k<syn.length;k++){
+        if(syn[k].length>=3 && (h2.indexOf(syn[k])>-1 || syn[k].indexOf(h2)>-1)){
+          mapa[c]=j; usadas[j]=1; return; }
+      }
+    }
+  });
+  var faltan=campos.filter(function(c){ return mapa[c]===undefined; });
+  return {mapa:mapa, faltan:faltan};
+}
+
+/* el camino completo: local primero, IA solo si falta algo importante */
+function mzMapaCols(cols, destino, campos, obligatorios, cb){
+  var loc=mzMapaLocal(cols, campos);
+  var faltanClave=(obligatorios||[]).filter(function(c){ return loc.mapa[c]===undefined; });
+  if(!faltanClave.length){ cb({mapa:loc.mapa, fuente:'local', dudas:[], costo:0}); return; }
+  if(!(V3_ON && sbReady() && SB)){ cb({mapa:loc.mapa, fuente:'local', dudas:['Sin conexión: no se pudo revisar con el motor.'], costo:0}); return; }
+  SB.rpc('hb_ia_mapea_cols',{p_encabezados:cols.join('\t'), p_destino:destino}).then(function(r){
+    var x=r&&r.data;
+    if(!(x&&x.ok&&x.req)){ cb({mapa:loc.mapa, fuente:'local', dudas:[(x&&x.detalle)||'El motor no contestó.'], costo:0}); return; }
+    var intento=0;
+    (function esperar(){
+      if(intento++>14){ cb({mapa:loc.mapa, fuente:'local', dudas:['El motor tardó demasiado.'], costo:0}); return; }
+      setTimeout(function(){
+        SB.rpc('hb_ia_mapea_result',{p_req:x.req}).then(function(r2){
+          var y=r2&&r2.data;
+          if(!(y&&y.ok)){ cb({mapa:loc.mapa, fuente:'local', dudas:[(y&&y.detalle)||''], costo:0}); return; }
+          if(y.estado==='esperando') return esperar();
+          /* el mapa local manda: la IA solo RELLENA lo que faltaba */
+          var m={}, ia=y.mapa||{};
+          campos.forEach(function(c){
+            if(loc.mapa[c]!==undefined) m[c]=loc.mapa[c];
+            else if(ia[c]!==undefined && ia[c]!==null && +ia[c]>=0) m[c]=+ia[c];
+          });
+          cb({mapa:m, fuente:'motor', dudas:(y.dudas||[]), costo:(y.costo_mxn||0)});
+        },function(){ cb({mapa:loc.mapa, fuente:'local', dudas:[], costo:0}); });
+      }, intento===1?900:1200);
+    })();
+  },function(){ cb({mapa:loc.mapa, fuente:'local', dudas:[], costo:0}); });
+}
+
+/* la tablita que se le enseña a la persona para que confirme o corrija */
+function mzMapaHTML(cols, campos, res, idPrefijo){
+  var etiq={fecha:'Fecha',clave:'Clave del material',kg:'Kilos',lote:'Lote',factura:'Factura',
+    proveedor:'Proveedor',precio:'Precio',moneda:'Moneda',compuesto:'Compuesto',
+    ciclo_min:'Ciclo (min)',temp:'Temperatura',letra:'Versión',turno:'Turno',
+    banbury:'Banbury',causa:'Causa',minutos:'Minutos',folio:'Folio'};
+  var h='<div style="margin-top:10px;padding:12px 14px;border-radius:12px;background:var(--card2)">'+
+    '<b style="font-size:12.5px">Así entendí tu archivo</b>'+
+    (res.fuente==='motor'?'<span class="note" style="font-size:10.5px"> · lo revisó el motor'+
+      (res.costo?(' ('+mzMx(res.costo,2)+')'):'')+'</span>':'')+
+    '<div class="note" style="margin:5px 0 8px;font-size:11.5px">Revisa que cada dato salga de la columna correcta. Si algo está mal, córrigelo aquí.</div>';
+  campos.forEach(function(c){
+    h+='<div style="display:flex;gap:9px;align-items:center;margin-top:6px;font-size:12px">'+
+       '<span style="flex:none;width:120px">'+esc(etiq[c]||c)+'</span>'+
+       '<select id="'+idPrefijo+'-map-'+c+'" style="flex:1;min-width:0;padding:7px 9px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;font-size:12px">'+
+       '<option value="">— no viene en el archivo —</option>'+
+       cols.map(function(t,i){
+         return '<option value="'+i+'"'+(res.mapa[c]===i?' selected':'')+'>'+esc((t||'(columna '+(i+1)+')'))+'</option>';
+       }).join('')+'</select></div>';
+  });
+  if(res.dudas && res.dudas.length){
+    h+='<div class="note" style="margin-top:9px;color:var(--warn);font-size:11.5px"><b>Ojo:</b><br>'+
+       res.dudas.map(function(d){ return '· '+esc(d); }).join('<br>')+'</div>';
+  }
+  return h+'</div>';
+}
+/* lee lo que quedó en los desplegables (por si la persona corrigió) */
+function mzMapaLee(campos, idPrefijo){
+  var m={};
+  campos.forEach(function(c){
+    var el=$(idPrefijo+'-map-'+c);
+    if(el && el.value!=='') m[c]=+el.value;
+  });
+  return m;
+}
+
+/* ===== Aviso antes de aceptar información de un Excel ======================
+   Ley de oro de Carlos (24-ago): cuando alguien sube un Excel, REVISA la
+   previsualización y hasta entonces le da a enviar — y al enviar tiene que
+   salirle un aviso NUESTRO preguntándole si ya leyó todo y está correcto.
+   Nada entra a la base sin que una persona lo haya dicho de frente.
+
+   Se usa así:  if(!mzConfirmaEnvio(n, 'precios', function(){ mzPreImporta(); })) return;
+   Devuelve false la primera vez (abre el aviso) y true cuando ya se confirmó.
+   =========================================================================== */
+var _mzEnvioOk={};
+function mzConfirmaEnvio(clave, cuantos, que, alSi){
+  if(_mzEnvioOk[clave]){ _mzEnvioOk[clave]=false; return true; }
+  var v=document.createElement('div'); v.className='hbav-velo'; v.id='mzenv';
+  v.innerHTML='<div class="hbav" role="alertdialog" aria-modal="true" aria-label="Confirmar la información">'+
+    '<div class="hbav-top"><img class="hbav-logo" alt="" onerror="this.style.display=\'none\'"><span>Aviso del sistema</span></div>'+
+    '<b style="font-size:16px;display:block;margin:9px 0 7px">¿Ya revisaste la información?</b>'+
+    '<div class="note" style="line-height:1.55">Estás a punto de guardar <b>'+mzN(cuantos)+' '+esc(que)+'</b> '+
+    'en el sistema.<br><br>Revisa la tabla de arriba contra tu archivo: que los <b>números</b>, las '+
+    '<b>fechas</b> y los <b>nombres</b> cuadren. Una vez guardado, estos datos ya cuentan para los '+
+    'tableros y los reportes de dirección.</div>'+
+    '<div style="margin:13px 0 0;padding:11px 13px;border-radius:12px;background:var(--card2)">'+
+      '<label style="display:flex;gap:9px;align-items:flex-start;font-size:13px;cursor:pointer">'+
+      '<input type="checkbox" id="mzenv-ok" style="margin-top:2px;flex:none" onchange="var b=$(\'mzenv-si\'); if(b){ b.disabled=!this.checked; b.style.opacity=this.checked?1:.45; }">'+
+      '<span>Sí, ya la leí toda y la información es correcta.</span></label></div>'+
+    '<div style="display:flex;gap:8px;margin-top:14px">'+
+      '<button class="btn ghost" style="margin:0;flex:1" onclick="mzEnvCierra(false)">Revisar otra vez</button>'+
+      '<button class="btn" id="mzenv-si" disabled style="margin:0;flex:1;opacity:.45" onclick="mzEnvCierra(true)">Guardar</button>'+
+    '</div></div>';
+  document.body.appendChild(v);
+  try{ var lg=document.querySelector('.loginlogo'), im=v.querySelector('.hbav-logo');
+       if(lg&&im&&lg.src) im.src=lg.src; }catch(e){}
+  v.classList.add('on');
+  window._mzEnvSeguir=function(){ _mzEnvioOk[clave]=true; alSi(); };
+  v.addEventListener('click',function(e){ if(e.target===v) mzEnvCierra(false); });
+  window._mzEnvEsc=function(e){ if(e.key==='Escape') mzEnvCierra(false); };
+  document.addEventListener('keydown', window._mzEnvEsc);
+  return false;
+}
+function mzEnvCierra(seguir){
+  var v=$('mzenv'); if(v) v.remove();
+  if(window._mzEnvEsc){ document.removeEventListener('keydown',window._mzEnvEsc); window._mzEnvEsc=null; }
+  var f=window._mzEnvSeguir; window._mzEnvSeguir=null;
+  if(seguir && f) f();
+}
 function hbConfirm(msg,alSi,opts){
   opts=opts||{}; _hbAvisoSi=alSi||null;
   var v=$('hbAviso');
@@ -5544,6 +5723,7 @@ function renderPersonal(){
        (prot?'':'<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">'+
          '<button class="btn ghost" style="margin:0;flex:1;min-width:31%;padding:9px;font-size:12px" onclick="perRol(\''+p.clave+'\','+(!p.mando)+','+p.admin+')">'+(p.mando?'Quitar resp.':'Hacer resp.')+'</button>'+
          '<button class="btn ghost" style="margin:0;flex:1;min-width:31%;padding:9px;font-size:12px'+(p.admin?'':';color:var(--warn)')+'" onclick="perAdmin(\''+p.clave+'\',\''+escA(p.nombre).replace(/\\/g,'').replace(/'/g,'')+'\','+(!p.admin)+','+p.mando+')">'+(p.admin?'Quitar acceso total':'Dar acceso total')+'</button>'+
+         '<button class="btn ghost" style="margin:0;flex:1;min-width:31%;padding:9px;font-size:12px" onclick="perEditar(\''+p.clave+'\')">Editar perfil</button>'+
          (p.registrado?'<button class="btn ghost" style="margin:0;flex:1;min-width:31%;padding:9px;font-size:12px" onclick="perReset(\''+p.clave+'\')">Reiniciar acceso</button>':'')+
          (p.admin?'':'<button class="btn ghost" style="margin:0;flex:1;min-width:31%;padding:9px;font-size:12px;color:var(--bad)" onclick="perBaja(\''+p.clave+'\',\''+escA(p.nombre).replace(/\\/g,'').replace(/'/g,'')+'\')">Baja</button>')+
        '</div>')+'</div>';
@@ -5575,6 +5755,59 @@ function doAlta(){
   }, function(e){ flash('Sin conexión con el servidor'); });
 }
 var PER_ERR={ protegido:'Cuenta protegida por Dirección: solo se cambia con SQL directo en Supabase', no_autorizado:'Tu cuenta no tiene acceso para esto', es_admin:'Primero quítale el acceso total, luego dale de baja', no_existe:'Esa clave no existe' };
+/* ===== Editar el perfil de OTRA persona (solo acceso total) ================
+   Antes solo se podía dar de alta, dar de baja y cambiar permisos. Un nombre
+   mal escrito o un cambio de área obligaba a dar de baja y volver a dar de
+   alta — y eso le tumbaba la cuenta a la persona. El servidor (hb_admin_edita)
+   guarda BITÁCORA de quién cambió qué. La clave nunca se toca: es su identidad.
+   =========================================================================== */
+function perEditar(clave){
+  var p=(DBC.adminList||[]).filter(function(x){ return x.clave===clave; })[0];
+  if(!p){ alert('No encontré a esa persona.'); return; }
+  var deptos=Object.keys(DEPTO_AREA).sort();
+  var dep=String(p.depto||'').toUpperCase();
+  if(dep && deptos.indexOf(dep)<0) deptos.unshift(dep);   /* no perder su área actual */
+  var v=document.createElement('div'); v.className='hbav-velo'; v.id='pered';
+  v.innerHTML='<div class="hbav" role="dialog" aria-modal="true" aria-label="Editar perfil" style="max-width:440px">'+
+    '<div class="hbav-top"><img class="hbav-logo" alt="" onerror="this.style.display=\'none\'"><span>Editar perfil</span></div>'+
+    '<b style="font-size:16px;display:block;margin:9px 0 2px">'+esc(niceName(p.nombre||''))+'</b>'+
+    '<div class="note" style="margin-bottom:12px">Clave '+esc(clave)+' · la clave no se puede cambiar, es su identidad en el sistema.</div>'+
+    '<label class="note" style="display:block;margin-bottom:3px">Nombre completo</label>'+
+    '<input id="ped-nom" value="'+escA(p.nombre||'')+'" style="width:100%;padding:10px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+    '<label class="note" style="display:block;margin:10px 0 3px">Puesto</label>'+
+    '<input id="ped-pue" value="'+escA(p.puesto||'')+'" style="width:100%;padding:10px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+    '<label class="note" style="display:block;margin:10px 0 3px">Departamento</label>'+
+    '<select id="ped-dep" style="width:100%;padding:10px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+      deptos.map(function(d){ return '<option value="'+escA(d)+'"'+(d===dep?' selected':'')+'>'+esc(d)+'</option>'; }).join('')+
+    '</select>'+
+    '<div id="ped-msg" class="note" style="margin-top:10px"></div>'+
+    '<div style="display:flex;gap:8px;margin-top:14px">'+
+      '<button class="btn ghost" style="margin:0;flex:1" onclick="perEdCierra()">Cancelar</button>'+
+      '<button class="btn" style="margin:0;flex:1" onclick="perEdGuarda(\''+jsAttr(clave)+'\')">Guardar</button>'+
+    '</div></div>';
+  document.body.appendChild(v);
+  try{ var lg=document.querySelector('.loginlogo'), im=v.querySelector('.hbav-logo');
+       if(lg&&im&&lg.src) im.src=lg.src; }catch(e){}
+  v.classList.add('on');
+  v.addEventListener('click',function(e){ if(e.target===v) perEdCierra(); });
+  window._pedEsc=function(e){ if(e.key==='Escape') perEdCierra(); };
+  document.addEventListener('keydown', window._pedEsc);
+}
+function perEdCierra(){
+  var v=$('pered'); if(v) v.remove();
+  if(window._pedEsc){ document.removeEventListener('keydown',window._pedEsc); window._pedEsc=null; }
+}
+function perEdGuarda(clave){
+  var nom=($('ped-nom').value||'').trim(), pue=($('ped-pue').value||'').trim(), dep=$('ped-dep').value;
+  var msg=$('ped-msg');
+  if(nom.length<3){ if(msg) msg.innerHTML='<span style="color:var(--warn)">El nombre no puede ir vacío.</span>'; return; }
+  if(msg) msg.textContent='Guardando…';
+  SB.rpc('hb_admin_edita',{p_clave:clave,p_nombre:nom,p_puesto:pue,p_depto:dep}).then(function(r){
+    var x=r&&r.data;
+    if(x&&x.ok){ perEdCierra(); flash('✓ '+(x.detalle||'Perfil actualizado')); v3LoadAdminList(); }
+    else if(msg) msg.innerHTML='<span style="color:var(--warn)">'+esc((x&&x.detalle)||mzErr(x))+'</span>';
+  },function(e){ if(msg) msg.innerHTML='<span style="color:var(--warn)">'+esc(mzErr(null,e))+'</span>'; });
+}
 function perRol(clave,mando,admin){
   SB.rpc('hb_admin_rol',{p_clave:clave,p_mando:mando,p_admin:admin}).then(function(r){ if(r.data&&r.data.ok){ flash('Rol actualizado'); v3LoadAdminList(); } else flash('No se pudo: '+(PER_ERR[(r.data||{}).error]||(r.data&&r.data.error)||(r.error&&r.error.message)||'')); });
 }
@@ -6712,15 +6945,44 @@ function pickVoice(lang){
   return null;
 }
 try{ if('speechSynthesis' in window){ loadVoices(); window.speechSynthesis.onvoiceschanged=loadVoices; } }catch(e){}
-function speak(text,lang){
+/* ===== Leer en voz alta, con PAUSA (pedido de Carlos, 24-ago) ==============
+   Antes, una vez que le dabas al bocinita no había forma de callarlo: había
+   que oírlo completo. Ahora el MISMO botón para y sigue:
+     · toco el que está sonando  → se detiene
+     · toco otro botón           → calla el anterior y lee el nuevo
+   El botón que está sonando se marca (clase .sonando) para que se vea cuál es.
+   =========================================================================== */
+var _spkBtn=null;
+function spkApaga(){
+  try{ speechSynthesis.cancel(); }catch(e){}
+  if(_spkBtn){ try{ _spkBtn.classList.remove('sonando'); }catch(e){} _spkBtn=null; }
+}
+function speak(text,lang,btn){
   try{
     if(!('speechSynthesis' in window)) return;
-    speechSynthesis.cancel();
+    /* Si tocan el MISMO botón que tenemos marcado como sonando, es PAUSA.
+       Se decide con nuestro propio estado (_spkBtn) y NO con
+       speechSynthesis.speaking: en algunos equipos sin voces instaladas
+       `speaking` nunca se pone en true y el botón se quedaba marcado para
+       siempre — el segundo toque parecía no hacer nada. Cuando el audio
+       termina solo, u.onend limpia _spkBtn, así que volver a tocarlo
+       lo vuelve a leer, que es lo que se espera. */
+    var mismo = (btn && _spkBtn === btn);
+    spkApaga();
+    if(mismo) return;
+
     var clean=String(text||'').replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE00}-\u{FE0F}\u{200D}]/gu,' ');
     if(!clean) return;
     var u=new SpeechSynthesisUtterance(clean.replace(/\s+/g,' ').trim());
     var v=pickVoice(lang); if(v){ u.voice=v; u.lang=v.lang; } else { u.lang=lang||'es-MX'; }
     u.rate=(window.S&&S.rate)||0.78; u.pitch=1.0; u.volume=1;   // velocidad ajustable desde Educación básica
+    if(btn){
+      _spkBtn=btn; try{ btn.classList.add('sonando'); }catch(e){}
+      /* al terminar solo, el botón se desmarca — si no, se quedaría en «sonando»
+         para siempre y el siguiente toque parecería que no hace nada */
+      u.onend=function(){ if(_spkBtn===btn){ try{ btn.classList.remove('sonando'); }catch(e){} _spkBtn=null; } };
+      u.onerror=u.onend;
+    }
     setTimeout(function(){ try{ window.speechSynthesis.speak(u); }catch(e){} }, 80);
   }catch(e){}
 }
@@ -6730,7 +6992,7 @@ function escA(s){ return esc(s).replace(/"/g,'&quot;'); }
    el valor viene de datos del servidor manipulables (p.ej. una conv 'd:...'). */
 function jsAttr(s){ return escA(String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'")); }
 var ICN_SPK='<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14"/></svg>';
-function speakBtn(text,lang){ return '<button class="speak" data-s="'+escA(text)+'"'+(lang?(' data-l="'+lang+'"'):'')+' onclick="event.stopPropagation();speak(this.getAttribute(\'data-s\'),this.getAttribute(\'data-l\'))" aria-label="Escuchar">'+ICN_SPK+'</button>'; }
+function speakBtn(text,lang){ return '<button class="speak" data-s="'+escA(text)+'"'+(lang?(' data-l="'+lang+'"'):'')+' onclick="event.stopPropagation();speak(this.getAttribute(\'data-s\'),this.getAttribute(\'data-l\'),this)" aria-label="Escuchar o detener" title="Escuchar (tócalo otra vez para parar)">'+ICN_SPK+'</button>'; }
 var clState={};
 function paintClases(h){ var el=$('s-clases'); el.innerHTML=h; el.classList.toggle('access',!!(S&&S.accessible)); show('clases'); }
 var RATES=[[0.62,'Muy lenta'],[0.78,'Normal'],[0.95,'Rápida']];   // velocidades de la voz (la "Normal" ya es lenta y clara)
@@ -6809,7 +7071,7 @@ function openLesson(id,n){
   var dn=clLevelDone(id,n);
   var h='<button class="back" onclick="openTopic(\''+id+'\')">‹ Niveles</button>';
   h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Nivel '+n+' · '+esc(CFG.clasesLevels[n-1])+'</div><b style="font-size:20px">'+esc(lv.title)+'</b><p class="note" style="margin:4px 0 0">Lee o escucha. Luego una práctica corta.</p></div><span class="chipst'+(dn?'':' mut')+'">'+(dn?'Hecho ✓':'Nuevo')+'</span></div></div>';
-  h+='<button class="bigbtn ghost" data-s="'+escA(lv.lesson.join('. '))+'" onclick="speak(this.getAttribute(\'data-s\'))">Escuchar la lección</button>';
+  h+='<button class="bigbtn ghost" data-s="'+escA(lv.lesson.join('. '))+'" onclick="speak(this.getAttribute(\'data-s\'),null,this)">Escuchar la lección</button>';
   h+='<div class="panel" style="margin-top:12px"><div class="eyebrow" style="font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--mut);font-weight:800;margin-bottom:10px">Lección</div>';
   lv.lesson.forEach(function(step){ h+='<div class="lesson-step"><span>'+esc(step)+'</span>'+speakBtn(step)+'</div>'; });
   h+='</div>';
@@ -6856,7 +7118,7 @@ function finishCl(){
         : ('Completaste el nivel '+lv.n+' otra vez. Repaso hecho: así no se te olvida. Eso es constancia.');
   var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">'+(allDone?'Materia completa':'Nivel completado')+'</div><b style="font-size:20px">'+title+'</b><p class="note" style="margin:4px 0 0">'+esc(tp.name)+' · Nivel '+lv.n+' · '+esc(lv.title)+'</p></div><span class="chipst'+(first?'':' mut')+'">'+(first?('+'+pts+' pts'):'Repaso')+'</span></div>';
   h+='<div style="display:flex;align-items:center;gap:16px;margin:4px 0 10px">'+ring(100,'var(--ok)')+'<p style="flex:1;margin:0;font-size:15px;line-height:1.55">'+msg+'</p></div>';
-  h+='<button class="bigbtn ghost" data-s="'+escA(spoken)+'" onclick="speak(this.getAttribute(\'data-s\'))">Escuchar</button>';
+  h+='<button class="bigbtn ghost" data-s="'+escA(spoken)+'" onclick="speak(this.getAttribute(\'data-s\'),null,this)">Escuchar</button>';
   h+='<button class="bigbtn" onclick="openTopic(\''+tp.id+'\')">Siguiente nivel →</button>';
   h+='<button class="bigbtn ghost" onclick="renderClases()">Otras materias</button></div>';
   paintClases(h);
@@ -11423,6 +11685,8 @@ function mzPegaPrev(){
 }
 function mzImporta(){
   if(!_mzFilas||!_mzFilas.length) return;
+  /* ley de oro: nadie guarda sin haber revisado y dicho que sí */
+  if(!mzConfirmaEnvio('mzImporta', _mzFilas.length, 'renglones de la bitácora', mzImporta)) return;
   /* CANDADO de reentrada (revisión 20-ago): sin esto, un doble tap lanzaba DOS
      cadenas concurrentes y el candado del servidor no las ve entre sí */
   if(window._mzImportando) return;
@@ -11769,6 +12033,8 @@ function mzProgPrev(tsv,nombre){
 }
 function mzProgImporta(){
   var filas=_mzProgFilas; if(!filas||!filas.length) return;
+  /* ley de oro: nadie guarda sin haber revisado y dicho que sí */
+  if(!mzConfirmaEnvio('mzProgImporta', filas.length, 'renglones de programación', mzProgImporta)) return;
   if(window._mzProgImportando) return;            /* candado de reentrada */
   window._mzProgImportando=true;
   _mzProgFilas=null;                              /* nadie re-manda lo mismo */
@@ -13001,6 +13267,8 @@ var _almSubiendo=false;
 function mzAlmImporta(){
   if(_almSubiendo) return;
   var f=_almFilas||[]; if(!f.length) return;
+  /* ley de oro: nadie guarda sin haber revisado y dicho que sí */
+  if(!mzConfirmaEnvio('mzAlmImporta', f.length, 'entradas de materia prima', mzAlmImporta)) return;
   _almSubiendo=true;
   var tot={nuevas:0,repetidas:0,malas:0,sin_dueno:0}, i=0;
   var paso=function(){
@@ -13061,6 +13329,8 @@ function mzAlmExisImporta(){
   var f=_almCorte||[], fecha=($('alm-fecha')||{}).value||'';
   if(!f.length) return;
   if(!fecha){ flash('Pon la fecha del corte'); return; }
+  /* ley de oro: nadie guarda sin haber revisado y dicho que sí */
+  if(!mzConfirmaEnvio('mzAlmExisImporta', f.length, 'renglones de inventario', mzAlmExisImporta)) return;
   SB.rpc('hb_mez_existencias_import',{p_fecha:fecha,p_filas:f}).then(function(r){ var x=r&&r.data;
     if(x&&x.ok){
       burst();
@@ -13586,6 +13856,8 @@ function mzCicPrev(){
 }
 function mzCicImporta(){
   if(!_mzCicFilas||!_mzCicFilas.length || window._mzCicGuardando) return;
+  /* ley de oro: nadie guarda sin haber revisado y dicho que sí */
+  if(!mzConfirmaEnvio('mzCicImporta', _mzCicFilas.length, 'tiempos de ciclo', mzCicImporta)) return;
   window._mzCicGuardando=true;
   var lote=_mzCicFilas.slice(); _mzCicFilas=null;
   var pv=$('mzcic-prev'); if(pv) pv.innerHTML='<div class="note" style="margin:8px 0">Guardando…</div>';
@@ -13657,6 +13929,8 @@ function mzTmPrev(){
 }
 function mzTmImporta(){
   if(!_mzTmFilas||!_mzTmFilas.length || window._mzTmGuardando) return;
+  /* ley de oro: nadie guarda sin haber revisado y dicho que sí */
+  if(!mzConfirmaEnvio('mzTmImporta', _mzTmFilas.length, 'paros', mzTmImporta)) return;
   window._mzTmGuardando=true;
   var lote=_mzTmFilas.slice(); _mzTmFilas=null;
   var pv=$('mztm-prev'); if(pv) pv.innerHTML='<div class="note" style="margin:8px 0">Guardando…</div>';
@@ -13737,6 +14011,8 @@ function mzPrePrev(){
 }
 function mzPreImporta(){
   if(!_mzPreFilas||!_mzPreFilas.length) return;
+  /* ley de oro: nadie guarda sin haber revisado y dicho que sí */
+  if(!mzConfirmaEnvio('mzPreImporta', _mzPreFilas.length, 'precios', mzPreImporta)) return;
   if(window._mzPreImportando) return;             /* candado de reentrada */
   window._mzPreImportando=true;
   var _lote=_mzPreFilas.slice(); _mzPreFilas=null;

@@ -3274,12 +3274,32 @@ function alimDoc(f){
         deptos.map(function(d){ return '<option value="'+escA(d)+'"'+(d===miDep?' selected':'')+'>'+esc(d)+'</option>'; }).join('')+'</select>'+
       '<label class="note" style="display:block;margin:10px 0 3px">Carpeta</label>'+
       '<input id="alim-cat" placeholder="Ej. Instrucciones de trabajo" style="width:100%;padding:10px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+      /* NACE PRIVADO (pedido de Carlos, 25-ago): por omisión solo lo ve quien lo
+         sube. Abrirlo es un acto deliberado. Antes nacía visible para toda el área. */
       '<label class="note" style="display:block;margin:10px 0 3px">¿Quién lo puede abrir?</label>'+
-      '<select id="alim-acl" style="width:100%;padding:10px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
-        '<option value="depto">Solo su área</option><option value="all">Toda la planta</option></select>'+
+      '<select id="alim-acl" onchange="alimAclCambia()" style="width:100%;padding:10px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+        '<option value="solo_yo">Solo yo</option>'+
+        '<option value="depto">Mi área ('+esc(miDep)+')</option>'+
+        '<option value="areas">Escoger áreas…</option>'+
+        '<option value="all">Toda la planta</option></select>'+
+      '<div id="alim-areas" class="hide" style="margin-top:9px">'+
+        '<div class="note" style="margin-bottom:5px">¿Qué áreas además de la tuya?</div>'+
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;max-height:150px;overflow:auto">'+
+        deptos.map(function(d){
+          return '<label style="display:flex;gap:5px;align-items:center;font-size:12px;padding:5px 9px;'+
+            'border:1px solid var(--line);border-radius:9px;cursor:pointer">'+
+            '<input type="checkbox" class="alim-area" value="'+escA(d)+'"'+(d===miDep?' checked disabled':'')+'>'+
+            esc(d)+'</label>'; }).join('')+'</div></div>'+
+      '<label class="note" style="display:block;margin:10px 0 3px">¿Alguien más en particular? (claves separadas por coma)</label>'+
+      '<input id="alim-personas" placeholder="Ej. 0917, 0887, 0861" style="width:100%;padding:10px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+      '<div class="note" style="margin-top:4px;font-size:11.5px">Estas personas lo van a poder abrir aunque no sean de esas áreas.</div>'+
       '<div id="alim-msg" class="note" style="margin-top:10px"></div>'+
       '<button class="btn" style="margin-top:12px" onclick="alimGuardaDoc()">Guardar el documento</button>'+
     '</div>';
+}
+function alimAclCambia(){
+  var sel=$('alim-acl'), caja=$('alim-areas');
+  if(caja) caja.classList.toggle('hide', !sel || sel.value!=='areas');
 }
 function alimCancela(){ alimLimpia(); var c=$('alim-cuerpo'); if(c) c.innerHTML=''; }
 function alimVuelve(){
@@ -3293,6 +3313,21 @@ function alimGuardaDoc(){
   var f=_alimF; if(!f) return;
   var t=($('alim-tit').value||'').trim(), dep=$('alim-dep').value,
       cat=($('alim-cat').value||'').trim()||'General', modo=$('alim-acl').value;
+  /* el alcance se arma aquí: privado por omisión, y lo demás se abre a propósito */
+  var acl;
+  if(modo==='all')      acl={mode:'all'};
+  else if(modo==='depto') acl={mode:'depto'};
+  else if(modo==='areas'){
+    var ars=[]; document.querySelectorAll('.alim-area:checked').forEach(function(c){ ars.push(c.value); });
+    if(ars.indexOf(dep)<0) ars.push(dep);
+    acl={mode:'areas', areas:ars};
+  } else acl={mode:'ids', ids:[String((S&&S.clave)||'')]};   /* solo yo */
+  /* las personas sueltas, como en el chat: entran siempre, sea cual sea el alcance */
+  var extra=(($('alim-personas')||{}).value||'').split(',').map(function(x){
+      var d=(x||'').replace(/\D/g,''); return d?(d.length<4?('0000'+d).slice(-4):d):''; })
+    .filter(function(x){ return x; });
+  extra=extra.filter(function(v,i){ return extra.indexOf(v)===i; });
+  if(extra.length) acl.extra=extra;
   var msg=$('alim-msg');
   if(t.length<3){ if(msg) msg.innerHTML='<span style="color:var(--warn)">Ponle un nombre al documento.</span>'; return; }
   if(!(V3_ON&&sbReady()&&SB)){ if(msg) msg.innerHTML='<span style="color:var(--warn)">Necesitas conexión para subirlo.</span>'; return; }
@@ -3305,7 +3340,7 @@ function alimGuardaDoc(){
       if(r.error){ window._alimSubiendo=false;
         if(msg) msg.innerHTML='<span style="color:var(--warn)">No se subió: '+esc(r.error.message||'error')+'</span>'; return; }
       var rec={ id:'doc'+Date.now(), titulo:t, depto:dep, deptoSlug:slug, cat:cat, sub:null,
-                acl:{mode:modo}, path:path, mime:(f.type||''), size:f.size, by:(S.clave||''), ts:Date.now() };
+                acl:acl, path:path, mime:(f.type||''), size:f.size, by:(S.clave||''), ts:Date.now() };
       SB.from('docs').upsert({id:rec.id, data:rec, ts:rec.ts}).then(function(r2){
         window._alimSubiendo=false;
         if(r2&&r2.error){ try{ SB.storage.from('docs').remove([path]); }catch(e){}
@@ -11330,10 +11365,12 @@ function renderMantoHub(){
     '<span style="flex:none">'+speakBtn('Mantenimiento. Aquí se piden las reparaciones de las máquinas y se ve en qué van.')+'</span></div></div>';
   h+='<div class="sec-t">Tu trabajo aquí<span class="ln"></span></div><div class="tgrid">';
   //  pedir reparación: lo puede hacer cualquiera que trabaje con una máquina
+  h+=htile("alimAbre('manto')",'docs','Subir documento del área','Manuales, órdenes y Excels — los revisas antes de guardar',{wide:true});
   h+=htile("window._pedFrom='manto';renderPedir()",'rep','Pedir reparación','Reporta una máquina, con foto');
   //  el técnico ve lo que trae asignado
   var esTec=false; try{ esTec=pedEsTecnico(); }catch(e){}
   if(esTec) h+=htile("window._pedFrom='manto';renderMisRep()",'pend','Tus reparaciones','Lo que traes asignado y su avance');
+  if(S.admin||S.mando) h+=htile("permAbre('MANTENIMIENTO')",'personas','Permisos del área','Quién ve los gráficos y la información de esta área');
   //  el responsable del área y acceso total ven la bandeja completa
   if(S.admin||S.mando){
     var pn=0; try{ pn=pedNuevosN()||0; }catch(e){}
@@ -12194,9 +12231,24 @@ function mzImporta(){
   window._mzImportando=true;
   var todas=_mzFilas.slice(), i=0, TANDA=450;
   _mzFilas=null;                                  /* nadie re-manda lo mismo */
+  /* si pidió reemplazar, el periodo se limpia ANTES de meter lo nuevo */
+  var _rep = (window._mzRep && $('mz-reemplaza') && $('mz-reemplaza').checked) ? window._mzRep : null;
   var tot={insertadas:0,a_bandeja:0,duplicadas:0,errores:[]};
   var pv=$('mz-prev');
-  if(pv) pv.innerHTML='<div class="note" style="margin:8px 0">Guardando…</div>';
+  if(pv) pv.innerHTML='<div class="note" style="margin:8px 0">'+(_rep?'Reemplazando esos días…':'Guardando…')+'</div>';
+  function arranca(){
+    if(!_rep) return paso();
+    SB.rpc('hb_mez_borra_periodo',{p_d1:_rep.d1,p_d2:_rep.d2}).then(function(r){
+      var x=r&&r.data;
+      if(!(x&&x.ok)){ window._mzImportando=false;
+        if(pv) pv.innerHTML='<div class="note" style="margin:8px 0;color:var(--warn)">No se pudo reemplazar: '+
+          esc((x&&x.detalle)||mzErr(x))+'. No se guardó nada.</div>'; return; }
+      if(pv) pv.innerHTML='<div class="note" style="margin:8px 0">Se quitaron '+mzN(x.corridas)+
+        ' corridas y '+mzN(x.paros)+' paros. Guardando lo nuevo…</div>';
+      paso();
+    },function(){ window._mzImportando=false;
+      if(pv) pv.innerHTML='<div class="note" style="margin:8px 0;color:var(--warn)">Sin conexión. No se guardó nada.</div>'; });
+  }
   function fin(){
     window._mzImportando=false;
     /* el archivo original queda guardado junto a los datos que produjo */
@@ -12229,7 +12281,7 @@ function mzImporta(){
         paso();
       } else falla(mzErr(x)); },function(){ falla(mzErr()); });
   }
-  paso();
+  arranca();
 }
 /* ===========================================================================
    ¿ESTO CUADRA? — el verificador de la vista previa
@@ -12261,6 +12313,22 @@ function mzVerifica(filas, totalHoja){
         h+='<div class="note" style="margin-top:5px">'+mzN(x.mezclas)+' mezclas'+
            (totalHoja?(', igual que el total de tu hoja'):'')+'.</div>';
       }
+      /* REEMPLAZAR O AGREGAR (pedido de Carlos): si esas fechas ya tienen datos,
+         la corrección no necesita una pantalla de edición — se corrige el Excel
+         y se vuelve a subir. El archivo anterior queda guardado, así que
+         siempre se puede ver qué decía la versión previa y quién la subió. */
+      var _rep=(x.avisos||[]).filter(function(a){ return a.t.indexOf('YA tienen') > -1; }).length>0;
+      if(_rep && x.desde && x.hasta){
+        window._mzRep={d1:x.desde, d2:x.hasta};
+        h+='<div style="margin-top:12px;padding-top:11px;border-top:1px solid var(--line)">'+
+           '<b style="font-size:12.5px">¿Es una corrección?</b>'+
+           '<div class="note" style="margin-top:3px;line-height:1.5">Si este Excel es la versión corregida '+
+           'de esos días, reemplázalos: se borra lo que había del <b>'+esc(x.desde)+'</b> al <b>'+esc(x.hasta)+
+           '</b> y queda tal como viene aquí. Si no, al guardar se van a <b>sumar</b>.</div>'+
+           '<label style="display:flex;gap:7px;align-items:flex-start;margin-top:9px;font-size:12.5px;cursor:pointer">'+
+           '<input type="checkbox" id="mz-reemplaza" style="margin-top:2px">'+
+           '<span>Sí, reemplazar esos días con lo que trae este archivo</span></label></div>';
+      } else { window._mzRep=null; }
       h+='</div>';
       c.innerHTML=h;
     },function(){ c.innerHTML=''; });
@@ -13206,7 +13274,7 @@ function renderMezTab(){
     if(!(x&&x.ok)){ $('s-meztab').innerHTML='<div class="card"><b>'+esc(mzErr(x))+'</b></div>'; return; }
     mzTabPaint(x); },function(){ $('s-meztab').innerHTML='<div class="card"><b>'+esc(mzErr())+'</b></div>'; });
 }
-function mzTabRango(d1,d2){ _mztD1=d1; _mztD2=d2; renderMezTab(); }
+function mzTabRango(d1,d2){ _mztD1=d1; _mztD2=d2; _mzProg=null; renderMezTab(); }
 /* ---- TIPO DE GRÁFICO elegible (regla de Carlos 13-ago): cada gráfico trae un
    desplegable junto al título (barras / pastel / línea); la elección se guarda
    POR GRÁFICO en este aparato. Patrón listo para extender al resto del sistema. */
@@ -13280,6 +13348,78 @@ function mzPie(items,dona){
   return '<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:9px">'+
     '<svg viewBox="0 0 160 160" style="width:148px;height:148px;flex:none" role="img" aria-label="Gráfico circular">'+paths+(dona?'<circle cx="80" cy="80" r="34" fill="var(--panel)"/>':'')+'</svg>'+
     '<div style="flex:1;min-width:210px">'+leg+'</div></div>'; }
+/* ===========================================================================
+   PROGRAMA CONTRA REAL (25-ago-2026)
+   Entró con el Excel de agosto, que por fin trae la columna PROGRAMADO. Era
+   uno de los huecos que el cierre de mes declaraba abiertamente. Se dibuja el
+   programa como una silueta y la producción encima: donde la barra no llena
+   la silueta, ahí se quedó corto el día.
+   =========================================================================== */
+var _mzProg=null;
+function mzProgCarga(d1,d2,cb){
+  if(!(V3_ON && sbReady() && SB)){ if(cb) cb(); return; }
+  SB.rpc('hb_mez_programa_cmp',{p_d1:d1,p_d2:d2}).then(function(r){
+    var x=r&&r.data; _mzProg=(x&&x.ok&&x.hay)?x:null; if(cb) cb();
+  },function(){ _mzProg=null; if(cb) cb(); });
+}
+function mzProgGrafico(){
+  var x=_mzProg; if(!x||!x.hay) return '';
+  var dias=(x.por_dia||[]).filter(function(d){ return (d.prog||0)>0 || (d.real||0)>0; });
+  if(!dias.length) return '';
+  var max=1; dias.forEach(function(d){ var m=Math.max(d.prog||0,d.real||0); if(m>max) max=m; });
+  var pct=+x.cumplimiento||0;
+  var col = pct>=95 ? 'var(--ok)' : pct>=80 ? 'var(--warn)' : 'var(--bad)';
+  var chico=dias.length>16;
+
+  var h='<div class="card" style="margin-bottom:12px">'+
+    mzTitulo('Programa contra real','prog',[['barras','Barras'],['tabla','Tabla']],'barras');
+  h+='<div style="display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;margin-top:8px">'+
+     '<b style="font-size:26px;color:'+col+'">'+mzN(pct,1)+'%</b>'+
+     '<span class="note">'+mzN(x.producido)+' de '+mzN(x.programado)+' mezclas programadas'+
+     (x.diferencia<0?(' · <b style="color:var(--bad)">'+mzN(Math.abs(x.diferencia))+' menos</b>')
+                    :(x.diferencia>0?(' · <b style="color:var(--ok)">'+mzN(x.diferencia)+' de más</b>'):''))+
+     '</span></div>';
+
+  if(mzGT('prog','barras')==='tabla'){
+    h+=mzTabla(['Día','Programado','Producido','Cumplió'],
+      dias.map(function(d){
+        var p=+d.pct||0, c=p>=95?'var(--ok)':(p>=80?'var(--warn)':'var(--bad)');
+        return mzTd([esc(String(d.fecha).slice(5)), mzN(d.prog), mzN(d.real),
+          '<b style="color:'+c+'">'+(d.prog>0?(mzN(p,1)+'%'):'—')+'</b>']); }));
+  } else {
+    /* la silueta es el programa; la barra llena es lo que se produjo */
+    h+='<div style="display:flex;align-items:flex-end;gap:'+(chico?'2px':'5px')+';margin-top:12px;height:100px">'+
+      dias.map(function(d){
+        var hp=Math.max(3,Math.round((d.prog||0)/max*88));
+        var hr=Math.max(2,Math.round((d.real||0)/max*88));
+        var p=+d.pct||0, c=p>=95?'var(--ok)':(p>=80?'var(--warn)':'var(--bad)');
+        return '<span style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px" '+
+          'title="'+esc(String(d.fecha))+': '+mzN(d.real)+' de '+mzN(d.prog)+'">'+
+          '<span style="width:100%;max-width:'+(chico?'16px':'26px')+';height:88px;display:flex;align-items:flex-end;position:relative">'+
+            '<span style="position:absolute;left:0;right:0;bottom:0;height:'+hp+'px;border:1.5px dashed var(--barmut);border-radius:3px 3px 0 0"></span>'+
+            '<span style="position:relative;display:block;width:100%;height:'+hr+'px;border-radius:3px 3px 0 0;background:'+c+';opacity:.9"></span>'+
+          '</span>'+
+          '<span style="font-size:'+(chico?'8px':'9px')+';color:var(--mut)">'+(+String(d.fecha).slice(8,10))+'</span></span>';
+      }).join('')+'</div>'+
+      '<div class="note" style="margin-top:7px">El contorno punteado es lo <b>programado</b>; la barra llena es lo que <b>se produjo</b>. '+
+      'Verde llegó a la meta del día, ámbar quedó cerca, rojo se quedó corto.</div>';
+  }
+
+  /* los compuestos donde más se falló: lo que dirección va a preguntar */
+  var pc=(x.por_compuesto||[]).filter(function(c){ return (c.prog||0)>0; }).slice(0,6);
+  if(pc.length){
+    h+='<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">'+
+       '<b style="font-size:12.5px">Dónde se quedó corto</b>'+
+       pc.map(function(c){
+         var p=+c.pct||0, cl=p>=95?'var(--ok)':(p>=80?'var(--warn)':'var(--bad)');
+         return '<div style="display:flex;justify-content:space-between;gap:9px;margin-top:6px;font-size:12px">'+
+           '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.compuesto)+'</span>'+
+           '<span class="note" style="flex:none">'+mzN(c.real)+' / '+mzN(c.prog)+'</span>'+
+           '<b style="flex:none;width:52px;text-align:right;color:'+cl+';font-variant-numeric:tabular-nums">'+mzN(p,1)+'%</b></div>';
+       }).join('')+'</div>';
+  }
+  return h+'</div>';
+}
 function mzCols(items){  /* columnas verticales con el número arriba */
   var max=1; items.forEach(function(i){ if((i.v||0)>max) max=i.v; });
   return '<div style="display:flex;align-items:flex-end;gap:10px;margin-top:10px">'+
@@ -13411,6 +13551,7 @@ function mzRangoAplica(){
 function mzTabPaint(x){
   window._mzTabX=x;
   mzPracCarga(_mztD1,_mztD2,function(){ if(_screen==='meztab'&&window._mzTabX) mzTabPaint(window._mzTabX); });
+  if(_mzProg===null) mzProgCarga(_mztD1,_mztD2,function(){ if(_screen==='meztab'&&window._mzTabX) mzTabPaint(window._mzTabX); });
   var hoy=mxToday(), t=x.totales||{};
   var hace7=(function(){ var d=new Date(hoy+'T12:00:00'); d.setDate(d.getDate()-6); return d.toISOString().slice(0,10); })();
   var h='';
@@ -13485,6 +13626,7 @@ function mzTabPaint(x){
     }
     h+='<div style="display:flex;justify-content:space-between;margin-top:6px"><span class="note">'+esc(dias[0].fecha)+'</span><span class="note">'+Number(totKg).toLocaleString()+' kg en el rango</span><span class="note">'+esc(dias[dias.length-1].fecha)+'</span></div></div>';
   }
+  h+=mzProgGrafico();
   var tc=x.top_compuestos||[];
   if(tc.length){
     var maxC=tc[0].mezclas||1;

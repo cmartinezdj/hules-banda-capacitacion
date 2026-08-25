@@ -11547,9 +11547,20 @@ function mzArchivoLee(inp){
     function(txt, comoSeLlama){
       var ta=$('mz-tsv'); if(!ta) return;
       ta.value=mzCsvATsv(txt);
-      var pv=$('mz-prev'); if(pv) pv.innerHTML='';
-      if(av) av.textContent=(comoSeLlama||f.name)+' — revisa los renglones abajo antes de guardar.';
-      mzPegaPrev();                     /* misma previsualización de siempre */
+      var pv=$('mz-prev'); if(pv) pv.innerHTML='<div class="note" style="margin:8px 0">Revisando el formato…</div>';
+      var crudas=ta.value.split(/\r?\n/).slice(0,30).map(function(l){ return l.split('\t'); });
+      /* se le pregunta al sistema QUÉ Excel es antes de previsualizar */
+      mzFormatoPide(crudas, function(fmt){
+        if(av){
+          av.innerHTML = fmt
+            ? ('✓ Reconocí tu formato: <b>'+esc(fmt.formato.nombre)+'</b>'+
+               (fmt.formato.quien?(' <span class="note">('+esc(fmt.formato.quien)+')</span>'):'')+
+               ' — revisa los renglones abajo y dale Guardar.')
+            : esc(comoSeLlama||f.name)+' — revisa los renglones abajo antes de guardar.';
+        }
+        if(pv) pv.innerHTML='';
+        mzPegaPrev();
+      });
     }, 'mz-prev');
 }
 var _mzFilas=null;
@@ -11597,8 +11608,48 @@ function mzCabecera(cs){
     else if(m.turno==null && t.indexOf('TURNO')>-1) m.turno=i;
     else if(m.bb==null && t.indexOf('BANBURY')>-1) m.bb=i;
     else if(m.op==null && t.indexOf('OPERADOR')>-1) m.op=i;
+    /* 25-ago: faltaban las dos columnas que el Excel real SÍ trae y que
+       resultaron importantes — el PASO (master/final/añejado…) sin el cual las
+       mezclas se cuentan dos veces, y el ÁREA, que es el origen del reproceso. */
+    else if(m.paso==null && t.indexOf('PASO')>-1) m.paso=i;
+    else if(m.area==null && (t==='AREA'||t.indexOf('AREA')===0)) m.area=i;
   }
   return (m.mez!=null && (m.comp!=null || m.lote!=null)) ? m : null;
+}
+/* ===== El sistema reconoce el Excel de cada quien =========================
+   Los formatos conocidos viven en la BASE (mez_formatos), no aquí: así,
+   cuando se registre el Excel de compras o el de otra área, entra solo sin
+   tocar el código. El de aquí arriba (mzCabecera) queda de respaldo para
+   cuando no hay señal o el formato no está registrado.
+   OJO: esto SOLO casa encabezados. Los números los sigue sacando el código,
+   tal cual venían. Aquí no entra ninguna IA. */
+var _mzFmt=null;
+function mzFormatoPide(crudas, cb){
+  _mzFmt=null;
+  if(!(V3_ON && sbReady() && SB)) { cb(null); return; }
+  SB.rpc('hb_mez_formato_detecta',{p_filas:crudas.slice(0,30)}).then(function(r){
+    var x=r&&r.data;
+    _mzFmt=(x && x.ok && x.encontrado) ? x : null;
+    cb(_mzFmt);
+  },function(){ cb(null); });
+}
+/* traduce el mapa del servidor al que usa el parser de siempre */
+function mzMapaDeFormato(x){
+  if(!x || !x.mapa) return null;
+  var m={}, M=x.mapa;
+  if(M.compuesto_txt!=null) m.comp=M.compuesto_txt;
+  if(M.lote!=null)          m.lote=M.lote;
+  if(M.letra!=null)         m.ver=M.letra;
+  if(M.num_corrida!=null)   m.corr=M.num_corrida;
+  if(M.quemadas!=null)      m.quem=M.quemadas;
+  if(M.mezclas!=null)       m.mez=M.mezclas;
+  if(M.fecha!=null)         m.fecha=M.fecha;
+  if(M.turno!=null)         m.turno=M.turno;
+  if(M.banbury!=null)       m.bb=M.banbury;
+  if(M.operador_n!=null)    m.op=M.operador_n;
+  if(M.paso!=null)          m.paso=M.paso;
+  if(M.origen!=null)        m.area=M.origen;
+  return m;
 }
 function mzPegaPrev(){
   var txt=($('mz-tsv').value||'').trim(); if(!txt){ alert('Pega primero los renglones, o sube el archivo.'); return; }
@@ -11608,8 +11659,14 @@ function mzPegaPrev(){
     var c=ln.split('\t'); if(c.length<2) c=ln.split(/;|,/);
     crudas.push(c.map(function(x){ return String(x==null?'':x).trim(); }));
   });
-  /* 1) buscar el encabezado por NOMBRE en los primeros 30 renglones */
+  /* 1) ¿el sistema RECONOCE este Excel? Si sí, usa su mapa registrado (que sabe
+        de columnas que el reconocedor de aquí no conoce, como el ÁREA). Si no,
+        se busca el encabezado por nombre como siempre. */
   var map=null, hi=-1;
+  if(_mzFmt && _mzFmt.encontrado){
+    var mm=mzMapaDeFormato(_mzFmt);
+    if(mm && mm.comp!=null){ map=mm; hi=(_mzFmt.fila_encabezado||1)-1; }
+  }
   for(var i=0;i<crudas.length && i<30 && !map;i++){ map=mzCabecera(crudas[i]); if(map) hi=i; }
 
   /* el catálogo por FAMILIA, para resolver LOTE (ej. 160F = familia 160, versión F) */
@@ -11629,10 +11686,16 @@ function mzPegaPrev(){
   }
 
   var filas=[], malas=0, fechasMal=0, sinLote=0;
+  /* Hay Excels donde cada RENGLÓN ES UNA MEZCLA y no existe columna de cantidad
+     (el de mezclado es así: un renglón por lote). En ese caso no se lee un
+     número: se agrupan los renglones iguales y se CUENTAN. Lo dice el formato
+     registrado, no lo adivina el parser. */
+  var _porRenglon = !!(_mzFmt && _mzFmt.encontrado &&
+                       _mzFmt.formato && _mzFmt.formato.modo_conteo==='renglon');
   if(map){
     for(var r=hi+1;r<crudas.length;r++){
       var c=crudas[r];
-      var mez=mzEntero(c[map.mez]);
+      var mez = _porRenglon ? 1 : mzEntero(c[map.mez]);
       var comp='', letra=null;
       if(map.comp!=null) comp=c[map.comp]||'';
       if(!comp && map.lote!=null){
@@ -11650,6 +11713,20 @@ function mzPegaPrev(){
       var fila={fecha:f, turno:t, banbury:b, compuesto_txt:comp, letra:letra||null,
         num_corrida:(map.corr!=null?(mzEntero(c[map.corr])||null):null),
         mezclas:mez, quemadas:(map.quem!=null?(mzEntero(c[map.quem])||0):0)};
+      /* el paso y el origen del reproceso, si el Excel los trae */
+      if(map.paso!=null){
+        var ps=mzNorm(c[map.paso]||'');
+        if(ps==='REPROCESO'){ fila.es_reproceso=true; fila.paso='REPROCESO'; }
+        else if(['MASTER','FINAL','AÑEJADO','ANEJADO','DIRECTA','REPASADO'].indexOf(ps)>-1)
+          fila.paso=(ps==='ANEJADO'?'AÑEJADO':ps);
+      }
+      if(map.area!=null && fila.es_reproceso){
+        var ar=mzNorm(c[map.area]||'');
+        fila.origen = ar.indexOf('LABORAT')>-1 ? 'laboratorio'
+                    : ar.indexOf('MEZCL')>-1   ? 'banbury'
+                    : ar.indexOf('TUBUL')>-1   ? 'tubuladora_precurado'
+                    : ar ? 'otro' : null;
+      }
       if(map.op!=null){ var on=parseInt(String(c[map.op]||'').replace(/[^0-9]/g,''),10); if(on>0) fila.operador_n=on; }
       filas.push(fila);
     }
@@ -11666,13 +11743,50 @@ function mzPegaPrev(){
     });
   }
   if(!filas.length){ alert('No pude leer renglones. Revisa que la hoja traiga encabezados (COMPUESTO o LOTE, y MEZCLAS) o que las columnas vayan en el orden indicado.'); return; }
+
+  /* AGRUPAR ANTES DE CONTAR. Hay Excels donde cada renglón es UNA mezcla y no
+     existe columna de cantidad (el de mezclado es así): se juntan los renglones
+     iguales y se cuentan. Tiene que ir antes de sumar los totales — si no, la
+     previsualización enseñaría un número y se guardaría otro. */
+  var _renglones = filas.length;
+  if(_porRenglon && filas.length){
+    var agr={}, orden=[];
+    filas.forEach(function(f){
+      var k=[f.fecha,f.turno,f.banbury,f.compuesto_txt,f.letra||'',f.paso||'',
+             f.es_reproceso?'R':'',f.origen||''].join('|');
+      if(!agr[k]){ agr[k]=JSON.parse(JSON.stringify(f)); agr[k].mezclas=0; orden.push(k); }
+      agr[k].mezclas  += (f.mezclas||1);
+      agr[k].quemadas  = (agr[k].quemadas||0) + (f.quemadas||0);
+    });
+    filas = orden.map(function(k){ return agr[k]; });
+  }
   _mzFilas=filas;
 
   var sumM=0, sumQ=0, porDia={};
   filas.forEach(function(x){ sumM+=(+x.mezclas||0); sumQ+=(+x.quemadas||0);
     porDia[x.fecha]=(porDia[x.fecha]||0)+(+x.mezclas||0); });
   var dias=Object.keys(porDia).sort();
-  var h='<div class="note" style="margin-top:8px"><b>'+filas.length+' renglones</b>'+
+  /* Antes de aceptar, la persona ve QUÉ se reconoció y A DÓNDE va a entrar.
+     Pedido de Carlos (25-ago): «que el usuario pueda ver lo que está subiendo,
+     darle aceptar, y que esa información se registre donde tiene que ir». */
+  var h='';
+  if(_mzFmt && _mzFmt.encontrado){
+    var _f=_mzFmt.formato, _dest={corridas:'la bitácora de producción (corridas de banbury)',
+      paros:'los paros', entradas:'las entradas de materia prima', precios:'los precios',
+      ciclos:'los tiempos de ciclo de las recetas', existencias:'las existencias de almacén'};
+    h+='<div class="card" style="margin-top:10px;border-color:color-mix(in srgb,var(--ok) 45%,transparent);'+
+       'background:color-mix(in srgb,var(--ok) 8%,transparent)">'+
+       '<b style="font-size:13px;color:var(--ok)">✓ Reconocí este archivo</b>'+
+       '<div class="note" style="margin-top:4px;line-height:1.55">Es <b>'+esc(_f.nombre)+'</b>'+
+       (_f.quien?(' de '+esc(_f.quien)):'')+'. Los títulos vienen en el renglón <b>'+
+       (_mzFmt.fila_encabezado||'?')+'</b>.<br>'+
+       'Al aceptar, esto entra a <b>'+esc(_dest[_f.destino]||_f.destino)+'</b>.</div>'+
+       (_f.notas?('<div class="note" style="margin-top:5px;font-size:11.5px">'+esc(_f.notas)+'</div>'):'')+
+       '</div>';
+  }
+  h+='<div class="note" style="margin-top:8px"><b>'+filas.length+
+    (_porRenglon ? ' corridas</b> (juntando '+_renglones+' renglones del Excel, uno por mezcla)'
+                 : ' renglones</b>')+
     (dias.length>1?(' · <b>'+dias.length+' días</b> (del '+esc(dias[0])+' al '+esc(dias[dias.length-1])+')'):(' para '+esc(dias[0]||_mzF)))+
     (malas?(' · <span style="color:var(--warn)">'+malas+' no se leyeron</span>'):'')+
     (fechasMal?(' · <span style="color:var(--warn)">'+fechasMal+' con fecha ilegible (usé la de arriba)</span>'):'')+
@@ -11689,6 +11803,8 @@ function mzPegaPrev(){
     if(map.turno!=null) tags.push('TURNO→'+mzColL(map.turno));
     if(map.bb!=null) tags.push('BANBURY→'+mzColL(map.bb));
     if(map.op!=null) tags.push('OPERADOR→'+mzColL(map.op));
+    if(map.paso!=null) tags.push('PASO→'+mzColL(map.paso));
+    if(map.area!=null) tags.push('ÁREA (origen)→'+mzColL(map.area));
     h+='<div class="note" style="margin-top:4px">Encontré los encabezados en el renglón '+(hi+1)+' y tomé: '+tags.join(' · ')+'.</div>';
     if(map.fecha==null||map.turno==null||map.bb==null)
       h+='<div class="note" style="margin-top:3px;color:var(--warn)">La hoja no trae '+

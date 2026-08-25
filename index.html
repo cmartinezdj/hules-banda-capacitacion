@@ -1361,6 +1361,9 @@ body.a11y .screen .tg{ font-size:13px !important; }
     <section id="s-prod"    class="screen pad hide"></section>
     <section id="s-mezcap"  class="screen pad hide"></section>
     <section id="s-alim"    class="screen pad hide"></section>
+    <section id="s-mprima"  class="screen pad hide"></section>
+    <section id="s-lab"     class="screen pad hide"></section>
+    <section id="s-perms"   class="screen pad hide"></section>
     <section id="s-mezprog" class="screen pad hide"></section>
     <section id="s-mezana"  class="screen pad hide"></section>
     <section id="s-meztab"  class="screen pad hide"></section>
@@ -3093,7 +3096,7 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'"'+main+' title="'+it[1]+'" onclick="'+accion+'">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['planta','manto','mezrec','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp','mezcierres','mezprecios','mezsem','mezraw','iallaves','mezalm'];
+var SCREENS=['planta','manto','mezrec','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp','mezcierres','mezprecios','mezsem','mezraw','iallaves','mezalm','alim','mprima','lab','perms'];
 var _prevShown=null;
 function show(name){
   var cambio = (name!==_prevShown);
@@ -3148,7 +3151,21 @@ function show(name){
      · PDF/PowerPoint/Word/imagen → se ve el documento de verdad (el navegador
        ya sabe mostrarlo) y se guarda en su carpeta con sus permisos.
    =========================================================================== */
-var _alimF=null, _alimTipo=null, _alimURL=null;
+var _alimF=null, _alimTipo=null, _alimURL=null, _alimArea='produccion';
+/* cada área tiene su propio subidor: el mismo módulo, pero sabiendo de dónde
+   viene. Así el documento cae en la carpeta correcta y el Excel se compara solo
+   con los formatos que tienen sentido para esa área. */
+var ALIM_AREAS={
+  produccion:{t:'Subir Excel de producción', dep:'BANBURYS',
+              d:'Tu bitácora del día: corridas, quemadas y paros.'},
+  mprima:    {t:'Subir Excel o documento de Materia Prima', dep:'ALMACEN DE MATERIA PRIMA',
+              d:'Precios de compra, entradas de almacén o existencias.'},
+  lab:       {t:'Subida de documentos de Laboratorio', dep:'LABORATORIO',
+              d:'Cédulas, métodos, tiempos de ciclo y documentos del área.'},
+  manto:     {t:'Subir documento de Mantenimiento', dep:'MANTENIMIENTO',
+              d:'Manuales, órdenes y documentos del área.'}
+};
+function alimAbre(area){ _alimArea=area||'produccion'; renderAlim(); }
 
 function alimLimpia(){
   if(_alimURL){ try{ URL.revokeObjectURL(_alimURL); }catch(e){} _alimURL=null; }
@@ -3162,11 +3179,13 @@ function alimTipoDe(f){
   return 'doc';
 }
 function renderAlim(){
-  var h='<div class="card" style="margin-bottom:12px"><div class="hd" style="align-items:flex-start"><div>'+
-    '<div class="eyebrow">Producción</div><b style="font-size:17px">Alimentar el sistema</b>'+
-    '<div class="note" style="margin-top:3px;line-height:1.5">Sube tu Excel del día, un PDF, una presentación o un documento. '+
+  var A=ALIM_AREAS[_alimArea]||ALIM_AREAS.produccion;
+  var h='<button class="back" style="margin-bottom:12px" onclick="alimVuelve()">‹ Volver</button>'+
+    '<div class="card" style="margin-bottom:12px"><div class="hd" style="align-items:flex-start"><div>'+
+    '<div class="eyebrow">'+esc(A.dep)+'</div><b style="font-size:17px">'+esc(A.t)+'</b>'+
+    '<div class="note" style="margin-top:3px;line-height:1.5">'+esc(A.d)+' '+
     'Antes de guardar vas a <b>ver lo que estás subiendo</b> y a dónde va a entrar.</div></div>'+
-    '<span style="flex:none">'+speakBtn('Alimentar el sistema. Aquí subes tu Excel o tus documentos, los revisas, y hasta entonces se guardan.')+'</span></div>'+
+    '<span style="flex:none">'+speakBtn(A.t+'. Aquí subes tu Excel o tus documentos, los revisas, y hasta entonces se guardan.')+'</span></div>'+
     '<label class="btn" style="margin-top:12px;display:block;text-align:center;cursor:pointer">Escoger archivo'+
       '<input type="file" accept=".xlsx,.xlsm,.xls,.csv,.tsv,.pdf,.ppt,.pptx,.doc,.docx,.png,.jpg,.jpeg" '+
       'style="display:none" onchange="alimEscoge(this)"></label>'+
@@ -3225,7 +3244,9 @@ function alimDoc(f){
   if(!_alimTipo) _alimTipo=alimTipoDe(f);   /* que no dependa de quién la llamó */
   if(!_alimURL) _alimURL=URL.createObjectURL(f);
   var deptos=Object.keys(DEPTO_AREA).sort();
-  var miDep=String((S&&S.depto)||'').toUpperCase();
+  var A=ALIM_AREAS[_alimArea]||ALIM_AREAS.produccion;
+  var miDep=A.dep;    /* el área del módulo por el que entró, no la suya */
+  if(deptos.indexOf(miDep)<0) miDep=String((S&&S.depto)||'').toUpperCase();
   var kb=Math.round(f.size/1024);
   /* el navegador ya sabe enseñar PDFs e imágenes: la vista previa es el
      documento DE VERDAD, no una descripción de él */
@@ -3261,6 +3282,13 @@ function alimDoc(f){
     '</div>';
 }
 function alimCancela(){ alimLimpia(); var c=$('alim-cuerpo'); if(c) c.innerHTML=''; }
+function alimVuelve(){
+  alimLimpia();
+  if(_alimArea==='mprima') return go('mprima');
+  if(_alimArea==='lab')    return go('lab');
+  if(_alimArea==='manto')  return go('manto');
+  return renderMezHub();
+}
 function alimGuardaDoc(){
   var f=_alimF; if(!f) return;
   var t=($('alim-tit').value||'').trim(), dep=$('alim-dep').value,
@@ -3299,6 +3327,8 @@ function go(name){
   if(name==='manto') return renderMantoHub();
   if(name==='prod') return renderMezHub();
   if(name==='alim') return renderAlim();
+  if(name==='mprima') return renderMPrima();
+  if(name==='lab') return renderLab();
   if(name==='rewards') return renderRewards();
   if(name==='chat') return renderChat();
   if(name==='hr') return renderDash();
@@ -11139,14 +11169,20 @@ function renderPlanta(){
      pedNuevosN() cuenta SUS pedidos y el número confundía (revisión 20-ago) */
   var pn=0; try{ if(S.admin||S.mando) pn=pedNuevosN()||0; }catch(e){}
   h+=htile("go('manto')",'rep','Mantenimiento','Órdenes de trabajo y reparaciones',{cnt:pn||''});
+  //  3 · MATERIA PRIMA — precios, almacén y semáforo, que vivían sueltos dentro
+  //      de Producción. Se separan para que cada quien entre a lo suyo (25-ago).
+  if(S.admin||S.mezCostos||S.mezCap) h+=htile("go('mprima')",'box','Materia Prima','Precios, almacén y semáforo de consumo');
+  //  4 · LABORATORIO — recetas y análisis de compuestos. Las fórmulas son
+  //      información clasificada: solo Oropeza, quien él autorice, y acceso total.
+  if(S.admin||S.mezTec) h+=htile("go('lab')",'encuestas','Laboratorio','Recetas de la carpeta GT y análisis de compuestos');
   h+='</div>';
 
   //  Los que faltan. Se listan con los departamentos REALES que los componen,
   //  para que se vea a dónde vamos y nadie se pregunte qué falta.
   h+='<div class="sec-t">En camino<span class="ln"></span></div><div class="tgrid">';
   /* textos cortos a propósito: en cuadro cabe menos que en renglón */
-  [['Calidad','encuestas','Reinspección y laboratorio'],
-   ['Almacén','deptos','Materia prima y producto terminado'],
+  [['Calidad','encuestas','Reinspección y aseguramiento'],
+   ['Almacén PT','deptos','Producto terminado y embarques'],
    ['Administración','personas','General y recursos humanos']
   ].forEach(function(d){
     h+=htile("plantaPronto('"+jsAttr(d[0])+"')", d[1], d[0], d[2], {cls:'pronto'});
@@ -11156,6 +11192,133 @@ function renderPlanta(){
   $('s-planta').innerHTML=h; show('planta');
 }
 function plantaPronto(nombre){ flash(nombre+' todavía no tiene tablero. Va en camino.'); }
+
+/* ---------- PERMISOS DEL ÁREA (25-ago-2026) ----------
+   Pedido de Carlos: cada área tiene su módulo de permisos, y el RESPONSABLE
+   —no solo dirección— decide quién de su gente ve los gráficos, los costos o
+   las fórmulas. El servidor revalida todo (hb_manda_area): esta pantalla no
+   es el candado, solo la manija. */
+var _permArea=null, _permData=null, _permQ='';
+function permAbre(depto){
+  /* del departamento al área que entiende el servidor */
+  var d=String(depto||'').toUpperCase();
+  _permArea = d.indexOf('LABORAT')>-1 ? 'lab'
+            : d.indexOf('MATERIA PRIMA')>-1 || d.indexOf('ALMACEN')>-1 ? 'mprima'
+            : d.indexOf('MANTENIM')>-1 ? 'manto' : 'produccion';
+  _permData=null; _permQ='';
+  renderPerms();
+}
+function permVuelve(){
+  if(_permArea==='mprima') return go('mprima');
+  if(_permArea==='lab')    return go('lab');
+  if(_permArea==='manto')  return go('manto');
+  return renderMezHub();
+}
+function renderPerms(){
+  var NOM={produccion:'Producción', mprima:'Materia Prima', lab:'Laboratorio', manto:'Mantenimiento'};
+  var h='<button class="back" style="margin-bottom:12px" onclick="permVuelve()">‹ Volver</button>'+
+    '<div class="card" style="margin-bottom:12px"><div class="hd" style="align-items:flex-start"><div>'+
+    '<div class="eyebrow">'+esc(NOM[_permArea]||'')+'</div><b style="font-size:17px">Permisos del área</b>'+
+    '<div class="note" style="margin-top:3px;line-height:1.5">Aquí decides quién de tu gente ve qué. '+
+    'Los cambios entran de inmediato y queda registrado quién los hizo.</div></div>'+
+    '<span style="flex:none">'+speakBtn('Permisos del área. Aquí decides quién de tu gente ve los gráficos y la información.')+'</span></div>'+
+    '<div id="perm-cuerpo"><div class="card"><div class="note">Cargando…</div></div></div>';
+  $('s-perms').innerHTML=h; show('perms');
+  if(!(V3_ON && sbReady() && SB)){
+    $('perm-cuerpo').innerHTML='<div class="card"><div class="note">Necesitas conexión para ver los permisos.</div></div>'; return; }
+  SB.rpc('hb_area_gente',{p_area:_permArea}).then(function(r){
+    var x=r&&r.data;
+    if(!(x&&x.ok)){ $('perm-cuerpo').innerHTML='<div class="card"><b style="color:var(--warn)">'+
+      esc((x&&x.detalle)||mzErr(x))+'</b></div>'; return; }
+    _permData=x; permPinta();
+  },function(e){ $('perm-cuerpo').innerHTML='<div class="card"><b style="color:var(--warn)">'+esc(mzErr(null,e))+'</b></div>'; });
+}
+function permBusca(v){ _permQ=(v||'').toUpperCase(); permPinta(); }
+function permPinta(){
+  var x=_permData; if(!x) return;
+  var permisos=x.permisos||[], gente=(x.gente||[]).filter(function(g){
+    return !_permQ || (String(g.nombre||'')+' '+String(g.clave||'')+' '+String(g.puesto||'')).toUpperCase().indexOf(_permQ)>-1; });
+  var h='<div class="card" style="margin-bottom:12px">'+
+    '<input value="'+escA(_permQ)+'" placeholder="Buscar por nombre, clave o puesto…" oninput="permBusca(this.value)" '+
+    'style="width:100%;padding:9px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+    '<div class="note" style="margin-top:7px">'+gente.length+' persona'+(gente.length===1?'':'s')+' en esta área. '+
+    'Los de <b>acceso total</b> no aparecen: ellos ya ven todo.</div></div>';
+  if(!gente.length){
+    h+='<div class="card"><div class="note">Nadie con ese nombre en esta área.</div></div>';
+    $('perm-cuerpo').innerHTML=h; return;
+  }
+  h+=gente.map(function(g){
+    var tiene=g.tiene||[];
+    return '<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start">'+
+      '<div style="min-width:0"><b style="font-size:14px">'+esc(niceName(g.nombre||''))+'</b>'+
+      '<div class="note" style="margin-top:1px">Clave '+esc(g.clave||'')+' · '+esc(g.puesto||'sin puesto')+
+      (g.mando?' · <b>responsable</b>':'')+(g.activo?'':' · <span style="color:var(--warn)">no ha entrado nunca</span>')+'</div></div></div>'+
+      '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px">'+
+      permisos.map(function(pm){
+        var on=(tiene.indexOf(pm.k)>-1);
+        return '<button class="btn'+(on?'':' ghost')+'" style="margin:0;width:auto;padding:8px 12px;font-size:12.5px" '+
+          'onclick="permSet('+g.n+',\''+jsAttr(pm.k)+'\','+(!on)+')">'+(on?'✓ ':'')+esc(pm.t)+'</button>';
+      }).join('')+'</div></div>';
+  }).join('');
+  $('perm-cuerpo').innerHTML=h;
+}
+function permSet(n, permiso, dar){
+  if(window._permGuardando) return; window._permGuardando=true;
+  SB.rpc('hb_area_permiso_set',{p_n:n,p_area:_permArea,p_permiso:permiso,p_dar:dar}).then(function(r){
+    window._permGuardando=false;
+    var x=r&&r.data;
+    if(!(x&&x.ok)){ flash((x&&x.detalle)||mzErr(x)); return; }
+    /* se refleja al momento, sin recargar toda la lista */
+    (_permData.gente||[]).forEach(function(g){
+      if(g.n!==n) return;
+      g.tiene=g.tiene||[];
+      var i=g.tiene.indexOf(permiso);
+      if(dar && i<0) g.tiene.push(permiso);
+      if(!dar && i>-1) g.tiene.splice(i,1);
+    });
+    permPinta();
+    flash(dar?'✓ Permiso dado':'Permiso quitado');
+  },function(e){ window._permGuardando=false; flash(mzErr(null,e)); });
+}
+
+/* ---------- MATERIA PRIMA: su propia área (25-ago-2026) ----------
+   Precios, almacén y semáforo vivían sueltos dentro de Producción. Carlos los
+   separó para que cada quien entre a lo suyo. Ojo con lo que NO cambió: los
+   datos siguen cayendo en las mismas tablas, así que si Josué sube precios
+   aquí, los gráficos de costo de Producción se actualizan igual. La separación
+   es de pantalla, no de plomería. */
+function renderMPrima(){
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Planta</div>'+
+    '<b style="font-size:20px">Materia Prima</b>'+
+    '<p class="note" style="margin:4px 0 0;max-width:340px">Lo que se compra, lo que hay y lo que se está consumiendo.</p></div>'+
+    '<span style="flex:none">'+speakBtn('Materia Prima. Aquí están los precios, el almacén y el semáforo de consumo.')+'</span></div></div>';
+  h+='<div class="tgrid">';
+  h+=htile("alimAbre('mprima')",'docs','Subir Excel o documento','Precios, entradas o existencias — los revisas antes de guardar',{wide:true});
+  if(S.mezCostos) h+=htile('renderMezPrecios()','recibo','Precios de materia prima','El sistema recalcula los costos desde esa fecha');
+  if(S.admin||S.mezCostos) h+=htile('renderMezAlm()','box','Almacén de materia prima','Entradas, claves por emparejar y existencia');
+  if(S.admin||S.mezCostos||S.mezCap) h+=htile('renderMezSem()','deptos','Semáforo de consumo','Qué se está usando y qué no se ha comprado');
+  if(S.admin||S.mando) h+=htile("permAbre('ALMACEN DE MATERIA PRIMA')",'personas','Permisos del área','Quién ve los gráficos y la información de esta área');
+  h+='</div>';
+  $('s-mprima').innerHTML=h; show('mprima');
+}
+
+/* ---------- LABORATORIO: su propia área (25-ago-2026) ----------
+   Las FÓRMULAS son información clasificada: las ven Oropeza, quien él o Carlos
+   autoricen, y todo acceso total. */
+function renderLab(){
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Planta</div>'+
+    '<b style="font-size:20px">Laboratorio</b>'+
+    '<p class="note" style="margin:4px 0 0;max-width:340px">Las recetas de la carpeta GT y el comportamiento de cada compuesto.</p></div>'+
+    '<span style="flex:none">'+speakBtn('Laboratorio. Aquí están las recetas y el análisis de compuestos.')+'</span></div></div>';
+  h+='<div class="tgrid">';
+  h+=htile("alimAbre('lab')",'docs','Subida de documentos','Cédulas, métodos y Excels — los revisas antes de guardar',{wide:true});
+  if(S.mezTec||S.admin) h+=htile('renderMezRec()','docs','Recetas (carpeta GT)','Vigentes por familia: ver, confirmar y cambiar');
+  if(S.mezTec||S.admin) h+=htile('renderMezAna()','focos','Analista de compuestos','Eficiencia, fallas e historial por compuesto');
+  if(S.admin||S.mando) h+=htile("permAbre('LABORATORIO')",'personas','Permisos del área','Quién ve las fórmulas y la información de esta área');
+  h+='</div>';
+  if(!(S.mezTec||S.admin)) h+='<div class="card" style="margin-top:12px"><div class="note">Las <b>fórmulas</b> son información clasificada: se necesita permiso del responsable de Laboratorio o de dirección para verlas.</div></div>';
+  $('s-lab').innerHTML=h; show('lab');
+}
 
 /* ---------- MANTENIMIENTO: el hub del área (v3.37) ----------
    No es función nueva: junta en un solo lugar las pantallas de órdenes de
@@ -11192,7 +11355,8 @@ function renderMezHub(){
   var veGraf = S.admin || (S.mando && S.mezCap);
   h+='<div class="sec-t">Tu trabajo aquí<span class="ln"></span></div><div class="tgrid">';
   if(S.mezCap){
-    h+=htile("go('alim')",'docs','Alimentar el sistema','Sube tu Excel del día, PDFs y documentos — los revisas antes de guardar',{wide:true});
+    h+=htile("alimAbre('produccion')",'docs','Subir Excel de producción','Tu bitácora del día — la revisas antes de guardar',{wide:true});
+    if(S.admin||S.mando) h+=htile("permAbre('PRODUCCION')",'personas','Permisos del área','Quién captura y quién ve los gráficos');
     h+=htile('renderMezCap()','operacion','Bitácora de turno','Captura corridas, quemadas y paros');
     h+=htile('renderMezProg()','pend','Programación','La cédula: qué se corre y cuánto');
   }
@@ -11200,13 +11364,14 @@ function renderMezHub(){
      dinero por diseño y el servidor le niega el tema de costos */
   if(veGraf||S.mezCap) h+=htile('renderMezTab()','deptos','Gráficos','Producción por día, paros y reproceso');
   if(veGraf) h+=htile('renderMezCierres()','pend','Cierres','Semana y mes listos para junta (PDF)');
-  if(S.mezCostos) h+=htile('renderMezPrecios()','recibo','Precios de materia prima','Súbelos y el sistema recalcula desde esa fecha');
-  if(S.admin||S.mezCostos) h+=htile('renderMezAlm()','box','Almacén de materia prima','Entradas, claves por emparejar y existencia');
-  if(S.admin||S.mezCostos||veGraf) h+=htile('renderMezSem()','deptos','Semáforo de materia prima','Qué se está consumiendo y qué no se ha comprado');
-  if(S.mezTec||S.admin) h+=htile('renderMezAna()','focos','Analista de compuestos','Eficiencia, fallas e historial por compuesto');
+  /* Precios, Almacén y Semáforo se mudaron a MATERIA PRIMA, y el Analista de
+     compuestos a LABORATORIO (25-ago). Los datos NO se separaron: siguen en las
+     mismas tablas, así que los gráficos de aquí se actualizan igual cuando
+     alguien sube precios allá. Lo que se separó es la pantalla, para que cada
+     quien entre a lo suyo. */
   /* v3.44: la carpeta de recetas — Alejandro: "las fórmulas las sube el
      laboratorio". Solo laboratorio (técnico) y dirección. */
-  if(S.mezTec||S.admin) h+=htile('renderMezRec()','docs','Recetas (carpeta GT)','Vigentes por familia: ver, confirmar y cambiar');
+
   h+='</div>';
   $('s-prod').innerHTML=h; show('prod');
   mzCat(function(){ var el=$('mz-hub-banner'); if(el) el.innerHTML=mzBanner(); });
@@ -11614,7 +11779,12 @@ function mzXlsxLee(f, avisa, cb, contId){
    al navegador. Escoger su Excel es lo natural: hay que atajarlo con
    instrucciones, no congelarse.) Revisa extensión, firma de bytes y forma,
    ANTES de entregar el texto. Lo usan bitácora, precios y cédula. */
+/* el último archivo que alguien abrió para alimentar el sistema, sin importar
+   por cuál pantalla entró: precios, almacén, ciclos, paros o producción. Así
+   TODOS los importadores pueden guardar su archivo, no solo uno. */
+var _ultimoArch=null;
 function mzArchivoTexto(f, avisa, cb, contId){
+  _ultimoArch=f;
   var nom=String((f&&f.name)||'').toLowerCase();
   var CONSEJO=' Guárdalo como CSV (Archivo → Guardar como → tipo «CSV») y sube ese. Tu archivo original queda igual.';
   /* el .xlsx/.xlsm SÍ se puede leer directo (v3.41); los formatos binarios
@@ -12005,6 +12175,8 @@ function mzImporta(){
   if(pv) pv.innerHTML='<div class="note" style="margin:8px 0">Guardando…</div>';
   function fin(){
     window._mzImportando=false;
+    /* el archivo original queda guardado junto a los datos que produjo */
+    if(_alimF){ alimRespalda(_alimF, 'Excel de producción', function(){ _alimF=null; }); }
     alert('Listo: '+tot.insertadas+' guardados'+
       (tot.a_bandeja?(' · '+tot.a_bandeja+' fuera de catálogo (bandeja)'):'')+
       (tot.duplicadas?(' · '+tot.duplicadas+' repetidos NO se guardaron (ya estaban capturados o venían dobles en el archivo)'):'')+
@@ -12034,6 +12206,37 @@ function mzImporta(){
       } else falla(mzErr(x)); },function(){ falla(mzErr()); });
   }
   paso();
+}
+/* ===========================================================================
+   EL ARCHIVO QUE ALIMENTÓ AL SISTEMA TAMBIÉN SE GUARDA (25-ago-2026)
+   Pedido de Carlos: «todos los archivos que suban para alimentar el sistema
+   también se guardan en la base de datos». Los datos entran a las tablas —de
+   ahí comen los gráficos— y ADEMÁS queda el archivo original, para poder
+   cotejar de dónde salió cada número. Si el respaldo falla, los datos NO se
+   pierden: ya quedaron guardados; solo se avisa.
+   =========================================================================== */
+function alimRespalda(f, queEs, cb){
+  f = f || _ultimoArch;
+  if(!f || !(V3_ON && sbReady() && SB)){ if(cb) cb(); return; }
+  _ultimoArch=null;                      /* que no se guarde dos veces */
+  var _A = ALIM_AREAS[_alimArea];
+  var dep = (_A && _A.dep) || String((S&&S.depto)||'').toUpperCase() || 'PRODUCCION';
+  var slug = deptoSlug(dep) || 'general';
+  var path = slug+'/'+Date.now()+'-'+String(f.name||'archivo').replace(/[^a-zA-Z0-9._-]/g,'_');
+  SB.storage.from('docs').upload(path, f, {contentType:(f.type||'application/octet-stream'), upsert:false})
+    .then(function(r){
+      if(r.error){ flash('⚠ Los datos sí entraron, pero no se pudo guardar el archivo'); if(cb) cb(); return; }
+      var hoy=(function(){ try{ return mxToday(); }catch(e){ return ''; } })();
+      var rec={ id:'doc'+Date.now(), titulo:(queEs||'Archivo')+' · '+hoy,
+                depto:dep, deptoSlug:slug, cat:'Alimentación del sistema', sub:(queEs||null),
+                acl:{mode:'depto'}, path:path, mime:(f.type||''), size:f.size,
+                by:(S.clave||''), ts:Date.now() };
+      SB.from('docs').upsert({id:rec.id, data:rec, ts:rec.ts}).then(function(r2){
+        if(r2&&r2.error) flash('⚠ Los datos entraron; el archivo se subió pero no quedó en la lista');
+        else sbLoad('docs');
+        if(cb) cb();
+      });
+    },function(){ flash('⚠ Los datos sí entraron, pero no se pudo guardar el archivo'); if(cb) cb(); });
 }
 /* ================= LECTOR DE FOTOS (v3_25) =================
    Gustavo le toma foto al papel; la foto va al SERVIDOR (nunca directo a
@@ -13583,6 +13786,7 @@ function mzAlmImporta(){
       _almSubiendo=false;
       burst();
       flash('✓ '+mzN(tot.nuevas)+' nuevas · '+mzN(tot.repetidas)+' ya estaban'+(tot.malas?(' · '+mzN(tot.malas)+' con problema'):''));
+      alimRespalda(null,'Excel de entradas de almacén');
       var b=$('alm-prev'); if(b) b.innerHTML='<div class="card" style="margin-top:11px"><b>Listo.</b>'+
         '<div class="note" style="margin-top:4px">Se guardaron <b>'+mzN(tot.nuevas)+'</b> entradas nuevas; '+mzN(tot.repetidas)+' ya estaban.'+
         (tot.sin_dueno?(' <b>'+mzN(tot.sin_dueno)+'</b> quedaron sin material: emparéjalas en la pestaña de arriba.'):'')+'</div></div>';
@@ -14176,7 +14380,7 @@ function mzCicImporta(){
       (x.sin_empatar? ('<div class="note" style="margin-top:6px;color:var(--warn)"><b>'+x.sin_empatar+' no empataron</b> — no se les inventó nada:</div>'+
         mzTabla(['Compuesto','Versión','Por qué'], (x.pendientes||[]).map(function(q){
           return mzTd([esc(q.compuesto||''), esc(q.letra||'—'), esc(q.motivo||'')]); }))) : '');
-    flash(msg); renderMezRec();
+    flash(msg); alimRespalda(null,'Excel de tiempos de ciclo'); renderMezRec();
   },function(){ window._mzCicGuardando=false; alert(mzErr()); });
 }
 
@@ -14251,7 +14455,7 @@ function mzTmImporta(){
           var r0=q.renglon||{};
           return mzTd([esc((r0.fecha||'')+' · T'+(r0.turno||'?')+' · '+(r0.causa||'')),
                        esc(q.motivo||'')]); }))) : '');
-    flash(msg); _mzPrac={};
+    flash(msg); alimRespalda(null,'Excel de paros'); _mzPrac={};
   },function(){ window._mzTmGuardando=false; alert(mzErr()); });
 }
 
@@ -14351,6 +14555,7 @@ function mzPreImporta(){
       var er=(x.errores||[]);
       alert('Listo: '+x.guardados+' precios guardados'+(x.materiales_nuevos?(' · '+x.materiales_nuevos+' materiales nuevos'):'')+
             (er.length?('\n\nNo entraron '+er.length+':\n'+er.slice(0,5).map(function(e){ return '· '+(e.codigo||('fila '+e.fila))+': '+e.error; }).join('\n')):''));
+      alimRespalda(null,'Excel de precios');
       $('mzp-form').innerHTML=''; renderMezPrecios();
     } else alert(mzErr(x)); },function(e){ window._mzPreImportando=false; alert(mzErr(null,e)); });
 }

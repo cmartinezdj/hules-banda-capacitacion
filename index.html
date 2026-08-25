@@ -6976,35 +6976,44 @@ try{ if('speechSynthesis' in window){ loadVoices(); window.speechSynthesis.onvoi
      · toco otro botón           → calla el anterior y lee el nuevo
    El botón que está sonando se marca (clase .sonando) para que se vea cuál es.
    =========================================================================== */
-var _spkBtn=null;
+var _spkBtn=null, _spkTxt='';
+/* Limpia el texto igual SIEMPRE, para poder comparar «¿es lo mismo que está
+   sonando?» sin depender del elemento del botón. */
+function spkLimpia(text){
+  return String(text||'')
+    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE00}-\u{FE0F}\u{200D}]/gu,' ')
+    .replace(/\s+/g,' ').trim();
+}
 function spkApaga(){
   try{ speechSynthesis.cancel(); }catch(e){}
-  if(_spkBtn){ try{ _spkBtn.classList.remove('sonando'); }catch(e){} _spkBtn=null; }
+  if(_spkBtn){ try{ _spkBtn.classList.remove('sonando'); }catch(e){} }
+  _spkBtn=null; _spkTxt='';
+  /* por si el botón se recreó en un repintado y quedó marcado uno viejo */
+  try{ var m=document.querySelectorAll('.speak.sonando');
+       for(var i=0;i<m.length;i++) m[i].classList.remove('sonando'); }catch(e){}
 }
 function speak(text,lang,btn){
   try{
     if(!('speechSynthesis' in window)) return;
-    /* Si tocan el MISMO botón que tenemos marcado como sonando, es PAUSA.
-       Se decide con nuestro propio estado (_spkBtn) y NO con
-       speechSynthesis.speaking: en algunos equipos sin voces instaladas
-       `speaking` nunca se pone en true y el botón se quedaba marcado para
-       siempre — el segundo toque parecía no hacer nada. Cuando el audio
-       termina solo, u.onend limpia _spkBtn, así que volver a tocarlo
-       lo vuelve a leer, que es lo que se espera. */
-    var mismo = (btn && _spkBtn === btn);
+    var clean=spkLimpia(text);
+    if(!clean) return;
+    /* PAUSA: se decide por lo que se está LEYENDO, no por el elemento del botón.
+       Antes se comparaba `_spkBtn === btn`, y como 91 pantallas se repintan con
+       innerHTML, el botón se destruía y se volvía a crear: el segundo toque ya
+       era «otro» botón y en vez de callarse, volvía a leer. Comparar el texto
+       sobrevive a cualquier repintado. */
+    var mismo = (_spkTxt && _spkTxt === clean);
     spkApaga();
     if(mismo) return;
-
-    var clean=String(text||'').replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE00}-\u{FE0F}\u{200D}]/gu,' ');
-    if(!clean) return;
-    var u=new SpeechSynthesisUtterance(clean.replace(/\s+/g,' ').trim());
+    var u=new SpeechSynthesisUtterance(clean);
+    _spkTxt=clean;
     var v=pickVoice(lang); if(v){ u.voice=v; u.lang=v.lang; } else { u.lang=lang||'es-MX'; }
     u.rate=(window.S&&S.rate)||0.78; u.pitch=1.0; u.volume=1;   // velocidad ajustable desde Educación básica
     if(btn){
       _spkBtn=btn; try{ btn.classList.add('sonando'); }catch(e){}
       /* al terminar solo, el botón se desmarca — si no, se quedaría en «sonando»
          para siempre y el siguiente toque parecería que no hace nada */
-      u.onend=function(){ if(_spkBtn===btn){ try{ btn.classList.remove('sonando'); }catch(e){} _spkBtn=null; } };
+      u.onend=function(){ if(_spkTxt===clean) spkApaga(); };
       u.onerror=u.onend;
     }
     setTimeout(function(){ try{ window.speechSynthesis.speak(u); }catch(e){} }, 80);
@@ -7016,7 +7025,8 @@ function escA(s){ return esc(s).replace(/"/g,'&quot;'); }
    el valor viene de datos del servidor manipulables (p.ej. una conv 'd:...'). */
 function jsAttr(s){ return escA(String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'")); }
 var ICN_SPK='<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14"/></svg>';
-function speakBtn(text,lang){ return '<button class="speak" data-s="'+escA(text)+'"'+(lang?(' data-l="'+lang+'"'):'')+' onclick="event.stopPropagation();speak(this.getAttribute(\'data-s\'),this.getAttribute(\'data-l\'),this)" aria-label="Escuchar o detener" title="Escuchar (tócalo otra vez para parar)">'+ICN_SPK+'</button>'; }
+function speakBtn(text,lang){ var _son=(_spkTxt && _spkTxt===spkLimpia(text))?' sonando':'';
+  return '<button class="speak'+_son+'" data-s="'+escA(text)+'"'+(lang?(' data-l="'+lang+'"'):'')+' onclick="event.stopPropagation();speak(this.getAttribute(\'data-s\'),this.getAttribute(\'data-l\'),this)" aria-label="Escuchar o detener" title="Escuchar (tócalo otra vez para parar)">'+ICN_SPK+'</button>'; }
 var clState={};
 function paintClases(h){ var el=$('s-clases'); el.innerHTML=h; el.classList.toggle('access',!!(S&&S.accessible)); show('clases'); }
 var RATES=[[0.62,'Muy lenta'],[0.78,'Normal'],[0.95,'Rápida']];   // velocidades de la voz (la "Normal" ya es lenta y clara)

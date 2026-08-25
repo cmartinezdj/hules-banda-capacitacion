@@ -11934,6 +11934,15 @@ function mzEntero(v){
   var f=parseFloat(String(v==null?'':v).trim().replace(',','.').replace(/[^0-9.\\-]/g,''));
   return isFinite(f)?Math.round(f):NaN;
 }
+/* los KILOS no son enteros: 2,259.95 kg tiene que llegar con sus decimales */
+function mzDecimal(v){
+  var t=String(v==null?'':v).trim().replace(/\s/g,'');
+  if(!t) return NaN;
+  t=t.replace(/,(?=\d{3}\b)/g,'');           /* 12,324.5 → 12324.5 */
+  if(t.indexOf('.')<0 && t.indexOf(',')>-1) t=t.replace(',','.');  /* 2259,95 */
+  var f=parseFloat(t.replace(/[^0-9.\-]/g,''));
+  return isFinite(f) ? Math.round(f*100)/100 : NaN;
+}
 function mzNorm(t){ return String(t||'').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim(); }
 function mzColL(i){ var t=''; do{ t=String.fromCharCode(65+(i%26))+t; i=Math.floor(i/26)-1; }while(i>=0); return t; }
 function mzFechaCelda(v){
@@ -11977,6 +11986,11 @@ function mzCabecera(cs){
        mezclas se cuentan dos veces, y el ÁREA, que es el origen del reproceso. */
     else if(m.paso==null && t.indexOf('PASO')>-1) m.paso=i;
     else if(m.area==null && (t==='AREA'||t.indexOf('AREA')===0)) m.area=i;
+    /* 25-ago: los KILOS. Antes el tablero los CALCULABA (mezclas × peso de la
+       receta) y daba un número parecido pero distinto al del Excel. Los kilos
+       los reporta producción; el sistema los guarda tal cual. */
+    else if(m.kg==null && (t.indexOf('KGS')>-1||t.indexOf('KILOS')>-1||
+            (t.indexOf('KG')>-1 && t.indexOf('PROGRAMAD')<0))) m.kg=i;
   }
   return (m.mez!=null && (m.comp!=null || m.lote!=null)) ? m : null;
 }
@@ -12013,6 +12027,9 @@ function mzMapaDeFormato(x){
   if(M.operador_n!=null)    m.op=M.operador_n;
   if(M.paso!=null)          m.paso=M.paso;
   if(M.origen!=null)        m.area=M.origen;
+  /* el formato registrado la llama «kgs» (KGS TOTALES PRODUCIDOS) */
+  if(M.kgs!=null)           m.kg=M.kgs;
+  else if(M.kg!=null)       m.kg=M.kg;
   return m;
 }
 function mzPegaPrev(){
@@ -12111,6 +12128,9 @@ function mzPegaPrev(){
                     : ar ? 'otro' : null;
       }
       if(map.op!=null){ var on=parseInt(String(c[map.op]||'').replace(/[^0-9]/g,''),10); if(on>0) fila.operador_n=on; }
+      /* los KILOS que reporta la hoja. Si la celda viene vacía NO se pone cero:
+         se deja sin dato y el sistema lo dice (regla de oro: nada inventado). */
+      if(map.kg!=null){ var kk=mzDecimal(c[map.kg]); if(isFinite(kk)&&kk>=0) fila.kg_reportado=kk; }
       filas.push(fila);
     }
   } else {
@@ -12140,14 +12160,18 @@ function mzPegaPrev(){
       if(!agr[k]){ agr[k]=JSON.parse(JSON.stringify(f)); agr[k].mezclas=0; orden.push(k); }
       agr[k].mezclas  += (f.mezclas||1);
       agr[k].quemadas  = (agr[k].quemadas||0) + (f.quemadas||0);
+      if(f.kg_reportado!=null) agr[k].kg_reportado=Math.round(((agr[k].kg_reportado||0)+f.kg_reportado)*100)/100;
     });
     filas = orden.map(function(k){ return agr[k]; });
   }
   _mzFilas=filas;
 
-  var sumM=0, sumQ=0, porDia={};
+  var sumM=0, sumQ=0, sumKg=0, conKg=0, sinKg=0, porDia={};
   filas.forEach(function(x){ sumM+=(+x.mezclas||0); sumQ+=(+x.quemadas||0);
-    porDia[x.fecha]=(porDia[x.fecha]||0)+(+x.mezclas||0); });
+    porDia[x.fecha]=(porDia[x.fecha]||0)+(+x.mezclas||0);
+    if(x.kg_reportado!=null){ sumKg+=(+x.kg_reportado||0); conKg++;
+      if(!(+x.kg_reportado>0) && (+x.mezclas>0)) sinKg++; } });
+  sumKg=Math.round(sumKg);
   var dias=Object.keys(porDia).sort();
   /* Antes de aceptar, la persona ve QUÉ se reconoció y A DÓNDE va a entrar.
      Pedido de Carlos (25-ago): «que el usuario pueda ver lo que está subiendo,
@@ -12174,7 +12198,9 @@ function mzPegaPrev(){
     (dias.length>1?(' · <b>'+dias.length+' días</b> (del '+esc(dias[0])+' al '+esc(dias[dias.length-1])+')'):(' para '+esc(dias[0]||_mzF)))+
     (malas?(' · <span style="color:var(--warn)">'+malas+' no se leyeron</span>'):'')+
     (fechasMal?(' · <span style="color:var(--warn)">'+fechasMal+' con fecha ilegible (usé la de arriba)</span>'):'')+
-    (sinLote?(' · <span style="color:var(--warn)">'+sinLote+' con lote fuera de catálogo (van a la bandeja)</span>'):'')+'</div>';
+    (sinLote?(' · <span style="color:var(--warn)">'+sinLote+' con lote fuera de catálogo (van a la bandeja)</span>'):'')+
+    (conKg?(' · <b>'+mzN(sumKg)+' kg</b>'):'')+
+    (sinKg?(' · <span style="color:var(--warn)">'+sinKg+' produjeron pero traen 0 kg</span>'):'')+'</div>';
   if(map){
     var tags=[];
     if(map.comp!=null) tags.push('COMPUESTO→'+mzColL(map.comp));
@@ -12189,6 +12215,7 @@ function mzPegaPrev(){
     if(map.op!=null) tags.push('OPERADOR→'+mzColL(map.op));
     if(map.paso!=null) tags.push('PASO→'+mzColL(map.paso));
     if(map.area!=null) tags.push('ÁREA (origen)→'+mzColL(map.area));
+    if(map.kg!=null) tags.push('KILOS→'+mzColL(map.kg));
     h+='<div class="note" style="margin-top:4px">Encontré los encabezados en el renglón '+(hi+1)+' y tomé: '+tags.join(' · ')+'.</div>';
     if(map.fecha==null||map.turno==null||map.bb==null)
       h+='<div class="note" style="margin-top:3px;color:var(--warn)">La hoja no trae '+
@@ -13567,7 +13594,10 @@ function mzTabPaint(x){
      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;justify-content:flex-end">'+
      '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzCierre(\'semana\')">Cierre de semana</button>'+
      '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="mzCierre(\'mes\')">Cierre de mes</button></div></div>';
-  var dias=x.por_dia||[]; var totKg=0; dias.forEach(function(d){ totKg+=(d.kg||0); });
+  var dias=x.por_dia||[];
+  /* el total de kilos sale del servidor, NO de sumar los días: cada día viene
+     redondeado y sumarlos daba 2 o 3 kg de más contra el Excel. */
+  var totKg=(t.kg!=null)?(+t.kg||0):(function(){ var a=0; dias.forEach(function(d){ a+=(d.kg||0); }); return a; })();
   /* KPI TÁCTILES (pedido de Carlos): cada cuadro abre su desglose completo */
   function kpi(tema,tit,val,color,sub){
     return '<div class="card kpi" role="button" tabindex="0" onkeydown="_kb(event)" onclick="renderMezDesg(\''+tema+'\')" style="cursor:pointer;position:relative">'+
@@ -13576,13 +13606,30 @@ function mzTabPaint(x){
   }
   h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:9px;margin-bottom:12px">'+
      kpi('produccion','Mezclas', mzN(t.mezclas||0), 'var(--data)')+
-     kpi('produccion','Kilos (por receta)', (totKg>=1000000?(mzN(totKg/1000000,2)+' M'):mzN(totKg)), null)+
+     kpi('produccion',((t.kg_estimados||0)>0?'Kilos (parte estimada)':'Kilos producidos'),
+         (totKg>=1000000?(mzN(totKg/1000000,2)+' M'):mzN(totKg)), null,
+         ((t.kg_estimados||0)>0?'ojo: hay estimados':'los reporta producción'))+
      kpi('produccion','Corridas', mzN(t.corridas||0), null)+
      kpi('merma','Quemadas', mzN(t.quemadas||0), 'var(--bad)','merma y calidad')+
      kpi('eficiencia','Paros', mzN((x.tm_top||[]).reduce(function(a,c){ return a+(+c.minutos||0); },0))+' min', 'var(--warn)','eficiencia')+
      (mzVeDinero()?kpi('costos','Costo de materia prima','ver','var(--ok)','costos y utilidad'):
        '<div class="card"><div class="note">En bandeja</div><b style="font-size:22px;color:var(--warn)">'+mzN(t.pendientes||0)+'</b></div>')+
      '</div>';
+  /* DE DÓNDE SALEN LOS KILOS. Regla de oro: si un dato no está, se dice —
+     no se rellena. (25-ago: el tablero los calculaba con el peso de la receta y
+     no daban igual que el Excel; ahora son los que reporta producción.) */
+  if((t.kg||0)>0 && ((t.kg_estimados||0)>0 || (t.mezclas_sin_kg||0)>0)){
+    var _av=[];
+    if((t.kg_estimados||0)>0) _av.push('<b>'+mzN(t.kg_estimados)+' kg</b> de '+
+      mzN(t.corridas_estimadas||0)+' corridas están <b>estimados</b> con el peso de la receta, porque la hoja no trajo sus kilos');
+    if((t.mezclas_sin_kg||0)>0) _av.push('<b>'+mzN(t.mezclas_sin_kg)+' mezclas</b> ('+
+      mzN(t.corridas_sin_kg||0)+' renglones) se produjeron pero <b>quedaron en cero kilos</b>: ni la hoja los trae ni hay receta con peso');
+    h+='<div class="card" style="margin-bottom:12px;border-color:color-mix(in srgb,var(--warn) 40%,transparent);'+
+       'background:color-mix(in srgb,var(--warn) 7%,transparent)">'+
+       '<b style="font-size:13px;color:var(--warn)">De dónde salen los kilos</b>'+
+       '<div class="note" style="margin-top:4px;line-height:1.6">De los <b>'+mzN(t.kg)+' kg</b> del periodo, '+
+       mzN(t.kg_medidos||0)+' kg los <b>reportó producción</b> en su hoja. '+_av.join('. ')+'.</div></div>';
+  }
   /* LA META DE ANA: un solo número, y la gráfica lo dibuja */
   var meta=(_mzMeta&&+_mzMeta.meta_dia)||0;
   var puedeMeta=(_mzMeta&&_mzMeta.puede_editar);

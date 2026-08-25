@@ -5367,6 +5367,7 @@ function dynDepto(tn,DS){
 }
 function dynFind(t){
   if(!S || !(S.admin||S.mando)) return null;   // los datos del equipo son solo de tableros
+  try{ eqFresco(); }catch(e){}                 // que no conteste con la foto de cuando entró
   var tn=' '+_norm(t)+' ';
   var reAv=/(avance|progreso|como va|como van|al dia|porcentaje|curso|capacitacion)/;
   var reReg=/(registrad|cuanta gente|inscrit|cuantos han entrado)/;
@@ -5622,8 +5623,21 @@ function iaEnvia(t){
   }
   chatBusy=true; _iaEsperando=true; paintChat();
   /* solo los turnos de conversación, sin lo que puso la biblioteca */
+  /* El historial se SELLA con su fecha. Sin esto, al abrir un hilo de la semana
+     pasada el modelo recibía dos verdades a la vez —el contexto de hoy y sus
+     propias respuestas viejas con cifras viejas— y los modelos le creen más a
+     la conversación que al instructivo. Ese es el camino más probable a que
+     alguien vuelva a sentir que «la IA no se actualizó». */
+  var _hoyMx=(function(){ try{ return mxToday(); }catch(e){ return ''; } })();
   var hist=(S.chat||[]).filter(function(m){ return m.role==='user'||m.role==='assistant'; })
-             .slice(-7,-1).map(function(m){ return {role:m.role,content:String(m.content||'').slice(0,1500)}; });
+             .slice(-7,-1).map(function(m){
+               var t=String(m.content||'').slice(0,1500);
+               if(m.role==='assistant'){
+                 var f=m.dia||'';
+                 t=(f&&f!==_hoyMx ? '[respuesta del '+f+' — sus cifras pueden estar vencidas] ' : '')+t;
+               }
+               return {role:m.role, content:t};
+             });
   SB.rpc('hb_ia_chat',{p_pregunta:t,p_hist:hist}).then(function(r){
     var x=r&&r.data;
     if(!(x&&x.ok)){ iaFalla(x&&x.detalle); return; }
@@ -5644,7 +5658,8 @@ function iaEspera(id, intento){
       if(x.estado==='esperando') return iaEspera(id, intento+1);
       chatBusy=false; _iaEsperando=null;
       S.chat.push({role:'assistant', content:x.respuesta||'(sin respuesta)',
-                   ia:true, costo:x.costo_mxn, bloqueada:x.bloqueada});
+                   ia:true, costo:x.costo_mxn, bloqueada:x.bloqueada,
+                   dia:(function(){ try{ return mxToday(); }catch(e){ return ''; } })()});
       paintChat();
       /* el gasto se actualiza solo: el perfil de quien preguntó y, si está
          abierto el tablero de IA, también el consumo por persona */
@@ -5872,12 +5887,21 @@ function teamMember(key,n){
            points:d.points||0, streak:d.streak||0 };
 }
 /* ===== V3: equipo real desde el roster del servidor ===== */
+var _eqTs=0;
 function v3LoadEquipo(){
   if(!sbReady()) return;
   SB.rpc('hb_equipo').then(function(r){
-    if(!r.error && r.data && r.data.ok){ DBC.equipo=r.data.equipo||[];
+    if(!r.error && r.data && r.data.ok){ DBC.equipo=r.data.equipo||[]; _eqTs=Date.now();
       if(_screen==='hr' && S && S.dash==='resp') renderDash(); }
   });
+}
+/* Los datos del equipo se cargaban UNA sola vez al entrar. Si alguien dejaba el
+   tablero abierto todo el día y preguntaba «¿cómo va la planta?», dynFind le
+   contestaba —antes que la IA— con la foto del momento en que entró. Ahora se
+   refrescan solos si ya pasaron 3 minutos. */
+function eqFresco(){
+  if(!sbReady()) return;
+  if(Date.now() - _eqTs > 180000) v3LoadEquipo();
 }
 function teamMemberV3(n){
   var eq=DBC.equipo||[]; var e=null;

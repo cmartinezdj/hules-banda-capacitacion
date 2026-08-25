@@ -11986,6 +11986,19 @@ function mzPegaPrev(){
     var c=ln.split('\t'); if(c.length<2) c=ln.split(/;|,/);
     crudas.push(c.map(function(x){ return String(x==null?'':x).trim(); }));
   });
+  /* ¿la hoja trae SU PROPIO total? Es lo más valioso del verificador: si el
+     Excel dice 654 y nosotros contamos 661, algo se leyó mal — y lo sabemos
+     sin que nadie compare a mano. */
+  _totalHoja=null;
+  for(var _t=0;_t<crudas.length;_t++){
+    var _row=crudas[_t], _hay=false, _num=null;
+    for(var _k=0;_k<_row.length;_k++){
+      var _v=mzNorm(_row[_k]||'');
+      if(!_hay && (_v==='TOTAL'||_v.indexOf('TOTAL DE MEZCLAS')>-1||_v==='TOTAL MEZCLAS'||_v==='GRAN TOTAL')) { _hay=true; continue; }
+      if(_hay && _num===null){ var _n=mzEntero(_row[_k]); if(_n>0) _num=_n; }
+    }
+    if(_hay && _num>0){ _totalHoja=_num; break; }
+  }
   /* 1) ¿el sistema RECONOCE este Excel? Si sí, usa su mapa registrado (que sabe
         de columnas que el reconocedor de aquí no conoce, como el ÁREA). Si no,
         se busca el encabezado por nombre como siempre. */
@@ -12031,7 +12044,13 @@ function mzPegaPrev(){
         else if((c[map.lote]||'').trim()){ comp=(c[map.lote]||'').trim(); sinLote++; } /* va a la bandeja tal cual */
       }
       if(map.ver!=null && (c[map.ver]||'').trim()) letra=(c[map.ver]||'').trim();
-      if(!comp && !(mez>=0)) continue;              /* renglón vacío o de totales */
+      if(!comp && !(mez>=0)) continue;              /* renglón vacío */
+      /* los renglones de TOTALES no son corridas: si se cuelan, se guardan como
+         una corrida más y inflan las mezclas del día. Se descubrió probando con
+         una hoja que traía «TOTAL DE MEZCLAS 40» al final (25-ago). */
+      var _c0=mzNorm(comp);
+      if(/^(TOTAL|TOTALES|SUMA|GRAN TOTAL|SUBTOTAL|TOTAL DE MEZCLAS|TOTAL MEZCLAS)$/.test(_c0)
+         || _c0.indexOf('TOTAL')===0) continue;
       if(!comp || !(mez>=0)){ malas++; continue; }
       var f=_mzF, t=_mzT, b=_mzB;
       if(map.fecha!=null){ var ff=mzFechaCelda(c[map.fecha]); if(ff) f=ff; else fechasMal++; }
@@ -12111,6 +12130,7 @@ function mzPegaPrev(){
        (_f.notas?('<div class="note" style="margin-top:5px;font-size:11.5px">'+esc(_f.notas)+'</div>'):'')+
        '</div>';
   }
+  h+='<div id="mz-verif"></div>';
   h+='<div class="note" style="margin-top:8px"><b>'+filas.length+
     (_porRenglon ? ' corridas</b> (juntando '+_renglones+' renglones del Excel, uno por mezcla)'
                  : ' renglones</b>')+
@@ -12159,6 +12179,10 @@ function mzPegaPrev(){
     '<div class="note" style="margin-top:7px">Compara el <b>TOTAL de '+sumM+' mezclas</b>'+(dias.length>1?' y los totales por día':'')+' contra la libreta. Si no cuadra, no lo guardes.</div>'+
     '<button class="btn" style="margin:10px 0 0" onclick="mzImporta()">Guardar los '+filas.length+' renglones</button>';
   $('mz-prev').innerHTML=h;
+  /* EL VERIFICADOR (pedido de Carlos, 25-ago): no es un paso más ni un botón —
+     es la misma vista previa opinando. Va DESPUÉS de pintar: su contenedor
+     tiene que existir ya en la pantalla, si no la llamada se pierde en silencio. */
+  mzVerifica(filas, _totalHoja);
 }
 function mzImporta(){
   if(!_mzFilas||!_mzFilas.length) return;
@@ -12206,6 +12230,40 @@ function mzImporta(){
       } else falla(mzErr(x)); },function(){ falla(mzErr()); });
   }
   paso();
+}
+/* ===========================================================================
+   ¿ESTO CUADRA? — el verificador de la vista previa
+   Carlos preguntó cómo revisar que lo que se sube sea correcto «sin agregar
+   renglones y botones». Esta es la respuesta: la misma tabla de siempre, con
+   un solo renglón arriba que dice si cuadra, qué revisar y por qué.
+   =========================================================================== */
+var _totalHoja=null;
+function mzVerifica(filas, totalHoja){
+  var c=$('mz-verif'); if(!c) return;
+  if(!(V3_ON && sbReady() && SB) || !filas || !filas.length){ if(c) c.innerHTML=''; return; }
+  c.innerHTML='<div class="note" style="margin-top:8px">Revisando que cuadre…</div>';
+  SB.rpc('hb_mez_verifica',{p_filas:filas.slice(0,600), p_total_hoja:(totalHoja||null)})
+    .then(function(r){
+      var x=r&&r.data;
+      if(!(x&&x.ok)){ c.innerHTML=''; return; }
+      var col = x.veredicto==='rojo' ? 'var(--bad)' : x.veredicto==='ambar' ? 'var(--warn)' : 'var(--ok)';
+      var ico = x.veredicto==='rojo' ? '⛔' : x.veredicto==='ambar' ? '⚠️' : '✓';
+      var h='<div class="card" style="margin-top:10px;border-color:color-mix(in srgb,'+col+' 50%,transparent);'+
+        'background:color-mix(in srgb,'+col+' 8%,transparent)">'+
+        '<b style="font-size:14px;color:'+col+'">'+ico+' '+esc(x.resumen)+'</b>';
+      (x.avisos||[]).forEach(function(a){
+        var ac = a.nivel==='grave' ? 'var(--bad)' : 'var(--warn)';
+        h+='<div style="margin-top:9px;padding-left:11px;border-left:2px solid '+ac+'">'+
+           '<b style="font-size:12.5px">'+esc(a.t)+'</b>'+
+           '<div class="note" style="margin-top:2px;line-height:1.5">'+esc(a.d)+'</div></div>';
+      });
+      if(x.veredicto==='verde' && x.mezclas!=null){
+        h+='<div class="note" style="margin-top:5px">'+mzN(x.mezclas)+' mezclas'+
+           (totalHoja?(', igual que el total de tu hoja'):'')+'.</div>';
+      }
+      h+='</div>';
+      c.innerHTML=h;
+    },function(){ c.innerHTML=''; });
 }
 /* ===========================================================================
    EL ARCHIVO QUE ALIMENTÓ AL SISTEMA TAMBIÉN SE GUARDA (25-ago-2026)

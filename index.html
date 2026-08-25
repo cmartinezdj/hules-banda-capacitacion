@@ -2596,7 +2596,12 @@ var DEPTO_AREA={
  'REINSPECCION':'calidad','ASEGURAMIENTO DE CALIDAD':'calidad','LABORATORIO':'calidad',
  'MANTENIMIENTO':'maquinaria','MONTACARGUISTAS':'maquinaria',
  'ALMACEN PT':'almacen','ALMACEN DE MATERIA PRIMA':'almacen','ALMACEN DE PRODUCTO TERMINADO':'almacen','ALMACEN MP':'almacen',
- 'ADMINISTRACION GENERAL':'comercial','RECURSOS HUMANOS':'comercial'
+ 'ADMINISTRACION GENERAL':'comercial','RECURSOS HUMANOS':'comercial',
+ /* CONSEJO (24-ago): grupo propio para los consejeros, que antes quedaban
+    revueltos en Administración General. Se mapea al área comercial porque los
+    cursos de planta no son para ellos; lo que importa es que aparezca como
+    departamento propio en gestión de personal y en documentos. */
+ 'CONSEJO':'comercial'
 };
 function areaCfgOf(key){ for(var i=0;i<CFG.ranges.length;i++){ if(CFG.ranges[i].key===key && !CFG.ranges[i].admin) return CFG.ranges[i]; } return CFG.ranges[2]; }
 function claveNorm(raw){ var d=(raw||'').replace(/\D/g,''); if(!d) return ''; return d.length<4? d.padStart(4,'0') : d; }

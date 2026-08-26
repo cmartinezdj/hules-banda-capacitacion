@@ -13081,6 +13081,31 @@ function mzSemPaint(){
     h+='<div class="card"><b style="font-size:14px">Todavía no hay de dónde sacarlo</b><div class="note" style="margin-top:4px">Hacen falta corridas capturadas con compuestos que tengan su receta vigente digitalizada. En cuanto haya producción, esta pantalla se llena sola.</div></div>';
     $('s-mezsem').innerHTML=h; return;
   }
+  /* ⭐ ESTE ES EL NÚMERO CON EL QUE SE COMPRA. Si el cálculo solo alcanza a
+     cubrir parte de la producción, tiene que decirlo antes de que alguien
+     decida sobre él. (25-ago-2026: en agosto solo cubre el 67%.) */
+  var cobs=x.cobertura||null;
+  if(cobs && (cobs.mezclas_sin_receta||0)>0){
+    var _cl=cobs.compuestos_sin_receta||[];
+    h+='<div class="card" style="margin-bottom:12px;border-color:color-mix(in srgb,var(--bad) 45%,transparent);'+
+       'background:color-mix(in srgb,var(--bad) 8%,transparent)">'+
+       '<b style="font-size:13.5px;color:var(--bad)">Antes de comprar con este número, léelo completo</b>'+
+       '<div class="note" style="margin-top:5px;line-height:1.6">Este consumo cubre <b>'+
+       mzN(cobs.mezclas_contadas)+' de '+mzN((cobs.mezclas_contadas||0)+(cobs.mezclas_sin_receta||0))+
+       ' mezclas</b> ('+esc(String(cobs.pct))+'%). Las otras <b>'+mzN(cobs.mezclas_sin_receta)+
+       '</b> son de <b>'+_cl.length+' compuestos sin receta cargada</b>: para el sistema consumen <b>cero kilos</b>, '+
+       'aunque en la planta sí gastaron material.</div>'+
+       '<div class="note" style="margin-top:7px;line-height:1.6;color:var(--bad)"><b>Qué significa:</b> el consumo real '+
+       'es mayor que el de esta tabla, así que un material que aquí aparece con sobrante puede estar en falta. '+
+       'Se arregla cargando esas recetas, no ajustando este número.</div>'+
+       (_cl.length ? '<details style="margin-top:8px"><summary class="note" style="cursor:pointer">Ver los '+_cl.length+' compuestos que no están contando</summary>'+
+          '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">'+
+          _cl.map(function(n){ return '<span class="tg">'+esc(n)+'</span>'; }).join('')+'</div></details>' : '')+
+       ((cobs.mezclas_retrabajo||0)>0 ? '<div class="note" style="margin-top:8px;line-height:1.5">Aparte, '+
+          mzN(cobs.mezclas_retrabajo)+' mezclas son de <b>retrabajo</b> y no descuentan material: se corren con '+
+          'recuperado de tubuladoras y Pathex. Eso sí está bien contado.</div>' : '')+
+       '</div>';
+  }
   var rojos=mats.filter(function(m){ return mzSemLuz(m,dias).k===0; });
   var ambar=mats.filter(function(m){ return mzSemLuz(m,dias).k===1; });
   h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px;margin-bottom:12px">'+
@@ -13219,22 +13244,31 @@ function mzCmpPinta(xs){
         return '<td'+(gana?' style="color:var(--ok);font-weight:800"':'')+'>'+txt+(gana?' ★':'')+'</td>'; }).join('')+'</tr>';
   }
   var h='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Comparación</b>'+
-    '<div class="note" style="margin-top:2px">Del año en curso. La estrella marca al mejor de cada renglón.</div>'+
+    '<div class="note" style="margin-top:2px">Del año en curso. La estrella marca al mejor de cada renglón. '+
+    'Un compuesto de <b>retrabajo</b> no compite en costo: se corre con material recuperado y no compra materia prima nueva.</div>'+
     '<div style="overflow-x:auto;margin-top:9px"><table class="mzt" style="min-width:420px">'+
     '<tr><th>Para el mismo pedido…</th>'+
     xs.map(function(x){ return '<th style="font-size:12px;color:var(--txt);text-transform:none;letter-spacing:0">'+esc(x.compuesto.nombre)+'</th>'; }).join('')+'</tr>'+
     fila('Mezclas producidas', function(x){ var n=(x.produccion||{}).mezclas||0; return {t:mzN(n),n:n}; },'alto')+
     fila('Velocidad (min por mezcla)', function(x){ var n=x.velocidad; return {t:n!=null?mzN(n,2):'—',n:n}; },'bajo')+
-    fila('Estándar de su hoja', function(x){ var v=(x.versiones||[]).filter(function(v){return v.estado==='vigente';})[0];
-        return {t:(v&&v.ciclo_min)?mzN(v.ciclo_min,2):'<span class="note">sin dato</span>',n:null}; })+
+    /* ya no se llama «estándar»: Laboratorio dice que ese estándar no existe (25-ago) */
+    fila('Temperatura de descarga', function(x){ var v=(x.versiones||[]).filter(function(v){return v.estado==='vigente';})[0];
+        return {t:(v&&v.temp!=null)?(mzN(v.temp,0)+' °C'):'<span class="note">sin dato</span>',n:null}; })+
     fila('Quemadas', function(x){ var p=x.produccion||{}; var pc=p.mezclas?p.quemadas/p.mezclas*100:null;
         return {t:mzN(p.quemadas||0)+(pc!=null?(' ('+mzN(pc,2)+'%)'):''),n:pc}; },'bajo')+
     fila('Reproceso que genera', function(x){ var p=x.produccion||{}; var pc=p.mezclas?p.reproceso/p.mezclas*100:null;
         return {t:(pc!=null?mzN(pc,2)+'%':'—'),n:pc}; },'bajo')+
-    (xs[0].admin? fila('Costo de MP por kilo', function(x){ var c=x.costo; var n=(c&&c.ok)?c.costo_kg_mxn:null;
-        return {t:n!=null?mzMx(n,4):'<span class="note">sin receta</span>',n:n}; },'bajo') : '')+
-    (xs[0].admin? fila('Costo por mezcla', function(x){ var c=x.costo; var n=(c&&c.ok)?c.costo_batch_mxn:null;
-        return {t:n!=null?mzMx(n,2):'—',n:n}; },'bajo') : '')+
+    /* 25-ago: un compuesto de retrabajo sale en $0.0000 porque no lleva materia
+       prima nueva. Cero NO es barato — es otra cosa. Antes salía en verde, en
+       negritas y con la estrella de «el mejor», al lado de compuestos de $29. */
+    (xs[0].admin? fila('Costo de MP por kilo', function(x){ var c=x.costo;
+        if(c&&c.es_r) return {t:'<span style="color:var(--warn)">no lleva MP nueva</span>',n:null};
+        var n=(c&&c.ok)?c.costo_kg_mxn:null;
+        return {t:n!=null?mzMx(n,4):'<span class="note">sin receta</span>',n:(n>0?n:null)}; },'bajo') : '')+
+    (xs[0].admin? fila('Costo por mezcla', function(x){ var c=x.costo;
+        if(c&&c.es_r) return {t:'<span style="color:var(--warn)">retrabajo</span>',n:null};
+        var n=(c&&c.ok)?c.costo_batch_mxn:null;
+        return {t:n!=null?mzMx(n,2):'—',n:(n>0?n:null)}; },'bajo') : '')+
     fila('Días con producción', function(x){ var n=(x.produccion||{}).dias||0; return {t:mzN(n),n:n}; })+
     fila('Versiones en la carpeta', function(x){ var n=(x.versiones||[]).length; return {t:mzN(n),n:null}; })+
     '</table></div>'+
@@ -14331,8 +14365,15 @@ function mzDesgPaint(){
   h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:12px">'+
      '<div class="card"><div class="note">Mezclas</div><b style="font-size:20px;color:var(--data)">'+mzN(t.mezclas)+'</b>'+
        '<div style="margin-top:3px">'+mzCmpChip('mezclas',x)+'</div></div>'+
-     '<div class="card"><div class="note">Kilos</div><b style="font-size:20px">'+mzN(t.kg)+'</b>'+
-       '<div style="margin-top:3px">'+mzCmpChip('kg',x)+'</div></div>'+
+     '<div class="card"><div class="note">Kilos'+
+       (((t.kg_estimados||0)>0 && (t.kg_medidos||0)>0) ? ' <span style="color:var(--warn)">(en parte estimados)</span>'
+        : ((t.kg_estimados||0)>0 ? ' <span style="color:var(--warn)">(estimados)</span>' : ''))+
+       '</div><b style="font-size:20px">'+mzN(t.kg)+'</b>'+
+       '<div style="margin-top:3px">'+mzCmpChip('kg',x)+'</div>'+
+       ((t.kg_estimados||0)>0 ? '<div class="note" style="margin-top:3px;line-height:1.4">'+
+          ((t.kg_medidos||0)>0 ? mzN(t.kg_medidos)+' kg los reportó producción; '+mzN(t.kg_estimados)+' kg se estimaron con el peso de la receta.'
+                               : 'Ninguno viene de la hoja: todos salen del peso de la receta.')+'</div>' : '')+
+       '</div>'+
      '<div class="card"><div class="note">Reproceso</div><b style="font-size:20px;color:var(--warn)">'+mzN(t.reproceso)+'</b>'+
        '<div class="note" style="margin-top:3px">'+mzPct(t.reproceso,t.mezclas)+' de lo producido</div>'+
        '<div>'+mzCmpChip('reproceso',x)+'</div></div>'+
@@ -14375,11 +14416,37 @@ function mzDesgPaint(){
     var cc=x.por_compuesto||[], totMx=0, totUs=0, kgCost=0, usdReal=0, sinRec=0;
     cc.forEach(function(c){ totMx+=(+c.costo_total_mxn||0); totUs+=(+c.costo_total_usd||0);
       if(c.costeable===false){ sinRec++; } else { kgCost+=(+c.kg||0); usdReal+=(+c.usd_total||0); } });
+    /* ⭐ QUÉ PARTE SE ALCANZÓ A COSTEAR. Sin esto, un mes al que le faltan recetas
+       se lee como un mes barato — y agosto 2026 solo cubre el 58%. (25-ago) */
+    var cob=x.cobertura||null;
+    if(cob && (cob.mezclas_sin_receta||0)>0){
+      var _cs=cob.compuestos_sin_receta||[];
+      h+='<div class="card" style="margin-bottom:12px;border-color:color-mix(in srgb,var(--warn) 45%,transparent);'+
+         'background:color-mix(in srgb,var(--warn) 8%,transparent)">'+
+         '<b style="font-size:13px;color:var(--warn)">Este costo NO cubre todo lo que se produjo</b>'+
+         '<div class="note" style="margin-top:4px;line-height:1.6">Alcanza <b>'+mzN(cob.mezclas_costeadas)+
+         ' de '+mzN((cob.mezclas_costeadas||0)+(cob.mezclas_sin_receta||0))+' mezclas</b> ('+esc(String(cob.pct))+'%). '+
+         'Las otras <b>'+mzN(cob.mezclas_sin_receta)+'</b> son de <b>'+_cs.length+' compuestos sin receta cargada</b>, '+
+         'y aportan <b>cero pesos</b> al total de arriba.</div>'+
+         '<div class="note" style="margin-top:6px;color:var(--warn)"><b>No compares este total contra otro periodo</b> '+
+         'si su cobertura es distinta: la diferencia sería de recetas faltantes, no de precio.</div>'+
+         (_cs.length ? '<details style="margin-top:7px"><summary class="note" style="cursor:pointer">Ver los '+_cs.length+' compuestos sin receta</summary>'+
+            '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">'+
+            _cs.map(function(n){ return '<span class="tg">'+esc(n)+'</span>'; }).join('')+'</div></details>' : '')+
+         '</div>';
+    } else if(cob && cob.pct!=null){
+      h+='<div class="note" style="margin-bottom:10px">Este costo cubre el <b>'+esc(String(cob.pct))+
+         '%</b> de lo producido en el periodo.</div>';
+    }
     /* el $/kg se divide entre los kilos COSTEADOS: sin reproceso y sin los compuestos
        sin receta — antes mezclaba denominadores y salía ~4% barato (auditoría A1) */
     h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:9px;margin-bottom:12px">'+
        '<div class="card"><div class="note">Costo de materia prima</div><b style="font-size:20px;color:var(--data)">'+mzMx(totMx)+'</b>'+
-         '<div class="note" style="margin-top:2px">'+mzUs(totUs)+' · sin reproceso</div></div>'+
+         '<div class="note" style="margin-top:2px">'+mzUs(totUs)+' · sin reproceso'+
+           ((x.cobertura&&(x.cobertura.mezclas_retrabajo||0)>0)?' ni retrabajo':'')+'</div>'+
+         ((x.cobertura&&(x.cobertura.mezclas_retrabajo||0)>0)?'<div class="note" style="margin-top:3px;line-height:1.4">'+
+            mzN(x.cobertura.mezclas_retrabajo)+' mezclas son de retrabajo (letra R): se corren con material '+
+            'recuperado y no compran materia prima nueva.</div>':'')+'</div>'+
        '<div class="card"><div class="note">Costo por kilo costeado</div><b style="font-size:20px">'+mzMx(kgCost?totMx/kgCost:null,4)+'</b>'+
          '<div class="note" style="margin-top:2px">'+mzUs(kgCost?totUs/kgCost:null,4)+' / kg · sobre '+mzN(kgCost)+' kg</div></div>'+
        /* la parte que DE VERDAD se compra en dólares: +$1 de tasa = +ese monto en pesos,
@@ -14962,7 +15029,9 @@ function mzCierrePinta(tipo,d1,d2,res){
      '<div class="k"><b>'+mzN(mez)+'</b><span>mezclas</span></div>'+
      (metaPct!=null?('<div class="k"><b>'+mzN(metaPct,1)+'%</b><span>de la meta del periodo</span></div>'):'')+
      '<div class="k"><b>'+mzN(prom,0)+'</b><span>mezclas por día ('+mzN(nd)+' días)</span></div>'+
-     '<div class="k"><b>'+mzN(kg)+'</b><span>kilos producidos</span></div>'+
+     '<div class="k"><b>'+mzN(kg)+'</b><span>kilos producidos'+
+       (((t.kg_estimados||0)>0 && (t.kg_medidos||0)>0) ? ' (parte estimados)'
+        : ((t.kg_estimados||0)>0 ? ' (estimados)' : ' (los reportó producción)'))+'</span></div>'+
      '<div class="k"><b>'+mzN(t.reproceso||0)+'</b><span>de reproceso ('+mzPct(t.reproceso||0,mez)+')</span></div>'+
      '<div class="k"><b>'+mzN(t.quemadas||0)+'</b><span>mezclas quemadas</span></div>'+
      (c?('<div class="k"><b>'+mzMx(costoTot,2)+'</b><span>costo de materia prima</span></div>'+
@@ -14970,7 +15039,15 @@ function mzCierrePinta(tipo,d1,d2,res){
    '</div>'+
    '<h2>Comparativo</h2><table><tr><th>Concepto</th><th class="n">Este periodo</th><th class="n">Periodo anterior</th><th class="n">Año pasado</th></tr>'+
      '<tr><td>Mezclas</td><td class="n">'+mzN(mez)+'</td><td class="n">'+mzN(ta.mezclas)+'</td><td class="n">'+mzN(ty.mezclas)+'</td></tr>'+
-     '<tr><td>Kilos</td><td class="n">'+mzN(kg)+'</td><td class="n">'+mzN(ta.kg)+'</td><td class="n">'+mzN(ty.kg)+'</td></tr>'+
+     /* 25-ago: un mes puede traer el kilo REAL de la hoja y el otro estimarlo con
+        el peso de la receta. Ponerlos en la misma fila sin decirlo engaña. */
+     '<tr><td>Kilos'+
+       (((t.kg_estimados||0)>0)!==((ta.kg_estimados||0)>0) || ((t.kg_estimados||0)>0)!==((ty.kg_estimados||0)>0)
+        ? ' <span class="sub">(ojo: no todos los periodos traen el kilo medido)</span>' : '')+
+       '</td>'+
+       '<td class="n">'+mzN(kg)+((t.kg_estimados||0)>0?' <span class="sub">est.</span>':'')+'</td>'+
+       '<td class="n">'+mzN(ta.kg)+((ta.kg_estimados||0)>0?' <span class="sub">est.</span>':'')+'</td>'+
+       '<td class="n">'+mzN(ty.kg)+((ty.kg_estimados||0)>0?' <span class="sub">est.</span>':'')+'</td></tr>'+
      '<tr><td>Reproceso</td><td class="n">'+mzN(t.reproceso||0)+'</td><td class="n">'+mzN(ta.reproceso)+'</td><td class="n">'+mzN(ty.reproceso)+'</td></tr>'+
      '<tr><td>Quemadas</td><td class="n">'+mzN(t.quemadas||0)+'</td><td class="n">'+mzN(ta.quemadas)+'</td><td class="n">'+mzN(ty.quemadas)+'</td></tr></table>'+
    /* ---- LA META (pedido de Carlos 24-ago: que el cierre la traiga) ---- */
@@ -15095,7 +15172,26 @@ function mzCompDias(pd){
     '<div class="note" style="font-size:11px">Cada barra es un día. En <span style="color:#ffbf47">amarillo</span>, las quemadas.</div>';
 }
 /* El ritmo real contra el que dice la receta — el dato que más dice de un compuesto */
+/* 25-ago-2026 — Laboratorio (Oropeza) aclaró que NO existe un tiempo de ciclo
+   estándar por compuesto: el control real es la TEMPERATURA de descarga, y en
+   los finales el tope es 100 °C. Esta tarjeta venía marcando en ámbar a
+   compuestos por «tardar más de lo que dice la receta», con desviaciones de
+   hasta 1554%. Se comparaba contra un número que no es un estándar.
+   Ahora enseña la temperatura, que sí es el dato de control. */
+function mzCompTemp(temp, tipo){
+  if(temp==null) return '';
+  var tope=(String(tipo||'').toLowerCase()==='final')?100:null;
+  return '<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Temperatura de descarga</b>'+
+    '<div style="display:flex;align-items:baseline;gap:8px;margin-top:8px">'+
+      '<b style="font-size:26px;color:var(--data)">'+mzN(temp,0)+'<span class="note" style="font-size:13px"> °C</span></b>'+
+      (tope?'<span class="note">tope de un compuesto final: '+tope+' °C</span>':'')+'</div>'+
+    '<div class="note" style="margin-top:7px;line-height:1.55">Este es el control real del proceso. '+
+    'No hay un tiempo de ciclo estándar por compuesto: Laboratorio ajusta los ciclos y lo que manda '+
+    'es la temperatura a la que se descarga la mezcla.</div></div>';
+}
 function mzCompRitmo(real, teor){
+  return '';   /* apagado a propósito — ver mzCompTemp */
+  /* eslint-disable no-unreachable */
   if(real==null || !teor) return '';
   var max=Math.max(real,teor)*1.15;
   var fila=function(t,v,col,nota){
@@ -15144,7 +15240,7 @@ function mzCompPaint(x){
   }
   /* el ritmo real contra el ciclo de la versión vigente */
   var vVig=(x.versiones||[]).filter(function(v){ return v.estado==='vigente'; })[0];
-  if(x.velocidad!=null && vVig && vVig.ciclo_min) h+=mzCompRitmo(+x.velocidad, +vVig.ciclo_min);
+  if(vVig && vVig.temp!=null) h+=mzCompTemp(+vVig.temp, (x.compuesto||{}).tipo);
   var pb=x.por_banbury||[];
   if(pb.length){
     /* dos vistas del mismo dato: por máquina y por turno */

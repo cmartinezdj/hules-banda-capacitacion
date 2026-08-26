@@ -124,6 +124,18 @@ button{font-family:var(--font)}
 .top .who b{font-size:14px;display:block;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .top .who span{font-size:11px;color:var(--mut)}
 .top .who b+span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* editor del directorio: lista larga en alto fijo, con scroll propio (25-ago) */
+/* editor de encuestas: las preguntas se apilan con scroll propio (25-ago) */
+.pqscroll{max-height:min(56vh,460px);overflow-y:auto;overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;padding-right:4px}
+.pqscroll::-webkit-scrollbar{width:8px}
+.pqscroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+body.a11y .pqscroll{max-height:none;overflow:visible}
+.dirscroll{max-height:min(52vh,420px);overflow-y:auto;overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;padding-right:4px;margin-top:6px}
+.dirscroll::-webkit-scrollbar{width:8px}
+.dirscroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+body.a11y .dirscroll{max-height:none;overflow:visible}
 .back{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);color:var(--txt);
   font-size:13px;font-weight:700;padding:8px 13px;border-radius:30px;cursor:pointer}
 .back:active{transform:scale(.96)}
@@ -175,7 +187,10 @@ body.a11y .mzord select{font-size:15px !important}
 .kpi .klbl{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
 .kpi .knum{font-size:24px;font-weight:850;letter-spacing:-.02em;line-height:1.1;margin-top:4px;display:block;font-variant-numeric:tabular-nums}
 .kpi .ksub{font-size:10px;color:var(--mut);margin-top:4px}
-.tlogo{width:38px;height:25px;flex:none;display:flex;align-items:center;margin-right:2px}
+.tlogo{width:54px;height:36px;flex:none;display:flex;align-items:center;margin-right:4px;
+  background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tlogo:active{transform:scale(.94)}
+.tlogo:focus-visible{outline:2px solid var(--accent2);outline-offset:3px;border-radius:6px}
 .tname.tn-largo{display:none}
 .tname.tn-corto{display:inline-block}
 @media (min-width:1000px){
@@ -241,7 +256,8 @@ body.a11y .tname{font-size:16px !important}
   .chatwrap .chatscreen{width:100%;min-width:0}
   .chatwrap .composer,.chatwrap .msgs,.chatwrap .chips{width:100%}
   /* el riel ya trae el logo: no duplicarlo en el HUD de escritorio */
-  #topLeft .tlogo{display:none}
+  /* el logo se queda visible también en pantalla chica: es el botón de inicio */
+  #topLeft .tlogo{width:42px;height:28px}
 }
 @media (max-width:999px){
   #nav-docs{display:none}
@@ -3420,16 +3436,36 @@ function hbQuienSoy(hayAtras){
   if(hayAtras) return b(largo,'tn-largo')+b(pila,'tn-corto');
   return b(largo);
 }
+/* el logo del topbar es el botón de inicio. Cada rol tiene su casa: acceso total
+   y responsables van al panel general; el personal de piso, a su inicio. */
+/* ══════════════════════════════════════════════════════════════════
+   QUIÉN CAPTURA Y QUIÉN CONSULTA (regla de Carlos, 25-ago-2026)
+
+   «Los acceso total no van a subir información, solo la van a ver. Lo demás lo
+    tiene el responsable del área y el responsable de esa función de trabajo.»
+
+   Acceso total = consulta y administración (permisos, gráficos, cierres).
+   La CAPTURA es de quien hace el trabajo: el responsable del área y su gente.
+   Así el dato tiene un dueño con nombre, y nadie de dirección mete un número
+   por su cuenta. Un solo lugar para no dejar puertas abiertas por descuido.
+   ══════════════════════════════════════════════════════════════════ */
+function puedeCapturar(){ return !!(S && S.mezCap && !S.admin); }
+function puedeSubirDocs(){ return !!(S && (S.mando || S.mezCap || S.mezTec || S.mezCostos) && !S.admin); }
+
+function hbInicio(){
+  try{ topMenuCierra(); }catch(e){}
+  go((S && (S.admin || S.mando)) ? 'hr' : 'home');
+}
 function renderTop(name){
   var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='mezraw'||name==='mezalm'||name==='iallaves'||name==='prod'||name==='manto') && !(name==='docs' && window._docFrom==='tab');
   var left=$('topLeft');
   if(sub){
     var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? (window._pedFrom==='manto'?'go(\'manto\')':'go(\'hr\')') : name==='pedir' ? (window._pedFrom==='manto'?'go(\'manto\')':('go(\''+((S.admin||S.mando)?'hr':'home')+'\')')) : (name==='prod'||name==='manto') ? 'go(\'planta\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='mezalm' ? 'go(\'prod\')' : name==='iallaves' ? 'go(\'hr\')' : name==='mezraw' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
-    left.innerHTML='<span class="tlogo" aria-hidden="true">'+HB_MARK+'</span><button class="back" onclick="'+backTo+'">‹ Atrás</button>'+hbQuienSoy(true);
+    left.innerHTML='<button class="tlogo" onclick="hbInicio()" title="Ir al inicio" aria-label="Ir al inicio">'+HB_MARK+'</button><button class="back" onclick="'+backTo+'">‹ Atrás</button>'+hbQuienSoy(true);
     left.classList.remove('who');
   }else{
     left.classList.remove('who');
-    left.innerHTML='<span class="tlogo" aria-hidden="true">'+HB_MARK+'</span>'+hbQuienSoy();
+    left.innerHTML='<button class="tlogo" onclick="hbInicio()" title="Ir al inicio" aria-label="Ir al inicio">'+HB_MARK+'</button>'+hbQuienSoy();
   }
   /* HUD de la referencia: [USD si acceso total] · campana (Mensajes) · menú ≡ */
   var BELL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>';
@@ -4407,11 +4443,11 @@ function pollsWorkerBlock(){
   var h='';
   a.forEach(function(p){
     var votes=p.votes||{}, myVote=votes[S.emp];
-    h+='<div class="survq"><div class="q">'+esc(p.q)+speakBtn(p.q)+'</div>';
+    h+='<div class="survq"><div class="q">'+esc(p.titulo||p.preguntas[0].q)+speakBtn(p.titulo||p.preguntas[0].q)+'</div>';
     if(myVote!=null){
       h+='<div class="survdone">✓ Ya respondiste. ¡Gracias!</div>';
     } else {
-      p.opts.forEach(function(o,j){
+      (p.preguntas[0].opts||[]).forEach(function(o,j){
         h+='<div class="opt" role="button" tabindex="0" onkeydown="_kb(event)" onclick="votePoll(\''+jsAttr(p.id)+'\','+j+')"><span class="dot"></span><span style="flex:1">'+esc(o)+'</span>'+speakBtn(o)+'</div>';
       });
       h+='<p class="note" style="margin-top:7px">Responde y gana +'+CFG.points.poll+' pts</p>';
@@ -4461,15 +4497,15 @@ var AREA_MIN=5;
 function areaSurveyDash(area, umbral){
   var polls=pollGet(), h='', any=false;
   polls.forEach(function(p){
-    var votes=p.votes||{}, counts=p.opts.map(function(){return 0;}), tot=0;
+    var votes=p.votes||{}, counts=(p.preguntas[0].opts||[]).map(function(){return 0;}), tot=0;
     for(var emp in votes){ if(_areaOfEmp(+emp)===area){ var vi=votes[emp]; counts[vi]=(counts[vi]||0)+1; tot++; } }
     if(!tot) return; any=true;
-    h+='<div class="card"><div class="line" style="border:none;padding:0 0 4px"><b style="flex:1">'+esc(p.q)+'</b><span class="chipst">'+tot+' resp.</span></div>';
+    h+='<div class="card"><div class="line" style="border:none;padding:0 0 4px"><b style="flex:1">'+esc(p.titulo||p.preguntas[0].q)+(p.preguntas.length>1?(' <span class="note">· '+p.preguntas.length+' preguntas</span>'):'')+'</b><span class="chipst">'+tot+' resp.</span></div>';
     if(umbral && tot<AREA_MIN){
       h+='<p class="note" style="margin-top:6px">Muy pocas respuestas para mostrar el desglose sin romper el anonimato (mínimo '+AREA_MIN+'). Van '+tot+'.</p></div>';
       return;
     }
-    p.opts.forEach(function(o,j){ var pc=tot?Math.round(counts[j]/tot*100):0;
+    (p.preguntas[0].opts||[]).forEach(function(o,j){ var pc=tot?Math.round(counts[j]/tot*100):0;
       h+='<div class="pctrow"><div class="lab"><span>'+esc(o)+'</span><span class="note">'+pc+'%</span></div><div class="track"><i class="fill" style="width:'+pc+'%"></i></div></div>'; });
     h+='<p class="note" style="margin-top:10px">Anónimo · '+tot+' respuesta(s) de '+esc(area)+'</p></div>';
   });
@@ -4509,7 +4545,9 @@ function renderEncuestasAdmin(){
    Es participación, NO respuestas — no dice qué contestó cada quien. */
 function pollParticipacion(p){
   var people=dirPeople()||[], votes=p.votes||{}, done=[], pend=[];
-  people.forEach(function(pp){ if(!inTarget(p.to, pp.id)) return; if(votes[pp.id]!=null) done.push(pp); else pend.push(pp); });
+  people.forEach(function(pp){ if(!inTarget(p.to, pp.id)) return;
+    /* completa = contestó TODAS las preguntas; a medias cuenta como pendiente */
+    if(pollCompleta(p, pp.id)) done.push(pp); else pend.push(pp); });
   return {done:done, pend:pend, total:done.length+pend.length, resp:done.length};
 }
 var _partShow=null;
@@ -4529,11 +4567,11 @@ function pollAdminResults(){
   var h='';
   a.forEach(function(p){
     var votes=p.votes||{}, tot=0; for(var k in votes) tot++;
-    var counts=p.opts.map(function(_,j){ var c=0; for(var kk in votes){ if(+votes[kk]===j) c++; } return c; });
+    var _c0=pollConteo(p,0), counts=_c0.counts;
     var part=pollParticipacion(p);
-    h+='<div class="card"><div class="line" style="border:none;padding:0 0 6px"><b style="flex:1">'+esc(p.q)+'</b><span class="chipst">'+targetLabel(p.to)+'</span></div>';
+    h+='<div class="card"><div class="line" style="border:none;padding:0 0 6px"><b style="flex:1">'+esc(p.titulo||p.preguntas[0].q)+(p.preguntas.length>1?(' <span class="note">· '+p.preguntas.length+' preguntas</span>'):'')+'</b><span class="chipst">'+targetLabel(p.to)+'</span></div>';
     if(tot){
-      p.opts.forEach(function(o,j){ var pc=Math.round(counts[j]/tot*100);
+      (p.preguntas[0].opts||[]).forEach(function(o,j){ var pc=Math.round(counts[j]/tot*100);
         h+='<div class="pctrow"><div class="lab"><span>'+esc(o)+'</span><span class="note">'+pc+'% ('+counts[j]+')</span></div><div class="track"><i class="fill" style="width:'+pc+'%"></i></div></div>'; });
       h+='<p class="note" style="margin-top:8px">Gráfico anónimo · '+tot+' respuesta(s)</p>';
     } else {
@@ -4561,7 +4599,7 @@ function partArea(area){
     var doneA=part.done.filter(function(pp){ return (pp.area||'')===area; });
     var pendA=part.pend.filter(function(pp){ return (pp.area||'')===area; });
     if(!doneA.length && !pendA.length) return; any=true;
-    h+='<div class="card"><div class="line" style="border:none;padding:0 0 6px"><b style="flex:1">'+esc(p.q)+'</b><span class="chipst">'+doneA.length+' de '+(doneA.length+pendA.length)+'</span></div>';
+    h+='<div class="card"><div class="line" style="border:none;padding:0 0 6px"><b style="flex:1">'+esc(p.titulo||p.preguntas[0].q)+(p.preguntas.length>1?(' <span class="note">· '+p.preguntas.length+' preguntas</span>'):'')+'</b><span class="chipst">'+doneA.length+' de '+(doneA.length+pendA.length)+'</span></div>';
     h+=_partList(pendA,'Faltan en '+esc(area),'var(--warn)');
     h+=_partList(doneA,'Ya respondieron en '+esc(area),'var(--ok)');
     h+='</div>';
@@ -4761,6 +4799,9 @@ function renderDia(){
              '<span style="display:flex;gap:8px;align-items:center;flex:none">'+(d.ext?'<span class="tg g">Ext. '+esc(d.ext)+'</span>':'')+speakBtn(voz)+'</span></div>'; }).join('')+
       '<div class="note" style="margin-top:9px">Marca la extensión desde cualquier teléfono de la planta. Para emergencias, avisa SIEMPRE primero a tu responsable.</div></div>';
   }
+  /* 25-ago (Carlos): la edición vive AQUÍ, no en un módulo aparte. Quien puede
+     publicarlo lo edita en la misma pantalla donde lo ve el personal. */
+  if(docIsTotal()) h+=dirAdminBlock();
   $('s-dia').innerHTML=h; show('dia');
 }
 /* ACCESO TOTAL: editor del directorio (pestaña Operación del tablero; mismo
@@ -4783,12 +4824,14 @@ function dirAdminBlock(){
   if($('dirRows') && Array.isArray(window._dirEdit)){ dirRowsRead(); }
   else { var D=directorioGet();
     window._dirEdit=(D.length?D:[{dep:'',who:'',ext:''}]).map(function(x){ return {dep:x.dep||'',who:x.who||'',ext:x.ext||''}; }); }
-  return '<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Directorio</div><b style="font-size:16px">A quién llamar en la planta</b>'+
-    '<div class="note" style="margin-top:3px">Lo que publiques aquí lo ve TODO el personal en <b>Inicio → Directorio</b>, al momento.</div></div></div>'+
-    '<div id="dirRows">'+window._dirEdit.map(dirRowHTML).join('')+'</div>'+
-    '<div style="display:flex;gap:8px;margin-top:12px">'+
-      '<button class="btn ghost" style="margin:0;flex:1" onclick="dirRowAdd()">+ Agregar renglón</button>'+
-      '<button class="btn" style="margin:0;flex:1" onclick="dirSave()">Publicar directorio</button></div></div>';
+  return '<div class="panel" style="margin-top:14px"><div class="hd" style="align-items:flex-start"><div>'+
+    '<div class="eyebrow">Solo tú lo ves</div><b style="font-size:16px">Editar el directorio</b>'+
+    '<div class="note" style="margin-top:3px">Lo que publiques aquí lo ve TODO el personal, arriba en esta misma pantalla, al momento. '+
+    'Un renglón sin departamento no se publica.</div></div></div>'+
+    '<div id="dirRows" class="dirscroll">'+window._dirEdit.map(dirRowHTML).join('')+'</div>'+
+    '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">'+
+      '<button class="btn ghost" style="margin:0;flex:1;min-width:150px" onclick="dirRowAdd()">+ Agregar</button>'+
+      '<button class="btn" style="margin:0;flex:1;min-width:150px" onclick="dirSave()">Publicar directorio</button></div></div>';
 }
 function dirSave(){
   dirRowsRead();
@@ -4813,7 +4856,7 @@ function newsInfographicDemo(){
     '</g></svg>';
   return '<div class="card" style="position:relative">'+
     '<span style="position:absolute;top:10px;right:10px;z-index:2">'+speakBtn('Semana de Seguridad, del 7 al 11 de julio. Plática de 10 minutos al inicio de cada turno y revisión de tu equipo de protección. Meta: cero accidentes.')+'</span>'+
-    '<div style="margin-bottom:8px"><span class="tg">Ejemplo · así se ven las infografías</span></div>'+
+
     '<b style="font-size:15.5px;display:block;padding-right:46px">Semana de Seguridad · 7 al 11 de julio</b><p style="margin-top:5px;line-height:1.55">Del lunes 7 al viernes 11 revisamos juntos el uso correcto del EPP en todas las áreas: plática de 10 minutos al inicio de cada turno y revisión de casco, lentes, guantes y botas. Meta de la semana: cero accidentes.</p>'+
     svg+'<div class="line" style="margin-top:10px;border-bottom:none;padding-bottom:0"><span class="note">Recursos Humanos · ejemplo</span></div></div>';
 }
@@ -5259,7 +5302,7 @@ function renderRewards(){
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+AP[art.ic]+'</svg>'+badge+'</div>'+
       '<div class="rl">'+esc(r.t)+'</div><div class="rc">'+r.cost+' pts</div></div>';
   }).join('')+'</div>';
-  h+='<div class="note">Toca un premio para ver el detalle y canjearlo. En la versión final, RRHH define el catálogo y aprueba los canjes.</div>';
+  h+='<div class="note">Toca un premio para ver el detalle y canjearlo. Recursos Humanos define el catálogo y aprueba los canjes.</div>';
   $('s-rewards').innerHTML=h; show('rewards');
 }
 function openRwd(i){
@@ -5291,7 +5334,7 @@ function curRole(){ return (S && CFG.roles[S.role]) || CFG.roles[CFG.defaultRole
 function roleLabel(){ var r=curRole(); return r.icon+' '+r.label; }
 function switchRole(){
   var ids=Object.keys(CFG.roles), i=ids.indexOf(S.role), next=ids[(i+1)%ids.length];
-  S.role=next; save(); flash('Perfil demo: '+CFG.roles[next].label); renderChat();
+  S.role=next; save(); flash(CFG.roles[next].label); renderChat();
 }
 function guard(text){
   var t=_norm(text), r=curRole();
@@ -6375,9 +6418,16 @@ function managerDash(role){
   h+='<div class="tgrid">';
   h+=htile("mgrGo('hoy')",'dia','Hoy', (cenN?cenN+' acciones para hoy':'Sin pendientes')+' · horas', {wide:true, cnt:cenN||''});
   h+=htile("mgrGo('personas')",'personas','Personas', DS?(DS.reg+' registrados · permisos'):'Equipo, permisos y recibos');
-  h+=htile("mgrGo('operacion')",'operacion','Operación', (unansN?unansN+' preguntas · ':'')+'buzón · directorio', {cnt:unansN||''});
   h+=htile('openCal()','cal','Calendario', 'Personal · áreas · general');
-  h+=htile('renderDia()','dia','Directorio', 'A quién llamar en la planta');
+  /* 25-ago (Carlos): «Operación» era un nivel de más — un cuadro que solo llevaba a
+     otros cuadros. Sus cinco secciones suben aquí, cada una con su propio acceso. */
+  var _buzN=0; try{ _buzN=reportsGet().filter(function(r){return r.status==='pendiente';}).length; }catch(e){}
+  var _nomSt=null; try{ _nomSt=nomGet(); }catch(e){}
+  h+=htile('renderDia()','dia','Directorio', 'Quién es quién y a quién llamar');
+  h+=htile("mgrGo('op-preguntas')",'ai','Preguntas del Asistente', unansN?(unansN+' sin responder'):'Al día', {cnt:unansN||''});
+  h+=htile("mgrGo('op-buzon')",'docs','Buzón de reportes', _buzN?(_buzN+' por revisar'):'Sin pendientes', {cnt:_buzN||''});
+  h+=htile("mgrGo('op-nom')",'encuestas','NOM-035', (_nomSt&&_nomSt.current)?'Aplicación en curso':'Riesgo psicosocial');
+  if(docIsTotal()) h+=htile("mgrGo('op-errores')",'shield','Fallas de la app', _errN?(_errN+' por revisar'):'Todo en orden', {cnt:_errN||''});
   h+='</div>';
   /* SOLO para la cuenta de Sistemas (0917): capacitación y registro del padrón,
      al FINAL del tablero — es información de administración del sistema, no de
@@ -6397,7 +6447,7 @@ function managerDash(role){
    en DOS niveles: sección (hub de cuadros) → tema (cuadro) → la información. */
 var _MGR_PADRE={'hoy-cen':'hoy','hoy-horas':'hoy','deptos-avance':'deptos','deptos-lista':'deptos','deptos-temas':'deptos',
   'personas-permisos':'personas','personas-recibos':'personas','personas-rank':'personas',
-  'focos-alertas':'focos','focos-rojos':'focos','op-preguntas':'operacion','op-buzon':'operacion','op-directorio':'operacion','op-nom':'operacion','op-errores':'operacion'};
+  'focos-alertas':'focos','focos-rojos':'focos'};
 var _MGR_TITULO={hoy:'Hoy',deptos:'Departamentos',personas:'Personas',focos:'Focos',operacion:'Operación'};
 function mgrPage(role){
   var H=CFG.hr, DS=deptStats(), Q=qstats(), ALERTS=(Q.alerts||[]); _HRAL=ALERTS;
@@ -6435,7 +6485,7 @@ function mgrPage(role){
     h+='<div class="tgrid">';
     h+=htile("mgrGo('deptos-avance')",'cap','Avance', (DS?DS.global:H.globalAvg)+'% global de la planta', {wide:true});
     h+=htile("mgrGo('deptos-lista')",'deptos','Por departamento', DS?(DS.list.length+' departamentos'):(nAreas+' áreas'));
-    if(!V3_ON) h+=htile("mgrGo('deptos-temas')",'encuestas','Temas con fallos', 'Datos de ejemplo');
+    if(!V3_ON) h+=htile("mgrGo('deptos-temas')",'encuestas','Temas con fallos', 'Sin conexión al servidor');
     h+='</div>';
   }
   else if(p==='deptos-avance'){
@@ -6453,7 +6503,7 @@ function mgrPage(role){
     } else {
       h+='<div class="panel"><div class="hd"><b>Avance por área</b><span class="chipst">'+H.globalAvg+'% global</span></div>'+
          colChart(H.byArea.map(function(a){ return [a[0], a[1], areaAccent(a[0])]; }))+
-         '<div class="note" style="margin-top:6px">Toca una columna para ver el detalle. Datos de ejemplo.</div></div>';
+         '<div class="note" style="margin-top:6px">Toca una columna para ver el detalle.</div></div>';
     }
   }
   else if(p==='deptos-lista'){
@@ -6507,7 +6557,7 @@ function mgrPage(role){
            '<span class="chipst'+(focoN?'':' mut')+'"'+(focoN?' style="border-color:color-mix(in srgb,var(--bad) 40%,transparent);color:var(--bad)"':'')+'>'+focoN+'</span>');
     h+='<div class="tgrid">';
     h+=htile("mgrGo('focos-alertas')",'focos','Alertas de sabotaje', ALERTS.length?(ALERTS.length+' por atender'):'Sin alertas ✓', {wide:true, cnt:ALERTS.length||''});
-    if(!V3_ON && H.redFlags.length) h+=htile("mgrGo('focos-rojos')",'operacion','Focos rojos', 'Datos de ejemplo');
+    if(!V3_ON && H.redFlags.length) h+=htile("mgrGo('focos-rojos')",'operacion','Focos rojos', 'Sin conexión al servidor');
     h+='</div>';
   }
   else if(p==='focos-alertas'){
@@ -6528,23 +6578,13 @@ function mgrPage(role){
     }
   }
   else if(p==='focos-rojos'){
-    h+='<div class="panel"><div class="hd"><b>Focos rojos</b><span class="chipst mut">Demo</span></div>'+H.redFlags.map(function(x){
+    h+='<div class="panel"><div class="hd"><b>Focos rojos</b></div>'+H.redFlags.map(function(x){
          return '<div class="line"><span>'+esc(x)+'</span><span class="tg">Atender</span></div>';
        }).join('')+'</div>';
   }
-  else if(p==='operacion'){
-    var unansN=0; try{ unansN=Object.keys(Q.unans||{}).length; }catch(e){}
-    var buzN=0; try{ buzN=reportsGet().filter(function(r){return r.status==='pendiente';}).length; }catch(e){}
-    var nomSt=null; try{ nomSt=nomGet(); }catch(e){}
-    h+=cab('Operación', 'Preguntas del Asistente, buzón, directorio y NOM-035.');
-    h+='<div class="tgrid">';
-    h+=htile("mgrGo('op-preguntas')",'ai','Preguntas del Asistente', unansN?(unansN+' sin responder'):'Al día ✓', {wide:true, cnt:unansN||''});
-    h+=htile("mgrGo('op-buzon')",'docs','Buzón de reportes', buzN?(buzN+' por revisar'):'Sin pendientes', {cnt:buzN||''});
-    h+=htile("mgrGo('op-directorio')",'dia','Directorio', 'Editar extensiones');
-    h+=htile("mgrGo('op-nom')",'encuestas','NOM-035', (nomSt&&nomSt.current)?'Aplicación en curso':'Riesgo psicosocial');
-    if(docIsTotal()) h+=htile("mgrGo('op-errores')",'shield','Fallas de la app', _errN?(_errN+' por revisar'):'Todo en orden ✓', {cnt:_errN||''});
-    h+='</div>';
-  }
+  /* 'operacion' se eliminó como página (25-ago): sus secciones viven en el tablero.
+     Si algo viejo apunta aquí, se manda al tablero en vez de dejar la pantalla vacía. */
+  else if(p==='operacion'){ setTimeout(function(){ mgrGo(null); },0); return; }
   else if(p==='op-errores'){
     h+=erroresBlock();        // fallas que la app reportó sola (v3_15)
   }
@@ -6554,9 +6594,8 @@ function mgrPage(role){
   else if(p==='op-buzon'){
     h+=reportsAdminBlock();   // RRHH revisa quejas/anormalidad/idea de mejora (otorga puntos)
   }
-  else if(p==='op-directorio'){
-    h+=dirAdminBlock();       // directorio de extensiones (lo ve todo el personal en Inicio → Directorio)
-  }
+  /* 'op-directorio' se eliminó (25-ago): se edita dentro de Inicio → Directorio */
+  else if(p==='op-directorio'){ setTimeout(function(){ renderDia(); },0); return; }
   else { // op-nom
     h+=nomAdminBlock();       // NOM-035 (riesgo psicosocial)
   }
@@ -6996,9 +7035,10 @@ function renderNewsPost(){
        '<div class="note" style="margin-top:8px">Los eventos también se editan en el <b>Calendario</b>.</div>'+
      '</div>'+
      '<div id="pubForm_poll" style="display:'+(_pubTab==='poll'?'':'none')+'">'+
-       '<input id="pollQ" class="fin" placeholder="Pregunta (ej. ¿Cómo te sientes con tu EPP?)" autocomplete="off" style="margin:0 0 8px">'+
-       '<input id="pollO1" class="fin" placeholder="Opción 1" style="margin-bottom:7px"><input id="pollO2" class="fin" placeholder="Opción 2" style="margin-bottom:7px"><input id="pollO3" class="fin" placeholder="Opción 3 (opcional)">'+
-       '<div class="note" style="margin:12px 0 6px">¿Para quién?</div>'+rangePicker('poll',_pollTo)+
+       '<input id="pollTit" class="fin" placeholder="Título de la encuesta (opcional)" autocomplete="off" style="margin:0 0 10px">'+
+       '<div id="pqWrap" class="pqscroll">'+pqPaintHTML()+'</div>'+
+       '<button class="btn ghost" style="margin:9px 0 0" onclick="pqAdd()">+ Agregar pregunta</button>'+
+       '<div class="note" style="margin:14px 0 6px">¿Para quién?</div>'+rangePicker('poll',_pollTo)+
        '<button class="btn" style="margin-top:10px" onclick="addPoll()">Publicar encuesta</button>'+
      '</div></div>';
   h+=dmAdminBlock();
@@ -7246,7 +7286,12 @@ function escA(s){ return esc(s).replace(/"/g,'&quot;'); }
    el valor viene de datos del servidor manipulables (p.ej. una conv 'd:...'). */
 function jsAttr(s){ return escA(String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'")); }
 var ICN_SPK='<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14"/></svg>';
-function speakBtn(text,lang){ var _son=(_spkTxt && _spkTxt===spkLimpia(text))?' sonando':'';
+/* 25-ago-2026 (Carlos): el botón de audio es para el personal de piso. Acceso
+   total y responsables no lo necesitan, y en sus pantallas solo estorba. Se
+   filtra aquí, en un solo lugar, para que aplique a las 91 pantallas. */
+function speakBtn(text,lang){
+  if(S && (S.admin || S.mando)) return '';
+  var _son=(_spkTxt && _spkTxt===spkLimpia(text))?' sonando':'';
   return '<button class="speak'+_son+'" data-s="'+escA(text)+'"'+(lang?(' data-l="'+lang+'"'):'')+' onclick="event.stopPropagation();speak(this.getAttribute(\'data-s\'),this.getAttribute(\'data-l\'),this)" aria-label="Escuchar o detener" title="Escuchar (tócalo otra vez para parar)">'+ICN_SPK+'</button>'; }
 var clState={};
 function paintClases(h){ var el=$('s-clases'); el.innerHTML=h; el.classList.toggle('access',!!(S&&S.accessible)); show('clases'); }
@@ -7453,7 +7498,12 @@ function coachNext(){
   // P5 · Encuesta dirigida a mí sin responder
   try{ var ps=pollGet();
     for(var k=0;k<ps.length;k++){ var p=ps[k];
-      if(inTarget(p.to,S.emp) && (p.votes||{})[S.emp]==null) return {kind:'encuesta', titulo:'Responde una encuesta', detalle:'“'+p.q+'”. Toma menos de un minuto y ganas '+CFG.points.poll+' puntos.', btnLabel:'Responder', onclick:'renderEncuestas()'};
+      if(inTarget(p.to,S.emp) && !pollCompleta(p,S.emp)){
+        var _nq=p.preguntas.length, _t=(p.titulo||p.preguntas[0].q||'');
+        return {kind:'encuesta', titulo:'Responde una encuesta',
+          detalle:'“'+_t+'”'+(_nq>1?(' · '+_nq+' preguntas'):'')+'. Ganas '+CFG.points.poll+' puntos al contestarla.',
+          btnLabel:'Responder', onclick:'renderEncuestas()'};
+      }
     }
   }catch(e){}
   // P6 · Repaso espaciado (registro propio: hb_repaso_<emp>, ciclos de 14 días)
@@ -7506,25 +7556,132 @@ function addEvent(){
    eventos ahora vive en la pantalla Calendario — calDel/calSave/renderCal) */
 
 /* ===== #4 ENCUESTAS (RRHH → personal) · hb_polls ===== */
-function pollGet(){ return lsGet('hb_polls'); }
+function pollGet(){ return lsGet('hb_polls').map(pollNorm); }
+/* ══════════════════════════════════════════════════════════════════
+   ENCUESTAS DE VARIAS PREGUNTAS (Carlos, 25-ago-2026)
+
+   Antes cada encuesta era UNA pregunta con hasta 3 opciones. Ahora lleva las
+   preguntas que hagan falta, cada una con sus opciones.
+
+   Las encuestas ya publicadas siguen funcionando: esta función las lee con la
+   forma nueva sin tocar lo guardado. Los votos viejos (votes[emp] = índice) se
+   leen como la respuesta de la pregunta 1 (votes[emp] = {"0": índice}).
+   ══════════════════════════════════════════════════════════════════ */
+function pollNorm(p){
+  if(!p || typeof p!=='object') return p;
+  if(!Array.isArray(p.preguntas)){
+    p.preguntas = [{ q:(p.q||''), opts:(Array.isArray(p.opts)?p.opts:[]) }];
+  }
+  var v=p.votes||{}, nv={};
+  for(var k in v){
+    if(!v.hasOwnProperty(k)) continue;
+    nv[k] = (v[k]!=null && typeof v[k]==='object') ? v[k] : {'0': v[k]};
+  }
+  p.votes=nv;
+  return p;
+}
+/* ¿esta persona ya contestó TODAS las preguntas de la encuesta? */
+function pollCompleta(p, emp){
+  var r=(p.votes||{})[emp]; if(!r) return false;
+  for(var i=0;i<p.preguntas.length;i++){ if(r[String(i)]==null) return false; }
+  return true;
+}
+function pollRespondidas(p, emp){
+  var r=(p.votes||{})[emp]||{}, n=0;
+  for(var i=0;i<p.preguntas.length;i++){ if(r[String(i)]!=null) n++; }
+  return n;
+}
+/* cuántas personas contestaron la pregunta i, y cómo se repartieron */
+function pollConteo(p, i){
+  var v=p.votes||{}, opts=p.preguntas[i].opts||[], c=opts.map(function(){return 0;}), t=0;
+  for(var k in v){ if(!v.hasOwnProperty(k)) continue;
+    var idx=v[k][String(i)]; if(idx==null) continue;
+    t++; if(c[idx]!=null) c[idx]++; }
+  return {counts:c, total:t};
+}
 function pollSave(a){ lsSet('hb_polls', a); }
+/* ── el editor de preguntas: vive en window._pqEdit mientras se escribe ── */
+function pqInit(){
+  if(!Array.isArray(window._pqEdit) || !window._pqEdit.length)
+    window._pqEdit=[{q:'',opts:['','']}];
+  return window._pqEdit;
+}
+function pqLee(){
+  (window._pqEdit||[]).forEach(function(pr,i){
+    var q=$('pq_q_'+i); if(q) pr.q=q.value;
+    (pr.opts||[]).forEach(function(_,j){ var o=$('pq_o_'+i+'_'+j); if(o) pr.opts[j]=o.value; });
+  });
+}
+function pqPaintHTML(){
+  return pqInit().map(function(pr,i){
+    return '<div class="card" style="padding:11px;margin-bottom:9px">'+
+      '<div class="line" style="border:none;padding:0 0 7px"><span class="note" style="font-weight:700">Pregunta '+(i+1)+'</span>'+
+        (window._pqEdit.length>1
+          ? '<button class="back" style="padding:5px 9px;flex:none;color:var(--bad)" title="Quitar esta pregunta" onclick="pqDel('+i+')">✕</button>' : '')+
+      '</div>'+
+      '<input id="pq_q_'+i+'" class="fin" autocomplete="off" style="margin:0 0 8px" placeholder="¿Qué quieres preguntar?" value="'+escA(pr.q||'')+'">'+
+      (pr.opts||[]).map(function(op,j){
+        return '<div style="display:flex;gap:7px;margin-bottom:6px;align-items:center">'+
+          '<input id="pq_o_'+i+'_'+j+'" class="fin" style="flex:1;min-width:0;margin:0" autocomplete="off" placeholder="Opción '+(j+1)+'" value="'+escA(op||'')+'">'+
+          (pr.opts.length>2
+            ? '<button class="back" style="flex:none;padding:8px 10px;color:var(--bad)" title="Quitar opción" onclick="pqOptDel('+i+','+j+')">✕</button>' : '')+
+        '</div>'; }).join('')+
+      '<button class="back" style="padding:6px 11px;margin-top:2px" onclick="pqOptAdd('+i+')">+ Opción</button>'+
+    '</div>';
+  }).join('');
+}
+function pqPaint(){ var el=$('pqWrap'); if(el) el.innerHTML=pqPaintHTML(); }
+function pqAdd(){ pqLee(); window._pqEdit.push({q:'',opts:['','']}); pqPaint();
+  var f=$('pq_q_'+(window._pqEdit.length-1)); if(f){ f.focus(); f.scrollIntoView({block:'nearest'}); } }
+function pqDel(i){ pqLee(); window._pqEdit.splice(i,1); if(!window._pqEdit.length) window._pqEdit=[{q:'',opts:['','']}]; pqPaint(); }
+function pqOptAdd(i){ pqLee(); window._pqEdit[i].opts.push(''); pqPaint();
+  var n=window._pqEdit[i].opts.length-1, f=$('pq_o_'+i+'_'+n); if(f) f.focus(); }
+function pqOptDel(i,j){ pqLee(); window._pqEdit[i].opts.splice(j,1);
+  while(window._pqEdit[i].opts.length<2) window._pqEdit[i].opts.push(''); pqPaint(); }
+
 function addPoll(){
-  var q=(($('pollQ')||{}).value||'').trim();
-  var opts=[(($('pollO1')||{}).value||''),(($('pollO2')||{}).value||''),(($('pollO3')||{}).value||'')].map(function(x){return (x||'').trim();}).filter(function(x){return x;});
-  if(!q||opts.length<2){ flash('Escribe la pregunta y al menos 2 opciones'); return; }
+  pqLee();
+  var tit=(($('pollTit')||{}).value||'').trim();
+  var preg=[], malas=[];
+  (window._pqEdit||[]).forEach(function(pr,i){
+    var q=(pr.q||'').trim();
+    var opts=(pr.opts||[]).map(function(x){ return (x||'').trim(); }).filter(function(x){ return x; });
+    if(!q && !opts.length) return;                 // renglón vacío: se ignora
+    if(!q || opts.length<2){ malas.push(i+1); return; }
+    preg.push({q:q, opts:opts});
+  });
+  if(malas.length){ flash('A la pregunta '+malas.join(', ')+' le falta el texto o le faltan opciones (mínimo 2)'); return; }
+  if(!preg.length){ flash('Escribe al menos una pregunta con dos opciones'); return; }
   var to=readTarget('poll'); if(!to){ flash('Escribe el rango de IDs (desde–hasta)'); return; }
-  var a=pollGet(); a.unshift({ id:'p'+Date.now(), q:q, opts:opts, votes:{}, to:to, ts:Date.now() });
-  pollSave(a); flash('Encuesta publicada · '+targetLabel(to)); _newsBack();
+  var a=pollGet();
+  a.unshift({ id:'p'+Date.now(), titulo:tit, preguntas:preg,
+              q:preg[0].q, opts:preg[0].opts,   /* compatibilidad con lo ya guardado */
+              votes:{}, to:to, ts:Date.now() });
+  pollSave(a);
+  window._pqEdit=null;
+  flash('✓ Encuesta publicada · '+preg.length+(preg.length===1?' pregunta':' preguntas')+' · '+targetLabel(to));
+  _newsBack();
 }
 function delPoll(id){ pollSave(pollGet().filter(function(p){ return p.id!==id; })); if(_screen==='encuestas') renderEncuestas(); else _newsBack(); }
-function votePoll(id,idx){
+/* votePoll(id, pregunta, opcion) — el punto se paga al completar TODA la encuesta */
+function votePoll(id,qi,idx){
   var a=pollGet(), p=null; for(var i=0;i<a.length;i++){ if(a[i].id===id){ p=a[i]; break; } }
-  if(!p) return; p.votes=p.votes||{};
+  if(!p) return;
   var back=function(){ if(_screen==='encuestas') renderEncuestas(); else renderNews(); };
-  if(p.votes[S.emp]!=null){ back(); return; }
-  p.votes[S.emp]=idx; pollSave(a);
-  S.points+=CFG.points.poll; save(); renderTop();
-  flash('¡Gracias por responder! +'+CFG.points.poll+' pts'); back();
+  p.votes=p.votes||{};
+  var mias=p.votes[S.emp]||{};
+  if(mias[String(qi)]!=null){ back(); return; }        /* ya contestó esa pregunta */
+  var eraCompleta=pollCompleta(p,S.emp);
+  mias[String(qi)]=idx; p.votes[S.emp]=mias;
+  pollSave(a);
+  if(!eraCompleta && pollCompleta(p,S.emp)){
+    S.points+=CFG.points.poll; save(); renderTop();
+    flash('¡Gracias por responder! +'+CFG.points.poll+' pts');
+  } else {
+    var faltan=p.preguntas.length - pollRespondidas(p,S.emp);
+    flash(faltan>0 ? ('Falta '+faltan+(faltan===1?' pregunta':' preguntas')) : '¡Gracias por responder!');
+  }
+  back();
 }
 function pollsBlock(){
   var a=pollGet();
@@ -7532,23 +7689,44 @@ function pollsBlock(){
   if(!vis.length) return '';
   var h='<div class="sec-t">Encuestas<span class="ln"></span></div>';
   vis.forEach(function(p){
-    var votes=p.votes||{}, total=0; for(var z in votes) total++;
-    var counts=p.opts.map(function(_,j){ var c=0; for(var k in votes){ if(votes[k]===j) c++; } return c; });
-    var myVote=votes[S.emp];
-    h+='<div class="card"><div class="line"><b style="flex:1">'+esc(p.q)+'</b>'+speakBtn(p.q)+'</div>';
-    if(S.admin || myVote!=null){
-      p.opts.forEach(function(o,j){
-        var pct = total? Math.round(counts[j]/total*100):0;
-        h+='<div style="margin-top:9px"><div class="line" style="margin-bottom:3px"><span'+(myVote===j?' style="font-weight:800;color:var(--accent2)"':'')+'>'+esc(o)+(myVote===j?' ✓':'')+'</span><span class="note">'+pct+'% ('+counts[j]+')</span></div>'+
-           '<div class="lvlbar"><i style="width:'+pct+'%"></i></div></div>';
-      });
-      h+='<p class="note" style="margin-top:9px">'+total+' respuesta(s)'+(S.admin?' · '+targetLabel(p.to):'')+'</p>';
-      if(S.admin) h+='<button class="back" style="margin-top:8px;padding:6px 10px" onclick="delPoll(\''+jsAttr(p.id)+'\')">Eliminar encuesta</button>';
-    } else {
-      p.opts.forEach(function(o,j){
-        h+='<div class="opt" onclick="votePoll(\''+jsAttr(p.id)+'\','+j+')"><span class="dot"></span><span style="flex:1">'+esc(o)+'</span>'+speakBtn(o)+'</div>';
-      });
-      h+='<p class="note" style="margin-top:7px">Responde y gana +'+CFG.points.poll+' pts</p>';
+    var nq=p.preguntas.length, hechas=pollRespondidas(p,S.emp), lista=pollCompleta(p,S.emp);
+    h+='<div class="card">';
+    /* encabezado: título si lo tiene, y el avance cuando hay varias preguntas */
+    if(p.titulo) h+='<div class="line"><b style="flex:1;font-size:15px">'+esc(p.titulo)+'</b>'+speakBtn(p.titulo)+'</div>';
+    if(nq>1) h+='<div class="note" style="margin:'+(p.titulo?'2px':'0')+' 0 8px">'+
+      (S.admin ? (nq+' preguntas')
+               : (lista ? '✓ Contestaste las '+nq+' preguntas'
+                        : hechas+' de '+nq+' contestadas'))+'</div>';
+
+    p.preguntas.forEach(function(pr,qi){
+      var c=pollConteo(p,qi), mia=((p.votes||{})[S.emp]||{})[String(qi)];
+      h+='<div'+(qi?' style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)"':'')+'>'+
+         '<div class="line" style="border:none;padding:0 0 4px">'+
+         (nq>1?'<span class="note" style="flex:none;margin-right:7px;font-weight:700">'+(qi+1)+'.</span>':'')+
+         '<b style="flex:1">'+esc(pr.q)+'</b>'+speakBtn(pr.q)+'</div>';
+      if(S.admin || mia!=null){
+        (pr.opts||[]).forEach(function(o,j){
+          var pct=c.total?Math.round(c.counts[j]/c.total*100):0;
+          h+='<div style="margin-top:8px"><div class="line" style="margin-bottom:3px"><span'+
+             (mia===j?' style="font-weight:800;color:var(--accent2)"':'')+'>'+esc(o)+(mia===j?' ✓':'')+
+             '</span><span class="note">'+pct+'% ('+c.counts[j]+')</span></div>'+
+             '<div class="lvlbar"><i style="width:'+pct+'%"></i></div></div>';
+        });
+        h+='<p class="note" style="margin-top:7px">'+c.total+' respuesta(s)</p>';
+      } else {
+        (pr.opts||[]).forEach(function(o,j){
+          h+='<div class="opt" onclick="votePoll(\''+jsAttr(p.id)+'\','+qi+','+j+')"><span class="dot"></span>'+
+             '<span style="flex:1">'+esc(o)+'</span>'+speakBtn(o)+'</div>';
+        });
+      }
+      h+='</div>';
+    });
+
+    if(S.admin){
+      h+='<p class="note" style="margin-top:10px">'+targetLabel(p.to)+'</p>'+
+         '<button class="back" style="margin-top:8px;padding:6px 10px" onclick="delPoll(\''+jsAttr(p.id)+'\')">Eliminar encuesta</button>';
+    } else if(!lista){
+      h+='<p class="note" style="margin-top:9px">'+(nq>1?'Contesta todas y ganas':'Responde y ganas')+' +'+CFG.points.poll+' pts</p>';
     }
     h+='</div>';
   });
@@ -8210,7 +8388,7 @@ function pedPdfBlob(d, firmaImg, cb){
 /* ---------- abrir el PDF (liga firmada, patrón docOpen/recOpen) ---------- */
 function pedOpen(id){
   var d=null; pedsGet().forEach(function(p){ if(p && p.id===id) d=p; });
-  if(!d || !d.pdf){ flash('Este pedido no tiene PDF'+(pedV3()?'':' (demo)')); return; }
+  if(!d || !d.pdf){ flash('Este pedido no tiene PDF'); return; }
   if(!sbReady()){ flash('Sin conexión: el PDF requiere internet'); return; }
   var w=window.open('','_blank');
   flash('Abriendo orden…');
@@ -8420,7 +8598,7 @@ function pedSubmit(){
     for(var k in datos) rec[k]=datos[k];
     a.unshift(rec); lsSet('hb_pedidos',a);
     var _conFotos=_pedFotos.length;
-    _pedFormReset(); flash('✓ Pedido #'+folio+' enviado (demo)'+(_conFotos?' — las fotos no viajan en el demo':'')); renderPedir(); return;
+    _pedFormReset(); flash('✓ Pedido #'+folio+' guardado'+(_conFotos?' — las fotos se suben al reconectar':'')); renderPedir(); return;
   }
   if(!sbReady()){ if(st) st.textContent=''; flash('Sin conexión: necesitas internet para mandar tu pedido'); return; }
   // ---- REAL: RPC alta (folio del servidor) → PDF → subir → adjuntar ----
@@ -11162,6 +11340,10 @@ function mzPracCarga(d1,d2,cb){
   },function(){});
 }
 function mzSelloPrueba(d1,d2){
+  /* 25-ago-2026: el periodo de práctica terminó y toda la información es real
+     (migración v3_92). El sello se apaga; la función se conserva por si algún
+     día vuelve a hacer falta marcar un rango como prueba. */
+  return '';
   var x=_mzPrac[(d1||'')+'|'+(d2||'')];
   if(!x || !x.corridas_practica) return '';
   var mezcla=(x.corridas_reales>0);   /* lo peligroso: reales y prueba revueltos */
@@ -11332,7 +11514,7 @@ function renderMPrima(){
     '<p class="note" style="margin:4px 0 0;max-width:340px">Lo que se compra, lo que hay y lo que se está consumiendo.</p></div>'+
     '<span style="flex:none">'+speakBtn('Materia Prima. Aquí están los precios, el almacén y el semáforo de consumo.')+'</span></div></div>';
   h+='<div class="tgrid">';
-  h+=htile("alimAbre('mprima')",'docs','Subir Excel o documento','Precios, entradas o existencias — los revisas antes de guardar',{wide:true});
+  if(puedeSubirDocs()) h+=htile("alimAbre('mprima')",'docs','Subir Excel o documento','Precios, entradas o existencias — los revisas antes de guardar',{wide:true});
   if(S.mezCostos) h+=htile('renderMezPrecios()','recibo','Precios de materia prima','El sistema recalcula los costos desde esa fecha');
   if(S.admin||S.mezCostos) h+=htile('renderMezAlm()','box','Almacén de materia prima','Entradas, claves por emparejar y existencia');
   if(S.admin||S.mezCostos||S.mezCap) h+=htile('renderMezSem()','deptos','Semáforo de consumo','Qué se está usando y qué no se ha comprado');
@@ -11350,7 +11532,7 @@ function renderLab(){
     '<p class="note" style="margin:4px 0 0;max-width:340px">Las recetas de la carpeta GT y el comportamiento de cada compuesto.</p></div>'+
     '<span style="flex:none">'+speakBtn('Laboratorio. Aquí están las recetas y el análisis de compuestos.')+'</span></div></div>';
   h+='<div class="tgrid">';
-  h+=htile("alimAbre('lab')",'docs','Subida de documentos','Cédulas, métodos y Excels — los revisas antes de guardar',{wide:true});
+  if(puedeSubirDocs()) h+=htile("alimAbre('lab')",'docs','Subida de documentos','Cédulas, métodos y Excels — los revisas antes de guardar',{wide:true});
   if(S.mezTec||S.admin) h+=htile('renderMezRec()','docs','Recetas (carpeta GT)','Vigentes por familia: ver, confirmar y cambiar');
   if(S.mezTec||S.admin) h+=htile('renderMezAna()','focos','Analista de compuestos','Eficiencia, fallas e historial por compuesto');
   if(S.admin||S.mando) h+=htile("permAbre('LABORATORIO')",'personas','Permisos del área','Quién ve las fórmulas y la información de esta área');
@@ -11369,7 +11551,7 @@ function renderMantoHub(){
     '<span style="flex:none">'+speakBtn('Mantenimiento. Aquí se piden las reparaciones de las máquinas y se ve en qué van.')+'</span></div></div>';
   h+='<div class="sec-t">Tu trabajo aquí<span class="ln"></span></div><div class="tgrid">';
   //  pedir reparación: lo puede hacer cualquiera que trabaje con una máquina
-  h+=htile("alimAbre('manto')",'docs','Subir documento del área','Manuales, órdenes y Excels — los revisas antes de guardar',{wide:true});
+  if(puedeSubirDocs()) h+=htile("alimAbre('manto')",'docs','Subir documento del área','Manuales, órdenes y Excels — los revisas antes de guardar',{wide:true});
   h+=htile("window._pedFrom='manto';renderPedir()",'rep','Pedir reparación','Reporta una máquina, con foto');
   //  el técnico ve lo que trae asignado
   var esTec=false; try{ esTec=pedEsTecnico(); }catch(e){}
@@ -11394,13 +11576,15 @@ function renderMezHub(){
      Gustavo y los capturistas con permiso ven los 2 de captura.
      NOTA FUTURA: al terminar la práctica, acceso total deja de capturar (Carlos da permisos). */
   var veGraf = S.admin || (S.mando && S.mezCap);
-  h+='<div class="sec-t">Tu trabajo aquí<span class="ln"></span></div><div class="tgrid">';
-  if(S.mezCap){
+  h+='<div class="sec-t">'+(puedeCapturar()?'Tu trabajo aquí':'Producción')+'<span class="ln"></span></div><div class="tgrid">';
+  /* La CAPTURA es del área (Gustavo y el responsable). Acceso total consulta:
+     ve gráficos y cierres, y administra permisos. (Carlos, 25-ago) */
+  if(puedeCapturar()){
     h+=htile("alimAbre('produccion')",'docs','Subir Excel de producción','Tu bitácora del día — la revisas antes de guardar',{wide:true});
-    if(S.admin||S.mando) h+=htile("permAbre('PRODUCCION')",'personas','Permisos del área','Quién captura y quién ve los gráficos');
     h+=htile('renderMezCap()','operacion','Bitácora de turno','Captura corridas, quemadas y paros');
     h+=htile('renderMezProg()','pend','Programación','La cédula: qué se corre y cuánto');
   }
+  if(S.admin||S.mando) h+=htile("permAbre('PRODUCCION')",'personas','Permisos del área','Quién captura y quién ve los gráficos');
   /* v3.43: Gustavo (capturista) también ve SUS gráficas — el tablero no trae
      dinero por diseño y el servidor le niega el tema de costos */
   if(veGraf||S.mezCap) h+=htile('renderMezTab()','deptos','Gráficos','Producción por día, paros y reproceso');

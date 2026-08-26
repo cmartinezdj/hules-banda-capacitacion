@@ -126,6 +126,18 @@ button{font-family:var(--font)}
 .top .who b+span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* editor del directorio: lista larga en alto fijo, con scroll propio (25-ago) */
 /* editor de encuestas: las preguntas se apilan con scroll propio (25-ago) */
+/* bitácora y consumos: listas largas de gente con su propio scroll (26-ago) */
+/* el top de consumo de IA: todos en el mismo recuadro, con scroll (26-ago) */
+.iascroll{max-height:min(46vh,380px);overflow-y:auto;overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;padding-right:4px}
+.iascroll::-webkit-scrollbar{width:7px}
+.iascroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+body.a11y .iascroll{max-height:none;overflow:visible}
+.dvscroll{max-height:min(62vh,540px);overflow-y:auto;overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;padding-right:4px}
+.dvscroll::-webkit-scrollbar{width:8px}
+.dvscroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+body.a11y .dvscroll{max-height:none;overflow:visible}
 .pqscroll{max-height:min(56vh,460px);overflow-y:auto;overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;padding-right:4px}
 .pqscroll::-webkit-scrollbar{width:8px}
@@ -1700,7 +1712,7 @@ window.CFG = {
        · a = lo que responde Asistente
      El buscador elige el tema con más coincidencias. Agrega o edita libremente. ====== */
   kb: [
-    { t:'', k:'hola buenas buenos saludos hey que tal holi ola', a:'Hola. Soy el asistente de planta, experto en llantas, precurado y renovado. Pregúntame lo que necesites: partes de una llanta, el renovado, camiones, líneas de producto, el negocio o tu capacitación.' },
+    { t:'', k:'hola buenas buenos saludos hey que tal holi ola', a:'Hola. Soy el asistente de planta, experto en hule, banda de precurado y el proceso de renovado. Pregúntame lo que necesites: la banda de precurado, el hule y sus compuestos, el proceso de la planta, las líneas de producto, el negocio o tu capacitación.' },
     { t:'', k:'gracias grax thanks genial perfecto excelente', a:'¡Con gusto! Aquí estoy cuando me necesites. ' },
     { t:'¿Qué es una llanta?', k:'llanta neumatico que es para que sirve funcion', a:'Una llanta (o neumático) es el componente de hule que envuelve el rin de una rueda y es el único punto de contacto del vehículo con el suelo. Cumple cuatro funciones: soportar el peso/carga del vehículo, transmitir las fuerzas de aceleración y frenado, dar agarre y dirección, y absorber las irregularidades del camino. En el transporte de carga es una de las mayores fuentes de costo operativo.' },
     { t:'Anatomía de la llanta: sus partes', k:'partes anatomia estructura componentes', a:'Una llanta se compone de: banda de rodamiento (tread, la parte con dibujo que toca el suelo), hombro (shoulder), costado (sidewall), carcasa o casing (la estructura interna de lonas/cuerdas), cinturones (belts, refuerzos), talón (bead, el aro que ancla la llanta al rin) y el liner interior (en llantas tubeless). En el renovado, la banda se reemplaza y la carcasa se reutiliza.' },
@@ -1760,10 +1772,10 @@ window.CFG = {
     { t:'Cómo elegir la banda correcta', k:'elegir seleccion recomendacion aplicacion eje cliente recomendar', a:'Para recomendar una banda se considera el uso del vehículo (largo recorrido, regional, urbano, mixto, fuera de carretera, industrial) y la posición del eje (dirección/libre, tracción, toda posición, single). Se elige la línea cuyo dibujo y compuesto se ajusten a esa necesidad. Ante la duda, preguntar al cliente cómo y dónde opera.' },
     { t:'Tipos de aplicación', k:'aplicacion largo recorrido regional urbano mixto fuera de carretera industrial', a:'Las bandas se clasifican por aplicación: largo recorrido (carretera, máximo kilometraje), regional (rutas mixtas/medias), urbano (arranques/frenadas, ciudad), mixto (on/off road), fuera de carretera (obra, minería) e industrial. Cada aplicación exige un dibujo y compuesto distintos.' },
     { t:'Tipo de eje', k:'eje direccion libre traccion toda posicion single tire posicion steer drive', a:'La posición del eje define la banda ideal: eje de dirección/libre (nervaduras para rodar y dirigir), eje de tracción (bloques para agarre y empuje), toda posición (versátil) y single tire (llanta ancha que sustituye a un par). Elegir según el eje optimiza desgaste y desempeño.' },
-    { t:'¿Quién es Hules Banda?', k:'hules banda empresa quien es fabrica mision lema paises', a:'Hules Banda (HB plus Bandamatic) es una fábrica de hule especializada en productos para el renovado de llantas. Produce banda de precurado de alto desempeño y hule verde. Tiene presencia en más de 50 países y su lema es "Tecnología que rueda por el mundo".' },
+    { t:'¿Quién es Hules Banda?', k:'hules banda empresa quien es fabrica mision lema paises', a:'Hules Banda (HB plus Bandamatic) es una fábrica de hule especializada en productos para la industria del renovado. Produce banda de precurado de alto desempeño y hule verde. Tiene presencia en más de 50 países y su lema es "Tecnología que rueda por el mundo".' },
     { t:'Bandamatic (empresa hermana)', k:'bandamatic comercializa hermana ventas distribucion', a:'Bandamatic es la empresa hermana que compra la banda de precurado de Hules Banda y la comercializa. Forma parte del mismo grupo y es el brazo comercial que lleva el producto al mercado. (En el futuro tendrá su propia app de ventas.)' },
     { t:'Clientes y mercado', k:'clientes goodyear mercado 50 paises exportacion', a:'Hules Banda vende a empresas grandes del sector, como Goodyear, que compran tanto hule verde como banda de precurado, además de a renovadores y distribuidores. Exporta a más de 50 países en América, Europa y el Caribe.' },
-    { t:'Qué vende Hules Banda', k:'productos que vende precurado hule verde oferta asesoria', a:'Hules Banda ofrece principalmente dos productos: 1) banda de precurado (en varias líneas según aplicación) para el renovado de llantas, y 2) hule verde (compuesto sin vulcanizar) como materia prima. También brinda asesoría para desarrollar productos a la medida del cliente.' },
+    { t:'Qué vende Hules Banda', k:'productos que vende precurado hule verde oferta asesoria', a:'Hules Banda ofrece principalmente dos productos: 1) banda de precurado (en varias líneas según aplicación) para el renovado, y 2) hule verde (compuesto sin vulcanizar) como materia prima. También brinda asesoría para desarrollar productos a la medida del cliente.' },
     { t:'Seguridad: uso de EPP', k:'epp seguridad proteccion guantes casco lentes botas', a:'El Equipo de Protección Personal (EPP) —casco, lentes, guantes, botas según la zona— debe usarse siempre en el área de producción. Si una pieza está dañada, se reporta y reemplaza antes de continuar. El EPP protege la integridad física del trabajador.' },
     { t:'Seguridad en la zona de prensado', k:'seguridad prensa prensado manos seguros', a:'En la zona de prensado, mantén las manos fuera del área de cierre, verifica que los seguros estén activos antes de operar y detén el equipo ante cualquier ruido o comportamiento anormal, reportándolo de inmediato.' },
     { t:'Manejo seguro de químicos y compuestos', k:'quimicos seguridad hojas de datos manejo almacenamiento', a:'Los químicos y aditivos del compuesto se manejan según sus hojas de datos de seguridad: con el EPP indicado, buena ventilación, almacenamiento correcto y sin mezclar productos. Ante dudas o derrames, seguir el procedimiento y avisar al supervisor.' },
@@ -5615,8 +5627,13 @@ function renderChat(){
   if(esAdmin){
     h+='<aside class="chstats"><div class="panel" style="margin-bottom:12px"><b style="font-size:13px">IA · gasto del mes</b>'+
        '<div id="iaGasto" class="note" style="margin-top:6px">Cargando…</div></div>'+
-       '<div class="panel"><b style="font-size:13px">Top consumo (llaves API)</b>'+
-       '<div id="iaTop" class="note" style="margin-top:6px">Cargando…</div></div></aside>';
+       '<div class="panel"><div class="line" style="border:none;padding:0 0 6px">'+
+       '<b style="font-size:13px;flex:1">Quién usa el asistente</b>'+
+       '<span class="note" id="iaTopN"></span></div>'+
+       '<div class="search" style="margin:0 0 8px"><input id="iaTopQ" placeholder="Buscar persona…" '+
+       'autocomplete="off" oninput="iaTopFiltra(this.value)"></div>'+
+       '<div id="iaTop" class="note iascroll">Cargando…</div>'+
+       '<div id="iaTopTot"></div></div></aside>';
   }
   h+='</div>';
   $('s-chat').innerHTML=h;
@@ -5626,6 +5643,36 @@ function renderChat(){
   show('chat');
 }
 function chSideTog(){ var a=document.querySelector('.chside'); if(a) a.classList.toggle('abierto'); }
+/* el top de consumo de IA: se filtra en el cliente sobre la lista ya cargada */
+function iaTopFiltra(v){ iaTopPinta(v||''); }
+function iaTopPinta(q){
+  var t=$('iaTop'); if(!t) return;
+  var todos=window._iaTop||[];
+  var nq=_norm(q||''), digits=(q||'').replace(/\D/g,'');
+  var lista=todos.filter(function(p){
+    if(!q) return true;
+    var porNom=nq && _norm(p.nombre||'').indexOf(nq)>=0;
+    var porNum=digits && (''+(p.clave||p.n||'')).indexOf(digits)>=0;
+    return !!(porNom||porNum);
+  });
+  var nn=$('iaTopN');
+  if(nn) nn.textContent = q ? (lista.length+' de '+todos.length) : (todos.length+(todos.length===1?' persona':' personas'));
+  if(!todos.length){ t.innerHTML='<span class="note">Nadie ha usado el asistente este mes.</span>'; return; }
+  if(!lista.length){ t.innerHTML='<span class="note">Nadie coincide con «'+esc(q)+'».</span>'; return; }
+  t.innerHTML=lista.map(function(p,i){
+    var det=[]; if(p.preguntas) det.push(p.preguntas+' preg.');
+                if(p.fotos)     det.push(p.fotos+' fotos');
+                if(p.bloqueadas)det.push(p.bloqueadas+' bloqueadas');
+    /* el lugar real en el ranking, aunque se esté filtrando */
+    var pos=todos.indexOf(p)+1;
+    return '<div style="display:flex;justify-content:space-between;gap:9px;align-items:flex-start;margin-top:8px;font-size:12px">'+
+      '<span style="min-width:0;flex:1"><span class="note" style="font-variant-numeric:tabular-nums">'+pos+'.</span> '+
+        esc(niceName(p.nombre||('#'+p.n)))+
+        (det.length?('<div class="note" style="font-size:10.5px;margin-top:1px">'+det.join(' · ')+
+           (p.motor?(' · '+esc(p.motor)):'')+'</div>'):'')+'</span>'+
+      '<b style="flex:none;font-variant-numeric:tabular-nums">'+mzMx(+p.mxn||0,2)+'</b></div>';
+  }).join('');
+}
 /* gasto del mes + top de consumo (RPCs del servidor; el top requiere v3_34) */
 function iaPanelLoad(){
   if(!sbReady()) return;
@@ -5639,20 +5686,17 @@ function iaPanelLoad(){
   },function(){});
   SB.rpc('hb_ia_top').then(function(r){ var x=r&&r.data; var t=$('iaTop'); if(!t) return;
     if(!(x&&x.ok)){ t.innerHTML='<span class="note">No disponible.</span>'; return; }
-    /* quién gastó, cuánto EN PESOS y en qué se le fue (pedido de Carlos, 24-ago) */
-    t.innerHTML=(x.top&&x.top.length)?(x.top.map(function(p,i){
-      var det=[]; if(p.preguntas) det.push(p.preguntas+' preg.');
-                  if(p.fotos)     det.push(p.fotos+' fotos');
-                  if(p.bloqueadas)det.push(p.bloqueadas+' bloqueadas');
-      return '<div style="display:flex;justify-content:space-between;gap:9px;align-items:flex-start;margin-top:8px;font-size:12px">'+
-        '<span style="min-width:0;flex:1">'+(i+1)+'. '+esc(niceName(p.nombre||('#'+p.n)))+
-          (det.length?('<div class="note" style="font-size:10.5px;margin-top:1px">'+det.join(' · ')+
-             (p.motor?(' · '+esc(p.motor)):'')+'</div>'):'')+'</span>'+
-        '<b style="flex:none;font-variant-numeric:tabular-nums">'+mzMx(+p.mxn||0,2)+'</b></div>';
-    }).join('')+
-      '<div style="display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid var(--line);font-size:12.5px">'+
-      '<b>Total del mes</b><b style="font-variant-numeric:tabular-nums">'+mzMx(+x.total_mxn||0,2)+'</b></div>')
-      :'<span class="note">Nadie la ha usado este mes.</span>';
+    /* 26-ago (Carlos): la lista completa, en el mismo recuadro, con scroll y
+       buscador — antes se cortaba en los primeros y no había manera de ver al
+       resto. Se guarda entera y se filtra sin volver a pedirla al servidor. */
+    window._iaTop = x.top || [];
+    window._iaTotMxn = +x.total_mxn || 0;
+    iaTopPinta('');
+    var tt=$('iaTopTot');
+    if(tt) tt.innerHTML='<div style="display:flex;justify-content:space-between;margin-top:10px;'+
+      'padding-top:8px;border-top:1px solid var(--line);font-size:12.5px">'+
+      '<b>Total del mes</b><b style="font-variant-numeric:tabular-nums">'+mzMx(window._iaTotMxn,2)+'</b></div>';
+    /* el caso «nadie lo ha usado» lo maneja iaTopPinta */
   },function(){ var t=$('iaTop'); if(t) t.innerHTML='<span class="note">No disponible.</span>'; });
 }
 function paintChat(){
@@ -9681,8 +9725,10 @@ function renderMsjEsc(){
     var vacN=0,quejN=0;
     try{ vacN=leaveGet().filter(function(r){return r.status==='pendiente';}).length; }catch(e){}
     try{ quejN=reportsGet().filter(function(r){return r.status==='pendiente';}).length; }catch(e){}
-    h+=msjFx("msgsGo('planta')",'🏭','Chats de la planta', tot?(tot+' conversaciones · monitoreo'):'Monitoreo de líneas');
-    h+=msjFx("wcReset();renderWConvs()",'👀','Conversaciones de trabajadores','Revisión · solo lectura');
+    /* 26-ago (Carlos): había DOS caminos para lo mismo — una lista plana de
+       todas las conversaciones y el directorio por departamento. Se queda el
+       directorio: se escoge el área, luego la persona, y se leen sus chats. */
+    h+=msjFx("wcReset();renderWConvs()",'🏭','Mensajes del personal', tot?(tot+' conversaciones · solo lectura'):'Buscar por área o por nombre');
     h+=msjFx("msgsGo('vacadm')",'🏖️','Vacaciones', vacN?(vacN+' por revisar'):'Quién pide · aprobar', vacN);
     h+=msjFx("msgsGo('quejadm')",'📢','Quejas y reportes', quejN?(quejN+' por revisar'):'Buzón · atender', quejN);
   } else if(rol==='resp'){
@@ -9931,9 +9977,9 @@ function msgAdminInbox(){
   var _act=[], _actUn=0;
   try{ _act=myActiveConvs(); _act.forEach(function(c){ _actUn+=convUnread(c); }); }catch(e){}
   h+=htile("msgsGo('activos')",'msg','Tus chats', _act.length?(_act.length+(_act.length===1?' conversación tuya':' conversaciones tuyas')):'Escríbele a quien sea', {wide:true, cnt:_actUn||''});
-  h+=htile("msgsGo('planta')",'msg','Chats de la planta', tot?(tot+(tot===1?' conversación':' conversaciones')+' · monitoreo'):'Aún sin mensajes');
   h+=htile('renderNewChat()','personas','Escribir a un trabajador', 'Chat directo 1 a 1');
-  h+=htile("wcReset();renderWConvs()",'docs','Conversaciones de trabajadores', 'Revisión · solo lectura');
+  h+=htile("wcReset();renderWConvs()",'dia','Mensajes del personal',
+     tot?(tot+(tot===1?' conversación':' conversaciones')+' · solo lectura'):'Buscar por área o por nombre');
   h+='</div>';
   // Back-end de las funciones (quién pide vacaciones, buzón de quejas) — toda la planta
   h+='<div class="sec-t">Back-end de la planta<span class="ln"></span></div><div class="tgrid">';
@@ -10042,7 +10088,7 @@ function renderWConvs(){
   var h='';
   if(_wcPick==null && _wcDept==null){
     // NIVEL 1 — departamentos (o resultados de búsqueda global)
-    h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Monitoreo</div><b style="font-size:20px">Conversaciones de trabajadores</b><p class="note" style="margin:4px 0 0;max-width:260px">Elige un departamento, luego a la persona, para revisar todo lo que ha escrito. Solo lectura.</p></div></div>'+
+    h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Monitoreo</div><b style="font-size:20px">Mensajes del personal</b><p class="note" style="margin:4px 0 0;max-width:280px">Escoge el área y luego a la persona: se abren sus conversaciones como las ve ella. Solo lectura — aquí no se puede escribir.</p></div></div>'+
        '<div class="search">'+SEARCH_SVG+'<input id="wcSearch" placeholder="Buscar por nombre o número…" autocomplete="off" oninput="wcFilter(this.value)" value="'+escA(_wcFilter)+'"></div></div>';
     h+='<div id="wcList">'+wcListHTML(_wcFilter)+'</div>';   // depende de _wcFilter: vacío→departamentos, con texto→búsqueda global
   } else if(_wcPick==null){
@@ -10366,34 +10412,153 @@ function dvLog(id){
   try{ SB.rpc('hb_doc_visto',{p_docid:id}).then(function(){},function(){}); }catch(e){}
 }
 function dvTime(ts){ try{ var d=new Date(ts); return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' · '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
-function docBitaGo(v){ _docBita=v; _docFin=false; _dvDept=null; if(v) dvLoad(); renderDocs(); window.scrollTo(0,0); }
-function dvDeptGo(d){ _dvDept=d; renderDocs(); window.scrollTo(0,0); }
-function _dvRow(v){
-  return '<div class="card"><div class="line" style="border:none;padding:0"><span style="min-width:0;flex:1"><b style="display:block">'+esc(v.nombre||'(documento)')+'</b>'+
-    '<span class="note">'+esc(niceName(v.viewerNombre||''))+' · Nº '+esc(v.clave||(''+v.viewer))+' · '+dvTime(v.ts)+'</span></span></div></div>';
+function docBitaGo(v){ _docBita=v; _docFin=false; _dvDept=null; _dvPick=null; _dvQ=''; if(v) dvLoad(); renderDocs(); window.scrollTo(0,0); }
+function dvDeptGo(d){ _dvDept=d; _dvPick=null; _dvQ=''; renderDocs(); window.scrollTo(0,0); }
+/* ══════════════════════════════════════════════════════════════════
+   BITÁCORA DE DOCUMENTOS (rehecha el 26-ago-2026, pedido de Carlos)
+
+   «lo que lo rige no es el documento sino el usuario: si se meten a Carlos
+    Martínez 0917, van a poder ver qué documentos ha abierto Carlos.»
+
+   Tres niveles, con el mismo patrón del directorio de mensajes:
+     área  →  persona (con buscador y scroll)  →  lo que abrió, con su fecha
+   Antes era una lista plana de vistas mezcladas de toda el área, y la fecha se
+   perdía entre el nombre y el número.
+   ══════════════════════════════════════════════════════════════════ */
+var _dvPick=null, _dvQ='';
+function dvPickGo(n){ _dvPick=(n==null?null:+n); renderDocs(); window.scrollTo(0,0); }
+function dvFiltra(v){ _dvQ=v||''; var el=$('dvGente'); if(el) el.innerHTML=dvGenteHTML(); }
+
+/* la fecha sola, para agrupar por día */
+function dvDia(ts){ try{ return new Date(ts).toISOString().slice(0,10); }catch(e){ return ''; } }
+function dvDiaTxt(iso){
+  try{
+    var hoy=new Date().toISOString().slice(0,10);
+    var ayer=new Date(Date.now()-864e5).toISOString().slice(0,10);
+    if(iso===hoy) return 'Hoy';
+    if(iso===ayer) return 'Ayer';
+    var d=new Date(iso+'T12:00:00');
+    return d.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'});
+  }catch(e){ return iso; }
 }
+function dvHora(ts){ try{ return new Date(ts).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
+
+/* ── quién ha abierto documentos: se agrupa por persona ── */
+function dvPorPersona(filtroArea){
+  var por={}, orden=[];
+  dvGet().forEach(function(v){
+    if(filtroArea!=null && (v.depto||'(sin área)')!==filtroArea) return;
+    var k=v.viewer;
+    if(!por[k]){
+      por[k]={ n:v.viewer, nombre:niceName(v.viewerNombre||''), clave:(v.clave||''+v.viewer),
+               area:(v.depto||'(sin área)'), vistas:[], ult:0 };
+      orden.push(k);
+    }
+    por[k].vistas.push(v);
+    if((v.ts||0) > por[k].ult) por[k].ult = v.ts||0;
+  });
+  return orden.map(function(k){ return por[k]; })
+              .sort(function(a,b){ return b.ult - a.ult; });   /* el más reciente arriba */
+}
+
+function dvGenteHTML(){
+  var gente=dvPorPersona(_dvDept);
+  var q=_norm(_dvQ||''), digits=(_dvQ||'').replace(/\D/g,'');
+  if(_dvQ){
+    gente=gente.filter(function(p){
+      var porNom=q && _norm(p.nombre).indexOf(q)>=0;
+      var porNum=digits && (''+p.clave).indexOf(digits)>=0;
+      return !!(porNom||porNum);
+    });
+  }
+  if(!gente.length) return '<div class="card"><div class="note">'+
+    (_dvQ?('Nadie coincide con «'+esc(_dvQ)+'».'):'Nadie de esta área ha abierto documentos todavía.')+'</div></div>';
+  try{ pubEnsure(gente.map(function(p){return p.n;}), function(){
+    var el=$('dvGente'); if(el && _screen==='docs' && _docBita && _dvPick==null) el.innerHTML=dvGenteHTML(); }); }catch(e){}
+  return gente.map(function(p){
+    var n=p.vistas.length;
+    return '<div class="dirrow" onclick="dvPickGo('+p.n+')">'+personAvatar(p.n,44)+
+      '<span class="t"><b>'+esc(p.nombre||('Nº '+p.clave))+'</b>'+
+      '<span>'+n+(n===1?' documento':' documentos')+' · último el '+dvDiaTxt(dvDia(p.ult)).toLowerCase()+'</span></span>'+
+      '<span class="idtag">#'+esc(p.clave)+'</span></div>';
+  }).join('');
+}
+
+/* ── lo que abrió UNA persona, agrupado por día ── */
+function dvPersonaHTML(n){
+  var todas=dvGet().filter(function(v){ return +v.viewer===+n; })
+                   .sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
+  if(!todas.length) return '<div class="card"><div class="note">Esta persona no ha abierto documentos.</div></div>';
+  var q=todas[0];
+  var h='<div class="card" style="margin-bottom:12px"><div class="line" style="border:none;padding:0">'+
+    personAvatar(+n,52)+'<span style="min-width:0;flex:1;margin-left:11px">'+
+    '<b style="font-size:16px">'+esc(niceName(q.viewerNombre||('Nº '+(q.clave||n))))+'</b>'+
+    '<div class="note" style="margin-top:2px">#'+esc(q.clave||n)+' · '+esc(q.depto||'(sin área)')+'</div></span>'+
+    '<span class="tg g" style="flex:none">'+todas.length+(todas.length===1?' documento':' documentos')+'</span>'+
+    '</div></div>';
+
+  /* agrupado por día: la fecha manda, como pidió Carlos */
+  var porDia={}, dias=[];
+  todas.forEach(function(v){ var d=dvDia(v.ts); if(!porDia[d]){ porDia[d]=[]; dias.push(d); } porDia[d].push(v); });
+  dias.forEach(function(d){
+    h+='<div class="sec-t">'+esc(dvDiaTxt(d))+'<span class="ln"></span></div>';
+    h+='<div class="panel">'+porDia[d].map(function(v){
+      return '<div class="line"><span style="min-width:0;flex:1"><b>'+esc(v.nombre||'(documento)')+'</b>'+
+        (v.cat?('<div class="note" style="margin-top:2px">'+esc(v.cat)+(v.sub?(' · '+esc(v.sub)):'')+'</div>'):'')+
+        '</span><span class="note" style="flex:none">'+dvHora(v.ts)+'</span></div>';
+    }).join('')+'</div>';
+  });
+  return h;
+}
+
 function renderBita(){
   var h='';
   var mgr=docIsTotal();
-  // acceso total: por DEPARTAMENTO → toca uno → sus vistas
+
+  /* ── NIVEL 3: una persona ── */
+  if(_dvPick!=null){
+    h+='<div style="display:flex;gap:6px;align-items:center;margin:2px 0 12px;flex-wrap:wrap">'+
+       '<button class="chip2" onclick="dvPickGo(null);dvDeptGo(null)">Bitácora</button><span class="note">›</span>'+
+       (mgr&&_dvDept?('<button class="chip2" onclick="dvPickGo(null)">'+esc(_dvDept)+'</button><span class="note">›</span>'):'')+
+       '<button class="chip2" style="pointer-events:none">Su actividad</button></div>';
+    return h + dvPersonaHTML(_dvPick);
+  }
+
+  /* ── NIVEL 1 (solo acceso total): las áreas ── */
   if(mgr && _dvDept==null){
-    var byD={}, order=[];
-    dvGet().forEach(function(v){ var d=v.depto||'(sin área)'; if(byD[d]==null){ byD[d]=0; order.push(d); } byD[d]++; });
+    var byD={}, order=[], gente={};
+    dvGet().forEach(function(v){
+      var d=v.depto||'(sin área)';
+      if(byD[d]==null){ byD[d]=0; gente[d]={}; order.push(d); }
+      byD[d]++; gente[d][v.viewer]=1;
+    });
     order.sort();
-    if(!order.length) return '<div class="card"><div class="note">Aún nadie ha abierto documentos. Aquí aparecerá quién entra a cada uno.</div></div>';
-    h+='<div class="sec-t">Vistas por área<span class="ln"></span></div><div class="arogrid">';
-    h+=order.map(function(d){ return '<div class="arocard" role="button" tabindex="0" onkeydown="_kb(event)" onclick="dvDeptGo(\''+jsAttr(d)+'\')"><div><div class="an">'+esc(d)+'</div><div class="as">'+byD[d]+' vista'+(byD[d]===1?'':'s')+'</div></div><span class="abadge">Ver ›</span></div>'; }).join('');
+    if(!order.length) return '<div class="card"><div class="note">Aún nadie ha abierto documentos. '+
+      'Aquí va a aparecer quién entró a cada uno, con su fecha.</div></div>';
+    h+='<div class="note" style="margin:0 2px 10px">Escoge un área y luego a la persona, para ver qué documentos ha abierto y cuándo.</div>';
+    h+='<div class="sec-t">Áreas<span class="ln"></span></div><div class="arogrid">';
+    h+=order.map(function(d){
+      var np=Object.keys(gente[d]).length;
+      return '<div class="arocard" role="button" tabindex="0" onkeydown="_kb(event)" onclick="dvDeptGo(\''+jsAttr(d)+'\')">'+
+        '<div><div class="an">'+esc(d)+'</div><div class="as">'+np+(np===1?' persona':' personas')+
+        ' · '+byD[d]+(byD[d]===1?' documento':' documentos')+'</div></div><span class="abadge">Ver ›</span></div>';
+    }).join('');
     return h+'</div>';
   }
-  var list=dvGet().slice();
+
+  /* ── NIVEL 2: la gente, con buscador y scroll ── */
   if(mgr && _dvDept!=null){
-    h+='<div style="display:flex;gap:6px;align-items:center;margin:2px 0 12px"><button class="chip2" onclick="dvDeptGo(null)">Bitácora</button><span class="note">›</span><button class="chip2" style="pointer-events:none">'+esc(_dvDept)+'</button></div>';
-    list=list.filter(function(v){ return (v.depto||'(sin área)')===_dvDept; });
+    h+='<div style="display:flex;gap:6px;align-items:center;margin:2px 0 12px">'+
+       '<button class="chip2" onclick="dvDeptGo(null)">Bitácora</button><span class="note">›</span>'+
+       '<button class="chip2" style="pointer-events:none">'+esc(_dvDept)+'</button></div>';
   } else {
-    h+='<div class="note" style="margin:0 2px 10px">Quién ha abierto los documentos de tu área ('+esc(S?S.area:'')+'), con nombre, número y hora.</div>';
+    h+='<div class="note" style="margin:0 2px 10px">Quién ha abierto los documentos de tu área ('+
+       esc(S?S.area:'')+'). Toca a la persona para ver qué abrió y cuándo.</div>';
   }
-  if(!list.length) return h+'<div class="card"><div class="note">Sin vistas registradas todavía.</div></div>';
-  list.slice(0,200).forEach(function(v){ h+=_dvRow(v); });
+  h+='<div class="search" style="margin:0 0 10px">'+SEARCH_SVG+
+     '<input id="dvBuscar" placeholder="Buscar por nombre o número…" autocomplete="off" '+
+     'oninput="dvFiltra(this.value)" value="'+escA(_dvQ)+'"></div>';
+  h+='<div id="dvGente" class="dvscroll">'+dvGenteHTML()+'</div>';
   return h;
 }
 function docsGet(){ return DBC.docs||[]; }
@@ -10402,7 +10567,7 @@ var _docAcl='depto';               // alcance que elige el ACCESO TOTAL al subir
 var _docArea=null, _docCat=null, _docSub=null;
 var _docFrom=null;    // pantalla de origen (para el botón "Atrás" de Documentos)
 var _docDepto=null;   // área elegida por el acceso total (sobrevive repintados en vivo)
-function _docReset(){ _docUpOpen=false; _docFoldOpen=false; _docGridMax=18; _docFoldAll={}; _docArea=null; _docCat=null; _docSub=null; _docBita=false; _docFin=false; _docShr=false; _dvDept=null; _docQ=''; _docQMax=60; }
+function _docReset(){ _docUpOpen=false; _docFoldOpen=false; _docGridMax=18; _docFoldAll={}; _docArea=null; _docCat=null; _docSub=null; _docBita=false; _docFin=false; _docShr=false; _dvDept=null; _dvPick=null; _dvQ=''; _docQ=''; _docQMax=60; }
 function docsHome(){ _docFrom=_screen; _docReset(); renderDocs(); }
 function docGoArea(a){ _docArea=a; _docCat=null; _docSub=null; _docShr=false; _docGridMax=18; docRecPush(); _docFoldAuto(); renderDocs(); window.scrollTo(0,0); }
 function docGoCat(c){ _docCat=c; _docSub=null; _docGridMax=18; docRecPush(); _docFoldAuto(); renderDocs(); window.scrollTo(0,0); }

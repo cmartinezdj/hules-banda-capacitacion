@@ -1316,6 +1316,26 @@ body.a11y .screen .tg{ font-size:13px !important; }
      pantalla se quedaba en blanco hasta refrescar). Si por lo que sea faltara el archivo
      local, 'onerror' cae al CDN de respaldo; el arranque (arranca()) espera al SDK igual. -->
 <script defer src="supabase.min.js" onerror="var s=document.createElement('script');s.defer=true;s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';document.head.appendChild(s);"></script>
+<style>
+/* PERFIL DE PRODUCCIÓN (26-ago) · desplegables chiquitos y la fila de cifras.
+   Todo lo nuevo entra también a body.a11y o el modo Texto grande se rompe
+   en silencio — la regla que ya nos costó una vez. */
+.mpsel{padding:7px 11px;border-radius:11px;border:1px solid var(--line);background:var(--card2);
+  color:var(--txt);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+  max-width:100%;text-overflow:ellipsis}
+.mpsel:hover{border-color:var(--accent)}
+.mpsel:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.mpkpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:9px;margin-top:12px}
+.mpkpi{background:var(--card2);border-radius:12px;padding:9px 11px;min-width:0}
+.mpkpi>.note{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase}
+.mpkpi>b{display:block;font-size:19px;font-variant-numeric:tabular-nums;margin-top:1px;
+  overflow:hidden;text-overflow:ellipsis}
+body.a11y .mpsel{font-size:15px;padding:9px 13px}
+body.a11y .mpkpi>.note{font-size:12.5px}
+body.a11y .mpkpi>b{font-size:22px}
+body.a11y .mpkpis{grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
+@media(max-width:520px){ .mpkpis{grid-template-columns:repeat(auto-fit,minmax(78px,1fr))} }
+</style>
 </head>
 <body>
 <div class="mesh"></div><div class="grain"></div>
@@ -1467,6 +1487,7 @@ body.a11y .screen .tg{ font-size:13px !important; }
     <section id="s-mezprog" class="screen pad hide"></section>
     <section id="s-mezana"  class="screen pad hide"></section>
     <section id="s-meztab"  class="screen pad hide"></section>
+    <section id="s-mezperf" class="screen pad hide"></section>
     <section id="s-mezdesg" class="screen pad hide"></section>
     <section id="s-mezcomp" class="screen pad hide"></section>
     <section id="s-mezcierres" class="screen pad hide"></section>
@@ -3196,7 +3217,7 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'"'+main+' title="'+it[1]+'" onclick="'+accion+'">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['planta','manto','mezrec','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezdesg','mezcomp','mezcierres','mezprecios','mezsem','mezraw','iallaves','mezalm','alim','mprima','lab','labrec','perms'];
+var SCREENS=['planta','manto','mezrec','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezperf','mezdesg','mezcomp','mezcierres','mezprecios','mezsem','mezraw','iallaves','mezalm','alim','mprima','lab','labrec','perms'];
 var _prevShown=null;
 function show(name){
   var cambio = (name!==_prevShown);
@@ -3222,8 +3243,8 @@ function show(name){
   if(name==='pedidos') navKey=(window._pedFrom==='manto')?'planta':'hr';                                   // inbox de Mantenimiento
   if(name==='mezraw'||name==='mezalm') navKey='planta';
   if(name==='iallaves') navKey='hr';
-  if(name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') navKey='planta';
-  if(name==='planta'||name==='manto'||name==='prod'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab') navKey='planta';  // todo lo de Planta
+  if(name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') navKey='planta';
+  if(name==='planta'||name==='manto'||name==='prod'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf') navKey='planta';  // todo lo de Planta
   if(name==='docs' && window._docFrom==='tab') navKey='docs';           // abierto desde el tab del riel
   if(navKey==='home' && S && S.admin && S.dash!=='resp') navKey='hr';   // dashboard general: su Inicio es el tablero
   ['home','msgs','rewards','chat','hr','clases','news','buzon','planta','docs'].forEach(function(k){ var b=$('nav-'+k); if(b) b.classList.toggle('on', k===navKey); });
@@ -3551,10 +3572,10 @@ function hbInicio(){
   go((S && (S.admin || S.mando)) ? 'hr' : 'home');
 }
 function renderTop(name){
-  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='mezraw'||name==='mezalm'||name==='iallaves'||name==='prod'||name==='manto'||name==='labrec') && !(name==='docs' && window._docFrom==='tab');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='mezraw'||name==='mezalm'||name==='iallaves'||name==='prod'||name==='manto'||name==='labrec') && !(name==='docs' && window._docFrom==='tab');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? (window._pedFrom==='manto'?'go(\'manto\')':'go(\'hr\')') : name==='pedir' ? (window._pedFrom==='manto'?'go(\'manto\')':('go(\''+((S.admin||S.mando)?'hr':'home')+'\')')) : (name==='prod'||name==='manto') ? 'go(\'planta\')' : name==='labrec' ? 'go(\'lab\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='mezalm' ? 'go(\'prod\')' : name==='iallaves' ? 'go(\'hr\')' : name==='mezraw' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? (window._pedFrom==='manto'?'go(\'manto\')':'go(\'hr\')') : name==='pedir' ? (window._pedFrom==='manto'?'go(\'manto\')':('go(\''+((S.admin||S.mando)?'hr':'home')+'\')')) : (name==='prod'||name==='manto') ? 'go(\'planta\')' : name==='labrec' ? 'go(\'lab\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='mezalm' ? 'go(\'prod\')' : name==='iallaves' ? 'go(\'hr\')' : name==='mezraw' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
     left.innerHTML='<button class="tlogo" onclick="hbInicio()" title="Ir al inicio" aria-label="Ir al inicio">'+HB_MARK+'</button><button class="back" onclick="'+backTo+'">‹ Atrás</button>'+hbQuienSoy(true);
     left.classList.remove('who');
   }else{
@@ -12205,6 +12226,9 @@ function renderMezHub(){
   /* v3.43: Gustavo (capturista) también ve SUS gráficas — el tablero no trae
      dinero por diseño y el servidor le niega el tema de costos */
   if(veGraf||S.mezCap) h+=htile('renderMezTab()','deptos','Gráficos','Producción por día, paros y reproceso');
+  /* 26-ago (Carlos): «escoger uno de ellos y ver desglosadamente toda la info
+     del banbury 2, o del operador 1, o del turno 3» */
+  if(veGraf||S.mezCap) h+=htile('renderMezPerfil()','personas','Por banbury, turno u operador','Escoge uno y ve todo lo suyo');
   if(veGraf) h+=htile('renderMezCierres()','pend','Cierres','Semana y mes listos para junta (PDF)');
   /* Precios, Almacén y Semáforo se mudaron a MATERIA PRIMA, y el Analista de
      compuestos a LABORATORIO (25-ago). Los datos NO se separaron: siguen en las
@@ -14126,6 +14150,211 @@ function mzFicha(cid){
   },function(e){ $('mza-ficha').innerHTML='<div class="card"><b>'+esc(mzErr(null,e))+'</b></div>'; });
 }
 
+
+/* ===========================================================================
+   PERFIL DE PRODUCCIÓN · un gráfico con TODO lo de un banbury, un turno o
+   un operador (pedido de Carlos, 26-ago-2026):
+     «escoger uno de ellos, y escoger un rango de fecha o una exacta y ver
+      desglosadamente toda la info del banbury 2 por ejemplo, o del operador 1,
+      o del turno 3»
+   Dos honestidades que esta pantalla NO se salta:
+     · el OPERADOR solo existe de agosto en adelante (el Excel anterior no
+       traía la columna) → se avisa, no se pinta un cero;
+     · los PAROS se capturan por banbury y turno, NO por operador → se dice
+       «no se captura», nunca 0 minutos.
+   =========================================================================== */
+var _mpEje='banbury', _mpVal=null, _mpEjes=null, _mpX=null;
+
+function renderMezPerfil(){
+  if(!(S.admin||S.mezCap||(S.mando&&S.mezCap))){ alert('Solo dirección, jefatura de producción y los capturistas de mezclado.'); return; }
+  var hoy=mxToday();
+  if(!_mztD1){ var d0=new Date(hoy+'T12:00:00'); d0.setDate(d0.getDate()-30);
+    _mztD1=d0.toISOString().slice(0,10); _mztD2=hoy; }
+  _mzRangoFn='mpRango';
+  $('s-mezperf').innerHTML='<div class="card"><div class="note">Cargando…</div></div>';
+  show('mezperf');
+  mpCargaEjes();
+}
+function mpRango(d1,d2){ _mztD1=d1; _mztD2=d2; _mpEjes=null; _mpVal=null; mpCargaEjes(); }
+
+function mpCargaEjes(){
+  if(!(V3_ON && sbReady() && SB)){ $('s-mezperf').innerHTML='<div class="card"><b>Sin conexión con el servidor.</b></div>'; return; }
+  SB.rpc('hb_mez_ejes',{p_d1:_mztD1,p_d2:_mztD2}).then(function(r){
+    var x=r&&r.data;
+    if(!(x&&x.ok)){ $('s-mezperf').innerHTML='<div class="card"><b>'+esc(mzErr(x))+'</b></div>'; return; }
+    _mpEjes=x;
+    var lista=x[_mpEje]||[];
+    /* si el eje elegido no tiene nada en este periodo, no dejarlo en blanco */
+    if(!lista.length){
+      var alt=['banbury','turno','operador'].filter(function(e){ return (x[e]||[]).length; })[0];
+      if(alt && alt!==_mpEje){ _mpEje=alt; lista=x[alt]||[]; }
+    }
+    var hay=lista.filter(function(o){ return String(o.v)===String(_mpVal); }).length;
+    if(!hay) _mpVal = lista.length ? String(lista[0].v) : null;
+    if(!_mpVal){ $('s-mezperf').innerHTML=mpBarra()+
+      '<div class="card"><b>No hay producción capturada en este periodo.</b>'+
+      '<div class="note" style="margin-top:4px">Cambia el rango de fechas con el control de arriba.</div></div>'; return; }
+    mpCarga();
+  },function(){ $('s-mezperf').innerHTML='<div class="card"><b>'+esc(mzErr())+'</b></div>'; });
+}
+function mpCarga(){
+  var cont=$('mp-cuerpo');
+  if(cont) cont.innerHTML='<div class="card"><div class="note">Cargando…</div></div>';
+  else $('s-mezperf').innerHTML=mpBarra()+'<div id="mp-cuerpo"><div class="card"><div class="note">Cargando…</div></div></div>';
+  SB.rpc('hb_mez_perfil',{p_eje:_mpEje,p_valor:String(_mpVal),p_d1:_mztD1,p_d2:_mztD2}).then(function(r){
+    mpPinta(r&&r.data);
+  },function(){ mpPinta(null); });
+}
+function mpEje(e){ if(e===_mpEje) return; _mpEje=e; _mpVal=null; mpCargaEjes(); }
+function mpVal(v){ if(String(v)===String(_mpVal)) return; _mpVal=String(v); mpCarga(); }
+
+/* la barra de arriba: dos desplegables chiquitos + el control de periodo */
+function mpBarra(){
+  var E=_mpEjes||{}, lista=E[_mpEje]||[];
+  var EJES=[['banbury','Banbury'],['turno','Turno'],['operador','Operador']];
+  var sel=function(id,val,ops,fn,ancho){
+    return '<select id="'+id+'" class="mpsel" onchange="'+fn+'(this.value)" style="max-width:'+ancho+'px">'+
+      ops.map(function(o){ return '<option value="'+escA(String(o[0]))+'"'+(String(o[0])===String(val)?' selected':'')+'>'+esc(o[1])+'</option>'; }).join('')+
+      '</select>'; };
+  var opsEje=EJES.map(function(e){ var n=(E[e[0]]||[]).length;
+    return [e[0], e[1]+(n?'':' (sin datos)')]; });
+  var opsVal=lista.map(function(o){ return [o.v, o.et+' · '+Number(o.mez||0).toLocaleString()+' mez']; });
+  return '<div class="card" style="margin-bottom:12px">'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
+      '<span class="note" style="font-size:11.5px">Ver por</span>'+
+      sel('mp-eje',_mpEje,opsEje,'mpEje',132)+
+      (opsVal.length? sel('mp-val',_mpVal,opsVal,'mpVal',232) : '')+
+      '<span style="margin-left:auto">'+mzRangoCtl()+'</span>'+
+    '</div><div id="mz-rangopanel"></div></div>';
+}
+
+function mpPinta(x){
+  var cont=$('mp-cuerpo'); if(!cont) return;
+  if(!(x&&x.ok)){ cont.innerHTML='<div class="card"><b>'+esc(mzErr(x))+'</b></div>'; return; }
+  _mpX=x;
+  var t=x.totales||{}, h='';
+  var eje=x.eje, esOp=(eje==='operador');
+
+  /* ---- encabezado ---- */
+  h+='<div class="card" style="margin-bottom:12px">'+
+     '<div style="display:flex;align-items:baseline;gap:9px;flex-wrap:wrap">'+
+       '<b style="font-size:19px">'+esc(niceName(x.etiqueta||''))+'</b>'+
+       '<span class="note" style="font-size:12px">'+esc(fmtCorto(x.desde))+' → '+esc(fmtCorto(x.hasta))+'</span></div>'+
+     '<div class="mpkpis">'+
+       mpKpi('Mezclas', mzN(t.mezclas), null)+
+       mpKpi('Kilos', mzN(t.kg), (t.kg_estimados>0? mzN(t.kg_estimados)+' kg estimados' : 'de la hoja'))+
+       mpKpi('Corridas', mzN(t.corridas), null)+
+       mpKpi('Días', mzN(t.dias), (t.prom_dia!=null? mzN(t.prom_dia)+' mez/día' : null))+
+       mpKpi('Compuestos', mzN(t.compuestos), null)+
+       mpKpi('Quemadas', mzN(t.quemadas), null)+
+     '</div>';
+  if(x.programa){
+    var pc=+x.programa.cumplimiento||0;
+    var col=pc>=95?'var(--ok)':(pc>=80?'var(--warn)':'var(--bad)');
+    h+='<div style="margin-top:11px;padding-top:10px;border-top:1px solid var(--line)">'+
+       '<div style="display:flex;justify-content:space-between;font-size:12.5px">'+
+         '<span>Contra el programa</span>'+
+         '<b style="color:'+col+'">'+mzN(pc,1)+'% cumplido</b></div>'+
+       '<span style="display:block;height:8px;border-radius:5px;background:var(--card2);margin-top:5px;overflow:hidden">'+
+         '<span style="display:block;height:100%;width:'+Math.min(100,Math.max(2,pc))+'%;background:'+col+'"></span></span>'+
+       '<div class="note" style="margin-top:4px;font-size:11.5px">Se programaron '+mzN(x.programa.programado)+
+         ' mezclas y se hicieron '+mzN(x.programa.producido)+'.</div></div>';
+  } else if(esOp){
+    h+='<div class="note" style="margin-top:10px;font-size:11.5px">El programa se hace por banbury y por turno, '+
+       'no por persona: para un operador no hay contra qué comparar.</div>';
+  }
+  h+='</div>';
+
+  /* ---- día por día ---- */
+  var dias=(x.por_dia||[]).map(function(d){ return {fecha:d.fecha, mezclas:d.mez}; });
+  if(dias.length){
+    var maxD=1; dias.forEach(function(d){ if(d.mezclas>maxD) maxD=d.mezclas; });
+    h+='<div class="card" style="margin-bottom:12px">'+
+       mzTitulo('Día por día','mp-dia',[['area','Área'],['linea','Línea']],'area')+
+       (mzGT('mp-dia','area')==='linea'? mzLinea(dias,maxD) : mzArea(dias,maxD))+
+       '<div class="note" style="margin-top:5px;font-size:11.5px">'+dias.length+
+         ' día(s) con producción en el periodo.</div></div>';
+  }
+
+  /* ---- paros ---- */
+  h+='<div class="card" style="margin-bottom:12px">';
+  if(esOp){
+    h+='<b style="font-size:13px">Paros</b>'+
+       '<div class="note" style="margin-top:5px;line-height:1.5">Información no disponible: el tiempo muerto '+
+       'se registra por banbury y por turno, no por operador. Si quieres verlo, cambia arriba a Banbury o Turno.</div>';
+  } else if(x.paros && (x.paros.n||0)>0){
+    var pmin=+x.paros.minutos||0;
+    h+=mzTitulo('Paros · '+mzN(x.paros.n)+' que suman '+mzN(Math.round(pmin/60*10)/10,1)+' h','mp-paro',MZ_OPS_CAT,'barras');
+    var pc2=(x.paros.por_causa||[]), maxP=1; pc2.forEach(function(c){ if(c.min>maxP) maxP=c.min; });
+    h+=mzCatGraf('mp-paro', pc2.map(function(c){ return {l:c.causa, v:c.min}; }), 'minutos',
+       pc2.map(function(c){ return '<div style="margin-top:8px"><div style="display:flex;justify-content:space-between;gap:9px;font-size:12px">'+
+         '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.causa)+'</span>'+
+         '<span class="note">'+mzN(c.min)+' min · '+c.n+'</span></div>'+
+         '<span style="display:block;height:7px;border-radius:4px;background:var(--bad);opacity:.85;margin-top:3px;width:'+
+           Math.max(3,Math.round(c.min/maxP*100))+'%"></span></div>'; }).join(''), 'barras');
+  } else {
+    h+='<b style="font-size:13px">Paros</b>'+
+       '<div class="note" style="margin-top:5px">Ninguno capturado en este periodo. Ojo: significa que no se '+
+       'registraron, no necesariamente que no hubo.</div>';
+  }
+  h+='</div>';
+
+  /* ---- qué corrió ---- */
+  var comp=x.por_compuesto||[];
+  if(comp.length){
+    var maxC=1; comp.forEach(function(c){ if(c.mez>maxC) maxC=c.mez; });
+    h+='<div class="card" style="margin-bottom:12px">'+
+       mzTitulo('Qué corrió','mp-comp',MZ_OPS_CAT,'barras')+
+       mzCatGraf('mp-comp', comp.map(function(c){ return {l:c.nom, v:c.mez}; }), 'mezclas',
+         comp.map(function(c){ return '<div style="margin-top:8px"><div style="display:flex;justify-content:space-between;gap:9px;font-size:12px">'+
+           '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.nom)+'</span>'+
+           '<span class="note">'+mzN(c.mez)+' mez · '+mzN(c.kg)+' kg</span></div>'+
+           '<span style="display:block;height:7px;border-radius:4px;background:var(--data);opacity:.9;margin-top:3px;width:'+
+             Math.max(3,Math.round(c.mez/maxC*100))+'%"></span></div>'; }).join(''), 'barras')+
+       '</div>';
+  }
+
+  /* ---- cómo se reparte por dentro (los otros dos ejes) ---- */
+  var cruces=[['cruce_banbury','Por banbury'],['cruce_turno','Por turno'],['cruce_operador','Por operador']];
+  var hayCruce=cruces.filter(function(c){ return x[c[0]] && x[c[0]].length; });
+  if(hayCruce.length){
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Cómo se reparte por dentro</b>';
+    hayCruce.forEach(function(c){
+      var it=x[c[0]].map(function(y){ return {l:y.et, v:y.mez}; });
+      h+='<div style="margin-top:11px"><div class="note" style="font-size:11.5px;letter-spacing:.05em;'+
+         'text-transform:uppercase;margin-bottom:2px">'+esc(c[1])+'</div>'+mzTablaG(it,'mezclas')+'</div>';
+    });
+    if((x.sin_operador||0)>0 && x.cruce_operador){
+      h+='<div class="note" style="margin-top:8px;color:var(--warn);line-height:1.5">'+mzN(x.sin_operador)+
+         ' mezclas del periodo no traen operador: son de julio, que se capturó con el formato anterior '+
+         '(no tenía esa columna). No se reparten arriba.</div>';
+    }
+    h+='</div>';
+  }
+
+  /* ---- contra sus pares ---- */
+  var par=x.pares||[];
+  if(par.length>1){
+    var maxPar=1; par.forEach(function(y){ if(y.mez>maxPar) maxPar=y.mez; });
+    h+='<div class="card"><b style="font-size:13px">Contra los demás</b>'+
+       par.map(function(y){
+         var yo=(String(y.v)===String(x.valor));
+         return '<div style="margin-top:8px;cursor:pointer" onclick="mpVal(\''+escA(String(y.v))+'\')">'+
+           '<div style="display:flex;justify-content:space-between;gap:9px;font-size:12px">'+
+             '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'+
+               (yo?';font-weight:700':'')+'">'+esc(niceName(y.et))+(yo?' ·  este':'')+'</span>'+
+             '<span class="note">'+mzN(y.mez)+' mez</span></div>'+
+           '<span style="display:block;height:7px;border-radius:4px;margin-top:3px;background:'+
+             (yo?'var(--data)':'var(--line)')+';width:'+Math.max(3,Math.round(y.mez/maxPar*100))+'%"></span></div>'; }).join('')+
+       '<div class="note" style="margin-top:9px;font-size:11.5px">Toca cualquiera para verlo.</div></div>';
+  }
+  cont.innerHTML=h;
+}
+function mpKpi(et,val,pie){
+  return '<div class="mpkpi"><div class="note">'+esc(et)+'</div><b>'+val+'</b>'+
+    (pie?'<div class="note" style="font-size:10.5px;margin-top:1px">'+esc(pie)+'</div>':'')+'</div>';
+}
+
 /* ---------- TABLERO DE DIRECCIÓN (acceso total) ---------- */
 function renderMezTab(){
   /* Gustavo (capturista) SÍ entra a sus gráficos — antes el cuadro se le pintaba
@@ -14349,6 +14578,10 @@ function mzLinea(dias,maxD){
 /* ---- SELECTOR DE RANGO: un solo control con flechas ‹ › y calendario ----
    (pedido de Carlos: nada de 5 botones amontonados; se navega de izquierda a
    derecha y el mismo control abre el mini calendario para el rango exacto) */
+/* el mismo control de rango sirve a varias pantallas: cada una dice a quién
+   avisarle cuando cambia el periodo. Por default, el tablero. */
+var _mzRangoFn='mzTabRango';
+function mzRangoGo(d1,d2){ var f=window[_mzRangoFn]||window.mzTabRango; f(d1,d2); }
 function mzRangos(){
   var hoy=mxToday(), d=new Date(hoy+'T12:00:00');
   function iso(x){ return x.toISOString().slice(0,10); }
@@ -14385,7 +14618,7 @@ function mzRangoMover(paso){
   var r=mzRangos(), i=mzRangoIdx();
   if(i<0) i = paso>0 ? -1 : r.length;          /* desde un rango a la medida */
   var j=Math.min(r.length-1, Math.max(0, i+paso));
-  mzTabRango(r[j].d1, r[j].d2);
+  mzRangoGo(r[j].d1, r[j].d2);
 }
 function mzRangoCtl(){
   var i=mzRangoIdx(), r=mzRangos();
@@ -14402,7 +14635,7 @@ function mzRangoPanel(){
   var r=mzRangos(), i=mzRangoIdx();
   el.innerHTML='<div class="card" style="margin-top:9px;background:var(--card2)">'+
     '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
-    r.map(function(x,k){ return '<button class="btn'+(k===i?'':' ghost')+'" style="margin:0;width:auto;padding:7px 12px;font-size:12px" onclick="mzTabRango(\''+x.d1+'\',\''+x.d2+'\')">'+x.t+'</button>'; }).join('')+
+    r.map(function(x,k){ return '<button class="btn'+(k===i?'':' ghost')+'" style="margin:0;width:auto;padding:7px 12px;font-size:12px" onclick="mzRangoGo(\''+x.d1+'\',\''+x.d2+'\')">'+x.t+'</button>'; }).join('')+
     '</div>'+
     '<div class="note" style="margin:10px 0 5px">O elige el rango exacto:</div>'+
     '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
@@ -14415,7 +14648,7 @@ function mzRangoAplica(){
   var a=$('mz-r1').value, b=$('mz-r2').value;
   if(!a||!b){ alert('Elige las dos fechas.'); return; }
   if(a>b){ var t=a; a=b; b=t; }
-  mzTabRango(a,b);
+  mzRangoGo(a,b);
 }
 function mzTabPaint(x){
   window._mzTabX=x;
@@ -16655,6 +16888,7 @@ function hbRefrescaPantalla(){
     if(sc==='mezcap'){ if(mzFormVacio()) mzLoadDia(mzCapPaint); }
     else if(sc==='mezprog') mzLoadDia(mzProgPaint);
     else if(sc==='meztab') renderMezTab();
+    else if(sc==='mezperf') renderMezPerfil();
     else if(sc==='mezsem') renderMezSem();
     else if(sc==='pedidos') pedsLoad();
   }catch(e){}

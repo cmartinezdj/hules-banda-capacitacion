@@ -11014,9 +11014,13 @@ function mzFxLoad(forzar){
    banbury | laboratorio | tubuladora_precurado | tubuladora_cojin | otro.
    Ninguna pasaba el CHECK, así que en 19 días de captura NADIE pudo guardar
    un reproceso: agosto tenía 0. Ahora son las claves reales de la base. */
+/* 25-ago: Laboratorio (Oropeza) avisó que faltaban DOS orígenes reales —
+   Pathex, y los sobrantes de los rollos cuando se meten a vulcanizar. */
 var MZ_ORG=[['banbury','Banbury (mezclado)'],
             ['tubuladora_precurado','Tubuladora de precurado'],
             ['tubuladora_cojin','Tubuladora de cojín'],
+            ['pathex','Pathex'],
+            ['vulcanizado','Sobrante de rollos al vulcanizar'],
             ['laboratorio','Laboratorio'],
             ['otro','Otro']];
 function mzOrgTxt(k){ for(var i=0;i<MZ_ORG.length;i++) if(MZ_ORG[i][0]===k) return MZ_ORG[i][1]; return k==='sin_origen'?'Sin origen':(k||''); }
@@ -12124,6 +12128,9 @@ function mzPegaPrev(){
         var ar=mzNorm(c[map.area]||'');
         fila.origen = ar.indexOf('LABORAT')>-1 ? 'laboratorio'
                     : ar.indexOf('MEZCL')>-1   ? 'banbury'
+                    : ar.indexOf('PATHEX')>-1  ? 'pathex'
+                    : ar.indexOf('VULCAN')>-1  ? 'vulcanizado'
+                    : (ar.indexOf('TUBUL')>-1 && ar.indexOf('COJIN')>-1) ? 'tubuladora_cojin'
                     : ar.indexOf('TUBUL')>-1   ? 'tubuladora_precurado'
                     : ar ? 'otro' : null;
       }
@@ -14430,8 +14437,20 @@ function mzDesgPaint(){
     if(rs.length) h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Reproceso semana a semana</b>'+
        mzTabla(['Semana','Reproceso','Total','% de la semana'],
         rs.map(function(s){ return mzTd([esc(s.semana),mzN(s.reproceso||0),mzN(s.total),mzPct(s.reproceso||0,s.total)]); }))+'</div>';
+    /* 25-ago: Laboratorio (Oropeza) precisó de dónde sale el 2% y a qué aplica.
+       Antes esta tarjeta lo multiplicaba por TODOS los kilos del periodo, y eso
+       está mal: la pérdida invisible ocurre en el MASTER, que es donde entran
+       el negro de humo y las cargas. Se dice el matiz en vez de dar un número
+       que no es (regla de oro: nada inventado). */
     h+='<div class="card"><b style="font-size:13px">Pérdida invisible (merma estándar)</b>'+
-       '<div class="note" style="margin-top:4px">Parámetro actual: '+mzN(x.merma_pct,2)+'% · equivale a <b>'+mzN((t.kg||0)*(+x.merma_pct||0)/100)+' kg</b> en el periodo.</div></div>';
+       '<div class="note" style="margin-top:4px">Parámetro actual: <b>'+mzN(x.merma_pct,2)+'%</b>. '+
+       'Lo definió Laboratorio con pruebas de <b>fly loss</b>, y el estudio fue global por compuesto.</div>'+
+       '<div class="note" style="margin-top:6px;line-height:1.55">En un compuesto de <b>dos pasos</b> ese 2% '+
+       'corresponde al <b>master</b> (1er paso), no al final: es en el master donde entran la mayoría de los '+
+       'polvos —negro de humo y cargas— y es ahí donde se pierde el material que no se ve.</div>'+
+       '<div class="note" style="margin-top:6px;color:var(--warn)">Falta separar los kilos de master de los de '+
+       'final para poder poner aquí el peso exacto. Mientras tanto no se multiplica por el total del periodo, '+
+       'porque daría un número más alto del real.</div></div>';
 
   } else if(x.tema==='eficiencia'){
     h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Velocidad real vs estándar de la hoja</b>'+

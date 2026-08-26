@@ -1336,6 +1336,14 @@ body.a11y .mpkpi>b{font-size:22px}
 body.a11y .mpkpis{grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
 @media(max-width:520px){ .mpkpis{grid-template-columns:repeat(auto-fit,minmax(78px,1fr))} }
 </style>
+<style>
+/* la pista del asistente (26-ago) · chiquita, pegada al cuadro de escribir */
+.chatpista{font-size:11px;line-height:1.45;color:var(--mut);padding:6px 14px 0;text-align:center}
+.chatpista b{color:var(--txt);font-weight:700}
+.chatpista i{font-style:normal;opacity:.75}
+body.a11y .chatpista{font-size:14px;line-height:1.5}
+@media(max-width:420px){ .chatpista{font-size:10.5px;padding:5px 10px 0} }
+</style>
 </head>
 <body>
 <div class="mesh"></div><div class="grain"></div>
@@ -5642,6 +5650,11 @@ function renderChat(){
      (esAdmin?'<span class="chipst soloesc" id="iaGastoChip" title="Gasto de IA del mes (llaves API)">IA · $…</span>':'')+
      '<button class="icoa solocel" title="Nuevo chat" aria-label="Nuevo chat" onclick="iaChNew()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>';
   h+='<div class="msgs" id="msgs"></div>';
+  /* 26-ago (Carlos): que el asistente no adivine cuándo buscar en la base.
+     Quien quiera un documento lo pide con la palabra al frente. El aviso va
+     chiquito, pegado al cuadro de escribir, para que se lea sin estorbar. */
+  h+='<div class="chatpista">Para buscar en los documentos del sistema, empieza con '+
+     '<b>Documentos:</b> y de qué se trata. Ejemplo: <i>Documentos: manual del banbury</i>.</div>';
   h+='<div class="composer"><input id="chatIn" placeholder="Escríbele a Bandi…" autocomplete="off"><button class="send" onclick="sendChat()" aria-label="Enviar"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button></div>';
   h+='</div>';
   /* --- DERECHA (solo acceso total, escritorio): gasto y top de consumo --- */
@@ -5916,10 +5929,18 @@ function bandiTotal(){ return !!(V3_ON && S && S.admin && S.dash!=='resp'); }
    responde con botones que abren cada documento (liga firmada, RLS del servidor). */
 function docFind(t){
   var lib=docsGet(); if(!lib||!lib.length) return null;
+  /* 26-ago (Carlos): el prefijo explícito. «Documentos: manual del banbury»
+     — o «base de datos:», «archivo:», «documento:» — le dice al asistente que
+     tiene que buscar en la base, en lugar de adivinarlo por las palabras.
+     Lo que va DESPUÉS de los dos puntos es la búsqueda; el prefijo se quita
+     para que no compita con los títulos. */
+  var explicito=docPrefijo(t);
+  if(explicito!==null) t=explicito;
   var raw=_norm(t).split(/\s+/).filter(function(w){ return w.length>=3 && !KB_STOP[w]; });
   var q=raw.map(function(w){ return w.length>4 ? w.replace(/(es|s)$/,'') : w; });
-  if(!q.length) return null;
-  var pideDoc=/(documento|manual|archivo|pdf|proceso|instructivo|formato|reporte)/.test(_norm(t));
+  if(!q.length && explicito===null) return null;
+  var pideDoc=(explicito!==null) ||
+    /(documento|manual|archivo|pdf|proceso|instructivo|formato|reporte)/.test(_norm(t));
   var hits=[];
   lib.forEach(function(d){
     var T=' '+_norm((d.titulo||'')+' '+(d.depto||''))+' ', s=0;
@@ -5939,6 +5960,12 @@ function docFind(t){
   var top=(fuertes.length?fuertes:hits).slice(0,4).map(function(h){ return h.d; });
   return { topic:'(Datos) Documentos', docs:top.map(function(d){ return {id:d.id, titulo:d.titulo, depto:d.depto}; }),
            answer:(top.length===1?'Encontré este documento. Tócalo para abrirlo:':'Encontré '+top.length+' documentos que pueden servirte. Toca uno para abrirlo:') };
+}
+/* devuelve lo que va después de «Documentos:» (o sus variantes), o null si
+   la pregunta no trae el prefijo. Cadena vacía = pidió documentos sin tema. */
+function docPrefijo(t){
+  var m=/^\s*(documentos?|base\s+de\s+datos|archivos?|expedientes?)\s*:\s*([\s\S]*)$/i.exec(t||'');
+  return m ? (m[2]||'').trim() : null;
 }
 function sendChat(){
   var inp=$('chatIn'); var t=(inp.value||'').trim(); if(!t||chatBusy) return;
@@ -5963,6 +5990,16 @@ function sendChat(){
   // RESPUESTAS CERRADAS: primero la biblioteca autorizada. Registra frecuencia y no-respondidas.
   setTimeout(function(){
     chatBusy=false;
+    /* si lo pidió con «Documentos:», la base va PRIMERO: fue una orden, no una
+       corazonada. Si no encuentra, lo dice — no se cuelga a la biblioteca. */
+    if(dios && docPrefijo(t)!==null){
+      var dfx=docFind(t);
+      if(dfx){ logQ(dfx.topic,t,true); S.chat.push({role:'assistant',content:dfx.answer,docs:dfx.docs}); paintChat(); return; }
+      logQ('(Datos) Documentos sin resultado',t,false);
+      S.chat.push({role:'assistant',content:'Busqué en los documentos del sistema y no encontré nada con eso. '+
+        'Prueba con el nombre del archivo, su código (por ejemplo MP-LPF-21) o el área. '+
+        'Si el documento no está subido todavía, no lo tengo.'}); paintChat(); return;
+    }
     var res=kbFind(t);
     if(res.hit){ logQ(res.topic,t,true); S.chat.push({role:'assistant',content:res.answer}); paintChat(); return; }
     // ACCESO TOTAL: si la biblioteca no supo, buscar DOCUMENTOS (privados incluidos; RLS ya validó admin)

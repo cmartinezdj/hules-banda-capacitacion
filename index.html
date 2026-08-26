@@ -14520,13 +14520,28 @@ function mzDesgPaint(){
        'porque daría un número más alto del real.</div></div>';
 
   } else if(x.tema==='eficiencia'){
-    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Velocidad real vs estándar de la hoja</b>'+
-       mzTabla(['Compuesto','Mezclas','Min/mezcla real','Estándar hoja','Diferencia'],
-        (x.velocidad||[]).map(function(v){
-          var d=(v.estandar_gt&&v.min_por_mezcla)?(v.min_por_mezcla-v.estandar_gt):null;
-          return mzTd([esc(v.compuesto||'¿?'),mzN(v.mezclas),mzN(v.min_por_mezcla,2),
-            v.estandar_gt?mzN(v.estandar_gt,2):'<span class="note">sin dato</span>',
-            d==null?'—':('<span style="color:'+(d<=0?'var(--ok)':'var(--warn)')+'">'+(d>0?'+':'')+mzN(d,2)+'</span>')]); }))+'</div>';
+    /* 25-ago-2026 — Laboratorio (Oropeza) aclaró que NO existe un tiempo de ciclo
+       estándar por compuesto: el control real es la TEMPERATURA de descarga, y en
+       los compuestos finales el tope es 100 °C. Antes esta tabla comparaba los
+       minutos reales contra tiempo_ciclo_min y sacaba desviaciones absurdas
+       (hasta 1554% «más lenta») contra un número que no es un estándar. */
+    var _vel=(x.velocidad||[]), _conTemp=_vel.filter(function(v){ return v.temp_descarga!=null; }).length;
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Ritmo y temperatura de descarga</b>'+
+       '<div class="note" style="margin-top:4px;line-height:1.55">El <b>control del proceso es la temperatura</b>, '+
+       'no el reloj: Laboratorio no tiene definido un tiempo de ciclo por compuesto. Los minutos por mezcla se '+
+       'muestran como referencia del ritmo, <b>no como un incumplimiento</b>.</div>'+
+       mzTabla(['Compuesto','Mezclas','Min/mezcla (referencia)','Temperatura de descarga'],
+        _vel.map(function(v){
+          var t=(v.temp_descarga!=null)?(+v.temp_descarga):null;
+          var tope=(String(v.tipo_compuesto||'').toLowerCase()==='final')?100:null;
+          var txt = (t==null) ? '<span class="note">sin dato</span>'
+            : ('<b>'+mzN(t,0)+' °C</b>'+(tope?('<span class="note"> · tope '+tope+' °C</span>'):''));
+          return mzTd([esc(v.compuesto||'¿?'),mzN(v.mezclas),
+            v.min_por_mezcla!=null?mzN(v.min_por_mezcla,2):'—', txt]); }))+
+       ((_conTemp<_vel.length)?('<div class="note" style="margin-top:7px;color:var(--warn)">'+
+          (_vel.length-_conTemp)+' de '+_vel.length+' compuestos no tienen capturada su temperatura de descarga. '+
+          'Viene en la hoja de cada uno; es el dato que hace falta para poder comparar contra el estándar real.</div>'):'')+
+       '</div>';
     h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Utilización por banbury</b>'+
        mzTabla(['Banbury','Turnos','Minutos de paro','Mezclas','Paro por turno'],
         (x.utilizacion||[]).map(function(u){ return mzTd(['BB'+u.banbury,mzN(u.turnos),mzN(u.paros_min),mzN(u.mezclas),

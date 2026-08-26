@@ -1505,6 +1505,7 @@ body.a11y .chatpista{font-size:14px;line-height:1.5}
     <section id="s-lab"     class="screen pad hide"></section>
     <section id="s-labrec"  class="screen pad hide"></section>
     <section id="s-labprb"  class="screen pad hide"></section>
+    <section id="s-labver"  class="screen pad hide"></section>
     <section id="s-perms"   class="screen pad hide"></section>
     <section id="s-mezprog" class="screen pad hide"></section>
     <section id="s-mezana"  class="screen pad hide"></section>
@@ -3242,7 +3243,7 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'"'+main+' title="'+it[1]+'" onclick="'+accion+'">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['planta','manto','mezrec','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezperf','mezdesg','mezcomp','mezcierres','mezprecios','mezsem','mezraw','iallaves','mezalm','alim','mprima','lab','labrec','labprb','perms'];
+var SCREENS=['planta','manto','mezrec','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezperf','mezdesg','mezcomp','mezcierres','mezprecios','mezsem','mezraw','iallaves','mezalm','alim','mprima','lab','labrec','labprb','labver','perms'];
 var _prevShown=null;
 function show(name){
   var cambio = (name!==_prevShown);
@@ -3607,7 +3608,7 @@ function renderTop(name){
   var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='mezraw'||name==='mezalm'||name==='iallaves'||name==='prod'||name==='manto'||name==='labrec') && !(name==='docs' && window._docFrom==='tab');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? (window._pedFrom==='manto'?'go(\'manto\')':'go(\'hr\')') : name==='pedir' ? (window._pedFrom==='manto'?'go(\'manto\')':('go(\''+((S.admin||S.mando)?'hr':'home')+'\')')) : (name==='prod'||name==='manto') ? 'go(\'planta\')' : (name==='labrec'||name==='labprb') ? 'go(\'lab\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='mezalm' ? 'go(\'prod\')' : name==='iallaves' ? 'go(\'hr\')' : name==='mezraw' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? (window._pedFrom==='manto'?'go(\'manto\')':'go(\'hr\')') : name==='pedir' ? (window._pedFrom==='manto'?'go(\'manto\')':('go(\''+((S.admin||S.mando)?'hr':'home')+'\')')) : (name==='prod'||name==='manto') ? 'go(\'planta\')' : (name==='labrec'||name==='labprb'||name==='labver') ? 'go(\'lab\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='mezalm' ? 'go(\'prod\')' : name==='iallaves' ? 'go(\'hr\')' : name==='mezraw' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
     left.innerHTML='<button class="tlogo" onclick="hbInicio()" title="Ir al inicio" aria-label="Ir al inicio">'+HB_MARK+'</button><button class="back" onclick="'+backTo+'">‹ Atrás</button>'+hbQuienSoy(true);
     left.classList.remove('who');
   }else{
@@ -12036,12 +12037,152 @@ function renderLab(){
   if(S.mezTec||S.admin) h+=htile("go('labrec')",'deptos','El recorrido de cada compuesto','Versión por versión: qué cambió y qué produjo',{wide:true});
   if(S.mezTec||S.admin) h+=htile('renderMezAna()','focos','Analista de compuestos','Eficiencia, fallas e historial por compuesto');
   if(S.mezTec||S.admin) h+=htile("go('labprb')",'clip','Pruebas por versión','Reometría, dureza, Mooney, densidad y físicas',{wide:true});
+  if(S.mezTec||S.admin) h+=htile("go('labver')",'recibo','Versiones vigentes','Sube aquí la hoja de versiones cada que la actualices',{wide:true});
   if(S.admin||S.mando) h+=htile("permAbre('LABORATORIO')",'personas','Permisos del área','Quién ve las fórmulas y la información de esta área');
   h+='</div>';
   if(!(S.mezTec||S.admin)) h+='<div class="card" style="margin-top:12px"><div class="note">Las <b>fórmulas</b> son información clasificada: se necesita permiso del responsable de Laboratorio o de dirección para verlas.</div></div>';
   $('s-lab').innerHTML=h; show('lab');
 }
 
+
+/* ══════════════════════════════════════════════════════════════════
+   LA HOJA DE VERSIONES VIGENTES (26-ago-2026)
+
+   Oropeza preguntó dónde subir su hoja cada que la actualiza. Aquí.
+   El sistema tomaba como vigente «la última versión que alcanzó a registrar»,
+   así que cuando Laboratorio liberaba una nueva, seguía costeando con la
+   anterior. Esta hoja es la que manda.
+   ══════════════════════════════════════════════════════════════════ */
+var _lvFilas=null, _lvNota='';
+function renderLabVer(){
+  if(!(S.mezTec||S.admin)){ flash('Solo Laboratorio y dirección.'); return; }
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div>'+
+    '<div class="eyebrow">Laboratorio</div><b style="font-size:20px">Versiones vigentes</b>'+
+    '<p class="note" style="margin:4px 0 0;max-width:400px">Sube aquí la hoja de versiones cada que '+
+    'Laboratorio la actualice. El sistema marca cuál fórmula está vigente y guarda su folio GT.</p></div></div>'+
+    '<div class="card" style="margin-top:11px;background:var(--card2)">'+
+      '<b style="font-size:13px">Qué debe traer la hoja</b>'+
+      '<div class="note" style="margin-top:5px;line-height:1.6">Una columna con el <b>compuesto</b>, '+
+      'otra con la <b>versión vigente</b> (la letra), y si vienen, el <b>folio GT</b> y la <b>fecha</b>. '+
+      'Es el mismo formato que ya usa Laboratorio — no hay que cambiarle nada.</div></div>'+
+    '<div style="margin-top:12px"><input type="file" id="lvFile" accept=".xlsx,.xls,.csv,.tsv" '+
+      'onchange="lvArchivo(this)" style="font:inherit;font-size:13px"></div>'+
+    '<div id="lvAviso" class="note" style="margin-top:8px"></div>'+
+    '<div id="lvPrev"></div></div>';
+  $('s-labver').innerHTML=h; show('labver');
+}
+function lvAvisa(t,malo){ var e=$('lvAviso'); if(e) e.innerHTML='<span'+(malo?' style="color:var(--bad)"':'')+'>'+esc(t)+'</span>'; }
+function lvArchivo(inp){
+  var f=inp.files&&inp.files[0]; if(!f) return;
+  _lvFilas=null; $('lvPrev').innerHTML=''; lvAvisa('Leyendo…');
+  if(/\.(csv|tsv)$/i.test(f.name)){
+    var rd=new FileReader();
+    rd.onload=function(){ lvTsv(rd.result, f.name); };
+    rd.readAsText(f); return;
+  }
+  mzXlsxLee(f, lvAvisa, lvTsv, 'lvPrev');
+}
+function lvTsv(tsv, nota){
+  _lvNota=nota||'';
+  var ren=(tsv||'').split(/\r?\n/).map(function(l){ return l.split(/\t|,/); });
+  /* buscar el encabezado: el renglón que traiga «vigente» */
+  var hi=-1;
+  for(var i=0;i<Math.min(ren.length,25);i++){
+    var j=ren[i].join(' ').toLowerCase();
+    if(j.indexOf('vigente')>=0){ hi=i; break; }
+  }
+  if(hi<0){ lvAvisa('No encontré el renglón de encabezados. La hoja debe traer una columna que diga «VERSION VIGENTE».', true); return; }
+  /* ojo: _norm() devuelve minúsculas */
+  var enc=ren[hi].map(function(c){ return _norm(c||'').toUpperCase(); });
+  var cVig=-1, cGt=-1, cFe=-1;
+  for(var k=0;k<enc.length;k++){
+    if(cVig<0 && enc[k].indexOf('VIGENTE')>=0){ cVig=k; cGt=k+1; cFe=k+2; }
+  }
+  var filas=[];
+  for(var r=hi+1;r<ren.length;r++){
+    var f=ren[r]; if(!f) continue;
+    /* el nombre del compuesto: la primera celda con texto a la izquierda */
+    var nom=''; for(var c=0;c<Math.min(f.length,cVig);c++){ var v=(f[c]||'').trim();
+      if(v && !/^\d+$/.test(v)){ nom=v; break; } }
+    var letra=(f[cVig]||'').trim();
+    if(!nom || !letra) continue;
+    if(_norm(letra).toUpperCase().indexOf('VERSION')>=0) continue;
+    filas.push({compuesto:nom, letra_vig:letra.replace(/\s+/g,''),
+                gt_vig:(f[cGt]||'').trim(), fecha_vig:lvFecha(f[cFe]||'')});
+  }
+  if(!filas.length){ lvAvisa('Leí la hoja pero no encontré ni un renglón con compuesto y versión.', true); return; }
+  _lvFilas=filas;
+  lvAvisa(filas.length+' renglón(es) leídos de '+(nota||'la hoja')+'. Revisa antes de guardar.');
+  lvPrev();
+}
+var LV_MES={ENE:1,FEB:2,MAR:3,ABR:4,MAY:5,JUN:6,JUL:7,AGO:8,SEP:9,OCT:10,NOV:11,DIC:12};
+function lvFecha(t){
+  t=(t||'').trim().toUpperCase().replace(/\./g,'');
+  var m=/^(\d{1,2})\/([A-Z]{3})[A-Z]*\/(\d{2,4})$/.exec(t);
+  if(m){ var a=+m[3]; if(a<100) a+=2000; var mm=LV_MES[m[2]];
+    if(!mm) return null;
+    return a+'-'+('0'+mm).slice(-2)+'-'+('0'+(+m[1])).slice(-2); }
+  m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(t);
+  if(m) return m[3]+'-'+('0'+(+m[2])).slice(-2)+'-'+('0'+(+m[1])).slice(-2);
+  if(/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+  return null;
+}
+function lvPrev(){
+  var f=_lvFilas||[];
+  $('lvPrev').innerHTML='<div class="card" style="margin-top:11px">'+
+    '<b style="font-size:13px">Lo que voy a guardar</b>'+
+    mzTabla(['Compuesto','Versión vigente','GT','Fecha'],
+      f.slice(0,40).map(function(x){ return mzTd([esc(x.compuesto), esc(x.letra_vig),
+        esc(x.gt_vig||'—'), esc(x.fecha_vig||'—')]); }))+
+    (f.length>40?'<div class="note" style="margin-top:5px">…y '+(f.length-40)+' más.</div>':'')+
+    '<button class="btn" style="margin-top:11px;width:auto;padding:9px 16px;font-size:13px" '+
+      'onclick="lvGuarda()">Guardar en el sistema</button></div>';
+}
+function lvGuarda(){
+  var f=_lvFilas||[]; if(!f.length) return;
+  if(!mzConfirmaEnvio('labver', f.length, 'versiones de fórmula', lvGuarda)) return;
+  lvAvisa('Guardando…');
+  SB.rpc('hb_lab_versiones_import',{p:{filas:f}}).then(function(r){
+    var x=r&&r.data;
+    if(!(x&&x.ok)){ lvAvisa(mzErr(x), true); return; }
+    lvResultado(x);
+  },function(){ lvAvisa(mzErr(), true); });
+}
+function lvResultado(x){
+  var h='<div class="card" style="margin-top:11px;border-color:color-mix(in srgb,var(--ok) 40%,transparent)">'+
+    '<b style="font-size:14px;color:var(--ok)">Listo</b>'+
+    '<div class="note" style="margin-top:5px;line-height:1.6">'+
+      '<b>'+mzN(x.cambiadas)+'</b> versión(es) cambiaron de vigente · <b>'+mzN(x.ya_estaban)+
+      '</b> ya estaban bien'+((x.retrabajo_solo_folio||0)>0?' · <b>'+mzN(x.retrabajo_solo_folio)+
+      '</b> de retrabajo (solo se guardó su folio)':'')+'.</div>';
+  if((x.cambios||[]).length){
+    h+='<div style="margin-top:9px">'+x.cambios.map(function(c){
+      return '<div style="font-size:12.5px;padding:4px 0;border-bottom:1px solid var(--line)">'+
+        esc(c.compuesto)+': <b>'+esc(c.antes)+'</b> → <b style="color:var(--ok)">'+esc(c.ahora)+'</b></div>'; }).join('')+'</div>';
+  }
+  if((x.conflictos||[]).length){
+    h+='<div style="margin-top:11px;padding:10px 12px;border-radius:11px;background:color-mix(in srgb,var(--warn) 10%,transparent)">'+
+      '<b style="font-size:12.5px;color:var(--warn)">No los toqué: la hoja los trae repetidos</b>'+
+      '<div class="note" style="margin-top:4px;line-height:1.55">Estos compuestos vienen en más de un '+
+      'renglón con letras distintas, así que no puedo saber cuál manda. Lo decide Laboratorio.</div>'+
+      x.conflictos.map(function(c){ return '<div style="font-size:12.5px;margin-top:4px">'+
+        esc(c.compuesto)+' → '+(c.letras||[]).map(esc).join(' · ')+'</div>'; }).join('')+'</div>';
+  }
+  if((x.sin_esa_version||[]).length){
+    h+='<div style="margin-top:11px;padding:10px 12px;border-radius:11px;background:var(--card2)">'+
+      '<b style="font-size:12.5px">Versiones que Laboratorio dice vigentes y no están en el sistema</b>'+
+      '<div class="note" style="margin-top:4px">Falta su hoja GT. Hasta que llegue, esos compuestos se '+
+      'siguen costeando con la versión anterior.</div>'+
+      x.sin_esa_version.map(function(c){ return '<div style="font-size:12.5px;margin-top:4px">'+
+        esc(c.compuesto)+' <b>'+esc(c.letra)+'</b> <span class="note">· '+esc(c.motivo)+'</span></div>'; }).join('')+'</div>';
+  }
+  if((x.compuestos_desconocidos||[]).length){
+    h+='<div class="note" style="margin-top:9px">No están en el catálogo: '+
+       x.compuestos_desconocidos.map(esc).join(' · ')+'</div>';
+  }
+  h+='</div>';
+  $('lvPrev').innerHTML=h; lvAvisa('');
+}
 
 /* ══════════════════════════════════════════════════════════════════
    PRUEBAS DE LABORATORIO POR VERSIÓN (26-ago-2026)
@@ -17209,6 +17350,7 @@ function hbRefrescaPantalla(){
     else if(sc==='meztab') renderMezTab();
     else if(sc==='mezperf') renderMezPerfil();
     else if(sc==='labprb') renderLabPrb();
+    else if(sc==='labver') renderLabVer();
     else if(sc==='mezsem') renderMezSem();
     else if(sc==='pedidos') pedsLoad();
   }catch(e){}

@@ -138,6 +138,15 @@ body.a11y .iascroll{max-height:none;overflow:visible}
 .dvscroll::-webkit-scrollbar{width:8px}
 .dvscroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
 body.a11y .dvscroll{max-height:none;overflow:visible}
+/* pruebas de laboratorio: lista larga de compuestos y de resultados */
+.lpscroll{max-height:340px;overflow-y:auto;margin-top:8px;padding-right:4px}
+.lprow{display:flex;align-items:center;gap:9px;width:100%;text-align:left;margin:0 0 6px;
+  padding:10px 12px;border-radius:11px;border:1px solid var(--line);background:var(--card2);
+  color:var(--txt);font:inherit;font-size:13px;cursor:pointer}
+.lprow:hover{border-color:color-mix(in srgb,var(--data) 45%,transparent)}
+/* REGLA DEL PROYECTO: toda clase nueva entra a Texto grande o se rompe en silencio */
+body.a11y .lpscroll{max-height:none;overflow:visible}
+body.a11y .lprow{font-size:16px;padding:13px 15px}
 .pqscroll{max-height:min(56vh,460px);overflow-y:auto;overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;padding-right:4px}
 .pqscroll::-webkit-scrollbar{width:8px}
@@ -1495,6 +1504,7 @@ body.a11y .chatpista{font-size:14px;line-height:1.5}
     <section id="s-mprima"  class="screen pad hide"></section>
     <section id="s-lab"     class="screen pad hide"></section>
     <section id="s-labrec"  class="screen pad hide"></section>
+    <section id="s-labprb"  class="screen pad hide"></section>
     <section id="s-perms"   class="screen pad hide"></section>
     <section id="s-mezprog" class="screen pad hide"></section>
     <section id="s-mezana"  class="screen pad hide"></section>
@@ -3101,6 +3111,9 @@ function bootV3(forceProfile){
     var admin=!!d.admin, mando=!!d.mando;
     var cfg={ emp:d.n, clave:d.clave, key:akey, area:d.depto, accent:ac.accent, accent2:ac.accent2,
               admin:admin, dash:(admin?'rrhh':(mando?'resp':null)), mando:mando, nombre:d.nombre,
+              /* cuenta de demostración (26-ago): ve el sistema completo pero el dinero
+                 sale como «---». El servidor ya no le manda ni una cifra. */
+              demo:!!d.demo,
               greet:'¡Hola, '+(niceName(d.nombre||'').split(' ')[0]||'')+'! Aquí nace la banda que rueda por +50 países.' };
     // Nombre/datos en el perfil SOLO en caché local (NO al servidor): así no pisamos
     // la foto/firma que ya vive en el servidor. kvInit cargará el perfil real (con
@@ -3229,7 +3242,7 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'"'+main+' title="'+it[1]+'" onclick="'+accion+'">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['planta','manto','mezrec','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezperf','mezdesg','mezcomp','mezcierres','mezprecios','mezsem','mezraw','iallaves','mezalm','alim','mprima','lab','labrec','perms'];
+var SCREENS=['planta','manto','mezrec','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezperf','mezdesg','mezcomp','mezcierres','mezprecios','mezsem','mezraw','iallaves','mezalm','alim','mprima','lab','labrec','labprb','perms'];
 var _prevShown=null;
 function show(name){
   var cambio = (name!==_prevShown);
@@ -3594,7 +3607,7 @@ function renderTop(name){
   var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='mezraw'||name==='mezalm'||name==='iallaves'||name==='prod'||name==='manto'||name==='labrec') && !(name==='docs' && window._docFrom==='tab');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? (window._pedFrom==='manto'?'go(\'manto\')':'go(\'hr\')') : name==='pedir' ? (window._pedFrom==='manto'?'go(\'manto\')':('go(\''+((S.admin||S.mando)?'hr':'home')+'\')')) : (name==='prod'||name==='manto') ? 'go(\'planta\')' : name==='labrec' ? 'go(\'lab\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='mezalm' ? 'go(\'prod\')' : name==='iallaves' ? 'go(\'hr\')' : name==='mezraw' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? (window._pedFrom==='manto'?'go(\'manto\')':'go(\'hr\')') : name==='pedir' ? (window._pedFrom==='manto'?'go(\'manto\')':('go(\''+((S.admin||S.mando)?'hr':'home')+'\')')) : (name==='prod'||name==='manto') ? 'go(\'planta\')' : (name==='labrec'||name==='labprb') ? 'go(\'lab\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='mezalm' ? 'go(\'prod\')' : name==='iallaves' ? 'go(\'hr\')' : name==='mezraw' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
     left.innerHTML='<button class="tlogo" onclick="hbInicio()" title="Ir al inicio" aria-label="Ir al inicio">'+HB_MARK+'</button><button class="back" onclick="'+backTo+'">‹ Atrás</button>'+hbQuienSoy(true);
     left.classList.remove('who');
   }else{
@@ -11626,12 +11639,19 @@ function mzN(v,dec){ if(v==null||isNaN(v)) return '—';
    v3_50, el tema 'costos' del desglose es solo de acceso total); esto es para
    que la pantalla ni lo pinte. ===== */
 function mzVeDinero(){ return !!(S && S.admin); }
-function mzVeDineroMp(){ return !!(S && (S.admin || S.mezCostos)); }
+function mzVeDineroMp(){ return !!(S && (S.admin || S.mezCostos || S.demo)); }
 function mzMonTag(c){ return ' <span class="mon">'+c+'</span>'; }
-function mzMx(v,dec){ if(v==null||isNaN(v)) return '—';
+/* En la cuenta de demostración el dinero NO se esconde: se dibuja el lugar donde
+   va, con «---». Así quien mira ve que el sistema costea, sin ver un peso de
+   Hules Banda. El servidor tampoco se lo manda: esto no es el candado, es el
+   letrero. (26-ago) */
+function mzDemo(){ return !!(S && S.demo); }
+function mzMx(v,dec){ if(mzDemo()) return '<span class="note" title="Cuenta de demostración: los montos no se muestran">---</span>';
+  if(v==null||isNaN(v)) return '—';
   if(Math.abs(v)>=1e6) return '<span title="$'+mzN(v,2)+' MXN">$'+mzN(v/1e6,2)+' M</span>'+mzMonTag('MXN');
   return '$'+mzN(v,dec==null?2:dec)+mzMonTag('MXN'); }
-function mzUs(v,dec){ if(v==null||isNaN(v)) return '—';
+function mzUs(v,dec){ if(mzDemo()) return '<span class="note" title="Cuenta de demostración: los montos no se muestran">---</span>';
+  if(v==null||isNaN(v)) return '—';
   if(Math.abs(v)>=1e6) return '<span title="$'+mzN(v,2)+' USD">$'+mzN(v/1e6,2)+' M</span>'+mzMonTag('USD');
   return '$'+mzN(v,dec==null?2:dec)+mzMonTag('USD'); }
 function mzPct(a,b){ if(!b) return '—'; return mzN(a/b*100,1)+'%'; }
@@ -12015,12 +12035,186 @@ function renderLab(){
   if(S.mezTec||S.admin) h+=htile('renderMezRec()','docs','Fórmulas (carpeta GT)','Vigentes por familia: ver, confirmar y cambiar');
   if(S.mezTec||S.admin) h+=htile("go('labrec')",'deptos','El recorrido de cada compuesto','Versión por versión: qué cambió y qué produjo',{wide:true});
   if(S.mezTec||S.admin) h+=htile('renderMezAna()','focos','Analista de compuestos','Eficiencia, fallas e historial por compuesto');
+  if(S.mezTec||S.admin) h+=htile("go('labprb')",'clip','Pruebas por versión','Reometría, dureza, Mooney, densidad y físicas',{wide:true});
   if(S.admin||S.mando) h+=htile("permAbre('LABORATORIO')",'personas','Permisos del área','Quién ve las fórmulas y la información de esta área');
   h+='</div>';
   if(!(S.mezTec||S.admin)) h+='<div class="card" style="margin-top:12px"><div class="note">Las <b>fórmulas</b> son información clasificada: se necesita permiso del responsable de Laboratorio o de dirección para verlas.</div></div>';
   $('s-lab').innerHTML=h; show('lab');
 }
 
+
+/* ══════════════════════════════════════════════════════════════════
+   PRUEBAS DE LABORATORIO POR VERSIÓN (26-ago-2026)
+
+   Oropeza contestó qué se le mide a una versión para saber si salió bien:
+   reometría, dureza, viscosidad Mooney, densidad, pruebas físicas (tensión y
+   elongación) y «desempeño en producción, defectivo». Nada de eso vivía en el
+   sistema: había el peso de la mezcla y la temperatura de descarga, pero
+   ningún resultado.
+
+   Los parámetros de adentro de cada prueba se dejan LIBRES a propósito: una
+   reometría trae varios números y no sé cuáles usa Laboratorio. Ellos escriben
+   los que de verdad miden.
+   ══════════════════════════════════════════════════════════════════ */
+var _lpCid=null, _lpX=null, _lpVid=null, _lpQ='';
+var LP_TIPOS=[['reometria','Reometría'],['dureza','Dureza'],['mooney','Viscosidad Mooney'],
+              ['densidad','Densidad'],['tension','Tensión'],['elongacion','Elongación'],
+              ['desempeno','Desempeño en producción']];
+function lpNom(t){ for(var i=0;i<LP_TIPOS.length;i++) if(LP_TIPOS[i][0]===t) return LP_TIPOS[i][1]; return t; }
+
+function renderLabPrb(){
+  if(!(S.mezTec||S.admin)){ flash('Solo Laboratorio y dirección.'); return; }
+  $('s-labprb').innerHTML='<div class="card"><div class="note">Cargando…</div></div>';
+  show('labprb');
+  if(_lpCid) lpCarga(); else lpPintaSel();
+}
+/* elegir compuesto: la misma lista que ya usa el recorrido */
+function lpPintaSel(){
+  if(!(V3_ON && sbReady() && SB)){ $('s-labprb').innerHTML='<div class="card"><b>Sin conexión con el servidor.</b></div>'; return; }
+  SB.rpc('hb_mez_catalogo').then(function(r){
+    var x=r&&r.data, lista=(x&&x.compuestos)||[];
+    window._lpLista=lista; lpPintaLista();
+  },function(){ $('s-labprb').innerHTML='<div class="card"><b>'+esc(mzErr())+'</b></div>'; });
+}
+function lpPintaLista(){
+  var lista=window._lpLista||[], q=_norm(_lpQ);
+  var f=q?lista.filter(function(c){ return _norm(c.nombre||'').indexOf(q)>=0; }):lista;
+  var h='<div class="panel"><div class="hd"><div><div class="eyebrow">Laboratorio</div>'+
+    '<b style="font-size:20px">Pruebas por versión</b>'+
+    '<p class="note" style="margin:4px 0 0;max-width:360px">Reometría, dureza, Mooney, densidad y pruebas físicas. '+
+    'Elige el compuesto.</p></div></div>'+
+    '<input id="lpQ" placeholder="Buscar compuesto…" autocomplete="off" oninput="lpBuscar(this.value)" value="'+escA(_lpQ)+'" '+
+      'style="width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px;margin-top:10px">'+
+    '<div class="lpscroll">'+
+      (f.length? f.map(function(c){
+        return '<button class="lprow" onclick="lpSel('+c.id+')">'+
+          '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.nombre)+'</span>'+
+          '<span class="note" style="flex:none;font-size:11px">'+esc(c.familia||'')+'</span></button>'; }).join('')
+        : '<div class="note" style="padding:10px">Nadie coincide con «'+esc(_lpQ)+'».</div>')+
+    '</div></div>';
+  $('s-labprb').innerHTML=h;
+}
+function lpBuscar(v){ _lpQ=v||''; var e=document.activeElement, p=e&&e.selectionStart;
+  lpPintaLista(); var n=$('lpQ'); if(n){ n.focus(); try{ n.setSelectionRange(p,p); }catch(x){} } }
+function lpSel(cid){ _lpCid=cid; _lpVid=null; lpCarga(); }
+function lpVolver(){ _lpCid=null; _lpX=null; _lpVid=null; lpPintaLista(); }
+
+function lpCarga(){
+  $('s-labprb').innerHTML='<div class="card"><div class="note">Cargando…</div></div>';
+  SB.rpc('hb_lab_pruebas',{p_cid:_lpCid}).then(function(r){ lpPinta(r&&r.data); },
+    function(){ lpPinta(null); });
+}
+function lpPinta(x){
+  if(!(x&&x.ok)){ $('s-labprb').innerHTML='<div class="card"><b>'+esc(mzErr(x))+'</b></div>'; return; }
+  _lpX=x;
+  var vs=x.versiones||[];
+  var conP=vs.filter(function(v){ return (v.n_pruebas||0)>0; }).length;
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start">'+
+    '<div style="flex:1;min-width:0"><div class="eyebrow">Laboratorio · pruebas</div>'+
+    '<b style="font-size:20px">'+esc(x.compuesto||'')+'</b>'+
+    '<p class="note" style="margin:4px 0 0">'+vs.length+' versión(es) · '+conP+' con pruebas capturadas</p></div>'+
+    '<button class="btn ghost" style="margin:0;width:auto;padding:8px 13px;font-size:12.5px;flex:none" onclick="lpVolver()">Cambiar compuesto</button>'+
+    '</div></div>';
+
+  if(!vs.length){
+    h+='<div class="card" style="margin-top:12px"><b>Este compuesto no tiene ninguna versión cargada.</b>'+
+       '<div class="note" style="margin-top:4px">Primero hay que subir su hoja GT en Fórmulas.</div></div>';
+    $('s-labprb').innerHTML=h; return;
+  }
+
+  vs.forEach(function(v){
+    var pr=v.pruebas||[];
+    /* agrupar por tipo, para que se lea como la hoja y no como una lista suelta */
+    var porTipo={}, orden=[];
+    pr.forEach(function(t){ if(!porTipo[t.tipo]){ porTipo[t.tipo]=[]; orden.push(t.tipo); } porTipo[t.tipo].push(t); });
+    h+='<div class="card" style="margin-top:12px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:9px;flex-wrap:wrap">'+
+        '<b style="font-size:15px">Versión '+esc(v.letra||'—')+'</b>'+
+        '<span class="note" style="font-size:11.5px">'+
+          (v.estado?esc(v.estado):'')+(v.folio?' · '+esc(v.folio):'')+
+          (v.peso_total_kg!=null?' · '+mzN(v.peso_total_kg,2)+' kg':'')+'</span></div>'+
+      '<div class="note" style="margin-top:3px;font-size:11.5px">'+
+        mzN(v.mezclas||0)+' mezclas corridas'+((v.quemadas||0)>0?' · '+mzN(v.quemadas)+' quemadas':'')+'</div>';
+    if(!pr.length){
+      h+='<div class="note" style="margin-top:8px;color:var(--warn)">Sin pruebas capturadas. '+
+         'Información no disponible: no se puede decir si esta versión salió bien.</div>';
+    } else {
+      orden.forEach(function(tp){
+        h+='<div style="margin-top:10px"><div class="note" style="font-size:11px;letter-spacing:.06em;'+
+           'text-transform:uppercase">'+esc(lpNom(tp))+'</div>'+
+           porTipo[tp].map(function(t){
+             var val = (t.valor!=null? mzN(t.valor,3)+(t.unidad?' '+esc(t.unidad):'') : esc(t.texto||''));
+             return '<div style="display:flex;justify-content:space-between;gap:9px;padding:5px 0;'+
+               'border-bottom:1px solid var(--line);font-size:12.5px">'+
+               '<span style="flex:1;min-width:0">'+esc(t.parametro||'—')+
+                 '<span class="note" style="font-size:10.5px"> · '+esc(fmtCorto(t.fecha))+'</span></span>'+
+               '<b style="flex:none;font-variant-numeric:tabular-nums">'+val+'</b></div>'; }).join('')+
+           '</div>';
+      });
+    }
+    h+='<button class="btn" style="margin-top:11px;width:auto;padding:8px 14px;font-size:12.5px" '+
+       'onclick="lpForm('+v.vid+')">Capturar resultados</button>'+
+       '<div id="lpform-'+v.vid+'"></div></div>';
+  });
+  $('s-labprb').innerHTML=h;
+}
+
+/* ── captura: un renglón por resultado, con el + para agregar ── */
+var _lpFilas=[];
+function lpForm(vid){
+  var c=$('lpform-'+vid); if(!c) return;
+  if(c.innerHTML){ c.innerHTML=''; _lpVid=null; return; }
+  _lpVid=vid; _lpFilas=[{tipo:'reometria',parametro:'',valor:'',unidad:''}];
+  lpFormPinta();
+}
+function lpFormPinta(){
+  var c=$('lpform-'+_lpVid); if(!c) return;
+  c.innerHTML='<div style="margin-top:11px;padding-top:11px;border-top:1px solid var(--line)">'+
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">'+
+      '<span class="note" style="font-size:11.5px">Fecha de la prueba</span>'+
+      '<input type="date" id="lpFecha" value="'+esc(mxToday())+'" '+
+        'style="padding:7px 9px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--txt);font:inherit;font-size:12.5px"></div>'+
+    '<div class="lpscroll" id="lpFilas">'+_lpFilas.map(lpFilaHTML).join('')+'</div>'+
+    '<div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">'+
+      '<button class="btn ghost" style="margin:0;width:auto;padding:8px 13px;font-size:12.5px" onclick="lpAdd()">+ Otro resultado</button>'+
+      '<button class="btn" style="margin:0;width:auto;padding:8px 15px;font-size:12.5px" onclick="lpGuarda()">Guardar</button>'+
+    '</div></div>';
+}
+function lpFilaHTML(f,i){
+  return '<div style="display:flex;gap:6px;align-items:center;margin-top:7px;flex-wrap:wrap">'+
+    '<select onchange="lpSet('+i+',\'tipo\',this.value)" class="mpsel" style="max-width:150px">'+
+      LP_TIPOS.map(function(t){ return '<option value="'+t[0]+'"'+(f.tipo===t[0]?' selected':'')+'>'+esc(t[1])+'</option>'; }).join('')+
+    '</select>'+
+    '<input placeholder="parámetro" value="'+escA(f.parametro||'')+'" oninput="lpSet('+i+',\'parametro\',this.value)" '+
+      'style="flex:1;min-width:90px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--txt);font:inherit;font-size:12.5px">'+
+    '<input placeholder="valor" value="'+escA(f.valor||'')+'" oninput="lpSet('+i+',\'valor\',this.value)" inputmode="decimal" '+
+      'style="width:82px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--txt);font:inherit;font-size:12.5px">'+
+    '<input placeholder="unidad" value="'+escA(f.unidad||'')+'" oninput="lpSet('+i+',\'unidad\',this.value)" '+
+      'style="width:74px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--txt);font:inherit;font-size:12.5px">'+
+    (_lpFilas.length>1?'<button class="icoa" title="Quitar" onclick="lpDel('+i+')" style="flex:none">✕</button>':'')+
+  '</div>';
+}
+function lpSet(i,k,v){ if(_lpFilas[i]) _lpFilas[i][k]=v; }
+function lpAdd(){ if(_lpFilas.length>=60){ flash('Máximo 60 por captura.'); return; }
+  _lpFilas.push({tipo:'reometria',parametro:'',valor:'',unidad:''}); lpFormPinta(); }
+function lpDel(i){ _lpFilas.splice(i,1); lpFormPinta(); }
+function lpGuarda(){
+  var fe=$('lpFecha'), pr=[];
+  _lpFilas.forEach(function(f){
+    var val=(f.valor||'').trim();
+    if(!val) return;
+    /* si no es número se guarda como texto: «defectivo» es un resultado válido */
+    var esNum=/^-?\d+(\.\d+)?$/.test(val);
+    pr.push({tipo:f.tipo, parametro:(f.parametro||'').trim(),
+             valor: esNum?val:null, texto: esNum?null:val, unidad:(f.unidad||'').trim()});
+  });
+  if(!pr.length){ flash('Escribe al menos un resultado.'); return; }
+  SB.rpc('hb_lab_prueba_alta',{p:{vid:_lpVid, fecha:(fe?fe.value:null), pruebas:pr}}).then(function(r){
+    var x=r&&r.data;
+    if(x&&x.ok){ flash(x.guardadas+' resultado(s) guardados'); _lpVid=null; lpCarga(); }
+    else flash(mzErr(x));
+  },function(){ flash(mzErr()); });
+}
 
 /* ══════════════════════════════════════════════════════════════════
    EL RECORRIDO DE UN COMPUESTO (25-ago-2026)
@@ -14789,7 +14983,11 @@ function mzTabPaint(x){
          ((t.kg_estimados||0)>0?'ojo: hay estimados':'los reporta producción'))+
      kpi('produccion','Corridas', mzN(t.corridas||0), null)+
      kpi('merma','Quemadas', mzN(t.quemadas||0), 'var(--bad)','merma y calidad')+
-     kpi('eficiencia','Paros', mzN((x.tm_top||[]).reduce(function(a,c){ return a+(+c.minutos||0); },0))+' min', 'var(--warn)','eficiencia')+
+     /* el TOTAL de verdad: tm_top solo trae las 10 causas principales, y sumarlas
+        daba 5,997 min cuando agosto tuvo 10,060 — un número de portada 40% corto (26-ago) */
+     kpi('eficiencia','Paros', mzN(x.tm_total!=null? x.tm_total
+           : (x.tm_top||[]).reduce(function(a,c){ return a+(+c.minutos||0); },0))+' min',
+         'var(--warn)','eficiencia')+
      (mzVeDinero()?kpi('costos','Costo de materia prima','ver','var(--ok)','costos y utilidad'):
        '<div class="card"><div class="note">En bandeja</div><b style="font-size:22px;color:var(--warn)">'+mzN(t.pendientes||0)+'</b></div>')+
      '</div>';
@@ -14903,6 +15101,8 @@ function mzTabPaint(x){
   });
   h+='</div>';
   var tmt=(x.tm_top||[]); var maxTm=1; tmt.forEach(function(c){ if(c.minutos>maxTm) maxTm=c.minutos; });
+  /* cuántas causas hay en total, para que la lista no se lea como si fueran todas */
+  var tmTotal=(x.tm_total!=null?+x.tm_total:null), tmCausas=(x.tm_causas!=null?+x.tm_causas:null);
   tmt=mzOrdAplica(tmt,'tmo','min',{
     min:   mzCmpNum('minutos'), veces: mzCmpNum('veces'),
     larga: function(a,b){ var pa=(a.veces?a.minutos/a.veces:0), pb=(b.veces?b.minutos/b.veces:0); return pb-pa; },
@@ -17008,6 +17208,7 @@ function hbRefrescaPantalla(){
     else if(sc==='mezprog') mzLoadDia(mzProgPaint);
     else if(sc==='meztab') renderMezTab();
     else if(sc==='mezperf') renderMezPerfil();
+    else if(sc==='labprb') renderLabPrb();
     else if(sc==='mezsem') renderMezSem();
     else if(sc==='pedidos') pedsLoad();
   }catch(e){}

@@ -131,13 +131,58 @@ button{font-family:var(--font)}
 .pqscroll::-webkit-scrollbar{width:8px}
 .pqscroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
 body.a11y .pqscroll{max-height:none;overflow:visible}
+/* ══ EL HUMO DE LA PLANTA (26-ago) ══
+   Sube y se desvanece. Cada bolita sale con su propio retraso, así el humo se
+   ve continuo y no como tres puntos que parpadean juntos. */
+.iso .humo circle{animation:sube 2.8s ease-out infinite;transform-origin:center}
+.iso .humo circle:nth-child(1){animation-delay:0s}
+.iso .humo circle:nth-child(2){animation-delay:.55s}
+.iso .humo circle:nth-child(3){animation-delay:1.1s}
+@keyframes sube{
+  0%   {transform:translate(0,5px)   scale(.5);  opacity:0}
+  18%  {                             opacity:.95}
+  62%  {                             opacity:.75}
+  100% {transform:translate(4px,-9px) scale(1.35); opacity:0}
+}
+@media (prefers-reduced-motion:reduce){ .iso .humo circle{animation:none} }
+
+/* ══ HUD: el nombre del icono al pasar el mouse (26-ago, pedido de Carlos) ══
+   Fondo rojo translúcido, letra blanca en negritas. Solo con mouse: en pantalla
+   táctil no hay hover y el título ya está debajo del icono. */
+.iso{position:relative}
+.iso[data-hud]::after{
+  content:attr(data-hud);
+  position:absolute; left:50%; bottom:calc(100% + 9px); transform:translateX(-50%) translateY(4px);
+  background:color-mix(in srgb,#e73b2f 82%,transparent);
+  color:#fff; font-weight:800; font-size:11.5px; letter-spacing:.02em;
+  padding:6px 11px; border-radius:9px; white-space:nowrap;
+  border:1px solid color-mix(in srgb,#fff 26%,transparent);
+  box-shadow:0 8px 22px rgba(0,0,0,.42); backdrop-filter:blur(9px);
+  opacity:0; pointer-events:none; z-index:30;
+  transition:opacity .16s ease, transform .16s ease;
+}
+/* la puntita del globo */
+.iso[data-hud]::before{
+  content:''; position:absolute; left:50%; bottom:calc(100% + 4px);
+  transform:translateX(-50%) translateY(4px);
+  border:5px solid transparent; border-top-color:color-mix(in srgb,#e73b2f 82%,transparent);
+  opacity:0; pointer-events:none; z-index:30;
+  transition:opacity .16s ease, transform .16s ease;
+}
+@media (hover:hover) and (pointer:fine){
+  .htile:hover .iso[data-hud]::after,
+  .htile:focus-visible .iso[data-hud]::after,
+  .htile:hover .iso[data-hud]::before,
+  .htile:focus-visible .iso[data-hud]::before{ opacity:1; transform:translateX(-50%) translateY(0) }
+}
+
 /* ══ BANDI en los encabezados (25-ago-2026, pedido de Carlos) ══
    Flota despacio y se inclina apenas: se ve vivo sin distraer. La imagen se
    pinta a la mitad de sus pixeles reales, así que queda nítida en retina. */
-.bandihero{flex:none;align-self:flex-end;margin:0 0 -6px 10px;position:relative;
+.bandihero{flex:none;align-self:flex-end;margin:0 0 -4px auto;position:relative;
   filter:drop-shadow(0 8px 18px rgba(0,0,0,.34));animation:bandiFlota 5.2s ease-in-out infinite;
   transform-origin:50% 92%;pointer-events:none;user-select:none}
-.bandihero img{display:block;height:118px;width:auto;image-rendering:auto}
+.bandihero img{display:block;height:76px;width:auto;image-rendering:auto}
 @keyframes bandiFlota{
   0%   {transform:translateY(0)      rotate(-1.4deg)}
   50%  {transform:translateY(-7px)   rotate(1.6deg)}
@@ -151,12 +196,12 @@ body.a11y .pqscroll{max-height:none;overflow:visible}
   0%,100%{width:64%;opacity:.30}
   50%    {width:52%;opacity:.18}
 }
-@media (max-width:520px){ .bandihero img{height:92px} .bandihero{margin-left:4px} }
+@media (max-width:520px){ .bandihero img{height:62px} }
 @media (prefers-reduced-motion:reduce){
   .bandihero,.bandihero::after{animation:none}
 }
 /* en Texto grande el Bandi cede el espacio a las letras */
-body.a11y .bandihero img{height:76px}
+body.a11y .bandihero img{height:56px}
 .dirscroll{max-height:min(52vh,420px);overflow-y:auto;overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;padding-right:4px;margin-top:6px}
 .dirscroll::-webkit-scrollbar{width:8px}
@@ -4919,6 +4964,50 @@ function iso3d(shape,c){
     s='<path d="M32 12 L60 25 L32 38 L4 25 Z" fill="url(#'+gid+')"/><path d="M4 25 L32 38 L32 41 L4 28 Z" fill="'+c[2]+'"/><path d="M60 25 L32 38 L32 41 L60 28 Z" fill="'+c[1]+'"/>'+
       '<path d="M20 34 L32 40 L44 34 L44 43 C44 50 20 50 20 43 Z" fill="'+c[1]+'"/><path d="M20 34 L32 40 L32 49 C24 49 20 46 20 43 Z" fill="'+c[2]+'"/>'+
       '<line x1="60" y1="25" x2="60" y2="46" stroke="'+c[0]+'" stroke-width="2.4"/><circle cx="60" cy="49" r="3.4" fill="'+c[0]+'"/>';
+  } else if(shape==='calendar'){
+    /* una hoja de calendario con sus dos anillos y la cuadrícula de los días */
+    s=_isoSlab(32,16,10,gid,c[1],c[2])+
+      '<path d="M24 21 L28 23" stroke="#fff" stroke-opacity=".95" stroke-width="3" stroke-linecap="round"/>'+
+      '<path d="M36 21 L40 23" stroke="#fff" stroke-opacity=".95" stroke-width="3" stroke-linecap="round"/>'+
+      '<path d="M22 27 L30 31 M30 24 L38 28 M38 21 L46 25" stroke="#fff" stroke-opacity=".6" stroke-width="1.7" stroke-linecap="round"/>'+
+      '<path d="M18 30 L26 34 M26 27 L34 31 M34 24 L42 28" stroke="#fff" stroke-opacity=".42" stroke-width="1.7" stroke-linecap="round"/>';
+  } else if(shape==='phone'){
+    /* el auricular del directorio */
+    s=_isoSlab(32,17,10,gid,c[1],c[2])+
+      '<path d="M25 25 C25 22 28 21 30 23 L32 26 C33 27 32 28 31 29 C31 31 33 33 35 33 '+
+      'C36 32 37 31 38 32 L41 34 C43 36 42 39 39 39 C32 39 25 32 25 25 Z" fill="#fff" fill-opacity=".92"/>';
+  } else if(shape==='clip'){
+    /* tabla de encuestas: la hoja con su pinza y los renglones marcados */
+    s=_isoSlab(32,15,12,gid,c[1],c[2])+
+      '<path d="M28 19 L36 23 L36 26 L28 22 Z" fill="#fff" fill-opacity=".92"/>'+
+      '<circle cx="25" cy="27" r="1.9" fill="#fff" fill-opacity=".9"/><path d="M29 29 L41 35" stroke="#fff" stroke-opacity=".7" stroke-width="1.9" stroke-linecap="round"/>'+
+      '<circle cx="23" cy="32" r="1.9" fill="#fff" fill-opacity=".75"/><path d="M27 34 L39 40" stroke="#fff" stroke-opacity=".55" stroke-width="1.9" stroke-linecap="round"/>';
+  } else if(shape==='folder'){
+    /* carpeta de documentos: la pestaña se ve en la cara de arriba */
+    s=_isoSlab(32,14,13,gid,c[1],c[2])+
+      '<path d="M20 24 L27 20 L31 22 L38 26 L31 30 Z" fill="#fff" fill-opacity=".28"/>'+
+      '<path d="M22 30 L34 36" stroke="#fff" stroke-opacity=".8" stroke-width="2" stroke-linecap="round"/>'+
+      '<path d="M28 27 L42 34" stroke="#fff" stroke-opacity=".55" stroke-width="2" stroke-linecap="round"/>';
+  } else if(shape==='factory'){
+    /* LA PLANTA (26-ago, pedido de Carlos): la nave con su chimenea y el humo
+       saliendo en ROJO corporativo. Es el único icono del sistema que lleva rojo
+       dentro, para que Planta se reconozca de un vistazo sin leer el título. */
+    s=/* el humo primero, para que la chimenea lo tape por abajo */
+      '<g class="humo">'+
+        '<circle cx="45" cy="13" r="3.6" fill="#e73b2f"/>'+
+        '<circle cx="48" cy="8"  r="2.9" fill="#e73b2f"/>'+
+        '<circle cx="50" cy="4"  r="2.2" fill="#ff6b5e"/>'+
+      '</g>'+
+      /* la chimenea: prisma isométrico delgado, pegado a la nave */
+      '<path d="M39 18 L45 21 L45 36 L39 33 Z" fill="'+c[2]+'"/>'+
+      '<path d="M45 21 L51 18 L51 33 L45 36 Z" fill="'+c[1]+'"/>'+
+      '<path d="M45 15 L51 18 L45 21 L39 18 Z" fill="'+c[0]+'"/>'+
+      /* la boca de la chimenea, en rojo: de ahí sale el humo */
+      '<path d="M45 16.4 L48.6 18 L45 19.6 L41.4 18 Z" fill="#e73b2f" fill-opacity=".9"/>'+
+      /* la nave */
+      _isoSlab(27,28,10,gid,c[1],c[2])+
+      /* los portones */
+      '<path d="M20 39 L27 42.5 M27 35.5 L34 39" stroke="#fff" stroke-opacity=".55" stroke-width="2" stroke-linecap="round"/>';
   } else if(shape==='stack'){
     s=_isoSlab(32,8,7,gid,c[1],c[2])+_isoSlab(32,24,9,gid,c[1],c[2]);
   } else if(shape==='news'){
@@ -4976,11 +5065,13 @@ var ICON3D={
   cap:['cap',['#c4b5fd','#8b5cf6','#5b21b6']], recibo:['doc',['#fca5a5','#e73b2f','#a3141b']],
   news:['news',['#fcd34d','#e0902a','#b06a12']], msg:['stack',['#93c5fd','#3b82f6','#1e40af']],
   premios:['gift',['#5eead4','#0e9e8e','#066a5f']], ai:['ai',['#7c7c88','#3a3a42','#17171c']],   /* Bandi = llanta grafito (canon); el glow rojo lo pone el tile */
-  edu:['book',['#86efac','#22c55e','#0f6b30']], encuestas:['cube',['#c4b5fd','#8b5cf6','#5b21b6']],
-  cal:['cube',['#fcd34d','#e0902a','#b06a12']], docs:['news',['#93c5fd','#3b82f6','#1e40af']],
-  dia:['cube',['#5eead4','#0e9e8e','#066a5f']],
+  edu:['book',['#86efac','#22c55e','#0f6b30']], encuestas:['clip',['#c4b5fd','#8b5cf6','#5b21b6']],
+  /* 26-ago (Carlos): los iconos tienen que decir qué son. Antes calendario,
+     directorio y encuestas compartían un cubo genérico. */
+  cal:['calendar',['#fcd34d','#e0902a','#b06a12']], docs:['folder',['#93c5fd','#3b82f6','#1e40af']],
+  dia:['phone',['#5eead4','#0e9e8e','#066a5f']],
   deptos:['stack',['#fcd34d','#e0902a','#b06a12']], personas:['people',['#c4b5fd','#8b5cf6','#5b21b6']],
-  focos:['shield',['#fca5a5','#e73b2f','#a3141b']], operacion:['gear',['#93c5fd','#3b82f6','#1e40af']],
+  focos:['shield',['#fca5a5','#e73b2f','#a3141b']], operacion:['factory',['#93c5fd','#3b82f6','#1e40af']],
   pend:['bell',['#fcd34d','#e0902a','#b06a12']],
   rep:['gear',['#fca5a5','#e73b2f','#a3141b']]
 };
@@ -4990,7 +5081,7 @@ function htile(onclick,kind,title,sub,opts){ opts=opts||{};
   var tc=opts.tc||({cap:'#8b5cf6',recibo:'#e73b2f',news:'#e0902a',msg:'#3b82f6',premios:'#0e9e8e',ai:'#e73b2f',edu:'#22c55e',encuestas:'#8b5cf6',cal:'#e0902a',docs:'#3b82f6',dia:'#0e9e8e',deptos:'#e0902a',personas:'#8b5cf6',focos:'#e73b2f',operacion:'#3b82f6',pend:'#e0902a',rep:'#e73b2f'}[kind]||'var(--accent)');
   return '<div class="htile'+(opts.wide?' wide':'')+(opts.cls?' '+opts.cls:'')+'" role="button" tabindex="0"'+(opts.cls&&opts.cls.indexOf('pronto')>-1?' aria-disabled="true"':'')+' onkeydown="_kb(event)" style="--tc:'+tc+'" onclick="'+onclick+'">'+
     (opts.cnt?'<span class="cnt">'+opts.cnt+'</span>':'')+
-    '<div class="iso">'+ic3(kind)+'</div>'+
+    '<div class="iso" data-hud="'+escA(title)+'">'+ic3(kind)+'</div>'+
     '<div style="'+(opts.wide?'flex:1;min-width:0':'')+'"><b>'+esc(title)+'</b>'+(sub?'<div class="note">'+esc(sub)+'</div>':'')+'</div>'+
     (opts.wide?'<span class="note" style="flex:none">›</span>':'')+'</div>';
 }
@@ -6464,10 +6555,12 @@ function managerDash(role){
   var _buzN=0; try{ _buzN=reportsGet().filter(function(r){return r.status==='pendiente';}).length; }catch(e){}
   var _nomSt=null; try{ _nomSt=nomGet(); }catch(e){}
   h+=htile('renderDia()','dia','Directorio', 'Quién es quién y a quién llamar');
-  h+=htile("mgrGo('op-preguntas')",'ai','Preguntas del Asistente', unansN?(unansN+' sin responder'):'Al día', {cnt:unansN||''});
-  h+=htile("mgrGo('op-buzon')",'docs','Buzón de reportes', _buzN?(_buzN+' por revisar'):'Sin pendientes', {cnt:_buzN||''});
-  h+=htile("mgrGo('op-nom')",'encuestas','NOM-035', (_nomSt&&_nomSt.current)?'Aplicación en curso':'Riesgo psicosocial');
-  if(docIsTotal()) h+=htile("mgrGo('op-errores')",'shield','Fallas de la app', _errN?(_errN+' por revisar'):'Todo en orden', {cnt:_errN||''});
+  /* 26-ago (Carlos): las cuatro cosas del sistema —asistente, buzón, NOM y
+     fallas— más los ajustes, viven en un solo módulo. Sueltas en el tablero
+     eran cinco cuadros de administración compitiendo con la operación real. */
+  var _sisN=(unansN||0)+(_buzN||0)+(docIsTotal()?(_errN||0):0);
+  h+=htile("mgrGo('sistema')",'rep','Operación de sistema',
+     (_sisN?(_sisN+' por atender · '):'')+'asistente · buzón · NOM · ajustes', {cnt:_sisN||''});
   h+='</div>';
   /* SOLO para la cuenta de Sistemas (0917): capacitación y registro del padrón,
      al FINAL del tablero — es información de administración del sistema, no de
@@ -6487,8 +6580,10 @@ function managerDash(role){
    en DOS niveles: sección (hub de cuadros) → tema (cuadro) → la información. */
 var _MGR_PADRE={'hoy-cen':'hoy','hoy-horas':'hoy','deptos-avance':'deptos','deptos-lista':'deptos','deptos-temas':'deptos',
   'personas-permisos':'personas','personas-recibos':'personas','personas-rank':'personas',
-  'focos-alertas':'focos','focos-rojos':'focos'};
-var _MGR_TITULO={hoy:'Hoy',deptos:'Departamentos',personas:'Personas',focos:'Focos',operacion:'Operación'};
+  'focos-alertas':'focos','focos-rojos':'focos',
+  'op-preguntas':'sistema','op-buzon':'sistema','op-nom':'sistema','op-errores':'sistema','op-ajustes':'sistema'};
+var _MGR_TITULO={hoy:'Hoy',deptos:'Departamentos',personas:'Personas',focos:'Focos',
+  operacion:'Operación',sistema:'Operación de sistema'};
 function mgrPage(role){
   var H=CFG.hr, DS=deptStats(), Q=qstats(), ALERTS=(Q.alerts||[]); _HRAL=ALERTS;
   var p=_mgrPage, par=_MGR_PADRE[p]||null;
@@ -6625,6 +6720,22 @@ function mgrPage(role){
   /* 'operacion' se eliminó como página (25-ago): sus secciones viven en el tablero.
      Si algo viejo apunta aquí, se manda al tablero en vez de dejar la pantalla vacía. */
   else if(p==='operacion'){ setTimeout(function(){ mgrGo(null); },0); return; }
+  /* ══ OPERACIÓN DE SISTEMA (26-ago): lo que es del sistema, no de la planta ══ */
+  else if(p==='sistema'){
+    var unN2=0; try{ unN2=Object.keys(Q.unans||{}).length; }catch(e){}
+    var bzN2=0; try{ bzN2=reportsGet().filter(function(r){return r.status==='pendiente';}).length; }catch(e){}
+    var nm2=null; try{ nm2=nomGet(); }catch(e){}
+    h+=cab('Operación de sistema', 'Lo que mantiene la app en pie: lo que el Asistente no supo contestar, '+
+           'lo que reporta la gente, la NOM-035 y cómo se ve el sistema.');
+    h+='<div class="tgrid">';
+    h+=htile("mgrGo('op-preguntas')",'ai','Preguntas del Asistente', unN2?(unN2+' sin responder'):'Al día', {wide:true, cnt:unN2||''});
+    h+=htile("mgrGo('op-buzon')",'docs','Buzón de reportes', bzN2?(bzN2+' por revisar'):'Sin pendientes', {cnt:bzN2||''});
+    h+=htile("mgrGo('op-nom')",'encuestas','NOM-035', (nm2&&nm2.current)?'Aplicación en curso':'Riesgo psicosocial');
+    if(docIsTotal()) h+=htile("mgrGo('op-errores')",'shield','Fallas de la app', _errN?(_errN+' por revisar'):'Todo en orden', {cnt:_errN||''});
+    h+=htile("mgrGo('op-ajustes')",'rep','Ajustes', 'Cómo se ve y cómo suena el sistema');
+    h+='</div>';
+  }
+  else if(p==='op-ajustes'){ h+=ajustesBlock(); }
   else if(p==='op-errores'){
     h+=erroresBlock();        // fallas que la app reportó sola (v3_15)
   }
@@ -7348,6 +7459,72 @@ function accBar(){   // en Educación básica solo queda la velocidad de voz; el
     '</div>';
 }
 function applyA11y(){ try{ document.body.classList.toggle('a11y', !!(S&&S.accessible)); }catch(e){} }
+/* ══════════════════════════════════════════════════════════════════
+   AJUSTES DEL SISTEMA (26-ago-2026, pedido de Carlos)
+
+   Los controles de accesibilidad ya existían, pero escondidos dentro de
+   «Educación básica» — donde nadie de oficina iba a buscarlos. Aquí quedan a
+   la vista, con lo que cada uno hace explicado en una línea.
+   ══════════════════════════════════════════════════════════════════ */
+function ajustesBlock(){
+  var esTotal=docIsTotal();
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div>'+
+    '<div class="eyebrow">Operación de sistema</div><b style="font-size:18px">Ajustes</b>'+
+    '<div class="note" style="margin-top:3px">Cambian solo para ti, en este dispositivo. Nadie más los ve.</div>'+
+    '</div></div>'+
+    switchRow('Texto grande','Sube el tamaño de la letra en toda la app',!!(S&&S.accessible),'toggleAcc()')+
+    '<div class="swrow"><div class="t"><b>Velocidad de la voz</b>'+
+      '<span>Para las pantallas que se leen en voz alta</span></div>'+
+      '<button class="toggle" style="min-height:40px" onclick="ajusteVoz()">'+RATES[rateIdx()][1]+' ›</button></div>'+
+    '<div class="swrow"><div class="t"><b>Probar la voz</b>'+
+      '<span>Escucha cómo se oye con la velocidad de arriba</span></div>'+
+      '<button class="toggle" style="min-height:40px" onclick="speak(\'Así voy a hablar contigo. Esta es la velocidad que escogiste.\')">Escuchar</button></div>'+
+    '</div>';
+
+  /* lo que es del dispositivo, no de la persona */
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div>'+
+    '<b style="font-size:16px">Este dispositivo</b>'+
+    '<div class="note" style="margin-top:3px">Datos guardados en este teléfono o computadora.</div></div></div>'+
+    '<div class="swrow"><div class="t"><b>Memoria sin conexión</b>'+
+      '<span>'+(('serviceWorker' in navigator)?'Activa: la app abre aunque no haya señal':'No disponible en este navegador')+'</span></div>'+
+      '<span class="tg'+(('serviceWorker' in navigator)?' g':'')+'">'+(('serviceWorker' in navigator)?'lista':'—')+'</span></div>'+
+    '<div class="swrow"><div class="t"><b>Volver a cargar la app</b>'+
+      '<span>Trae la última versión publicada, por si algo se quedó viejo</span></div>'+
+      '<button class="toggle" style="min-height:40px" onclick="ajusteRecarga()">Actualizar</button></div>'+
+    '</div>';
+
+  if(esTotal){
+    h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div>'+
+      '<b style="font-size:16px">Solo acceso total</b>'+
+      '<div class="note" style="margin-top:3px">Lo que afecta a todo el sistema, no solo a ti.</div></div></div>'+
+      '<div class="swrow"><div class="t"><b>Llaves de IA</b>'+
+        '<span>Encender el asistente y ver el gasto</span></div>'+
+        '<button class="toggle" style="min-height:40px" onclick="renderIALlaves()">Abrir ›</button></div>'+
+      '<div class="swrow"><div class="t"><b>Permisos por área</b>'+
+        '<span>Quién captura y quién solo consulta en cada área</span></div>'+
+        '<button class="toggle" style="min-height:40px" onclick="go(\'planta\')">Ir a Planta ›</button></div>'+
+      '</div>';
+  }
+  return h;
+}
+function ajusteVoz(){
+  var i=(rateIdx()+1)%RATES.length; S.rate=RATES[i][0]; save();
+  mgrGo('op-ajustes');
+  speak('Así voy a hablar contigo. Esta es la velocidad '+RATES[i][1].toLowerCase()+'.');
+}
+function ajusteRecarga(){
+  flash('Buscando la última versión…');
+  try{
+    if('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations){
+      navigator.serviceWorker.getRegistrations().then(function(rs){
+        rs.forEach(function(r){ try{ r.update(); }catch(e){} });
+        setTimeout(function(){ location.reload(); }, 700);
+      }, function(){ location.reload(); });
+      return;
+    }
+  }catch(e){}
+  setTimeout(function(){ location.reload(); }, 400);
+}
 function toggleAcc(){ S.accessible=!S.accessible; save(); applyA11y();
   flash(S.accessible?'Texto grande activado':'Texto grande desactivado');
   renderTop(_screen);   // refresca el botón del ojo

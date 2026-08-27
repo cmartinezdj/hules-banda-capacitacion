@@ -15954,8 +15954,13 @@ function mzDesgPaint(){
        /* la parte que DE VERDAD se compra en dólares: +$1 de tasa = +ese monto en pesos,
           del periodo en pantalla (regla de Carlos: cada día su tasa; lo ya comprado
           conserva el precio de su día) */
-       '<div class="card"><div class="note">Comprado en dólares</div><b style="font-size:20px;color:var(--warn)">'+mzUs(usdReal||totUs)+'</b>'+
-         '<div class="note" style="margin-top:2px">+$1 al dólar ≈ '+mzMx(usdReal||totUs)+' más en este periodo</div></div></div>';
+       /* ⭐ los dólares DE VERDAD (27-ago): antes se sumaba usd_total de por_compuesto,
+          que es la base explotada y cuenta el master dos veces — agosto pintaba
+          US$3,465,934 cuando lo que salió del almacén fueron US$1,522,791. */
+       '<div class="card"><div class="note">Comprado en dólares</div><b style="font-size:20px;color:var(--warn)">'+
+         mzUs(cd&&cd.usd_directo!=null ? cd.usd_directo : (usdReal||totUs))+'</b>'+
+         '<div class="note" style="margin-top:2px">+$1 al dólar ≈ '+
+           mzMx(cd&&cd.usd_directo!=null ? cd.usd_directo : (usdReal||totUs))+' más en este periodo</div></div></div>';
     cc=mzOrdAplica(cc,'desgcc','gasto',{
       gasto:  mzCmpNum('costo_total_mxn'), kilo:  mzCmpNum('costo_kg_mxn'),
       barato: mzCmpNum('costo_kg_mxn',true), lote: mzCmpNum('costo_batch_mxn'),

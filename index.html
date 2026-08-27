@@ -16832,8 +16832,20 @@ function mzCompPaint(x){
         ['Costo por mezcla ('+mzN(co.peso_total_kg,3)+' kg, hoy)', mzMx(co.costo_batch_mxn,2), mzUs(co.costo_batch_usd,2)],
         /* el total del periodo va día por día (tasa y precios de CADA día) —
            mismo criterio que la tabla de costos, para que cuadren (A6) */
-        (ct&&ct.dias?['Costo de lo producido en el periodo (día por día)', mzMx(+ct.mxn||0,2), mzUs(+ct.usd||0,2)]
-                    :['Costo de lo producido en el periodo', mzMx((+co.costo_batch_mxn||0)*(p.mezclas||0),2), mzUs((+co.costo_batch_usd||0)*(p.mezclas||0),2)])];
+        (ct&&ct.dias?['Valor en material de lo producido (día por día)', mzMx(+ct.mxn||0,2), mzUs(+ct.usd||0,2)]
+                    :['Valor en material de lo producido', mzMx((+co.costo_batch_mxn||0)*(p.mezclas||0),2), mzUs((+co.costo_batch_usd||0)*(p.mezclas||0),2)])];
+      /* ⭐ 27-ago · los DOS números, porque no son lo mismo:
+         · «valor en material» revienta el master hasta materia prima → sirve para
+           ponerle precio al producto, pero NO se puede sumar entre compuestos.
+         · «materia prima comprada» es lo que ESTE compuesto sacó del almacén.
+         En BP-GY de agosto: $12.1 M contra $427 mil. La diferencia ya la pagó
+         el master MP-GY en su propia corrida. */
+      var cdz = x.costo_directo;
+      if(cdz && cdz.mxn!=null){
+        filas.push(['<b>Materia prima que compró este compuesto</b>',
+                    '<b>'+mzMx(+cdz.mxn||0,2)+'</b>',
+                    mzUs(co.fx?(+cdz.mxn||0)/co.fx:null,2)]);
+      }
       if(vt&&vt.precio){
         var pv=+vt.precio*(vt.moneda==='USD'?(+co.fx||0):1);
         var cu=(vt.unidad==='mezcla')?(+co.costo_batch_mxn||0):(+co.costo_kg_mxn||0);
@@ -16844,6 +16856,16 @@ function mzCompPaint(x){
          '<b style="font-size:13px">Dinero (solo dirección)</b>'+
          '<div class="note" style="margin-top:2px">Tasa DOF $'+mzN(co.fx,4)+' del '+esc(co.fx_fecha||'')+' — cada día usa la suya.</div>'+
          mzTabla(['Concepto','MXN','USD'], filas.map(function(f){ return mzTd(f); }))+
+         /* la advertencia que evita que alguien sume entre compuestos (27-ago) */
+         ((cdz && cdz.mxn!=null && ct && (+ct.mxn||0) > (+cdz.mxn||0)*1.15)
+           ? '<div class="note" style="margin-top:8px;line-height:1.5;padding:9px 11px;border-radius:10px;'+
+             'background:color-mix(in srgb,var(--warn) 9%,transparent)">'+
+             '<b>Los dos números de arriba no son lo mismo.</b> El <b>valor en material</b> incluye el '+
+             'hule del master, que ya se pagó cuando el master se corrió — sirve para ponerle precio al '+
+             'producto, pero <b>no se puede sumar entre compuestos</b> o el mismo hule se cuenta dos veces. '+
+             'Lo que este compuesto sacó del almacén son <b>'+mzMx(+cdz.mxn||0)+'</b>'+
+             ((+cdz.kg||0)>0?(' ('+mzN(cdz.kg)+' kg)'):'')+'.</div>'
+           : '')+
          (!(vt&&vt.precio)?'<div class="note" style="margin-top:6px;color:var(--warn)">Falta el precio de venta de este compuesto para calcular la utilidad.</div>':'')+
          ((co.faltantes||[]).length?'<div class="note" style="margin-top:5px;color:var(--warn)">Sin precio de compra: '+esc(co.faltantes.join(', '))+'</div>':'')+'</div>';
     } else {

@@ -12418,6 +12418,8 @@ function labTemp(t){
 function labRecPinta(){
   var x=_labRec, out=$('labrec-out'); if(!x||!out) return;
   var L=x.letras||[], h='';
+  /* el candado de dinero lo decide el servidor (v3_140), no la pantalla */
+  var _labVeDin=(x.ve_dinero!==false);
 
   /* ── el resumen del compuesto ── */
   var totM=0, totK=0, conHoja=0;
@@ -12474,8 +12476,12 @@ function labRecPinta(){
        '<div><div class="note">Kg por mezcla</div><b>'+(v.kg_por_mezcla!=null?mzN(v.kg_por_mezcla,2):'—')+'</b>'+
          (tieneHoja&&v.version.peso_receta!=null
            ? '<div class="note" style="font-size:10.5px">fórmula: '+mzN(v.version.peso_receta,2)+'</div>' : '')+'</div>'+
-       (ck!=null?('<div><div class="note">MP por kilo</div><b>'+mzMx(ck,4)+'</b></div>'):
-                 ('<div><div class="note">MP por kilo</div><b class="note">sin fórmula</b></div>'))+
+       /* ⭐ 27-ago · sin permiso de dinero NO se dice «sin fórmula»: eso era mentira
+          y sembraba desconfianza en versiones que sí están digitalizadas. */
+       (_labVeDin
+          ? (ck!=null?('<div><div class="note">MP por kilo</div><b>'+mzMx(ck,4)+'</b></div>')
+                     :('<div><div class="note">MP por kilo</div><b class="note">sin fórmula</b></div>'))
+          : '')+
        ((+v.quemadas||0)>0?('<div><div class="note">Quemadas</div><b style="color:var(--bad)">'+mzN(v.quemadas)+'</b></div>'):'')+
        ((v.paros&&+v.paros.minutos>0)?('<div><div class="note">Paro en sus turnos</div><b>'+mzN(v.paros.minutos)+' min</b></div>'):'')+
        ((v.programa&&v.programa.pct!=null)?('<div><div class="note">Del programa</div><b style="color:'+((+v.programa.pct>=95)?'var(--ok)':'var(--warn)')+'">'+mzN(v.programa.pct,1)+'%</b></div>'):'')+
@@ -12534,16 +12540,22 @@ function labDiffPinta(){
   if(d.cargando){ el.innerHTML='<div class="card"><div class="note">Comparando '+esc(d.a)+' con '+esc(d.b)+'…</div></div>'; return; }
   if(!d.ok){ el.innerHTML='<div class="card"><div class="note">No se pudo comparar esas dos versiones.</div></div>'; return; }
 
+  /* ⭐ 27-ago · el candado de dinero manda desde el servidor (v3_140): quien no
+     tiene permiso ve QUÉ cambió, en kilos, y ni un peso. Nunca $0.00, que sería
+     mentir diciendo «no cuesta nada» en vez de «no te toca verlo». */
+  var vd=(d.ve_dinero!==false);
   var h='<div class="sec-t">Qué cambió: '+esc(d.a.letra)+' → '+esc(d.b.letra)+'<span class="ln"></span></div>';
   var dk=(+d.b.costo_kg_mxn||0)-(+d.a.costo_kg_mxn||0);
   h+='<div class="card" style="margin-bottom:10px">'+
      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px">'+
-       '<div><div class="note">MP por kilo antes</div><b style="font-size:17px">'+mzMx(d.a.costo_kg_mxn,4)+'</b>'+
+       (vd?('<div><div class="note">MP por kilo antes</div><b style="font-size:17px">'+mzMx(d.a.costo_kg_mxn,4)+'</b>'+
          '<div class="note" style="font-size:10.5px">versión '+esc(d.a.letra)+'</div></div>'+
        '<div><div class="note">MP por kilo después</div><b style="font-size:17px">'+mzMx(d.b.costo_kg_mxn,4)+'</b>'+
          '<div class="note" style="font-size:10.5px">versión '+esc(d.b.letra)+'</div></div>'+
        '<div><div class="note">Diferencia</div><b style="font-size:17px;color:'+(dk>0?'var(--warn)':(dk<0?'var(--ok)':'var(--mut)'))+'">'+
-         (dk>0?'+':'')+mzMx(dk,4)+'</b><div class="note" style="font-size:10.5px">por kilo</div></div>'+
+         (dk>0?'+':'')+mzMx(dk,4)+'</b><div class="note" style="font-size:10.5px">por kilo</div></div>'):
+        ('<div><div class="note">Cambios en la fórmula</div><b style="font-size:17px">'+mzN(d.n_cambios)+'</b>'+
+         '<div class="note" style="font-size:10.5px">'+esc(d.a.letra)+' → '+esc(d.b.letra)+'</div></div>'))+
        ((+d.peso_cambio||0)!==0?('<div><div class="note">Peso del lote</div><b style="font-size:17px">'+
          ((+d.peso_cambio>0)?'+':'')+mzN(d.peso_cambio,3)+' kg</b></div>'):'')+
      '</div>'+
@@ -12570,8 +12582,8 @@ function labDiffPinta(){
   h+='<div class="card">'+
      '<div class="line" style="border:none;padding:0 0 8px"><b style="font-size:13px;flex:1">'+
      cs.length+(cs.length===1?' cambio en la fórmula':' cambios en la fórmula')+'</b>'+
-     '<span class="tg g">los aportes cuadran</span></div>'+
-     mzTabla(['Material','Antes','Después','Cambio','Aporte al costo'],
+     (vd?'<span class="tg g">los aportes cuadran</span>':'')+'</div>'+
+     mzTabla(['Material','Antes','Después','Cambio'].concat(vd?['Aporte al costo']:[]),
        cs.map(function(c){
          var col=(c.tipo==='entra')?'var(--ok)':(c.tipo==='sale'?'var(--bad)':'var(--data)');
          var etq=(c.tipo==='entra')?'entra':(c.tipo==='sale'?'sale':'cambia');
@@ -12580,12 +12592,13 @@ function labDiffPinta(){
              ' · <span style="color:'+col+'">'+etq+'</span>'+(c.es_recorte?' · recorte':'')+'</span>',
            (+c.kg_antes>0)?mzN(c.kg_antes,3):'—',
            (+c.kg_despues>0)?mzN(c.kg_despues,3):'—',
-           '<span style="color:'+col+'">'+((+c.delta_kg>0)?'+':'')+mzN(c.delta_kg,3)+'</span>',
-           c.sin_precio ? '<span class="note">sin precio</span>'
-                        : ((+c.aporte_mxn>0?'+':'')+mzMx(c.aporte_mxn,2))
-         ]); }))+
-     '<div class="note" style="margin-top:9px">La suma de los aportes da <b>'+mzMx(d.suma_aportes_mxn,2)+
-     '</b> y la diferencia real del lote es <b>'+mzMx(d.dif_costo_mxn,2)+'</b>. Por eso se puede mostrar.</div>'+
+           '<span style="color:'+col+'">'+((+c.delta_kg>0)?'+':'')+mzN(c.delta_kg,3)+'</span>'
+         ].concat(vd?[c.sin_precio ? '<span class="note">sin precio</span>'
+                                   : ((+c.aporte_mxn>0?'+':'')+mzMx(c.aporte_mxn,2))]:[])); }))+
+     (vd?('<div class="note" style="margin-top:9px">La suma de los aportes da <b>'+mzMx(d.suma_aportes_mxn,2)+
+     '</b> y la diferencia real del lote es <b>'+mzMx(d.dif_costo_mxn,2)+'</b>. Por eso se puede mostrar.</div>')
+       :('<div class="note" style="margin-top:9px">Aquí se ve <b>qué cambió en la fórmula</b>, en kilos. '+
+         'Lo que cuesta cada material no está en tu acceso.</div>'))+
      '</div>';
   el.innerHTML=h;
 }
@@ -15957,22 +15970,32 @@ function mzDesgPaint(){
        /* ⭐ los dólares DE VERDAD (27-ago): antes se sumaba usd_total de por_compuesto,
           que es la base explotada y cuenta el master dos veces — agosto pintaba
           US$3,465,934 cuando lo que salió del almacén fueron US$1,522,791. */
+       /* y si el gasto directo no viene, se dice «—»: caer a la base explotada
+          era exactamente el bug de arriba, con otro rótulo (27-ago). */
        '<div class="card"><div class="note">Comprado en dólares</div><b style="font-size:20px;color:var(--warn)">'+
-         mzUs(cd&&cd.usd_directo!=null ? cd.usd_directo : (usdReal||totUs))+'</b>'+
-         '<div class="note" style="margin-top:2px">+$1 al dólar ≈ '+
-           mzMx(cd&&cd.usd_directo!=null ? cd.usd_directo : (usdReal||totUs))+' más en este periodo</div></div></div>';
+         mzUs(cd?cd.usd_directo:null)+'</b>'+
+         '<div class="note" style="margin-top:2px">'+(cd&&cd.usd_directo!=null
+            ? ('+$1 al dólar ≈ '+mzMx(cd.usd_directo)+' más en este periodo')
+            : 'dato no disponible para este periodo')+'</div></div></div>';
     cc=mzOrdAplica(cc,'desgcc','gasto',{
       gasto:  mzCmpNum('costo_total_mxn'), kilo:  mzCmpNum('costo_kg_mxn'),
       barato: mzCmpNum('costo_kg_mxn',true), lote: mzCmpNum('costo_batch_mxn'),
       mezclas:mzCmpNum('mezclas'),         kg:    mzCmpNum('kg'),
       az:     mzCmpTxt('compuesto')
     });
-    h+='<div class="card" style="margin-bottom:12px"><div class="mzordfila"><b style="font-size:13px">Costo por compuesto — números exactos</b>'+
-       mzOrdBtn('desgcc',[['gasto','Mayor gasto total'],['kilo','Más caro por kilo'],['barato','Más barato por kilo'],
+    h+='<div class="card" style="margin-bottom:12px"><div class="mzordfila"><b style="font-size:13px">Valor en material por compuesto</b>'+
+       mzOrdBtn('desgcc',[['gasto','Mayor valor en material'],['kilo','Más caro por kilo'],['barato','Más barato por kilo'],
                           ['lote','Más caro por mezcla'],['mezclas','Más mezclas'],['kg','Más kilos'],
                           ['az','Compuesto (A-Z)']],'gasto')+'</div>'+
-       '<div class="note" style="margin-top:2px">Tasa DOF $'+mzN(x.fx,4)+' del '+esc(x.fx_fecha)+'. Toca un renglón para el detalle completo.</div>'+
-       mzTabla(['Compuesto','Mezclas','$/kg MXN','$/kg USD','$/mezcla MXN','Costo total MXN','Costo total USD','% del gasto','Venta','Utilidad'],
+       /* ⭐ 27-ago · el mismo letrero que ya trae la ficha del compuesto: esta tabla
+          es el número A (revienta el master) y convive en pantalla con las tarjetas
+          del gasto real (B). Sin la nota, sumar la columna parece legítimo y no lo es:
+          en agosto da $71.8M contra los $31.0M que salieron del almacén. */
+       '<div class="note" style="margin-top:2px;line-height:1.5">Tasa DOF $'+mzN(x.fx,4)+' del '+esc(x.fx_fecha)+'. '+
+       'Cada renglón <b>revienta el master hasta materia prima</b>: sirve para comparar compuestos y ponerles precio, '+
+       'pero <b>no se suma entre renglones</b> — el hule del master ya se pagó en su propia corrida. '+
+       'El dinero que salió del almacén es el de las tarjetas de arriba. Toca un renglón para el detalle completo.</div>'+
+       mzTabla(['Compuesto','Mezclas','$/kg MXN','$/kg USD','$/mezcla MXN','Valor material MXN','Valor material USD','% del valor','Venta','Utilidad'],
         cc.map(function(c){
           var ven=c.venta, util='<span class="note">falta precio</span>', vtx='<span class="note">—</span>';
           if(ven&&ven.precio){
@@ -16503,17 +16526,16 @@ function mzCierrePinta(tipo,d1,d2,res){
   /* ⭐ el gasto REAL del periodo (26-ago): la suma de por_compuesto multiplica el
      costo unitario EXPLOTADO por volumen y eso paga dos veces la materia prima del
      master. Para el consejo va lo que de verdad salió del almacén. */
-  var costoTot=0, costoKg=null, kgCost=0;
+  var costoTot=null, costoKg=null;
   var _cd=(c&&c.costo_directo&&c.costo_directo.ok)?c.costo_directo:null;
   if(_cd){
     costoTot=+_cd.total_mxn||0;
-    kgCost=+_cd.kg_materia_prima||0;
     costoKg=+_cd.mxn_por_kg_mp||null;
-  } else if(c&&c.por_compuesto){
-    c.por_compuesto.forEach(function(x){ costoTot+=(+x.costo_total_mxn||0);
-      if(x.costeable!==false) kgCost+=(+x.kg||0); });
-    costoKg=kgCost?costoTot/kgCost:null;
   }
+  /* ⭐ 27-ago · si el gasto directo no viene, NO se cae al número explotado:
+     ese fallback fue justo el bug que pintaba US$3.4M donde salieron US$1.5M.
+     Regla del proyecto: si falta el dato, se dice que falta. */
+  var _cdCob=(_cd&&_cd.cobertura)?_cd.cobertura:null;
   var paros=(e&&e.paros||[]).reduce(function(a,x){ return a+(+x.minutos||0); },0);
 
   /* ===== MATEMÁTICAS PARA EL CONSEJO Y LA DIRECCIÓN (24-ago) =====
@@ -16591,9 +16613,22 @@ function mzCierrePinta(tipo,d1,d2,res){
         : ((t.kg_estimados||0)>0 ? ' (estimados)' : ' (los reportó producción)'))+'</span></div>'+
      '<div class="k"><b>'+mzN(t.reproceso||0)+'</b><span>de reproceso ('+mzPct(t.reproceso||0,mez)+')</span></div>'+
      '<div class="k"><b>'+mzN(t.quemadas||0)+'</b><span>mezclas quemadas</span></div>'+
-     (c?('<div class="k"><b>'+mzMx(costoTot,2)+'</b><span>costo de materia prima</span></div>'+
-         '<div class="k"><b>'+mzMx(costoKg,4)+'</b><span>MP por kilo costeado (sin reproceso)</span></div>'):'')+
+     /* ⭐ 27-ago · el KPI dice su COBERTURA: sin ella, dos meses con cobertura
+        distinta se comparan como si fueran comparables. Y el rótulo dice
+        «retrabajo letra R», que es lo único que de verdad se excluye. */
+     (c?('<div class="k"><b>'+mzMx(costoTot,2)+'</b><span>costo de materia prima'+
+           (_cdCob&&_cdCob.pct!=null?(' · cubre '+mzN(_cdCob.pct,1)+'% de lo producido'):'')+'</span></div>'+
+         '<div class="k"><b>'+mzMx(costoKg,4)+'</b><span>MP por kilo costeado (sin retrabajo letra R)</span></div>'):'')+
    '</div>'+
+   (c&&!_cd
+     ? '<p class="mut" style="font-size:11px;margin:-2px 0 10px">El costo de materia prima de este periodo '+
+       '<b>no está disponible</b>. Se prefiere dejarlo en blanco antes que poner un número que no es el gasto real.</p>'
+     : '')+
+   (_cdCob&&_cdCob.pct!=null&&_cdCob.pct<99.5
+     ? '<p class="mut" style="font-size:11px;margin:-2px 0 10px">El costo cubre '+mzN(_cdCob.pct,1)+'% de lo producido ('+
+       mzN(_cdCob.mezclas_costeadas)+' de '+mzN(_cdCob.mezclas_total)+' mezclas). '+
+       '<b>No se compara contra un periodo con otra cobertura</b> sin decirlo.</p>'
+     : '')+
    '<h2>Comparativo</h2><table><tr><th>Concepto</th><th class="n">Este periodo</th><th class="n">Periodo anterior</th><th class="n">Año pasado</th></tr>'+
      '<tr><td>Mezclas</td><td class="n">'+mzN(mez)+'</td><td class="n">'+mzN(ta.mezclas)+'</td><td class="n">'+mzN(ty.mezclas)+'</td></tr>'+
      /* 25-ago: un mes puede traer el kilo REAL de la hoja y el otro estimarlo con
@@ -16647,11 +16682,18 @@ function mzCierrePinta(tipo,d1,d2,res){
           : ''))
      : '')+
 
-   '<h2>Los 10 compuestos más corridos</h2><table><tr><th>Compuesto</th><th class="n">Mezclas</th><th class="n">Kilos</th><th class="n">% del total</th>'+(c?'<th class="n">Costo total</th>':'')+'</tr>'+
+   /* ⭐ 27-ago · esta columna es VALOR EN MATERIAL (revienta el master hasta
+      materia prima). Sumarla paga el master dos y tres veces: en agosto daría
+      $71.8M contra los $31.0M que de verdad salieron. El rótulo lo dice. */
+   '<h2>Los 10 compuestos más corridos</h2><table><tr><th>Compuesto</th><th class="n">Mezclas</th><th class="n">Kilos</th><th class="n">% del total</th>'+(c?'<th class="n">Valor en material</th>':'')+'</tr>'+
      (p.por_compuesto||[]).slice(0,10).map(function(x){
        var cx=c?(c.por_compuesto||[]).filter(function(y){ return y.compuesto===x.compuesto; })[0]:null;
        return '<tr><td>'+esc(x.compuesto||'')+'</td><td class="n">'+mzN(x.mezclas)+'</td><td class="n">'+mzN(x.kg)+'</td><td class="n">'+mzPct(x.mezclas,mez)+'</td>'+
          (c?('<td class="n">'+(cx?mzMx(cx.costo_total_mxn,2):'—')+'</td>'):'')+'</tr>'; }).join('')+'</table>'+
+   (c?('<p class="mut" style="font-size:11px;margin-top:4px">La última columna es lo que <b>vale en material</b> cada '+
+       'compuesto: incluye el hule del master, que ya se pagó cuando el master se corrió. Sirve para comparar '+
+       'compuestos y ponerles precio, pero <b>no se suma entre renglones</b> ni se compara contra el costo de '+
+       'materia prima de arriba — ese es el dinero que salió del almacén, y el master ahí se paga una sola vez.</p>'):'')+
    '<h2>Reproceso por origen</h2><table><tr><th>Origen</th><th class="n">Mezclas</th><th class="n">Kilos</th><th class="n">%</th></tr>'+
      ((m&&m.reproceso_origen||[]).map(function(o){ return '<tr><td>'+esc(mzOrgTxt(o.origen))+'</td><td class="n">'+mzN(o.mezclas)+'</td><td class="n">'+mzN(o.kg)+'</td><td class="n">'+mzPct(o.mezclas,t.reproceso||0)+'</td></tr>'; }).join('')||'<tr><td colspan="4">Sin reproceso en el periodo.</td></tr>')+'</table>'+
    '<h2>Paros · '+mzN(paros)+' minutos ('+mzN(parosH,1)+' horas)</h2>'+

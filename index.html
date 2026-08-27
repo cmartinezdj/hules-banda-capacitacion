@@ -12456,7 +12456,7 @@ function labRecPinta(){
     /* renglón 1: la letra, sus fechas y si es la que corre hoy */
     h+='<div class="line" style="border:none;padding:0 0 7px"><span style="flex:1;min-width:0">'+
        '<b style="font-size:16px">'+esc(v.letra)+'</b>'+
-       (clase?('<span class="tg" style="margin-left:7px">'+esc(clase)+'</span>'):'')+
+       ((clase&&clase!==v.letra)?('<span class="tg" style="margin-left:7px">'+esc(clase)+'</span>'):'')+
        (esR?'<span class="tg" style="margin-left:5px;color:var(--warn)">no compra materia prima</span>':'')+
        (v.es_la_ultima?'<span class="tg g" style="margin-left:5px">la que corre hoy</span>':'')+
        '<div class="note" style="margin-top:3px">'+esc(v.desde)+' al '+esc(v.hasta)+' · '+v.dias+(v.dias===1?' día':' días')+

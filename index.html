@@ -15123,7 +15123,18 @@ function mzTabPaint(x){
          (totKg>=1000000?(mzN(totKg/1000000,2)+' M'):mzN(totKg)), null,
          ((t.kg_estimados||0)>0?'ojo: hay estimados':'los reporta producción'))+
      kpi('produccion','Corridas', mzN(t.corridas||0), null)+
-     kpi('merma','Quemadas', mzN(t.quemadas||0), 'var(--bad)','merma y calidad')+
+     /* «0 quemadas» y «nadie las capturó» son cosas distintas: en julio la
+        columna del Excel venía vacía en los 950 renglones y el tablero lo
+        enseñaba como un mes perfecto de calidad (26-ago) */
+     kpi('merma','Quemadas',
+         ((x.quemadas_capturadas!=null && x.quemadas_capturadas===0 && (x.corridas_del_periodo||0)>0)
+            ? 'sin dato' : mzN(t.quemadas||0)),
+         'var(--bad)',
+         ((x.quemadas_capturadas!=null && x.quemadas_capturadas===0 && (x.corridas_del_periodo||0)>0)
+            ? 'no se capturó en la hoja'
+            : ((x.quemadas_capturadas!=null && x.corridas_del_periodo && x.quemadas_capturadas<x.corridas_del_periodo)
+                 ? mzN(x.quemadas_capturadas)+' de '+mzN(x.corridas_del_periodo)+' corridas con dato'
+                 : 'merma y calidad')))+
      /* el TOTAL de verdad: tm_top solo trae las 10 causas principales, y sumarlas
         daba 5,997 min cuando agosto tuvo 10,060 — un número de portada 40% corto (26-ago) */
      kpi('eficiencia','Paros', mzN(x.tm_total!=null? x.tm_total

@@ -12372,6 +12372,8 @@ function lpGuarda(){
 var _labCid=null, _labRec=null, _labDiff=null, _labSel=[];
 
 function renderLabRec(){
+  /* el mismo candado de rol que labprb y labver: era la única del hub sin él */
+  if(!(S.mezTec||S.admin)){ flash('Solo Laboratorio y dirección.'); return; }
   var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Laboratorio</div>'+
     '<b style="font-size:20px">El recorrido de cada compuesto</b>'+
     '<p class="note" style="margin:4px 0 0;max-width:360px">Cada versión con lo que cambió en su fórmula y lo que produjo en la planta. '+
@@ -12419,7 +12421,7 @@ function labRecPinta(){
   var x=_labRec, out=$('labrec-out'); if(!x||!out) return;
   var L=x.letras||[], h='';
   /* el candado de dinero lo decide el servidor (v3_140), no la pantalla */
-  var _labVeDin=(x.ve_dinero!==false);
+  var _labVeDin=(x.ve_dinero===true);
 
   /* ── el resumen del compuesto ── */
   var totM=0, totK=0, conHoja=0;
@@ -12543,7 +12545,7 @@ function labDiffPinta(){
   /* ⭐ 27-ago · el candado de dinero manda desde el servidor (v3_140): quien no
      tiene permiso ve QUÉ cambió, en kilos, y ni un peso. Nunca $0.00, que sería
      mentir diciendo «no cuesta nada» en vez de «no te toca verlo». */
-  var vd=(d.ve_dinero!==false);
+  var vd=(d.ve_dinero===true);
   var h='<div class="sec-t">Qué cambió: '+esc(d.a.letra)+' → '+esc(d.b.letra)+'<span class="ln"></span></div>';
   var dk=(+d.b.costo_kg_mxn||0)-(+d.a.costo_kg_mxn||0);
   h+='<div class="card" style="margin-bottom:10px">'+
@@ -12559,8 +12561,20 @@ function labDiffPinta(){
        ((+d.peso_cambio||0)!==0?('<div><div class="note">Peso del lote</div><b style="font-size:17px">'+
          ((+d.peso_cambio>0)?'+':'')+mzN(d.peso_cambio,3)+' kg</b></div>'):'')+
      '</div>'+
-     (d.temp_cambio?'<div class="note" style="margin-top:8px;color:var(--warn)">También cambió la temperatura de descarga: '+
-       esc(labTemp(d.a.temp)||'—')+' → '+esc(labTemp(d.b.temp)||'—')+'</div>':'')+
+     /* ⭐ 27-ago · la bandera del servidor se prende por simple desigualdad, y null
+        es distinto de «100 °C»: en los 35 pares que existen, las 8 veces que salía
+        era porque FALTABA capturar la temperatura de un lado. Cero eran un cambio
+        real. Decirlo en amarillo, sobre el parámetro que Laboratorio usa para
+        controlar el proceso, mandaba a investigar algo que nunca pasó. */
+     (function(){
+       var ta=labTemp(d.a.temp), tb=labTemp(d.b.temp);
+       if(ta&&tb&&ta!==tb) return '<div class="note" style="margin-top:8px;color:var(--warn)">'+
+         'También cambió la temperatura de descarga: '+esc(ta)+' → '+esc(tb)+'</div>';
+       if(d.temp_cambio&&!(ta&&tb)) return '<div class="note" style="margin-top:8px">'+
+         'A la versión '+esc(ta?d.b.letra:d.a.letra)+' le falta capturar su temperatura de descarga, '+
+         'así que no se pueden comparar.</div>';
+       return '';
+     })()+
      '</div>';
 
   /* ⭐ el candado: si los aportes no suman la diferencia, no se dibuja el desglose */
@@ -15955,9 +15969,13 @@ function mzDesgPaint(){
           EXPLOTADO por volumen, y eso paga dos veces la materia prima del master:
           el master se produce aparte Y ADEMÁS entra como ingrediente de la mezcla
           final. Lo comprueban las hojas de Laboratorio y las facturas de Almacén. */
+       /* por VALOR, no por existencia: un periodo sin captura contesta ok con total 0
+          y pintaba «$0.00 · 0 kg», que se lee como «no gastamos» (27-ago). */
        '<div class="card"><div class="note">Materia prima del periodo</div><b style="font-size:20px;color:var(--data)">'+
-         mzMx(cd?cd.total_mxn:null)+'</b>'+
-         '<div class="note" style="margin-top:2px">'+(cd?mzN(cd.kg_materia_prima)+' kg comprados':'—')+'</div>'+
+         mzMx((cd&&(+cd.kg_materia_prima||0)>0)?cd.total_mxn:null)+'</b>'+
+         '<div class="note" style="margin-top:2px">'+((cd&&(+cd.kg_materia_prima||0)>0)
+            ? (mzN(cd.kg_materia_prima)+' kg que salieron del almacén')
+            : 'sin captura en este periodo')+'</div>'+
          ((cd&&cd.cobertura&&(cd.cobertura.mezclas_retrabajo||0)>0)?'<div class="note" style="margin-top:3px;line-height:1.4">'+
             mzN(cd.cobertura.mezclas_retrabajo)+' mezclas son de retrabajo (letra R): se corren con material '+
             'que ya estaba en la planta y no compran materia prima nueva.</div>':'')+'</div>'+
@@ -16528,7 +16546,10 @@ function mzCierrePinta(tipo,d1,d2,res){
      master. Para el consejo va lo que de verdad salió del almacén. */
   var costoTot=null, costoKg=null;
   var _cd=(c&&c.costo_directo&&c.costo_directo.ok)?c.costo_directo:null;
-  if(_cd){
+  /* ⭐ 27-ago · por VALOR, no por existencia: hb_mez_costo_directo contesta ok:true
+     con total 0 para un periodo sin captura, y eso pintaba «$0.00 costo de materia
+     prima», que es justo el número falso que se quería evitar. */
+  if(_cd && (+_cd.kg_materia_prima||0)>0){
     costoTot=+_cd.total_mxn||0;
     costoKg=+_cd.mxn_por_kg_mp||null;
   }
@@ -16617,17 +16638,30 @@ function mzCierrePinta(tipo,d1,d2,res){
         distinta se comparan como si fueran comparables. Y el rótulo dice
         «retrabajo letra R», que es lo único que de verdad se excluye. */
      (c?('<div class="k"><b>'+mzMx(costoTot,2)+'</b><span>costo de materia prima'+
-           (_cdCob&&_cdCob.pct!=null?(' · cubre '+mzN(_cdCob.pct,1)+'% de lo producido'):'')+'</span></div>'+
-         '<div class="k"><b>'+mzMx(costoKg,4)+'</b><span>MP por kilo costeado (sin retrabajo letra R)</span></div>'):'')+
+           (_cdCob&&_cdCob.pct!=null?(' · cubre '+mzN(_cdCob.pct,1)+'% de lo que consumió'):'')+'</span></div>'+
+         /* ⭐ 27-ago · «por kilo» de QUÉ: es por kilo de materia prima que entró al
+            banbury, NO por kilo producido. Sin decirlo, la cuenta obvia (kilos
+            producidos × este número) da más del doble del costo impreso arriba. */
+         '<div class="k"><b>'+mzMx(costoKg,4)+'</b><span>por kilo de materia prima que entró (no por kilo producido)</span></div>'):'')+
    '</div>'+
-   (c&&!_cd
+   (c&&costoTot==null
      ? '<p class="mut" style="font-size:11px;margin:-2px 0 10px">El costo de materia prima de este periodo '+
        '<b>no está disponible</b>. Se prefiere dejarlo en blanco antes que poner un número que no es el gasto real.</p>'
      : '')+
-   (_cdCob&&_cdCob.pct!=null&&_cdCob.pct<99.5
-     ? '<p class="mut" style="font-size:11px;margin:-2px 0 10px">El costo cubre '+mzN(_cdCob.pct,1)+'% de lo producido ('+
-       mzN(_cdCob.mezclas_costeadas)+' de '+mzN(_cdCob.mezclas_total)+' mezclas). '+
-       '<b>No se compara contra un periodo con otra cobertura</b> sin decirlo.</p>'
+   /* ⭐ 27-ago · las DOS coberturas. La primera («tuvo alguna fórmula») sale casi
+      siempre en 99-100% y tranquiliza de más: lo que de verdad separa a julio de
+      agosto es cuánto se costeó con la fórmula de la LETRA que corrió (54% vs 85%). */
+   (_cdCob&&(_cdCob.pct!=null||_cdCob.pct_formula_exacta!=null)
+     ? '<p class="mut" style="font-size:11px;margin:-2px 0 10px">'+
+       (_cdCob.pct!=null?('El costo alcanza a '+mzN(_cdCob.pct,1)+'% de las mezclas que consumieron materia prima ('+
+         mzN(_cdCob.mezclas_costeadas)+' de '+mzN(_cdCob.mezclas_total)+'). '):'')+
+       (_cdCob.pct_formula_exacta!=null
+         ? ('De ese costo, <b>'+mzN(_cdCob.pct_formula_exacta,1)+'% usó la fórmula de la letra que de verdad corrió</b>'+
+            ((+_cdCob.mezclas_formula_sustituta||0)>0
+              ? ('; las otras '+mzN(_cdCob.mezclas_formula_sustituta)+' mezclas se costearon con la fórmula vigente como sustituta')
+              : '')+'. ')
+         : '')+
+       '<b>Dos periodos con distinta cobertura no se comparan</b> sin decirlo.</p>'
      : '')+
    '<h2>Comparativo</h2><table><tr><th>Concepto</th><th class="n">Este periodo</th><th class="n">Periodo anterior</th><th class="n">Año pasado</th></tr>'+
      '<tr><td>Mezclas</td><td class="n">'+mzN(mez)+'</td><td class="n">'+mzN(ta.mezclas)+'</td><td class="n">'+mzN(ty.mezclas)+'</td></tr>'+
@@ -16874,19 +16908,30 @@ function mzCompPaint(x){
         ['Costo por mezcla ('+mzN(co.peso_total_kg,3)+' kg, hoy)', mzMx(co.costo_batch_mxn,2), mzUs(co.costo_batch_usd,2)],
         /* el total del periodo va día por día (tasa y precios de CADA día) —
            mismo criterio que la tabla de costos, para que cuadren (A6) */
-        (ct&&ct.dias?['Valor en material de lo producido (día por día)', mzMx(+ct.mxn||0,2), mzUs(+ct.usd||0,2)]
-                    :['Valor en material de lo producido', mzMx((+co.costo_batch_mxn||0)*(p.mezclas||0),2), mzUs((+co.costo_batch_usd||0)*(p.mezclas||0),2)])];
+        /* ⭐ 27-ago · NUNCA multiplicar costo_batch × p.mezclas: p.mezclas incluye el
+           retrabajo, que no compra materia prima. Ese plan B revivía el bug que el
+           servidor acababa de quitar (BP-GY el 14-jul: $200,181 de un día en que las
+           dos corridas fueron letra R). Si el servidor manda cero, cero es la verdad. */
+        (ct&&ct.mxn!=null
+          ? ['Valor en material de lo producido (día por día)', mzMx(+ct.mxn||0,2), mzUs(+ct.usd||0,2)]
+          : ['Valor en material de lo producido', mzMx(null), mzUs(null)])];
       /* ⭐ 27-ago · los DOS números, porque no son lo mismo:
          · «valor en material» revienta el master hasta materia prima → sirve para
            ponerle precio al producto, pero NO se puede sumar entre compuestos.
          · «materia prima comprada» es lo que ESTE compuesto sacó del almacén.
          En BP-GY de agosto: $12.1 M contra $427 mil. La diferencia ya la pagó
          el master MP-GY en su propia corrida. */
-      var cdz = x.costo_directo;
+      /* el candado lo decide el servidor (v3_142b): ve_dinero, no la presencia del dato */
+      var cdz = (x.ve_dinero===true) ? x.costo_directo : null;
       if(cdz && cdz.mxn!=null){
         filas.push(['<b>Materia prima que compró este compuesto</b>',
                     '<b>'+mzMx(+cdz.mxn||0,2)+'</b>',
                     mzUs(co.fx?(+cdz.mxn||0)/co.fx:null,2)]);
+      }
+      /* cuando todo el periodo fue retrabajo el cero es correcto, y hay que decir por qué */
+      if(ct && ct.mxn!=null && !(+ct.mxn) && (+p.mezclas||0)>0){
+        filas.push(['<span class="note">Todo lo que corrió en el periodo fue retrabajo: se hizo con '+
+                    'material que ya estaba en la planta y no compró materia prima nueva.</span>','','']);
       }
       if(vt&&vt.precio){
         var pv=+vt.precio*(vt.moneda==='USD'?(+co.fx||0):1);

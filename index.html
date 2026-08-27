@@ -15255,11 +15255,18 @@ function mzTabPaint(x){
                     ['larga','La que más dura cada vez'],['az','Causa (A-Z)']],'min')+'</div>';
   if(!tmt.length) h+='<div class="note" style="margin-top:4px">Sin paros en el rango.</div>';
   else if(mzGT('tm','barras')!=='barras'){
-    h+=mzCatGraf('tm', tmt.map(function(c){ return {l:c.causa||'¿?', v:Math.round(c.minutos)}; }), 'minutos', '');
+    h+=mzCatGraf('tm', tmt.map(function(c){ return {l:c.causa||'¿?', v:Math.round(c.minutos)}; }), 'minutos', '', 'barras', tmTotal);
   } else tmt.forEach(function(c){
     h+='<div style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:12px"><span>'+esc(c.causa||'¿?')+'</span><span class="note">'+Math.round(c.minutos).toLocaleString()+' min</span></div>'+
        '<span style="display:block;height:7px;border-radius:4px;background:var(--data);opacity:.85;margin-top:3px;width:'+Math.round(c.minutos/maxTm*100)+'%"></span></div>';
   });
+  /* la lista son las 10 principales: si no se dice, se lee como si fueran todas (26-ago) */
+  if(tmt.length && tmCausas && tmCausas>tmt.length)
+    h+='<div class="note" style="margin-top:9px;font-size:11.5px">Arriba están las <b>'+tmt.length+
+       '</b> causas que más pegan, de <b>'+mzN(tmCausas)+'</b> distintas. Entre todas suman <b>'+
+       mzN(tmTotal)+' min</b>'+
+       (tmTotal? ' — lo listado es el '+Math.round(tmt.reduce(function(a,c){ return a+(+c.minutos||0); },0)/tmTotal*100)+'%.' : '.')+
+       '</div>';
   h+='</div>';
   $('s-meztab').innerHTML=h; show('meztab');
 }
@@ -16036,7 +16043,17 @@ function mzDesgPaint(){
         (x.paros||[]).map(function(p){ return mzTd([esc(p.causa||'¿?'),mzN(p.minutos),mzN(p.veces),mzN(p.con_folio),
           p.veces?mzN(p.minutos/p.veces,1)+' min':'—']); }))+'</div>';
     var cu=x.cumplimiento||[];
+    /* el servidor manda máximo 60 renglones, los más recientes: si no se dice,
+       la tabla se lee como si fuera el periodo completo (26-ago) */
+    var cuTot=(x.cumplimiento_total&&x.cumplimiento_total.ok)?x.cumplimiento_total:null;
     if(cu.length) h+='<div class="card"><b style="font-size:13px">Cumplimiento por turno (cédula vs bitácora)</b>'+
+       (cu.length>=60
+         ? '<div class="note" style="margin-top:4px;color:var(--warn)">Aquí caben los <b>60</b> renglones '+
+           'más recientes (del '+esc(cu[cu.length-1].fecha||'')+' al '+esc(cu[0].fecha||'')+'). '+
+           (cuTot? 'El periodo completo va arriba: <b>'+mzN(cuTot.programado)+'</b> programadas y <b>'+
+                   mzN(cuTot.producido)+'</b> hechas.' : 'No sumes esta tabla para sacar el total del periodo.')+
+           '</div>'
+         : '')+
        mzTabla(['Fecha','Turno','Banbury','Programado','Real','Cumplimiento'],
         cu.map(function(c){ return mzTd([esc(c.fecha),'T'+c.turno,'BB'+c.banbury,mzN(c.programado),mzN(c.real),
           '<span style="color:'+((c.real>=c.programado)?'var(--ok)':'var(--warn)')+'">'+mzPct(c.real,c.programado)+'</span>']); }))+'</div>';
@@ -16061,8 +16078,13 @@ function mzPrePaint(){
   var x=_mzPre, ms=x.materiales||[], h='';
   /* el % de cambio no viene del servidor: se calcula al pintar. Para poder
      ORDENAR por él hay que tenerlo antes, así que se anota en cada renglón. */
+  /* SOLO se compara si las dos capturas están en la MISMA moneda: un material
+     tiene historial en pesos y en dólares, y comparar 37.50 MXN contra 2.61 USD
+     daba −93% pintado en verde, como si hubiera bajado (26-ago) */
   ms.forEach(function(m){
-    m._dpc=(m.precio!=null && m.precio_previo!=null && +m.precio_previo>0)
+    var mismaMon = (m.moneda_previa==null) || ((m.moneda||'MXN')===(m.moneda_previa||'MXN'));
+    m._mismaMon = mismaMon;
+    m._dpc=(mismaMon && m.precio!=null && m.precio_previo!=null && +m.precio_previo>0)
       ? (+m.precio - +m.precio_previo)/+m.precio_previo*100 : null; });
   var msOrd=mzOrdAplica(ms,'pre','uso',{
     uso:     function(a,b){ var ua=a.en_uso?0:1, ub=b.en_uso?0:1;
@@ -16095,9 +16117,11 @@ function mzPrePaint(){
      mzTabla(['Material','Precio','Moneda','En pesos','Desde','Cambio','Compras'],
       msOrd.map(function(m){
         var d='—';
-        if(m.precio!=null && m.precio_previo!=null && +m.precio_previo>0){
-          var dd=(+m.precio - +m.precio_previo)/+m.precio_previo*100;
+        if(m._dpc!=null){
+          var dd=m._dpc;
           d='<span style="color:'+(dd>0?'var(--bad)':(dd<0?'var(--ok)':'var(--mut)'))+'">'+(dd>0?'▲':(dd<0?'▼':''))+' '+mzN(Math.abs(dd),1)+'%</span>';
+        } else if(m.precio!=null && m.precio_previo!=null && !m._mismaMon){
+          d='<span class="note" title="El precio anterior estaba en otra moneda: comparar los dos daría un porcentaje falso">cambió de moneda</span>';
         }
         return mzTd([esc(m.codigo)+(m.en_uso?' <span class="note">en fórmulas</span>':''),
           m.precio!=null?mzN(m.precio,4):'<span class="note">sin precio</span>',
@@ -16510,9 +16534,17 @@ function mzCierrePinta(tipo,d1,d2,res){
   var top5Pct=mez?(top5/mez*100):null;
   var nComp=pc.length;
   /* programa contra real (cuando Producción empiece a capturar la cédula) */
+  /* ⭐ el arreglo «cumplimiento» viene RECORTADO a 60 renglones por el servidor:
+     en agosto eso era del 17 al 23 nada más. Sumarlo daba 4,354 programadas
+     cuando el mes tuvo 15,209 — y ese número iba al PDF del consejo (26-ago).
+     El total sale de hb_mez_programa_cmp, la misma que dibuja el tablero. */
   var cump=(e&&e.cumplimiento)||[];
-  var progTot=cump.reduce(function(a,x){ return a+(+x.programado||0); },0);
-  var realProg=cump.reduce(function(a,x){ return a+(+x.real||0); },0);
+  var ct=(e&&e.cumplimiento_total&&e.cumplimiento_total.ok)?e.cumplimiento_total:null;
+  var progTot = ct ? (+ct.programado||0)
+                   : cump.reduce(function(a,x){ return a+(+x.programado||0); },0);
+  var realProg = ct ? (+ct.producido||0)
+                    : cump.reduce(function(a,x){ return a+(+x.real||0); },0);
+  var diasSinProg = ct ? (+ct.dias_sin_programa||0) : 0;
 
   var tit='Cierre de '+(tipo==='semana'?'semana':'mes')+' · Mezclado';
   var html='<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>'+tit+'</title><style>'+
@@ -16591,7 +16623,12 @@ function mzCierrePinta(tipo,d1,d2,res){
      ? ('<h2>Programa contra real</h2><table>'+
         '<tr><td>Programado</td><td class="n"><b>'+mzN(progTot)+'</b></td><td class="n mut">mezclas</td></tr>'+
         '<tr><td>Real en lo programado</td><td class="n"><b>'+mzN(realProg)+'</b></td><td class="n mut">'+mzPct(realProg,progTot)+' de cumplimiento</td></tr>'+
-        '</table>')
+        '</table>'+
+        (diasSinProg>0
+          ? '<p class="mut" style="font-size:11px;margin-top:4px">El cumplimiento se mide solo en los '+
+            'd\u00edas con programa capturado: '+mzN(diasSinProg)+' d\u00eda(s) del periodo no tienen '+
+            'programa y su producci\u00f3n no entra en este porcentaje.</p>'
+          : ''))
      : '')+
 
    '<h2>Los 10 compuestos más corridos</h2><table><tr><th>Compuesto</th><th class="n">Mezclas</th><th class="n">Kilos</th><th class="n">% del total</th>'+(c?'<th class="n">Costo total</th>':'')+'</tr>'+

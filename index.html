@@ -15456,23 +15456,9 @@ function mzTabPaint(x){
   }
   h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:9px;margin-bottom:12px">'+
      kpi('produccion','Mezclas', mzN(t.mezclas||0), 'var(--data)')+
-     /* ⭐ 27-ago · LOS DOS KILOS, uno junto al otro (pedido de Carlos y Ana):
-        «que sepan cuánto entra al banbury y cuánto es final».
-        La planta mezcla por pasos, así que el mismo hule se pesa dos y a veces
-        tres veces. El de paso mide cuánto trabajaron las máquinas; el final,
-        cuánto producto salió hacia el cliente. Los dos son ciertos. */
-     kpi('produccion',((t.kg_estimados||0)>0?'Kilos al banbury (parte estimada)':'Kilos que entraron al banbury'),
+     kpi('produccion',((t.kg_estimados||0)>0?'Kilos (parte estimada)':'Kilos producidos'),
          (totKg>=1000000?(mzN(totKg/1000000,2)+' M'):mzN(totKg)), null,
-         ((t.kg_estimados||0)>0?'ojo: hay estimados':'todos los pasos'))+
-     /* ⚠ NUNCA poner aquí el porcentaje contra los kilos de paso: se lee como merma
-        y NO lo es. El master no se pierde — entra completo a la mezcla final (en julio
-        se reintegró el 112.7% de lo producido). La diferencia es el mismo hule pesado
-        dos veces, no material perdido. (Carlos, 27-ago) */
-     (t.kg_final!=null
-       ? kpi('produccion','Kilos de último paso',
-           ((+t.kg_final||0)>=1000000?(mzN((+t.kg_final||0)/1000000,2)+' M'):mzN(+t.kg_final||0)),
-           'var(--ok)', 'sin contar el master aparte')
-       : '')+
+         ((t.kg_estimados||0)>0?'ojo: hay estimados':'los reporta producción'))+
      kpi('produccion','Corridas', mzN(t.corridas||0), null)+
      /* «0 quemadas» y «nadie las capturó» son cosas distintas: en julio la
         columna del Excel venía vacía en los 950 renglones y el tablero lo
@@ -16212,29 +16198,15 @@ function mzDesgPaint(){
   h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:12px">'+
      '<div class="card"><div class="note">Mezclas</div><b style="font-size:20px;color:var(--data)">'+mzN(t.mezclas)+'</b>'+
        '<div style="margin-top:3px">'+mzCmpChip('mezclas',x)+'</div></div>'+
-     /* ⭐ 27-ago · los DOS kilos, uno junto al otro */
-     '<div class="card"><div class="note">Kilos que entraron al banbury'+
+     '<div class="card"><div class="note">Kilos'+
        (((t.kg_estimados||0)>0 && (t.kg_medidos||0)>0) ? ' <span style="color:var(--warn)">(en parte estimados)</span>'
         : ((t.kg_estimados||0)>0 ? ' <span style="color:var(--warn)">(estimados)</span>' : ''))+
        '</div><b style="font-size:20px">'+mzN(t.kg)+'</b>'+
        '<div style="margin-top:3px">'+mzCmpChip('kg',x)+'</div>'+
-       '<div class="note" style="margin-top:3px;line-height:1.4">Todos los pasos. El master se pesa aquí y '+
-       'otra vez dentro de su mezcla final.'+
-       ((t.kg_estimados||0)>0 ? ' '+((t.kg_medidos||0)>0 ? mzN(t.kg_medidos)+' kg los reportó producción; '+mzN(t.kg_estimados)+' kg se estimaron con el peso de la fórmula.'
-                               : 'Ninguno viene de la hoja: todos salen del peso de la fórmula.') : '')+'</div>'+
+       ((t.kg_estimados||0)>0 ? '<div class="note" style="margin-top:3px;line-height:1.4">'+
+          ((t.kg_medidos||0)>0 ? mzN(t.kg_medidos)+' kg los reportó producción; '+mzN(t.kg_estimados)+' kg se estimaron con el peso de la fórmula.'
+                               : 'Ninguno viene de la hoja: todos salen del peso de la fórmula.')+'</div>' : '')+
        '</div>'+
-     (t.kg_final!=null
-       ? ('<div class="card" style="border-color:color-mix(in srgb,var(--ok) 40%,transparent)">'+
-          '<div class="note">Kilos de último paso</div>'+
-          '<b style="font-size:20px;color:var(--ok)">'+mzN(+t.kg_final||0)+'</b>'+
-          '<div class="note" style="margin-top:3px;line-height:1.45">Lo mismo, contando cada mezcla '+
-          '<b>una sola vez</b>: aquí el master no se suma aparte, porque ya va adentro de su mezcla final.'+
-          '<br><b style="color:var(--warn)">La diferencia con el número de al lado NO es merma.</b> '+
-          'El master no se pierde: se reintegra completo (en julio, el 112.7% de lo producido). '+
-          'La merma real se mide con el scrap, y todavía no se está capturando.</div>'+
-          '<div class="note" style="margin-top:5px;font-size:10.5px;color:var(--warn)">'+
-          'Por confirmar con Producción qué significa exactamente la columna PASO de la hoja.</div></div>')
-       : '')+
      '<div class="card"><div class="note">Reproceso</div><b style="font-size:20px;color:var(--warn)">'+mzN(t.reproceso)+'</b>'+
        '<div class="note" style="margin-top:3px">'+mzPct(t.reproceso,t.mezclas)+' de lo producido</div>'+
        '<div>'+mzCmpChip('reproceso',x)+'</div></div>'+
@@ -16967,13 +16939,9 @@ function mzCierrePinta(tipo,d1,d2,res){
      '<div class="k"><b>'+mzN(mez)+'</b><span>mezclas</span></div>'+
      (metaPct!=null?('<div class="k"><b>'+mzN(metaPct,1)+'%</b><span>de la meta del periodo</span></div>'):'')+
      '<div class="k"><b>'+mzN(prom,0)+'</b><span>mezclas por día ('+mzN(nd)+' días)</span></div>'+
-     /* ⭐ 27-ago · los DOS kilos también en la hoja que va al consejo */
-     '<div class="k"><b>'+mzN(kg)+'</b><span>kilos que entraron al banbury'+
+     '<div class="k"><b>'+mzN(kg)+'</b><span>kilos producidos'+
        (((t.kg_estimados||0)>0 && (t.kg_medidos||0)>0) ? ' (parte estimados)'
-        : ((t.kg_estimados||0)>0 ? ' (estimados)' : ''))+'</span></div>'+
-     ((t.kg_final!=null)
-       ? ('<div class="k"><b>'+mzN(+t.kg_final||0)+'</b><span>kilos de último paso (cada mezcla contada una vez)</span></div>')
-       : '')+
+        : ((t.kg_estimados||0)>0 ? ' (estimados)' : ' (los reportó producción)'))+'</span></div>'+
      '<div class="k"><b>'+mzN(t.reproceso||0)+'</b><span>de reproceso ('+mzPct(t.reproceso||0,mez)+')</span></div>'+
      '<div class="k"><b>'+mzN(t.quemadas||0)+'</b><span>mezclas quemadas</span></div>'+
      /* ⭐ 27-ago · el KPI dice su COBERTURA: sin ella, dos meses con cobertura
@@ -17004,15 +16972,6 @@ function mzCierrePinta(tipo,d1,d2,res){
               : '')+'. ')
          : '')+
        '<b>Dos periodos con distinta cobertura no se comparan</b> sin decirlo.</p>'
-     : '')+
-   ((t.kg_final!=null && kg>0)
-     ? '<p class="mut" style="font-size:11px;margin:-2px 0 10px">La planta mezcla por pasos: primero el '+
-       'master y despu&eacute;s la mezcla final, as&iacute; que el mismo hule pasa por el banbury dos y a veces '+
-       'tres veces. Por eso hay dos cifras: los <b>'+mzN(kg)+' kg que entraron al banbury</b> miden cu&aacute;nto '+
-       'trabajaron las m&aacute;quinas, y los <b>'+mzN(+t.kg_final||0)+' kg de &uacute;ltimo paso</b> cuentan cada '+
-       'mezcla una sola vez. <b>La diferencia entre las dos NO es merma:</b> el master no se pierde, se '+
-       'reintegra completo dentro de su mezcla final. La merma real se mide con el scrap, que todav&iacute;a '+
-       'no se captura en la hoja.</p>'
      : '')+
    '<h2>Comparativo</h2><table><tr><th>Concepto</th><th class="n">Este periodo</th><th class="n">Periodo anterior</th><th class="n">Año pasado</th></tr>'+
      '<tr><td>Mezclas</td><td class="n">'+mzN(mez)+'</td><td class="n">'+mzN(ta.mezclas)+'</td><td class="n">'+mzN(ty.mezclas)+'</td></tr>'+

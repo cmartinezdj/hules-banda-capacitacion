@@ -14631,15 +14631,28 @@ function renderMezSem(){
 }
 function mzSemDias(d){ _mzSemDias=d; renderMezSem(); }
 /*  Regla del semáforo, dicha en cristiano:
-    ROJO   = lleva sin comprarse más del doble del periodo que llevamos midiendo
-    ÁMBAR  = lleva sin comprarse más de lo que dura el periodo
-    VERDE  = se compró dentro del periodo                                     */
+    ROJO   = lleva sin LLEGAR material más del doble del periodo que medimos
+    ÁMBAR  = lleva sin llegar más de lo que dura el periodo
+    VERDE  = llegó material dentro del periodo
+
+    ⭐ 27-ago · El color mira la ENTRADA del almacén, no la fecha del precio.
+    Antes se calculaba con el último precio capturado, y por eso el N-10 salía
+    en rojo con «119 días sin compra» cuando el almacén había recibido 566,795 kg
+    en ese lapso. Son dos cosas distintas: que no llegue material es problema de
+    abasto; que no se capture la factura es de Costos, y va aparte.           */
 function mzSemLuz(m,dias){
-  var s=m.dias_sin_comprar;
-  if(s==null) return {c:'var(--bad)', t:'nunca se ha capturado su precio', k:0};
-  if(s > dias*2) return {c:'var(--bad)',  t:'lleva '+mzN(s)+' días sin compra', k:0};
-  if(s > dias)   return {c:'var(--warn)', t:'lleva '+mzN(s)+' días sin compra', k:1};
-  return {c:'var(--ok)', t:'comprado hace '+mzN(s)+' días', k:2};
+  var s=(m.dias_sin_entrada!=null)?m.dias_sin_entrada:m.dias_sin_comprar;
+  if(s==null) return {c:'var(--bad)', t:'nunca ha entrado al almacén', k:0};
+  if(s > dias*2) return {c:'var(--bad)',  t:'lleva '+mzN(s)+' días sin entrar material', k:0};
+  if(s > dias)   return {c:'var(--warn)', t:'lleva '+mzN(s)+' días sin entrar material', k:1};
+  return {c:'var(--ok)', t:'entró material hace '+mzN(s)+' días', k:2};
+}
+/* el precio viejo es aviso de Costos, no de abasto: se dice aparte y no pinta el semáforo */
+function mzSemPrecioViejo(m,dias){
+  var pd=m.dias_sin_precio;
+  if(pd==null || pd<=Math.max(dias,90)) return '';
+  return '<div class="note" style="margin-top:3px;color:var(--warn)">Su precio tiene '+mzN(pd)+
+         ' días. Puede estar bien (si no se ha comprado) o faltar la factura.</div>';
 }
 function mzSemPaint(){
   var x=_mzSem, mats=x.materiales||[], dias=x.dias||30, h='';
@@ -14729,9 +14742,10 @@ function mzSemPaint(){
          var costo=(m.costo_mxn!=null)?mzMx(m.costo_mxn,2):ND;
          var precio=(m.precio!=null)
            ? ('<span style="white-space:nowrap">'+(m.moneda==='USD'?mzUs(m.precio,4):mzMx(m.precio,4))+'</span>'+
-              (m.precio_fecha?('<div class="note" style="font-size:9.5px;margin-top:1px">compra '+esc(m.precio_fecha)+'</div>'):''))
+              (m.precio_fecha?('<div class="note" style="font-size:9.5px;margin-top:1px">precio del '+esc(m.precio_fecha)+'</div>'):''))
            : ND;
-         var semaf='<span style="color:'+l.c+';font-weight:700">●</span> <span style="font-size:11.5px;white-space:nowrap">'+l.t+'</span>';
+         var semaf='<span style="color:'+l.c+';font-weight:700">●</span> <span style="font-size:11.5px;white-space:nowrap">'+l.t+'</span>'+
+                   mzSemPrecioViejo(m,dias);
          /* entró y movimiento: el número que le importa a compras */
          var entro=(m.kg_entrada!=null)
            ? ('<span style="white-space:nowrap">'+mzN(m.kg_entrada)+' <span class="note">kg</span></span>'+
@@ -14753,7 +14767,7 @@ function mzSemPaint(){
          celdas.push(semaf);
          return mzTd(celdas);
        }))+
-     '<div class="note" style="margin-top:8px">Rojo = lleva más del doble del periodo sin comprarse (o nunca se capturó su precio). Ámbar = más de '+mzN(dias)+' días. Verde = compra reciente.</div>'+
+     '<div class="note" style="margin-top:8px">Rojo = lleva más del doble del periodo <b>sin que entre material al almacén</b> (o nunca ha entrado). Ámbar = más de '+mzN(dias)+' días. Verde = entró material hace poco.<br>El precio viejo se avisa aparte: no pinta el semáforo, porque que falte capturar una factura no significa que falte material.</div>'+
      (ve?'<div class="note" style="margin-top:4px">El «costo de lo usado» se valúa día por día: los kilos de cada fecha con el precio y la tasa DOF de esa fecha. Si a un material le faltó precio algún día, sale «no disponible» — no se suman pedazos.</div>':'')+
      '<div class="note" style="margin-top:4px">Ya entran los <b>kilos de cada entrada</b> del registro de almacén: por eso se puede ver lo que entró y el movimiento del periodo. Para el <b>«Restante»</b> falta una sola cosa — la <b>existencia física a una fecha de corte</b>. En cuanto almacén la capture, esta columna se llena sola. Nada aquí se aproxima.</div>';
   $('s-mezsem').innerHTML=h;

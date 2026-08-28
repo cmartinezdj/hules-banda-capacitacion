@@ -1517,6 +1517,8 @@ body.a11y .chatpista{font-size:14px;line-height:1.5}
     <section id="s-mezprecios" class="screen pad hide"></section>
     <section id="s-mezsem" class="screen pad hide"></section>
     <section id="s-mezrec" class="screen pad hide"></section>
+    <section id="s-mezpend" class="screen pad hide"></section>
+    <section id="s-labvig" class="screen pad hide"></section>
     <section id="s-mezraw" class="screen pad hide"></section>
     <section id="s-iallaves" class="screen pad hide"></section>
     <section id="s-mezalm" class="screen pad hide"></section>
@@ -3243,7 +3245,7 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'"'+main+' title="'+it[1]+'" onclick="'+accion+'">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['planta','manto','mezrec','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezperf','mezdesg','mezcomp','mezcierres','mezprecios','mezsem','mezraw','iallaves','mezalm','alim','mprima','lab','labrec','labprb','labver','perms'];
+var SCREENS=['planta','manto','mezrec','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezperf','mezdesg','mezcomp','mezcierres','mezprecios','mezsem','mezraw','iallaves','mezalm','alim','mprima','lab','labrec','labprb','labver','labvig','mezpend','perms'];
 var _prevShown=null;
 function show(name){
   var cambio = (name!==_prevShown);
@@ -3269,7 +3271,7 @@ function show(name){
   if(name==='pedidos') navKey=(window._pedFrom==='manto')?'planta':'hr';                                   // inbox de Mantenimiento
   if(name==='mezraw'||name==='mezalm') navKey='planta';
   if(name==='iallaves') navKey='hr';
-  if(name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') navKey='planta';
+  if(name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='mezpend'||name==='labvig') navKey='planta';
   if(name==='planta'||name==='manto'||name==='prod'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf') navKey='planta';  // todo lo de Planta
   if(name==='docs' && window._docFrom==='tab') navKey='docs';           // abierto desde el tab del riel
   if(navKey==='home' && S && S.admin && S.dash!=='resp') navKey='hr';   // dashboard general: su Inicio es el tablero
@@ -3605,10 +3607,10 @@ function hbInicio(){
   go((S && (S.admin || S.mando)) ? 'hr' : 'home');
 }
 function renderTop(name){
-  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='mezraw'||name==='mezalm'||name==='iallaves'||name==='prod'||name==='manto'||name==='labrec') && !(name==='docs' && window._docFrom==='tab');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='mezraw'||name==='mezalm'||name==='iallaves'||name==='prod'||name==='manto'||name==='labrec'||name==='mezpend'||name==='labvig') && !(name==='docs' && window._docFrom==='tab');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? (window._pedFrom==='manto'?'go(\'manto\')':'go(\'hr\')') : name==='pedir' ? (window._pedFrom==='manto'?'go(\'manto\')':('go(\''+((S.admin||S.mando)?'hr':'home')+'\')')) : (name==='prod'||name==='manto') ? 'go(\'planta\')' : (name==='labrec'||name==='labprb'||name==='labver') ? 'go(\'lab\')' : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='mezalm' ? 'go(\'prod\')' : name==='iallaves' ? 'go(\'hr\')' : name==='mezraw' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? (window._pedFrom==='manto'?'go(\'manto\')':'go(\'hr\')') : name==='pedir' ? (window._pedFrom==='manto'?'go(\'manto\')':('go(\''+((S.admin||S.mando)?'hr':'home')+'\')')) : (name==='prod'||name==='manto') ? 'go(\'planta\')' : (name==='labrec'||name==='labprb'||name==='labver'||name==='labvig') ? 'go(\'lab\')' : name==='mezpend' ? ('go(\''+(_pendVolver||'prod')+'\')') : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='mezalm' ? 'go(\'prod\')' : name==='iallaves' ? 'go(\'hr\')' : name==='mezraw' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
     left.innerHTML='<button class="tlogo" onclick="hbInicio()" title="Ir al inicio" aria-label="Ir al inicio">'+HB_MARK+'</button><button class="back" onclick="'+backTo+'">‹ Atrás</button>'+hbQuienSoy(true);
     left.classList.remove('who');
   }else{
@@ -12018,6 +12020,7 @@ function renderMPrima(){
   if(S.mezCostos) h+=htile('renderMezPrecios()','recibo','Precios de materia prima','El sistema recalcula los costos desde esa fecha');
   if(S.admin||S.mezCostos) h+=htile('renderMezAlm()','box','Almacén de materia prima','Entradas, claves por emparejar y existencia');
   if(mzVeDineroMp()) h+=htile('renderMezSem()','deptos','Semáforo de consumo','Qué se está usando y qué no se ha comprado');
+  if(S.admin||S.mezCostos) h+=htile("renderMezPend('almacen','mprima')",'focos','Lo que falta resolver','Claves sin empatar y materiales sin precio');
   if(S.admin||S.mando) h+=htile("permAbre('ALMACEN DE MATERIA PRIMA')",'personas','Permisos del área','Quién ve los gráficos y la información de esta área');
   h+='</div>';
   $('s-mprima').innerHTML=h; show('mprima');
@@ -12038,10 +12041,267 @@ function renderLab(){
   if(S.mezTec||S.admin) h+=htile('renderMezAna()','focos','Analista de compuestos','Eficiencia, fallas e historial por compuesto');
   if(S.mezTec||S.admin) h+=htile("go('labprb')",'clip','Pruebas por versión','Reometría, dureza, Mooney, densidad y físicas',{wide:true});
   if(S.mezTec||S.admin) h+=htile("go('labver')",'recibo','Versiones vigentes','Sube aquí la hoja de versiones cada que la actualices',{wide:true});
+  if(S.mezTec||S.admin) h+=htile("renderLabVig()",'pend','Vigencias','Desde qué día corre cada versión');
+  if(S.mezTec||S.admin) h+=htile("renderMezPend('laboratorio','lab')",'focos','Lo que falta resolver','Lo que el sistema no pudo interpretar solo');
   if(S.admin||S.mando) h+=htile("permAbre('LABORATORIO')",'personas','Permisos del área','Quién ve las fórmulas y la información de esta área');
   h+='</div>';
   if(!(S.mezTec||S.admin)) h+='<div class="card" style="margin-top:12px"><div class="note">Las <b>fórmulas</b> son información clasificada: se necesita permiso del responsable de Laboratorio o de dirección para verlas.</div></div>';
   $('s-lab').innerHTML=h; show('lab');
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   LA BANDEJA DE PENDIENTES, POR ÁREA (27-ago-2026)
+
+   Pedido de Carlos: «que el sistema funcione con alimentación de la planta
+   de parte de ellos, y no tener yo que estar metiendo los Excels».
+
+   El sistema ya detecta lo que no entiende. Lo que faltaba es que ese
+   pendiente le llegue a QUIEN LE TOCA resolverlo, y no a Carlos. Cada
+   renglón dice qué pasa, cuánto mueve y qué hay que hacer: un pendiente
+   sin dueño y sin instrucción no se resuelve nunca.
+   ══════════════════════════════════════════════════════════════════ */
+var _pendVolver='prod', _pendData=null;
+
+function renderMezPend(area, volver){
+  _pendVolver = volver || 'prod';
+  $('s-mezpend').innerHTML='<div class="card"><div class="note">Buscando pendientes…</div></div>';
+  show('mezpend');
+  if(!(V3_ON && sbReady() && SB)){
+    $('s-mezpend').innerHTML='<div class="card"><b>Sin conexión</b>'+
+      '<div class="note" style="margin-top:4px">Los pendientes se leen del servidor. Vuelve a entrar cuando haya señal.</div></div>';
+    return;
+  }
+  SB.rpc('hb_mez_pendientes',{p_area:area||null}).then(function(r){
+    var x=r&&r.data;
+    if(!(x&&x.ok)){
+      $('s-mezpend').innerHTML='<div class="card"><b>'+esc(mzErr(x,r&&r.error))+'</b></div>'; return; }
+    _pendData=x; mzPendPinta();
+  },function(e){
+    $('s-mezpend').innerHTML='<div class="card"><b>'+esc(mzErr(null,e))+'</b></div>'; });
+}
+
+var PEND_AREA={produccion:'Producción', laboratorio:'Laboratorio',
+               almacen:'Almacén de Materia Prima', costos:'Costos'};
+
+function mzPendPinta(){
+  var x=_pendData; if(!x) return;
+  var lista=x.pendientes||[];
+  var altas=lista.filter(function(p){ return p.urgencia==='alta'; }).length;
+
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div>'+
+    '<div class="eyebrow">Planta</div><b style="font-size:20px">Lo que falta resolver</b>'+
+    '<p class="note" style="margin:4px 0 0;max-width:380px">'+
+    (lista.length
+      ? 'El sistema guardó todo, pero hay cosas que no puede interpretar solo. Nadie más que tu área las sabe.'
+      : 'El sistema no tiene nada pendiente de tu área.')+
+    '</p></div><span style="flex:none">'+
+    speakBtn(lista.length ? ('Tienes '+lista.length+' pendientes por resolver.') : 'No tienes pendientes.')+
+    '</span></div></div>';
+
+  if(!lista.length){
+    h+='<div class="card" style="border-color:color-mix(in srgb,var(--ok) 40%,transparent);'+
+       'background:color-mix(in srgb,var(--ok) 7%,transparent)">'+
+       '<b style="font-size:15px;color:var(--ok)">Todo en orden</b>'+
+       '<div class="note" style="margin-top:4px;line-height:1.6">No hay nada que el sistema no haya podido '+
+       'entender de lo que subió tu área. Si acabas de cargar un Excel y esperabas ver algo aquí, '+
+       'vuelve a entrar en un momento.</div></div>';
+    $('s-mezpend').innerHTML=h; return;
+  }
+
+  h+='<div class="card" style="margin-bottom:12px"><div style="display:grid;'+
+     'grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px">'+
+     '<div><div class="note">Pendientes</div><b style="font-size:20px">'+lista.length+'</b></div>'+
+     (altas?('<div><div class="note">Urgentes</div><b style="font-size:20px;color:var(--warn)">'+altas+'</b>'+
+       '<div class="note" style="font-size:10.5px">estos sí mueven números</div></div>'):'')+
+     '<div><div class="note">Al día</div><b style="font-size:15px">'+esc(x.hoy||'')+'</b></div>'+
+     '</div></div>';
+
+  lista.forEach(function(p,i){
+    var urg=(p.urgencia==='alta');
+    h+='<div class="card" style="margin-bottom:10px'+
+       (urg?';border-color:color-mix(in srgb,var(--warn) 45%,transparent)':'')+'">'+
+       '<div class="line" style="border:none;padding:0 0 6px"><span style="flex:1;min-width:0">'+
+         '<b style="font-size:14.5px">'+esc(p.titulo||'')+'</b>'+
+         (urg?'<span class="tg" style="margin-left:6px;color:var(--warn)">urgente</span>':'')+
+       '</span>'+
+       (PEND_AREA[p.area]?('<span class="tg" style="flex:none">'+esc(PEND_AREA[p.area])+'</span>'):'')+
+       '</div>'+
+       '<div class="note" style="line-height:1.6">'+esc(p.detalle||'')+'</div>'+
+       (p.cuanto?('<div class="note" style="margin-top:5px"><b>'+esc(p.cuanto)+'</b></div>'):'');
+
+    /* los ejemplos: que vea de qué le estoy hablando, no una lista abstracta */
+    var ej=p.ejemplos||[];
+    if(ej.length){
+      h+='<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px">'+
+         ej.slice(0,10).map(function(e){
+           var t = (typeof e==='string') ? e
+                 : (e.compuesto? (e.compuesto+(e.letra?(' '+e.letra):'')+(e.mezclas?(' · '+mzN(e.mezclas)+' mez.'):''))
+                 : (e.material? (e.material+(e.ultimo?(' · '+e.ultimo):'')) : JSON.stringify(e)));
+           return '<span class="tg">'+esc(t)+'</span>'; }).join('')+
+         (ej.length>10?('<span class="note">y '+(ej.length-10)+' más</span>'):'')+'</div>';
+    }
+    if(p.que_hacer){
+      h+='<div class="note" style="margin-top:9px;line-height:1.6;padding:8px 10px;border-radius:10px;'+
+         'background:color-mix(in srgb,var(--data) 8%,transparent)">'+
+         '<b>Qué hay que hacer:</b> '+esc(p.que_hacer)+'</div>';
+    }
+    h+='</div>';
+  });
+
+  h+='<div class="card"><div class="note" style="line-height:1.6">'+
+     'Esta lista se arma sola cada vez que entras. En cuanto resuelvas algo, deja de aparecer. '+
+     'Si algo aquí no le toca a tu área, dímelo y lo mando a donde va.</div></div>';
+  $('s-mezpend').innerHTML=h;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   VIGENCIAS: DESDE CUÁNDO CORRE CADA VERSIÓN (27-ago-2026)
+
+   El Ing. Oropeza contestó por WhatsApp «la J del 1 al 7, la K del 8 al 26,
+   la P del 27 al 31» y Carlos lo capturó a mano. Esta pantalla es para que
+   Laboratorio lo escriba directo, al emitir la versión.
+
+   Por qué importa: sin las fechas, el costo de un mes viejo se calcula con
+   la fórmula vigente HOY — que a veces ni existía entonces. Eso valía
+   2.2 millones de pesos en agosto.
+   ══════════════════════════════════════════════════════════════════ */
+var _vigCid=null, _vigData=null, _vigQ='';
+
+function renderLabVig(){
+  if(!(S.mezTec||S.admin)){ flash('Solo Laboratorio y dirección.'); return; }
+  $('s-labvig').innerHTML='<div class="card"><div class="note">Cargando…</div></div>';
+  show('labvig');
+  if(_vigCid) vigCarga(); else vigPintaSel();
+}
+
+function vigPintaSel(){
+  var cat=(_mzCat&&_mzCat.compuestos)||[];
+  if(!cat.length && V3_ON && sbReady() && SB){
+    SB.rpc('hb_mez_catalogo').then(function(r){
+      var x=r&&r.data; if(x&&x.ok){ _mzCat=x; vigPintaSel(); } });
+  }
+  var q=_vigQ.toUpperCase();
+  var lista=cat.filter(function(c){ return !q || String(c.nombre).toUpperCase().indexOf(q)>-1; }).slice(0,60);
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div>'+
+    '<div class="eyebrow">Laboratorio</div><b style="font-size:20px">Vigencias</b>'+
+    '<p class="note" style="margin:4px 0 0;max-width:380px">Desde qué día corre cada versión. '+
+    'Con eso el sistema costea cada mes con la fórmula que de verdad se pesó, y no con la de hoy.</p></div>'+
+    '<span style="flex:none">'+speakBtn('Vigencias. Aquí se dice desde qué día corre cada versión de cada fórmula.')+
+    '</span></div></div>';
+  h+='<div class="card"><input value="'+escA(_vigQ)+'" placeholder="Busca el compuesto…" '+
+     'oninput="_vigQ=this.value; vigPintaSel()" style="width:100%;padding:10px 12px;border-radius:12px;'+
+     'border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px"></div>';
+  h+='<div class="card" style="margin-top:10px">'+
+     (lista.length
+       ? mzTabla(['Compuesto','Familia'], lista.map(function(c){
+           return mzTd([esc(c.nombre), esc(c.familia||'—')], 'vigAbre('+c.id+')'); }))
+       : '<div class="note">No encontré ese compuesto.</div>')+'</div>';
+  $('s-labvig').innerHTML=h;
+}
+
+function vigAbre(cid){ _vigCid=cid; vigCarga(); }
+function vigVolverSel(){ _vigCid=null; _vigData=null; vigPintaSel(); }
+
+function vigCarga(){
+  if(!(V3_ON && sbReady() && SB)){
+    $('s-labvig').innerHTML='<div class="card"><b>Sin conexión</b></div>'; return; }
+  SB.rpc('hb_mez_vigencias',{p_cid:_vigCid}).then(function(r){
+    var x=r&&r.data;
+    if(!(x&&x.ok)){ $('s-labvig').innerHTML='<div class="card"><b>'+esc(mzErr(x,r&&r.error))+'</b></div>'; return; }
+    _vigData=x; vigPinta();
+  },function(e){ $('s-labvig').innerHTML='<div class="card"><b>'+esc(mzErr(null,e))+'</b></div>'; });
+}
+
+function vigPinta(){
+  var x=_vigData; if(!x) return;
+  var vers=x.versiones||[], vig=x.vigencias||[], corrio=x.corrio||[];
+
+  var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div>'+
+    '<div class="eyebrow">Laboratorio · Vigencias</div>'+
+    '<b style="font-size:20px">'+esc(x.compuesto.nombre)+'</b>'+
+    '<p class="note" style="margin:4px 0 0">Desde qué día corrió cada versión.</p></div>'+
+    '<span style="flex:none"><button class="btn ghost" style="margin:0;width:auto;padding:7px 12px;font-size:12px" '+
+    'onclick="vigVolverSel()">Otro compuesto</button></span></div></div>';
+
+  /* lo que YA está declarado */
+  h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Lo declarado</b>';
+  if(vig.length){
+    h+=mzTabla(['Versión','Desde','Hasta','Quién lo dijo',''],
+      vig.map(function(g){
+        return mzTd([
+          '<b>'+esc(g.letra||'?')+'</b>',
+          esc(g.desde),
+          g.hasta?esc(g.hasta):'<span class="note">sigue vigente</span>',
+          '<span class="note">'+esc(g.fuente||'')+'</span>',
+          '<button class="btn ghost" style="margin:0;width:auto;padding:4px 9px;font-size:11px" '+
+            'onclick="event.stopPropagation();vigBorra('+g.id+')">Quitar</button>'
+        ]); }));
+  } else {
+    h+='<div class="note" style="margin-top:5px;line-height:1.6">Todavía no hay ningún periodo declarado. '+
+       'Mientras no lo haya, el sistema costea todo con la versión vigente de hoy &mdash; aunque esa '+
+       'versión no existiera en el mes que se está viendo.</div>';
+  }
+  h+='</div>';
+
+  /* lo que CORRIÓ en la planta: para que se vea qué falta declarar */
+  if(corrio.length){
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Lo que corrió en la planta</b>'+
+       '<div class="note" style="margin-top:3px">Sale del reporte de Producción. Sirve para saber qué periodos hay que declarar.</div>'+
+       mzTabla(['Versión','Del','Al','Mezclas'], corrio.map(function(c){
+         return mzTd(['<b>'+esc(c.letra)+'</b>', esc(c.desde), esc(c.hasta), mzN(c.mezclas)]); }))+
+       '</div>';
+  }
+
+  /* dar de alta uno nuevo */
+  h+='<div class="card"><b style="font-size:13px">Agregar un periodo</b>'+
+     '<div class="note" style="margin-top:3px;line-height:1.55">Escoge la versión y di desde qué día corrió. '+
+     'Si todavía es la que corre, deja «hasta» en blanco.</div>'+
+     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;margin-top:10px">'+
+       '<div><div class="note">Versión</div><select id="vig-v" style="width:100%;padding:9px;border-radius:10px;'+
+         'border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+         (vers.length
+           ? vers.map(function(v){ return '<option value="'+v.id+'">'+esc(v.letra||'?')+
+               (v.folio?(' · GT '+esc(v.folio)):'')+(v.estado==='vigente'?' · vigente':'')+'</option>'; }).join('')
+           : '<option value="">— sin fórmulas digitalizadas —</option>')+
+         '</select></div>'+
+       '<div><div class="note">Desde</div><input id="vig-d" type="date" style="width:100%;padding:9px;'+
+         'border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px"></div>'+
+       '<div><div class="note">Hasta (opcional)</div><input id="vig-h" type="date" style="width:100%;padding:9px;'+
+         'border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px"></div>'+
+     '</div>'+
+     '<input id="vig-n" placeholder="Nota (opcional): por qué cambió, quién autorizó…" '+
+       'style="width:100%;margin-top:9px;padding:9px 11px;border-radius:10px;border:1px solid var(--line);'+
+       'background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
+     '<button class="btn" style="margin-top:11px" onclick="vigGuarda()"'+(vers.length?'':' disabled')+'>Guardar el periodo</button>'+
+     (vers.length?'':'<div class="note" style="margin-top:7px;color:var(--warn)">Este compuesto no tiene ninguna '+
+        'fórmula digitalizada. Primero sube su hoja GT en «Versiones vigentes».</div>')+
+     '</div>';
+
+  $('s-labvig').innerHTML=h;
+}
+
+function vigGuarda(){
+  var v=$('vig-v'), d=$('vig-d'), hh=$('vig-h'), n=$('vig-n');
+  if(!v||!v.value){ flash('Escoge la versión.'); return; }
+  if(!d||!d.value){ flash('Falta desde qué día.'); return; }
+  SB.rpc('hb_mez_vigencia_alta',{p_cid:_vigCid, p_version_id:+v.value,
+      p_desde:d.value, p_hasta:(hh&&hh.value)||null, p_nota:(n&&n.value)||null})
+   .then(function(r){
+      var x=r&&r.data;
+      if(!(x&&x.ok)){ flash(mzErr(x,r&&r.error)); return; }
+      flash('Guardado: la '+(x.letra||'')+' desde el '+x.desde+'.');
+      vigCarga();
+   },function(e){ flash(mzErr(null,e)); });
+}
+
+function vigBorra(id){
+  hbConfirm('¿Quitar ese periodo?','El sistema volverá a costear ese rango con la versión vigente de hoy.',
+    function(){
+      SB.rpc('hb_mez_vigencia_borra',{p_id:id}).then(function(){ vigCarga(); },
+        function(e){ flash(mzErr(null,e)); });
+    });
 }
 
 
@@ -12660,6 +12920,7 @@ function renderMezHub(){
     h+=htile('renderMezCap()','operacion','Bitácora de turno','Captura corridas, quemadas y paros');
     h+=htile('renderMezProg()','pend','Programación','La cédula: qué se corre y cuánto');
   }
+  if(puedeCapturar()) h+=htile("renderMezPend('produccion','prod')",'focos','Lo que falta resolver','Lo que el sistema no pudo interpretar solo');
   if(S.admin||S.mando) h+=htile("permAbre('PRODUCCION')",'personas','Permisos del área','Quién captura y quién ve los gráficos');
   /* v3.43: Gustavo (capturista) también ve SUS gráficas — el tablero no trae
      dinero por diseño y el servidor le niega el tema de costos */
@@ -13459,9 +13720,51 @@ function mzPegaPrev(){
        (_mzFmt.fila_encabezado||'?')+'</b>.<br>'+
        'Al aceptar, esto entra a <b>'+esc(_dest[_f.destino]||_f.destino)+'</b>.</div>'+
        (_f.notas?('<div class="note" style="margin-top:5px;font-size:11.5px">'+esc(_f.notas)+'</div>'):'')+
+       '<div id="mz-huella"></div></div>';
+  } else {
+    /* ⭐ 27-ago · si el sistema NO reconoce el Excel, se dice FUERTE. Antes se
+       leía buscando los títulos por nombre y se seguía de largo: así fue como
+       julio y agosto entraron con las columnas corridas y nadie se enteró. */
+    h+='<div class="card" style="margin-top:10px;border-color:color-mix(in srgb,var(--warn) 55%,transparent);'+
+       'background:color-mix(in srgb,var(--warn) 9%,transparent)">'+
+       '<b style="font-size:13px;color:var(--warn)">Este archivo no lo tengo registrado</b>'+
+       '<div class="note" style="margin-top:4px;line-height:1.55">Lo voy a leer buscando los títulos por su '+
+       'nombre, que casi siempre funciona. Pero <b>revisa abajo que cada columna haya caído en su casilla</b> '+
+       'antes de guardar: si alguien movió o agregó una columna, los datos se recorren y nadie se entera.</div>'+
        '</div>';
   }
   h+='<div id="mz-verif"></div>';
+  /* ⭐ la huella: comparar los títulos de HOY contra los del formato registrado */
+  var _enc = (hi>=0 && crudas[hi]) ? crudas[hi].join('\t') : '';
+  if(_enc && _mzFmt && _mzFmt.encontrado && _mzFmt.formato && V3_ON && sbReady() && SB){
+    (function(clave, enc){
+      setTimeout(function(){
+        SB.rpc('hb_mez_formato_revisa',{p_clave:clave, p_encabezados:enc}).then(function(r){
+          var x=r&&r.data, el=$('mz-huella'); if(!el||!(x&&x.ok)) return;
+          if(x.primera_vez){
+            el.innerHTML='<div class="note" style="margin-top:6px;font-size:11.5px">'+
+              'Guardé cómo vienen las columnas de este archivo. La próxima vez te aviso si le cambian alguna.</div>';
+            return;
+          }
+          if(x.igual){
+            el.innerHTML='<div class="note" style="margin-top:6px;font-size:11.5px">'+
+              'Las columnas vienen igual que la última vez. Todo en su lugar.</div>';
+            return;
+          }
+          var f=(x.faltan||[]), so=(x.sobran||[]);
+          el.innerHTML='<div style="margin-top:8px;padding:9px 11px;border-radius:10px;line-height:1.55;'+
+            'background:color-mix(in srgb,var(--bad) 10%,transparent);border:1px solid color-mix(in srgb,var(--bad) 40%,transparent)">'+
+            '<b style="font-size:12.5px;color:var(--bad)">Le cambiaron las columnas a este Excel</b>'+
+            '<div class="note" style="margin-top:3px">'+
+            (f.length?('<b>Ya no viene:</b> '+f.map(esc).join(', ')+'. '):'')+
+            (so.length?('<b>Ahora trae:</b> '+so.map(esc).join(', ')+'. '):'')+
+            '<br>Revisa con calma el mapa de abajo antes de guardar. Si el cambio es a propósito, '+
+            'guarda de todos modos y la próxima vez ya no te aviso.</div></div>';
+        },function(){});
+      }, 60);
+    })(_mzFmt.formato.clave || _mzFmt.clave || '', _enc);
+  }
+  window._mzEnc = _enc;   /* para sellar la huella cuando la carga salga bien */
   h+='<div class="note" style="margin-top:8px"><b>'+filas.length+
     (_porRenglon ? ' corridas</b> (juntando '+_renglones+' renglones del Excel, uno por mezcla)'
                  : ' renglones</b>')+
@@ -13548,6 +13851,13 @@ function mzImporta(){
   }
   function fin(){
     window._mzImportando=false;
+    /* ⭐ 27-ago · la carga salió bien: se sella la huella de las columnas.
+       Así, la próxima vez que este Excel llegue con una columna movida, el
+       sistema lo dice ANTES de guardar y no después de descuadrar el mes. */
+    if(window._mzEnc && _mzFmt && _mzFmt.encontrado && _mzFmt.formato && V3_ON && sbReady() && SB){
+      SB.rpc('hb_mez_formato_huella',{p_clave:(_mzFmt.formato.clave||_mzFmt.clave||''),
+        p_encabezados:window._mzEnc}).then(function(){},function(){});
+    }
     /* el archivo original queda guardado junto a los datos que produjo */
     if(_alimF){ alimRespalda(_alimF, 'Excel de producción', function(){ _alimF=null; }); }
     alert('Listo: '+tot.insertadas+' guardados'+

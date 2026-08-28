@@ -13514,9 +13514,13 @@ function mzCabecera(cs){
        mezclas se cuentan dos veces, y el ÁREA, que es el origen del reproceso. */
     else if(m.paso==null && t.indexOf('PASO')>-1) m.paso=i;
     else if(m.area==null && (t==='AREA'||t.indexOf('AREA')===0)) m.area=i;
-    /* 25-ago: los KILOS. Antes el tablero los CALCULABA (mezclas × peso de la
-       fórmula) y daba un número parecido pero distinto al del Excel. Los kilos
-       los reporta producción; el sistema los guarda tal cual. */
+    /* Los KILOS de la hoja. Se guardan tal cual vienen, sin recalcular: así el
+       total del sistema cuadra al kilo contra el Excel de Producción.
+       ⭐ 27-ago · Alejandro Escamilla aclaró que esos kilos TAMPOCO se pesan:
+       «No se pesan, están calculadas basadas en el tipo de fórmula». Es la misma
+       multiplicación que haría el sistema, hecha en el Excel. Por eso 1,053 de
+       1,501 renglones coinciden exactos con mezclas × peso. NO etiquetar este
+       dato como «medido» ni «reportado»: es calculado, igual que el otro. */
     else if(m.kg==null && (t.indexOf('KGS')>-1||t.indexOf('KILOS')>-1||
             (t.indexOf('KG')>-1 && t.indexOf('PROGRAMAD')<0))) m.kg=i;
   }
@@ -15470,9 +15474,12 @@ function mzTabPaint(x){
   }
   h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:9px;margin-bottom:12px">'+
      kpi('produccion','Mezclas', mzN(t.mezclas||0), 'var(--data)')+
-     kpi('produccion',((t.kg_estimados||0)>0?'Kilos (parte estimada)':'Kilos producidos'),
+     /* ⭐ 27-ago · Alejandro Escamilla, por escrito: «No se pesan, están calculadas
+        basadas en el tipo de fórmula». No hay báscula en el banbury, así que decir
+        «los reporta producción» prometía una precisión que no existe. */
+     kpi('produccion','Kilos producidos',
          (totKg>=1000000?(mzN(totKg/1000000,2)+' M'):mzN(totKg)), null,
-         ((t.kg_estimados||0)>0?'ojo: hay estimados':'los reporta producción'))+
+         'mezclas × peso de fórmula')+
      kpi('produccion','Corridas', mzN(t.corridas||0), null)+
      /* «0 quemadas» y «nadie las capturó» son cosas distintas: en julio la
         columna del Excel venía vacía en los 950 renglones y el tablero lo
@@ -16123,6 +16130,17 @@ function mzRawFiltro(campo,valor){
 }
 function mzRawMas(){ _mzRawF.salta=(_mzRaw&&_mzRaw.filas?_mzRaw.filas.length:0); mzRawCarga(); }
 function mzRawTurno(t){ return t==1?'1º':(t==2?'2º':(t==3?'3º':(t||'—'))); }
+/* ⭐ 27-ago · EL NÚMERO DE LOTE. Ing. Alejandro Escamilla, por escrito:
+   «El número de lote se compone de compuesto, número de operador y fecha. El
+   número de lote sí viaja a tubulado y pathex, solo que este cambia el número
+   de operador y la fecha en que se haga el siguiente proceso.»
+   Los tres datos ya estaban capturados: no hubo que pedir nada.
+   OJO: él dijo de QUÉ se compone, no cómo se escribe en el papel del piso. Se
+   respeta su orden y no se inventa separador ni formato de fecha. */
+function mzLote(comp, op, fecha){
+  if(!comp || op==null || op==='' || !fecha) return null;
+  return String(comp).toUpperCase()+' · '+op+' · '+fecha;
+}
 function mzRawPinta(){
   var x=_mzRaw, filas=x.filas||[], h='';
   mzPracCarga(x.desde,x.hasta,function(){ if(_screen==='mezraw'&&_mzRaw) mzRawPinta(); });
@@ -16175,7 +16193,9 @@ function mzRawPinta(){
     var cuando = f.creado_ts ? fechaHora(f.creado_ts) : '—';
     var sello = '<b style="font-size:12px">'+quien+'</b><div class="note" style="font-size:10px;margin-top:1px">'+esc(cuando)+
                 (f.editado_ts?('<br><span style="color:var(--warn)">editada '+esc(fechaHora(f.editado_ts))+'</span>'):'')+'</div>';
+    var _lote = mzLote(f.compuesto, f.operador_n, f.fecha);
     var comp = '<b>'+esc(f.compuesto||'¿?')+'</b>'+(f.letra?(' <span class="note">'+esc(f.letra)+'</span>'):'')+
+               (_lote?('<div class="note" style="font-size:10px;margin-top:2px">lote '+esc(_lote)+'</div>'):'')+
                (f.resuelto?'':'<div class="note" style="font-size:10px;color:var(--warn)">en bandeja: «'+esc(f.crudo||'')+'»</div>')+
                (f.nota?('<div class="note" style="font-size:10px">'+esc(f.nota)+'</div>'):'');
     var marcas=(f.reproceso?'<span class="chipst mut">reproceso'+(f.origen?(' · '+esc(mzOrgTxt(f.origen))):'')+'</span>':'')+
@@ -16189,7 +16209,10 @@ function mzRawPinta(){
      mzTabla(['Cuándo se corrió','Compuesto','Mezclas','Quemadas','Marcas','Quién la capturó'], rows)+
      '<div class="note" style="margin-top:8px">Se ven <b>'+mzN(filas.length)+'</b> de '+mzN(x.total)+'.'+
      (filas.length<x.total?' El orden se aplica sobre estas '+mzN(filas.length)+', no sobre todas — carga el resto con «Ver más».':'')+
-     (x.sin_autor?(' '+mzN(x.sin_autor)+' de estas corridas entraron por importación de Excel y no guardaron quién las subió.'):'')+'</div></div>';
+     (x.sin_autor?(' '+mzN(x.sin_autor)+' de estas corridas entraron por importación de Excel y no guardaron quién las subió.'):'')+
+     '<br>El <b>lote</b> se compone de compuesto, número de operador y fecha, como lo confirmó Producción. '+
+     'Ese mismo lote pasa a tubulado y a Pathex, donde cambia el operador y la fecha: lo que se ve aquí es '+
+     'el arranque de la cadena, no todo el recorrido.</div></div>';
   if(filas.length<x.total) h+='<button class="btn ghost" style="margin:12px 0 0" onclick="mzRawMas()">Ver más ('+mzN(x.total-filas.length)+' faltan)</button>';
   $('s-mezraw').innerHTML=h;
 }
@@ -16217,9 +16240,14 @@ function mzDesgPaint(){
         : ((t.kg_estimados||0)>0 ? ' <span style="color:var(--warn)">(estimados)</span>' : ''))+
        '</div><b style="font-size:20px">'+mzN(t.kg)+'</b>'+
        '<div style="margin-top:3px">'+mzCmpChip('kg',x)+'</div>'+
-       ((t.kg_estimados||0)>0 ? '<div class="note" style="margin-top:3px;line-height:1.4">'+
-          ((t.kg_medidos||0)>0 ? mzN(t.kg_medidos)+' kg los reportó producción; '+mzN(t.kg_estimados)+' kg se estimaron con el peso de la fórmula.'
-                               : 'Ninguno viene de la hoja: todos salen del peso de la fórmula.')+'</div>' : '')+
+       /* ⭐ 27-ago · los kilos de la hoja tampoco se pesan: el Excel los calcula igual
+          que el sistema (Alejandro, por escrito). La diferencia entre «de la hoja» y
+          «estimado» es de dónde salió la multiplicación, no de precisión. */
+       '<div class="note" style="margin-top:3px;line-height:1.45">Ningún kilo se pesa en el banbury: '+
+       'salen de <b>mezclas × el peso de la fórmula</b>.'+
+       ((t.kg_medidos||0)>0 ? ' De estos, '+mzN(t.kg_medidos)+' kg vienen calculados en la hoja de '+
+          'Producción y '+mzN(t.kg_estimados||0)+' kg los calculó el sistema con la fórmula vigente.' : '')+
+       '</div>'+
        '</div>'+
      '<div class="card"><div class="note">Reproceso</div><b style="font-size:20px;color:var(--warn)">'+mzN(t.reproceso)+'</b>'+
        '<div class="note" style="margin-top:3px">'+mzPct(t.reproceso,t.mezclas)+' de lo producido</div>'+
@@ -16953,9 +16981,7 @@ function mzCierrePinta(tipo,d1,d2,res){
      '<div class="k"><b>'+mzN(mez)+'</b><span>mezclas</span></div>'+
      (metaPct!=null?('<div class="k"><b>'+mzN(metaPct,1)+'%</b><span>de la meta del periodo</span></div>'):'')+
      '<div class="k"><b>'+mzN(prom,0)+'</b><span>mezclas por día ('+mzN(nd)+' días)</span></div>'+
-     '<div class="k"><b>'+mzN(kg)+'</b><span>kilos producidos'+
-       (((t.kg_estimados||0)>0 && (t.kg_medidos||0)>0) ? ' (parte estimados)'
-        : ((t.kg_estimados||0)>0 ? ' (estimados)' : ' (los reportó producción)'))+'</span></div>'+
+     '<div class="k"><b>'+mzN(kg)+'</b><span>kilos producidos (mezclas × peso de fórmula)</span></div>'+
      '<div class="k"><b>'+mzN(t.reproceso||0)+'</b><span>de reproceso ('+mzPct(t.reproceso||0,mez)+')</span></div>'+
      '<div class="k"><b>'+mzN(t.quemadas||0)+'</b><span>mezclas quemadas</span></div>'+
      /* ⭐ 27-ago · el KPI dice su COBERTURA: sin ella, dos meses con cobertura
@@ -17188,7 +17214,9 @@ function mzCompPaint(x){
      '<div class="card"><div class="note">Mezclas del periodo</div><b style="font-size:20px;color:var(--data)">'+mzN(p.mezclas)+'</b><div class="note">'+mzN(p.kg)+' kg</div></div>'+
      '<div class="card"><div class="note">Corridas · días</div><b style="font-size:20px">'+mzN(p.corridas)+'</b><div class="note">en '+mzN(p.dias)+' días</div></div>'+
      '<div class="card"><div class="note">Quemadas</div><b style="font-size:20px;color:var(--bad)">'+mzN(p.quemadas)+'</b><div class="note">'+mzPct(p.quemadas,p.mezclas)+'</div></div>'+
-     '<div class="card"><div class="note">Velocidad real</div><b style="font-size:20px">'+(x.velocidad!=null?mzN(x.velocidad,2):'—')+'</b><div class="note">min por mezcla</div></div>'+
+     /* ⭐ 27-ago · Alejandro: «El tiempo total de la mezcla está basado en un estudio de
+        tiempos y movimientos que hace años se hizo». No es medición: es estándar. */
+     '<div class="card"><div class="note">Minutos por mezcla</div><b style="font-size:20px">'+(x.velocidad!=null?mzN(x.velocidad,2):'—')+'</b><div class="note">del estudio de tiempos, no medido con reloj</div></div>'+
      '<div class="card"><div class="note">Histórico total</div><b style="font-size:20px">'+mzN(hi.mezclas)+'</b><div class="note">'+esc(hi.desde||'—')+' → '+esc(hi.hasta||'—')+'</div></div></div>';
   /* ---- GRÁFICOS (pedido de Carlos 24-ago) ---- */
   var pd=(x.por_dia||[]);

@@ -13637,6 +13637,11 @@ function mzPegaPrev(){
       var _c0=mzNorm(comp);
       if(/^(TOTAL|TOTALES|SUMA|GRAN TOTAL|SUBTOTAL|TOTAL DE MEZCLAS|TOTAL MEZCLAS)$/.test(_c0)
          || _c0.indexOf('TOTAL')===0) continue;
+      /* «NA» no es un compuesto: es el renglón del banbury que no produjo nada.
+         Se descubrió en la hoja de agosto (28-ago): 4 renglones con NA y 0 mezclas.
+         Si pasan, ensucian la bandeja de pendientes como compuesto desconocido.
+         No hay ningún compuesto llamado NA en el catálogo — se verificó. */
+      if(/^(NA|N\/A|NO APLICA|SIN COMPUESTO)$/.test(_c0)) continue;
       if(!comp || !(mez>=0)){ malas++; continue; }
       var f=_mzF, t=_mzT, b=_mzB;
       if(map.fecha!=null){ var ff=mzFechaCelda(c[map.fecha]); if(ff) f=ff; else fechasMal++; }

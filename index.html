@@ -4257,7 +4257,7 @@ function evSave(){
     var a=lsGet('hb_eventos'), me=S.emp;
     if(_evEdit){ a=a.map(function(e){ return e.id===_evEdit? Object.assign({},e,{titulo:t,fecha:d,hora:datos.hora,lugar:datos.lugar,nota:datos.nota,ts:Date.now()}) : e; }); flash('✓ Evento actualizado'); }
     else { var inv=(_calLayer==='personal'? _evInv.map(function(p){return {n:+p.n,clave:''+p.n,nombre:p.nombre,status:'pendiente'};}):[]);
-      a.push({ id:'ev'+Date.now(), scope:_calLayer, owner:me, ownerClave:S.clave||(''+me), ownerNombre:S.nombre||('Nº '+me),
+      a.push({ id:'ev'+Date.now(), scope:_calLayer, owner:me, ownerClave:S.clave||(''+me), ownerNombre:hbNombre()||('Nº '+me),
         area:(_calLayer==='area'?deptoSlug(S.area):''), titulo:t, fecha:d, hora:datos.hora, lugar:datos.lugar, nota:datos.nota, invites:inv, ts:Date.now(), demo:(location.hash==='#demo') });
       flash('✓ Evento agregado'); }
     lsSet('hb_eventos',a); _evEdit=null; _evInv=[]; _evFecha=null; _evFormOpen=false; renderCal(); return;
@@ -4520,7 +4520,7 @@ function citaSend(){
   // ---- DEMO (sin servidor): se guarda en el aparato ----
   if(!V3_ON){
     var a=lsGet('hb_eventos'), me=S.emp;
-    a.push({ id:'ev'+Date.now(), scope:'personal', owner:me, ownerClave:S.clave||(''+me), ownerNombre:S.nombre||('Nº '+me),
+    a.push({ id:'ev'+Date.now(), scope:'personal', owner:me, ownerClave:S.clave||(''+me), ownerNombre:hbNombre()||('Nº '+me),
       area:'', titulo:motivo, fecha:fecha, hora:hora, lugar:lugar, nota:nota,
       invites:_citaSel.map(function(p){ return {n:+p.n, clave:''+p.n, nombre:p.nombre, status:'pendiente'}; }),
       ts:Date.now(), demo:(location.hash==='#demo') });
@@ -5236,7 +5236,7 @@ function renderHomeAdmin(){
   var h='';
   h+='<div class="panel"><div class="hd" style="align-items:flex-end">'+
      '<div style="flex:1;min-width:0"><div class="eyebrow">'+esc(S.area)+'</div>'+
-     '<b style="font-size:20px">Hola'+(S.nombre?', '+esc(niceName(S.nombre)):'')+'</b>'+
+     '<b style="font-size:20px">Hola'+(hbNombre()?', '+esc(niceName(hbNombre())):'')+'</b>'+
      '<p class="note" style="margin:4px 0 0;max-width:230px">Tu espacio personal. El tablero de la planta vive en su pestaña.</p>'+
      '<span class="status" style="margin-top:6px"><span class="d"></span>En línea</span></div>'+
      bandiHero()+'</div></div>';
@@ -7938,7 +7938,7 @@ function coachCard(noCurso){
 function addEvent(){
   var t=(($('evTitle')||{}).value||'').trim(), d=(($('evDate')||{}).value||'').trim();
   if(!t||!d){ flash('Escribe el evento y la fecha'); return; }
-  if(!V3_ON){ var a=lsGet('hb_eventos'); a.push({ id:'ev'+Date.now(), scope:'general', owner:S.emp, ownerClave:S.clave||(''+S.emp), ownerNombre:S.nombre||('Nº '+S.emp), area:'', titulo:t, fecha:d, hora:'', lugar:'', nota:'', invites:[], ts:Date.now(), demo:(location.hash==='#demo') }); lsSet('hb_eventos',a); flash('✓ Evento agregado'); _newsBack(); return; }
+  if(!V3_ON){ var a=lsGet('hb_eventos'); a.push({ id:'ev'+Date.now(), scope:'general', owner:S.emp, ownerClave:S.clave||(''+S.emp), ownerNombre:hbNombre()||('Nº '+S.emp), area:'', titulo:t, fecha:d, hora:'', lugar:'', nota:'', invites:[], ts:Date.now(), demo:(location.hash==='#demo') }); lsSet('hb_eventos',a); flash('✓ Evento agregado'); _newsBack(); return; }
   if(!sbReady()){ flash('Sin conexión'); return; }
   SB.rpc('hb_evento_alta',{p:{scope:'general',titulo:t,fecha:d,hora:'',lugar:'',nota:''}}).then(function(r){ var x=r&&r.data;
     if(r.error||!x||!x.ok){ flash(r.error?(_rpcFaltante(r.error)?'La función se está activando, intenta en un momento':'No se pudo'):'No se pudo'); return; }
@@ -8986,7 +8986,7 @@ function pedSubmit(){
   //      aún no cargue): un pedido en localStorage jamás llegaría a Zeus. ----
   if(!V3_ON){
     var a=lsGet('hb_pedidos'), folio=30000+a.length+1;
-    var rec={ id:'pd'+Date.now(), folio:folio, emp:S.emp, clave:S.clave||(''+S.emp), nombre:S.nombre||('Nº '+S.emp), deptoReal:S.area,
+    var rec={ id:'pd'+Date.now(), folio:folio, emp:S.emp, clave:S.clave||(''+S.emp), nombre:hbNombre()||('Nº '+S.emp), deptoReal:S.area,
       estado:'nuevo', tsSol:Date.now(), demo:(location.hash==='#demo') };
     for(var k in datos) rec[k]=datos[k];
     a.unshift(rec); lsSet('hb_pedidos',a);
@@ -9026,7 +9026,7 @@ function pedSubmit(){
 }
 function _pedGenSube(pid,folio,datos,fimg,fin){
   var d={}; for(var k in datos) d[k]=datos[k];
-  d.folio=folio; d.clave=S.clave; d.nombre=S.nombre||''; d.tsSol=Date.now();
+  d.folio=folio; d.clave=S.clave; d.nombre=hbNombre(); d.tsSol=Date.now();
   pedPdfBlob(d, fimg, function(blob){
     if(!blob){ fin('✓ Pedido #'+folio+' enviado (la orden en PDF no se generó)'); return; }
     var path=S.clave+'/pd-'+folio+'.pdf';
@@ -17596,6 +17596,14 @@ function kvInit(){
   try{ SB.from('kv').select('k,data').then(function(r){
     if(!r.error && r.data){
       r.data.forEach(function(row){ DBC.kv[row.k]=row.data; try{ localStorage.setItem(row.k, JSON.stringify(row.data)); }catch(e){}
+        /* ⭐ 31-ago-2026: esta sincronización traía de vuelta el perfil guardado en el
+           servidor, y con él un nombre viejo. Lo que se PINTA ya sale del expediente
+           (hbNombre), así que en pantalla nunca se ve mal; pero el respaldo que se usa
+           sin señal sí se quedaba atrás. Aquí se le vuelve a poner el oficial. */
+        try{ if(S && S.nombre && row.k==='hb_profile_'+S.emp && row.data && row.data.nombre!==S.nombre){
+          row.data.nombre=S.nombre; DBC.kv[row.k]=row.data;
+          localStorage.setItem(row.k, JSON.stringify(row.data));
+        } }catch(e){}
         if(S) kvApplySession(row.k,row.data); });
       kvSeed(); sbRerender(); try{ if(S) renderTop(_screen); }catch(e){}
     }

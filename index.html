@@ -16391,6 +16391,13 @@ function mzRawPinta(){
   if(filas.length<x.total) h+='<button class="btn ghost" style="margin:12px 0 0" onclick="mzRawMas()">Ver más ('+mzN(x.total-filas.length)+' faltan)</button>';
   $('s-mezraw').innerHTML=h;
 }
+/* ⭐ 31-ago-2026: una tabla vacía de quemadas puede significar dos cosas muy
+   distintas. Si la hoja del periodo no traía la columna (julio), decirlo. */
+function mzQuemSinDato(x){
+  return (x && x.quemadas_capturadas!=null && x.quemadas_capturadas===0 && (x.corridas_del_periodo||0)>0)
+    ? 'La hoja de este periodo <b>no traía la columna de quemadas</b>, así que no hay dato — no es que no haya habido merma.'
+    : 'Sin quemadas en el periodo.';
+}
 function mzDesgPaint(){
   var x=_mzDesg, t=x.tot||{}, ta=x.tot_ant||{}, ty=x.tot_ay||{}, h='';
   mzPracCarga(x.desde,x.hasta,function(){ if(_screen==='mezdesg'&&_mzDesg) mzDesgPaint(); });
@@ -16427,9 +16434,23 @@ function mzDesgPaint(){
      '<div class="card"><div class="note">Reproceso</div><b style="font-size:20px;color:var(--warn)">'+mzN(t.reproceso)+'</b>'+
        '<div class="note" style="margin-top:3px">'+mzPct(t.reproceso,t.mezclas)+' de lo producido</div>'+
        '<div>'+mzCmpChip('reproceso',x)+'</div></div>'+
-     '<div class="card"><div class="note">Quemadas</div><b style="font-size:20px;color:var(--bad)">'+mzN(t.quemadas)+'</b>'+
-       '<div class="note" style="margin-top:3px">'+mzPct(t.quemadas,t.mezclas)+' de lo producido</div>'+
-       '<div>'+mzCmpChip('quemadas',x)+'</div></div></div>';
+     /* ⭐ 31-ago-2026 · «0 quemadas» y «nadie las capturó» son cosas distintas, y aquí
+        se pintaba igual. En julio la columna del Excel viejo no existía: los 890
+        renglones vienen sin dato y esta tarjeta decía «0 · 0.0% de lo producido»,
+        o sea un mes perfecto de calidad que nunca se midió. El tablero ya estaba
+        protegido; el desglose no. (El servidor manda el aviso desde v3_173b.) */
+     (function(){
+       var _sinDato = (x.quemadas_capturadas!=null && x.quemadas_capturadas===0 && (x.corridas_del_periodo||0)>0);
+       var _parcial = (x.quemadas_capturadas!=null && x.corridas_del_periodo &&
+                       x.quemadas_capturadas>0 && x.quemadas_capturadas<x.corridas_del_periodo);
+       return '<div class="card"><div class="note">Quemadas</div>'+
+         '<b style="font-size:20px;color:var(--bad)">'+(_sinDato?'sin dato':mzN(t.quemadas))+'</b>'+
+         '<div class="note" style="margin-top:3px">'+
+           (_sinDato ? 'no se capturó en la hoja'
+                     : (mzPct(t.quemadas,t.mezclas)+' de lo producido'+
+                        (_parcial? (' · solo '+mzN(x.quemadas_capturadas)+' de '+mzN(x.corridas_del_periodo)+' corridas traen el dato') : '')))+
+         '</div><div>'+(_sinDato?'':mzCmpChip('quemadas',x))+'</div></div>';
+     })()+'</div>';
 
   if(x.tema==='produccion'){
     var pc=x.por_compuesto||[];
@@ -16566,11 +16587,11 @@ function mzDesgPaint(){
     h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Quemadas por compuesto</b>'+
        ((x.quemadas_compuesto||[]).length? mzTabla(['Compuesto','Quemadas','Mezclas','% quemado'],
         x.quemadas_compuesto.map(function(q){ return mzTd([esc(q.compuesto||'¿?'),mzN(q.quemadas),mzN(q.mezclas),mzN(q.pct,2)+'%']); }))
-        :'<div class="note" style="margin-top:5px">Sin quemadas en el periodo.</div>')+'</div>';
+        :('<div class="note" style="margin-top:5px">'+mzQuemSinDato(x)+'</div>'))+'</div>';
     h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Quemadas por banbury y turno</b>'+
        ((x.quemadas_banbury||[]).length? mzTabla(['Banbury','Turno','Quemadas','Mezclas','%'],
         x.quemadas_banbury.map(function(q){ return mzTd(['BB'+q.banbury,'T'+q.turno,mzN(q.quemadas),mzN(q.mezclas),mzPct(q.quemadas,q.mezclas)]); }))
-        :'<div class="note" style="margin-top:5px">Sin quemadas en el periodo.</div>')+'</div>';
+        :('<div class="note" style="margin-top:5px">'+mzQuemSinDato(x)+'</div>'))+'</div>';
     h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Reproceso por origen</b>'+
        ((x.reproceso_origen||[]).length? mzTabla(['Origen','Mezclas','Kilos','% del reproceso'],
         x.reproceso_origen.map(function(o){ return mzTd([esc(mzOrgTxt(o.origen)),mzN(o.mezclas),mzN(o.kg),mzPct(o.mezclas,t.reproceso)]); }))

@@ -11803,15 +11803,22 @@ var MZ_ORG=[['banbury','Banbury (mezclado)'],
             ['otro','Otro']];
 function mzOrgTxt(k){ for(var i=0;i<MZ_ORG.length;i++) if(MZ_ORG[i][0]===k) return MZ_ORG[i][1]; return k==='sin_origen'?'Sin origen':(k||''); }
 var _mzRTt=null;
+var MZ_PANT_VIVAS={mezcap:1,mezprog:1,meztab:1,mezdesg:1,mezsem:1,mezcomp:1,mezperf:1,mezana:1,mezraw:1,mezpend:1};
 function mzCambioVivo(){
   /* si otro turno captura mientras esta pantalla está abierta, se refresca
-     sola — pero JAMÁS pisa lo que se esté escribiendo */
-  if(_screen!=='mezcap'&&_screen!=='mezprog') return;
+     sola — pero JAMÁS pisa lo que se esté escribiendo.
+     ⭐ 31-ago-2026 (pedido de Carlos): antes solo se refrescaban las DOS pantallas
+     de captura. Ahora también el tablero y los gráficos: si Producción o
+     Laboratorio suben algo, quien esté viendo los números lo ve al momento, sin
+     recargar. La espera de 1.2 s junta la avalancha de una carga de 759 renglones
+     en un solo refresco. */
+  if(!MZ_PANT_VIVAS[_screen]) return;
   clearTimeout(_mzRTt);
   _mzRTt=setTimeout(function(){
     try{
       if(_screen==='mezcap'){ if(mzFormVacio()) mzLoadDia(mzCapPaint); else flash('👀 Un compañero capturó algo nuevo — se verá al terminar lo tuyo.'); }
-      else if(_screen==='mezprog') mzLoadDia(mzProgPaint);
+      else if(_screen==='mezprog'){ mzLoadDia(mzProgPaint); }
+      else { renderMezTab(); flash('🔄 Llegó información nueva de la planta'); }
     }catch(e){}
   },1200);
 }
@@ -17656,6 +17663,16 @@ function kvSeed(){   // primera corrida: sube al servidor lo local que el servid
   }catch(e){}
 }
 function kvApplySession(k,data){   // si cambian mis puntos/avance desde otro dispositivo, refrescar la sesión
+  /* ⭐ 31-ago-2026 · MI NOMBRE, EN VIVO (pedido de Carlos).
+     El expediente (roster) no se puede escuchar en vivo: tiene el candado
+     encendido y cero políticas, así que o no llegaría nada, o para que llegara
+     habría que abrir la tabla y el mensaje traería el PIN y los datos privados.
+     Se usa kv, donde cada quien solo puede leer LO SUYO y el tiempo real ya
+     está encendido. Al guardar el nombre, el servidor escribe también aquí. */
+  if(S && k==='hb_profile_'+S.emp && data && data.nombre && data.nombre!==S.nombre){
+    S.nombre=data.nombre;
+    try{ renderTop(_screen); if(_screen==='perfil') renderPerfil(); }catch(e){}
+  }
   if(!S || k!=='hb_'+S.emp || !data) return;
   S.points=data.points||0; S.streak=data.streak||0; S.done=data.done||{}; S.attempts=data.attempts||{};
   S.best=data.best||{}; S.redeemed=data.redeemed||{}; S.watched=data.watched||{}; S.clases=data.clases||{};

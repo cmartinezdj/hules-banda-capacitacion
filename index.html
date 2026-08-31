@@ -39,7 +39,14 @@
   --radius:18px; --shadow:0 10px 28px rgba(0,0,0,.32); --shadow-sm:0 3px 10px rgba(0,0,0,.25);
   --barmut:rgba(255,255,255,.13);            /* barras neutras de gráfica (el rojo resalta UNA) */
   --ease-out:cubic-bezier(.23,1,.32,1); --ease-io:cubic-bezier(.77,0,.175,1);   /* motion Emil */
-  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;
+
+  /* ⭐ 31-ago-2026 · Los mismos colores en RGB suelto. Sirven para dar un color
+     de RESPALDO donde se usa color-mix(): Safari solo entiende color-mix desde
+     la version 16.2, y en las anteriores la declaracion se descarta ENTERA y en
+     silencio — bordes y fondos simplemente no se pintan. Con el respaldo, la
+     Safari vieja de Ana pinta el color plano y la nueva pinta la mezcla. */
+  --accdeep-rgb:125,13,17;--accent-rgb:204,26,31;--accent2-rgb:231,59,47;--bad-rgb:255,107,107;--bg-rgb:10,10,12;--card-rgb:18,18,21;--card2-rgb:26,26,30;--data-rgb:231,59,47;--data2-rgb:204,26,31;--mut-rgb:143,149,163;--ok-rgb:34,197,94;--panel-rgb:20,20,23;--txt-rgb:244,245,247;--warn-rgb:255,191,71;
+    --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{-webkit-user-select:none;user-select:none}
@@ -60,7 +67,7 @@ button{font-family:var(--font)}
 .grain{position:fixed;inset:0;z-index:-1;opacity:.5;pointer-events:none;background:
   radial-gradient(circle at center,transparent 60%,rgba(0,0,0,.35));mix-blend-mode:multiply}
 
-#app{max-width:480px;margin:0 auto;min-height:100dvh;position:relative}
+#app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;position:relative}
 .hide{display:none!important}
 .fade{animation:fade .42s cubic-bezier(.2,.7,.3,1)}
 @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -78,7 +85,7 @@ button{font-family:var(--font)}
 .b-xl{width:172px;height:172px}.b-lg{width:84px;height:84px}.b-md{width:54px;height:54px}.b-sm{width:38px;height:38px}.b-xs{width:30px;height:30px}
 
 /* ============================== LOGIN ============================== */
-.login{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+.login{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
   padding:30px 26px calc(30px + env(safe-area-inset-bottom));padding-top:calc(24px + env(safe-area-inset-top))}
 .kicker{font-weight:800;letter-spacing:2px;font-size:11px;color:var(--mut);text-transform:uppercase;margin:14px 0 2px}
 .kicker b{color:var(--accent2)}
@@ -113,14 +120,14 @@ button{font-family:var(--font)}
 /* ============================== TOPBAR ============================== */
 .top{position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:11px 14px;padding-top:calc(11px + env(safe-area-inset-top));
-  background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+  background:rgba(var(--bg-rgb),.78);background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
 #topLeft{display:flex;align-items:center;gap:8px;min-width:0;flex:1;overflow:hidden}
 .top .who{display:flex;align-items:center;gap:10px;min-width:0;flex:1;overflow:hidden}
 /* marca central estilo logo — OCULTA: con nombres reales largos se encimaba con
    el nombre del usuario. El logo grande ya vive en el login; el topbar prioriza
    el nombre + controles. */
 .brandmid{display:none}
-.top .who .av{width:40px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--accent) 22%,#14151d);padding:3px;flex:none}
+.top .who .av{width:40px;height:40px;border-radius:12px;background:rgba(var(--accent-rgb),.22);background:color-mix(in srgb,var(--accent) 22%,#14151d);padding:3px;flex:none}
 .top .who b{font-size:14px;display:block;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .top .who span{font-size:11px;color:var(--mut)}
 .top .who b+span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -143,7 +150,7 @@ body.a11y .dvscroll{max-height:none;overflow:visible}
 .lprow{display:flex;align-items:center;gap:9px;width:100%;text-align:left;margin:0 0 6px;
   padding:10px 12px;border-radius:11px;border:1px solid var(--line);background:var(--card2);
   color:var(--txt);font:inherit;font-size:13px;cursor:pointer}
-.lprow:hover{border-color:color-mix(in srgb,var(--data) 45%,transparent)}
+.lprow:hover{border-color:rgba(var(--data-rgb),.45);border-color:color-mix(in srgb,var(--data) 45%,transparent)}
 /* REGLA DEL PROYECTO: toda clase nueva entra a Texto grande o se rompe en silencio */
 body.a11y .lpscroll{max-height:none;overflow:visible}
 body.a11y .lprow{font-size:16px;padding:13px 15px}
@@ -174,7 +181,7 @@ body.a11y .pqscroll{max-height:none;overflow:visible}
 .iso[data-hud]::after{
   content:attr(data-hud);
   position:absolute; left:50%; bottom:calc(100% + 9px); transform:translateX(-50%) translateY(4px);
-  background:color-mix(in srgb,#e73b2f 82%,transparent);
+  background:rgba(231,59,47,.82);background:color-mix(in srgb,#e73b2f 82%,transparent);
   color:#fff; font-weight:800; font-size:11.5px; letter-spacing:.02em;
   padding:6px 11px; border-radius:9px; white-space:nowrap;
   border:1px solid color-mix(in srgb,#fff 26%,transparent);
@@ -186,7 +193,7 @@ body.a11y .pqscroll{max-height:none;overflow:visible}
 .iso[data-hud]::before{
   content:''; position:absolute; left:50%; bottom:calc(100% + 4px);
   transform:translateX(-50%) translateY(4px);
-  border:5px solid transparent; border-top-color:color-mix(in srgb,#e73b2f 82%,transparent);
+  border:5px solid transparent; border-top-color:rgba(231,59,47,.82);border-top-color:color-mix(in srgb,#e73b2f 82%,transparent);
   opacity:0; pointer-events:none; z-index:30;
   transition:opacity .16s ease, transform .16s ease;
 }
@@ -234,7 +241,7 @@ body.a11y .dirscroll{max-height:none;overflow:visible}
   font-size:13px;font-weight:700;padding:8px 13px;border-radius:30px;cursor:pointer}
 .back:active{transform:scale(.96)}
 .ptchip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;padding:7px 10px;border-radius:30px;
-  background:color-mix(in srgb,var(--accent) 22%,transparent);color:#fff;border:1px solid color-mix(in srgb,var(--accent) 42%,transparent);white-space:nowrap}
+  background:rgba(var(--accent-rgb),.22);background:color-mix(in srgb,var(--accent) 22%,transparent);color:#fff;border:1px solid color-mix(in srgb,var(--accent) 42%,transparent);white-space:nowrap}
 
 /* ============================== CARDS ============================== */
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:13px}
@@ -252,7 +259,7 @@ body.a11y .dirscroll{max-height:none;overflow:visible}
 body.a11y .iasello{font-size:13px !important}
 /* El botón de voz que está sonando se marca, para que se vea cuál parar
    (pedido de Carlos 24-ago: antes no se podía pausar). */
-.speak.sonando{color:var(--data);background:color-mix(in srgb,var(--data) 16%,transparent);border-color:color-mix(in srgb,var(--data) 45%,transparent)}
+.speak.sonando{color:var(--data);background:rgba(var(--data-rgb),.16);background:color-mix(in srgb,var(--data) 16%,transparent);border-color:rgba(var(--data-rgb),.45);border-color:color-mix(in srgb,var(--data) 45%,transparent)}
 .bigbtn.sonando{border-color:var(--data);color:var(--data)}
 @keyframes spkpulso{0%,100%{opacity:1}50%{opacity:.45}}
 .speak.sonando svg,.bigbtn.sonando{animation:spkpulso 1.1s ease-in-out infinite}
@@ -276,8 +283,8 @@ body.a11y .mzord select{font-size:15px !important}
 #s-mezrec .mzt td:first-child{white-space:normal;word-break:break-word}
 @media (hover:hover){.mzt tbody tr:hover td,.mzt tr:hover td{background:rgba(255,255,255,.02)}}
 .delta{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;padding:3px 8px;border-radius:20px;font-variant-numeric:tabular-nums}
-.delta.up{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
-.delta.down{color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent)}
+.delta.up{color:var(--ok);background:rgba(var(--ok-rgb),.12);background:color-mix(in srgb,var(--ok) 12%,transparent)}
+.delta.down{color:var(--bad);background:rgba(var(--bad-rgb),.12);background:color-mix(in srgb,var(--bad) 12%,transparent)}
 .kpi .klbl{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
 .kpi .knum{font-size:24px;font-weight:850;letter-spacing:-.02em;line-height:1.1;margin-top:4px;display:block;font-variant-numeric:tabular-nums}
 .kpi .ksub{font-size:10px;color:var(--mut);margin-top:4px}
@@ -321,11 +328,11 @@ body.a11y .tname{font-size:16px !important}
 .chatwrap .chips,.chatwrap .msgs,.chatwrap .composer{min-width:0;max-width:100%}
 .chside{display:none}
 .chside.abierto{display:block;position:fixed;inset:auto 12px calc(96px + env(safe-area-inset-bottom)) 12px;z-index:90;
-  background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px;box-shadow:var(--shadow);max-height:50dvh;overflow-y:auto}
+  background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px;box-shadow:var(--shadow);max-height:50vh;max-height:50dvh;overflow-y:auto}
 .chlist{display:flex;flex-direction:column;gap:6px}
 .chitem{display:flex;align-items:center;gap:8px;padding:10px 11px;border-radius:12px;border:1px solid transparent;cursor:pointer;transition:background .15s,border-color .15s}
 .chitem b{flex:1;min-width:0;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.chitem.on{background:color-mix(in srgb,var(--accent) 14%,transparent);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+.chitem.on{background:rgba(var(--accent-rgb),.14);background:color-mix(in srgb,var(--accent) 14%,transparent);border-color:rgba(var(--accent-rgb),.30);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
 @media (hover:hover){.chitem:hover{background:rgba(255,255,255,.04)}}
 .chitem .chdel{flex:none;background:none;border:none;color:var(--mut);cursor:pointer;font-size:12px;padding:2px 5px;border-radius:7px}
 .chitem .chdel:hover{color:var(--bad)}
@@ -369,7 +376,7 @@ body.a11y .tname{font-size:16px !important}
 .htile.pronto:active{transform:none}
 .icoa.mini{width:26px;height:26px;border-radius:9px}
 .icoa.mini svg{width:14px;height:14px}
-@media (hover:hover){.icoa:hover{border-color:color-mix(in srgb,var(--accent2) 45%,var(--line))}}
+@media (hover:hover){.icoa:hover{border-color:rgba(var(--accent2-rgb),.45);border-color:color-mix(in srgb,var(--accent2) 45%,var(--line))}}
 :where(button,a,input,select,textarea):focus-visible{outline:2px solid color-mix(in srgb,var(--accent2) 70%,#fff);outline-offset:2px}
 
 /* ===== TILES (cuadros del home — cada uno lleva a su página) · V3.6 ===== */
@@ -449,7 +456,7 @@ body.a11y .tname{font-size:16px !important}
 .citalist{max-height:320px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;padding:4px 8px;background:rgba(255,255,255,.02);-webkit-overflow-scrolling:touch}
 .citaarea{font-size:9.5px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;padding:9px 4px 4px;border-bottom:1px solid var(--line)}
 .citalist .dirrow{margin-bottom:7px}
-.citachip{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;font-size:12px;font-weight:700;padding:7px 10px 7px 13px;border-radius:30px;border:1px solid color-mix(in srgb,var(--accent) 48%,transparent);background:color-mix(in srgb,var(--accent) 11%,transparent);color:var(--txt)}
+.citachip{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;font-size:12px;font-weight:700;padding:7px 10px 7px 13px;border-radius:30px;border:1px solid color-mix(in srgb,var(--accent) 48%,transparent);background:rgba(var(--accent-rgb),.11);background:color-mix(in srgb,var(--accent) 11%,transparent);color:var(--txt)}
 .citachip b{cursor:pointer;color:var(--bad);font-size:15px;line-height:1;font-weight:900}
 /* buscador dentro de un chat en monitoreo (solo lectura) */
 .thfind{margin:0 0 10px}
@@ -460,7 +467,7 @@ body.a11y .tname{font-size:16px !important}
   border:1px solid color-mix(in srgb,var(--accent2) 36%,transparent);
   transition:transform .13s var(--ease-out),border-color .2s var(--ease-out)}
 .salert:active{transform:scale(.985)}
-@media (hover:hover){.salert:hover{border-color:color-mix(in srgb,var(--accent2) 60%,transparent)}}
+@media (hover:hover){.salert:hover{border-color:rgba(var(--accent2-rgb),.60);border-color:color-mix(in srgb,var(--accent2) 60%,transparent)}}
 .salert .sic{width:36px;height:36px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;
   background:linear-gradient(150deg,var(--accent2),var(--accent));color:#fff;box-shadow:0 6px 14px rgba(204,26,31,.4)}
 .salert .sic svg{width:19px;height:19px}
@@ -524,7 +531,7 @@ body.a11y .tname{font-size:16px !important}
 /* ============================== CURSOS ============================== */
 .course{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:16px;
   padding:12px;margin-bottom:10px;cursor:pointer;transition:transform .15s,border-color .2s,background .2s}
-.course:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 50%,transparent);background:var(--card2)}
+.course:hover{transform:translateY(-3px);border-color:rgba(var(--accent-rgb),.50);border-color:color-mix(in srgb,var(--accent) 50%,transparent);background:var(--card2)}
 .course:active{transform:scale(.99)}
 .thumb{width:50px;height:50px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;font-size:23px;
   background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 42%,#1c1c24),#15151c)}
@@ -532,7 +539,7 @@ body.a11y .tname{font-size:16px !important}
 .course .t b{display:block;font-size:14.5px;font-weight:700;line-height:1.25}
 .course .t span{font-size:11.5px;color:var(--mut);display:inline-flex;align-items:center;gap:7px;margin-top:2px}
 .tag{font-size:9px;font-weight:800;letter-spacing:.4px;padding:3px 7px;border-radius:20px;text-transform:uppercase}
-.tag.ob{background:color-mix(in srgb,var(--accent) 20%,transparent);color:var(--accent2)}
+.tag.ob{background:rgba(var(--accent-rgb),.20);background:color-mix(in srgb,var(--accent) 20%,transparent);color:var(--accent2)}
 .pill{font-size:10px;font-weight:800;padding:5px 10px;border-radius:20px;white-space:nowrap;flex:none}
 .pill.pend{background:rgba(255,255,255,.08);color:var(--mut)}
 .pill.done{background:rgba(39,194,103,.16);color:#5fe093}
@@ -558,8 +565,8 @@ body.a11y .tname{font-size:16px !important}
 .qn{font-size:11px;font-weight:800;color:var(--accent2);letter-spacing:.5px}
 .opt{display:flex;align-items:center;gap:11px;padding:13px 14px;border:1.5px solid var(--line);border-radius:14px;margin-bottom:9px;cursor:pointer;font-size:14px;transition:.15s;line-height:1.3}
 .opt .dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--mut);flex:none;transition:.15s;position:relative}
-.opt:hover{border-color:color-mix(in srgb,var(--accent) 55%,transparent)}
-.opt.sel{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent)}
+.opt:hover{border-color:rgba(var(--accent-rgb),.55);border-color:color-mix(in srgb,var(--accent) 55%,transparent)}
+.opt.sel{border-color:var(--accent);background:rgba(var(--accent-rgb),.13);background:color-mix(in srgb,var(--accent) 13%,transparent)}
 .opt.sel .dot{border-color:var(--accent);background:var(--accent)}
 .opt.sel .dot:after{content:'';position:absolute;inset:4px;border-radius:50%;background:#fff}
 .opt.ok{border-color:var(--ok);background:rgba(39,194,103,.14)}
@@ -619,7 +626,7 @@ body.a11y .tname{font-size:16px !important}
 .dotst.on{background:var(--ok);box-shadow:0 0 0 3px rgba(39,194,103,.18)}
 .keybtn{background:var(--card);border:1px solid var(--line);color:var(--txt);font-size:12px;font-weight:700;padding:9px 12px;border-radius:30px;cursor:pointer;display:flex;align-items:center;gap:6px}
 .keybtn:active{transform:scale(.96)}
-.msgs{display:flex;flex-direction:column;gap:11px;min-height:46dvh;padding:4px 0 6px}
+.msgs{display:flex;flex-direction:column;gap:11px;min-height:46vh;min-height:46dvh;padding:4px 0 6px}
 .m{display:flex;gap:9px;align-items:flex-end;max-width:90%}
 .m.user{align-self:flex-end;flex-direction:row-reverse}
 .m .bub{padding:11px 14px;border-radius:16px;font-size:14px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word}
@@ -634,7 +641,7 @@ body.a11y .tname{font-size:16px !important}
 .chips::-webkit-scrollbar{display:none}
 .chip2{white-space:nowrap;font-size:12px;font-weight:600;padding:8px 13px;border-radius:30px;border:1px solid var(--line);background:var(--card);color:var(--txt);cursor:pointer;flex:none;transition:transform .13s var(--ease-out),border-color .2s var(--ease-out)}
 .chip2:active{transform:scale(.96)}
-@media (hover:hover){.chip2:hover{border-color:color-mix(in srgb,var(--accent2) 45%,var(--line))}}
+@media (hover:hover){.chip2:hover{border-color:rgba(var(--accent2-rgb),.45);border-color:color-mix(in srgb,var(--accent2) 45%,var(--line))}}
 .chip2:active{transform:scale(.95)}
 .composer{position:sticky;bottom:0;display:flex;gap:9px;align-items:center;padding:10px 0 calc(10px + env(safe-area-inset-bottom));
   background:linear-gradient(180deg,transparent,var(--bg) 28%)}
@@ -679,7 +686,7 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .status{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--ok);white-space:nowrap;flex:none}
 .status .d{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 22%,transparent);animation:pulseDot 2.4s ease-in-out infinite}
 @keyframes pulseDot{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--data) 8%,transparent)}}
-.chipst{font-size:11px;font-weight:800;letter-spacing:.3px;padding:5px 11px;border-radius:30px;border:1px solid color-mix(in srgb,var(--data) 34%,transparent);background:color-mix(in srgb,var(--data) 12%,transparent);color:var(--data);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%;flex:none}
+.chipst{font-size:11px;font-weight:800;letter-spacing:.3px;padding:5px 11px;border-radius:30px;border:1px solid color-mix(in srgb,var(--data) 34%,transparent);background:rgba(var(--data-rgb),.12);background:color-mix(in srgb,var(--data) 12%,transparent);color:var(--data);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%;flex:none}
 .chipst.mut{border-color:var(--line);background:var(--card);color:var(--mut)}
 
 /* ----- columnas de dots (tipo ecualizador) ----- */
@@ -699,7 +706,7 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 /* stat tile INTERACTIVO: toca el cuadro para abrir su detalle */
 .statile.stbtn{cursor:pointer;transition:transform .13s var(--ease-out),border-color .2s var(--ease-out)}
 .statile.stbtn:active{transform:scale(.96)}
-@media (hover:hover){.statile.stbtn:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent2) 45%,var(--line))}}
+@media (hover:hover){.statile.stbtn:hover{transform:translateY(-2px);border-color:rgba(var(--accent2-rgb),.45);border-color:color-mix(in srgb,var(--accent2) 45%,var(--line))}}
 .statile.stbtn:focus-visible,.salert:focus-visible,.htile:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
 .cbar{cursor:pointer}
 .cbar:hover rect{filter:brightness(1.3)}
@@ -722,8 +729,8 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .agrid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
 .acard{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:15px;cursor:pointer;transition:transform .15s,border-color .2s}
 .acard:active{transform:scale(.98)}
-.acard:hover{border-color:color-mix(in srgb,var(--data) 40%,transparent)}
-.acard .ico{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;color:var(--data);background:color-mix(in srgb,var(--data) 13%,transparent);margin-bottom:26px}
+.acard:hover{border-color:rgba(var(--data-rgb),.40);border-color:color-mix(in srgb,var(--data) 40%,transparent)}
+.acard .ico{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;color:var(--data);background:rgba(var(--data-rgb),.13);background:color-mix(in srgb,var(--data) 13%,transparent);margin-bottom:26px}
 .acard .ico svg{width:22px;height:22px}
 .acard .an{font-size:15px;font-weight:800;display:block}
 .acard .as{font-size:11.5px;color:var(--mut);margin-top:3px;display:block}
@@ -758,7 +765,7 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .a11ybtn{display:flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--line);color:var(--mut);padding:7px 9px;border-radius:30px;cursor:pointer;font-size:10.5px;font-weight:800;transition:.15s}
 .a11ybtn svg{width:15px;height:15px}
 .a11ybtn:active{transform:scale(.94)}
-.a11ybtn.on{background:color-mix(in srgb,var(--data) 16%,transparent);border-color:color-mix(in srgb,var(--data) 40%,transparent);color:var(--data)}
+.a11ybtn.on{background:rgba(var(--data-rgb),.16);background:color-mix(in srgb,var(--data) 16%,transparent);border-color:rgba(var(--data-rgb),.40);border-color:color-mix(in srgb,var(--data) 40%,transparent);color:var(--data)}
 
 /* ----- buscador ----- */
 .search{display:flex;align-items:center;gap:9px;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin-bottom:12px}
@@ -767,7 +774,7 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 
 /* ----- fila de directorio (persona) ----- */
 .dirrow{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin-bottom:9px;cursor:pointer;transition:.15s}
-.dirrow:active{transform:scale(.99)}.dirrow:hover{border-color:color-mix(in srgb,var(--data) 40%,transparent)}
+.dirrow:active{transform:scale(.99)}.dirrow:hover{border-color:rgba(var(--data-rgb),.40);border-color:color-mix(in srgb,var(--data) 40%,transparent)}
 .dirrow .ava{width:40px;height:40px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:#fff}
 .dirrow .t{flex:1;min-width:0}.dirrow .t b{font-size:14.5px;display:block}.dirrow .t span{font-size:11.5px;color:var(--mut)}
 .dirrow .idtag{font-size:12px;font-weight:800;color:var(--mut);flex:none}
@@ -776,8 +783,8 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .lvgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:6px}
 .lvcard{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:15px;cursor:pointer;transition:.15s;text-align:left;color:var(--txt);font-family:var(--font)}
 .lvcard:active{transform:scale(.98)}
-.lvcard.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
-.lvcard .ico{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;color:var(--data);background:color-mix(in srgb,var(--data) 13%,transparent);margin-bottom:20px}
+.lvcard.on{border-color:var(--accent);background:rgba(var(--accent-rgb),.12);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.lvcard .ico{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;color:var(--data);background:rgba(var(--data-rgb),.13);background:color-mix(in srgb,var(--data) 13%,transparent);margin-bottom:20px}
 .lvcard .ico svg{width:23px;height:23px}
 .lvcard b{font-size:14.5px;display:block}.lvcard span{font-size:11px;color:var(--mut);display:block;margin-top:2px}
 
@@ -800,7 +807,7 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .cov{position:absolute;inset:0;width:100%;height:100%;display:block}
 /* tarjeta de curso con portada */
 .ccard{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-bottom:12px;cursor:pointer;transition:transform .15s,border-color .2s}
-.ccard:active{transform:scale(.99)}.ccard:hover{border-color:color-mix(in srgb,var(--data) 40%,transparent)}
+.ccard:active{transform:scale(.99)}.ccard:hover{border-color:rgba(var(--data-rgb),.40);border-color:color-mix(in srgb,var(--data) 40%,transparent)}
 .ccover{position:relative;height:106px;overflow:hidden}
 .ccover .ctag{position:absolute;top:9px;left:9px;font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:4px 9px;border-radius:20px;background:rgba(0,0,0,.5);color:#fff;border:1px solid rgba(255,255,255,.25);backdrop-filter:blur(4px)}
 .cbody{display:flex;align-items:center;gap:10px;padding:13px 14px}
@@ -832,11 +839,11 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
   min-height:96px;display:flex;flex-direction:column;justify-content:space-between;
   transition:transform .14s var(--ease-out),border-color .2s var(--ease-out),box-shadow .2s var(--ease-out)}
 .arocard:active{transform:scale(.97)}
-@media (hover:hover){.arocard:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent) 45%,var(--line));box-shadow:0 12px 28px rgba(0,0,0,.32)}}
+@media (hover:hover){.arocard:hover{transform:translateY(-2px);border-color:rgba(var(--accent-rgb),.45);border-color:color-mix(in srgb,var(--accent) 45%,var(--line));box-shadow:0 12px 28px rgba(0,0,0,.32)}}
 .arocard::before{content:'';position:absolute;inset:0;background:radial-gradient(90% 60% at 20% 0,color-mix(in srgb,var(--accent) 13%,transparent),transparent 70%);pointer-events:none}
 .arocard .an{font-size:14.5px;font-weight:800;letter-spacing:-.01em;line-height:1.2;position:relative}
 .arocard .as{font-size:11.5px;color:var(--mut);margin-top:4px;position:relative}
-.arocard .abadge{position:relative;align-self:flex-start;margin-top:9px;font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+.arocard .abadge{position:relative;align-self:flex-start;margin-top:9px;font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px;background:rgba(var(--accent-rgb),.16);background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
 /* ===== Documentos: BUSCADOR (todas las cuentas) ===== */
 .dsearch{position:relative;display:block}
 .dsearch .dsi{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;opacity:.65;pointer-events:none;line-height:1}
@@ -852,7 +859,7 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 .dreslist{display:flex;flex-direction:column;gap:10px;margin:6px 0 4px}
 .dres{position:relative;display:flex;gap:12px;align-items:flex-start;padding:12px 12px 12px 12px;border:1px solid var(--line);border-radius:14px;background:var(--panel);cursor:pointer;text-align:left;transition:transform .13s var(--ease-out),border-color .2s var(--ease-out)}
 .dres:active{transform:scale(.99)}
-@media (hover:hover){.dres:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}}
+@media (hover:hover){.dres:hover{border-color:rgba(var(--accent-rgb),.45);border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}}
 .dres .dresi{flex:0 0 46px;height:56px;border-radius:9px;overflow:hidden;background:rgba(255,255,255,.05);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
 .dres .dresi img{width:100%;height:100%;object-fit:cover}
 .dres .dresi b{font-size:10px;font-weight:900;letter-spacing:.5px;color:#fff;padding:2px 5px;border-radius:5px}
@@ -865,12 +872,12 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 /* la fila de arriba: buscador + el ＋ de subir, pegado a la derecha */
 .dtop{display:flex;gap:9px;align-items:center}
 .dtop .dsearch{flex:1;min-width:0;margin:0}
-.dplus{flex:none;width:46px;height:46px;border-radius:14px;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));background:color-mix(in srgb,var(--accent) 18%,transparent);color:#fff;font-size:22px;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.dplus{flex:none;width:46px;height:46px;border-radius:14px;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));background:rgba(var(--accent-rgb),.18);background:color-mix(in srgb,var(--accent) 18%,transparent);color:#fff;font-size:22px;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
 @media (hover:hover){.dplus:hover{background:var(--accent);border-color:var(--accent)}}
 .dplus:active{transform:scale(.95)}
 /* carpetas PLEGABLES en el teléfono (para que no se coman la pantalla) */
 .dfhead{display:flex;align-items:center;gap:10px;width:100%;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 12px;font-family:inherit;color:var(--txt);text-align:left;cursor:pointer;min-width:0}
-.dfhead .fic{width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:10px;background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent2)}
+.dfhead .fic{width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(var(--accent-rgb),.15);background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent2)}
 .dfhead .fic svg{width:18px;height:18px}
 .dfhead .ft{flex:1;min-width:0}
 .dfhead .ft b{display:block;font-size:13.5px;font-weight:800;line-height:1.2}
@@ -900,9 +907,9 @@ body.a11y .duphd b{font-size:18px !important}
 .dfsec{display:flex;align-items:center;gap:8px;padding:10px 4px 8px;font-size:10.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--mut)}
 .dfsec .ln{flex:1;height:1px;background:var(--line)}
 .dfrow{display:flex;align-items:center;gap:11px;width:100%;background:none;border:1px solid transparent;border-radius:12px;padding:9px 10px;cursor:pointer;font-family:inherit;color:var(--txt);text-align:left;min-width:0;margin-bottom:2px}
-@media (hover:hover){.dfrow:hover{background:color-mix(in srgb,var(--txt) 6%,transparent)}}
-.dfrow.on{background:color-mix(in srgb,var(--accent) 15%,var(--card));border-color:color-mix(in srgb,var(--accent) 42%,var(--line))}
-.dfrow .fic{width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:10px;background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent2)}
+@media (hover:hover){.dfrow:hover{background:rgba(var(--txt-rgb),.06);background:color-mix(in srgb,var(--txt) 6%,transparent)}}
+.dfrow.on{background:rgba(var(--accent-rgb),.15);background:color-mix(in srgb,var(--accent) 15%,var(--card));border-color:rgba(var(--accent-rgb),.42);border-color:color-mix(in srgb,var(--accent) 42%,var(--line))}
+.dfrow .fic{width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(var(--accent-rgb),.15);background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent2)}
 .dfrow.on .fic{background:var(--accent);color:#fff}
 .dfrow .fic svg{width:19px;height:19px}
 .dfrow .ft{flex:1;min-width:0}
@@ -914,15 +921,15 @@ body.a11y .duphd b{font-size:18px !important}
 /* archivos recientes: fila de chips arriba (como "Recent Files" de la referencia) */
 .drecent{display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 2px}
 .dchip{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:13px;background:var(--panel);padding:9px 12px;cursor:pointer;min-width:0;max-width:238px;font-family:inherit;color:var(--txt);text-align:left}
-@media (hover:hover){.dchip:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}}
+@media (hover:hover){.dchip:hover{border-color:rgba(var(--accent-rgb),.45);border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}}
 .dchip .dfic{width:22px;height:28px;flex:none}
 .dchip .ct{min-width:0}
 .dchip .ct b{display:block;font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dchip .ct span{font-size:10.5px;color:var(--mut)}
 /* el cuadro punteado de "agrega un archivo nuevo aquí" */
 .dnew{border:1.5px dashed var(--line);border-radius:14px;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:100%;cursor:pointer;color:var(--mut);font-family:inherit;font-size:11.5px;font-weight:700;text-align:center;padding:14px;line-height:1.35}
-@media (hover:hover){.dnew:hover{border-color:color-mix(in srgb,var(--accent) 50%,var(--line));color:var(--txt)}}
-.dnew .plus{width:36px;height:36px;border-radius:50%;flex:none;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent2);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:800;line-height:1}
+@media (hover:hover){.dnew:hover{border-color:rgba(var(--accent-rgb),.50);border-color:color-mix(in srgb,var(--accent) 50%,var(--line));color:var(--txt)}}
+.dnew .plus{width:36px;height:36px;border-radius:50%;flex:none;background:rgba(var(--accent-rgb),.16);background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent2);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:800;line-height:1}
 @media (min-width:1000px){
   .dwrap{display:grid;grid-template-columns:302px minmax(0,1fr);gap:18px;align-items:start}
   .dfold{position:sticky;top:14px;max-height:calc(100vh - 28px);overflow:auto;margin-bottom:0;
@@ -941,7 +948,7 @@ body.a11y .dnew{font-size:14px !important}
 .dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(152px,1fr));gap:13px;margin:6px 0 4px}
 .dcard{position:relative;border:1px solid var(--line);border-radius:14px;background:var(--panel);cursor:pointer;padding:8px 8px 9px;text-align:center;transition:transform .13s var(--ease-out),border-color .2s var(--ease-out)}
 .dcard:active{transform:scale(.97)}
-@media (hover:hover){.dcard:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent) 45%,var(--line));box-shadow:0 12px 28px rgba(0,0,0,.32)}}
+@media (hover:hover){.dcard:hover{transform:translateY(-2px);border-color:rgba(var(--accent-rgb),.45);border-color:color-mix(in srgb,var(--accent) 45%,var(--line));box-shadow:0 12px 28px rgba(0,0,0,.32)}}
 .dthumb{position:relative;height:106px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.05);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
 /* cuando es un ÍCONO (no una miniatura de foto) va suelto sobre la tarjeta, como
    en la referencia: nada de cuadrito gris detrás */
@@ -978,7 +985,7 @@ body.a11y .dnew{font-size:14px !important}
 .convcard:nth-child(1){animation-delay:0ms}.convcard:nth-child(2){animation-delay:45ms}.convcard:nth-child(3){animation-delay:90ms}
 .convcard:nth-child(4){animation-delay:135ms}.convcard:nth-child(5){animation-delay:180ms}.convcard:nth-child(n+6){animation-delay:210ms}
 .convcard:active{transform:scale(.98)}
-@media (hover:hover){.convcard:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--line));box-shadow:0 10px 26px rgba(0,0,0,.3)}}
+@media (hover:hover){.convcard:hover{border-color:rgba(var(--accent-rgb),.40);border-color:color-mix(in srgb,var(--accent) 40%,var(--line));box-shadow:0 10px 26px rgba(0,0,0,.3)}}
 .convcard .cc-l{flex:1;min-width:0;display:flex;align-items:center;gap:12px}
 .convcard .cc-t{min-width:0;display:flex;flex-direction:column;gap:2px}
 .convcard .cc-t b{font-size:14.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1005,7 +1012,7 @@ body.a11y .dnew{font-size:14px !important}
 .modal .ap svg{width:50px;height:50px;color:#fff}
 .modal .ap .gl{position:absolute;top:0;left:0;right:0;height:52%;background:linear-gradient(180deg,rgba(255,255,255,.30),transparent)}
 /* chat estilo mensajería */
-.chatscreen{display:flex;flex-direction:column;height:calc(100dvh - 128px - env(safe-area-inset-top) - env(safe-area-inset-bottom));min-height:360px}
+.chatscreen{display:flex;flex-direction:column;height:calc(100vh;height:calc(100dvh - 128px - env(safe-area-inset-top) - env(safe-area-inset-bottom));min-height:360px}
 .chatscreen .msgs{flex:1;min-height:0;overflow-y:auto;padding:6px 0}
 .chatscreen .chips{flex:none}
 .chatscreen .composer{position:static;padding:8px 0 6px;background:none}
@@ -1018,20 +1025,20 @@ body.a11y .dnew{font-size:14px !important}
 .calg .dc{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:12.5px;font-weight:700;color:var(--txt);position:relative}
 .calg .dc.mut{color:rgba(255,255,255,.16)}
 .calg .dc.today{background:var(--accent);color:#fff}
-.calg .dc.has{background:color-mix(in srgb,var(--data) 14%,transparent)}
+.calg .dc.has{background:rgba(var(--data-rgb),.14);background:color-mix(in srgb,var(--data) 14%,transparent)}
 .calg .dc .ev{width:5px;height:5px;border-radius:50%;background:var(--data);position:absolute;bottom:5px}
 .calg .dc.today .ev{background:#fff}
 /* Días TOCABLES (Sesión 15): tocar una fecha abre el desglose de ese día para
    agregar o quitar. Área de toque completa (la celda es cuadrada, ~44px en
    celular) y el día abierto se queda marcado para no perderse. */
 .calg button.dc{border:1px solid transparent;background:none;cursor:pointer;font-family:inherit;padding:0;-webkit-tap-highlight-color:transparent;transition:transform .12s var(--ease-out),border-color .15s var(--ease-out)}
-.calg button.dc.has{background:color-mix(in srgb,var(--data) 14%,transparent)}
+.calg button.dc.has{background:rgba(var(--data-rgb),.14);background:color-mix(in srgb,var(--data) 14%,transparent)}
 .calg button.dc:active{transform:scale(.92)}
 .calg button.dc.sel{border-color:var(--accent2);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent2) 28%,transparent)}
 .calg button.dc:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
 .evrow{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
 .evrow:last-child{border-bottom:none}
-.evrow .dt{width:48px;flex:none;text-align:center;background:color-mix(in srgb,var(--data) 14%,transparent);border-radius:11px;padding:6px 0;color:var(--data)}
+.evrow .dt{width:48px;flex:none;text-align:center;background:rgba(var(--data-rgb),.14);background:color-mix(in srgb,var(--data) 14%,transparent);border-radius:11px;padding:6px 0;color:var(--data)}
 .evrow .dt .d{display:block;font-size:18px;font-weight:900;line-height:1;text-align:center}
 .evrow .dt .m{display:block;font-size:9px;font-weight:800;text-transform:uppercase;text-align:center;letter-spacing:1px;padding-left:1px;margin-top:2px}
 .evrow .et{flex:1;min-width:0}.evrow .et b{font-size:14px}.evrow .et span{font-size:11.5px;color:var(--mut);display:block}
@@ -1044,7 +1051,7 @@ body.a11y .dnew{font-size:14px !important}
 .nav button{flex:1;max-width:80px;position:relative;background:none;border:none;color:rgba(255,255,255,.72);font-size:9px;font-weight:700;cursor:pointer;
   display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;border-radius:14px;transition:.18s var(--ease-out)}
 .nav button .ni{width:20px;height:20px}
-.nav button.on{background:color-mix(in srgb,var(--accent) 26%,transparent);color:#fff}
+.nav button.on{background:rgba(var(--accent-rgb),.26);background:color-mix(in srgb,var(--accent) 26%,transparent);color:#fff}
 /* Puntito AZUL de mensaje recibido (todas las cuentas) — vive en el menú, junto a "Mensajes".
    Se ancla al CENTRO del botón (no al borde derecho): así muerde siempre la esquina
    superior derecha del ícono, sin importar cuán ancho quede el botón en cada teléfono.
@@ -1097,12 +1104,12 @@ body.a11y .dnew{font-size:14px !important}
 .toggle{border:1px solid var(--line);border-radius:30px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;background:var(--card2);color:var(--mut)}
 .toggle.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none}
 .topic{display:flex;align-items:center;gap:13px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px;margin-bottom:11px;cursor:pointer;transition:transform .15s,border-color .2s}
-.topic:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 50%,transparent)}
+.topic:hover{transform:translateY(-3px);border-color:rgba(var(--accent-rgb),.50);border-color:color-mix(in srgb,var(--accent) 50%,transparent)}
 .topic:active{transform:scale(.99)}
 .topic .t{flex:1;min-width:0}.topic .t b{display:block;font-size:15px}.topic .t span{font-size:11.5px;color:var(--mut)}
 .acad-head{display:flex;align-items:center;gap:12px;margin:4px 0 10px}
 .lvl-card{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 12px;margin-bottom:9px;cursor:pointer;transition:.15s}
-.lvl-card:hover{border-color:color-mix(in srgb,var(--accent) 50%,transparent)}
+.lvl-card:hover{border-color:rgba(var(--accent-rgb),.50);border-color:color-mix(in srgb,var(--accent) 50%,transparent)}
 .lvl-card.locked{opacity:.5;cursor:default}
 .lvl-card .t{flex:1;min-width:0}.lvl-card .t b{display:block;font-size:14px}.lvl-card .t span{font-size:11px;color:var(--mut)}
 .lvl-num{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:900;background:var(--card2);color:var(--mut);border:1px solid var(--line)}
@@ -1113,7 +1120,7 @@ body.a11y .dnew{font-size:14px !important}
 .qbig span{flex:1}
 .qopt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--card2);border:1.5px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;font-size:15px;color:var(--txt);cursor:pointer;transition:.15s;font-family:var(--font)}
 .qopt:hover{border-color:var(--accent)}.qopt:active{transform:scale(.99)}.qopt span{flex:1}
-.speak{flex:none;width:38px;height:38px;border-radius:50%;border:none;background:color-mix(in srgb,var(--accent) 22%,transparent);color:#fff;font-size:16px;cursor:pointer}
+.speak{flex:none;width:38px;height:38px;border-radius:50%;border:none;background:rgba(var(--accent-rgb),.22);background:color-mix(in srgb,var(--accent) 22%,transparent);color:#fff;font-size:16px;cursor:pointer}
 .speak:active{transform:scale(.9)}
 .bigbtn{display:block;width:100%;border:none;border-radius:15px;padding:17px;font-size:17px;font-weight:800;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2));margin-top:12px;font-family:var(--font)}
 .bigbtn.ghost{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
@@ -1133,7 +1140,7 @@ body.a11y .mon{font-size:12px !important}
 /* ---- Mensajería de dos paneles (20-ago, foto Threema) ---- */
 .msjh{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .msjrow{display:flex;align-items:center;gap:11px;width:100%;background:none;border:none;border-radius:12px;padding:10px 8px;font-family:inherit;color:var(--txt);cursor:pointer;text-align:left;min-width:0}
-.msjrow:hover{background:color-mix(in srgb,var(--txt) 5%,transparent)}
+.msjrow:hover{background:rgba(var(--txt-rgb),.05);background:color-mix(in srgb,var(--txt) 5%,transparent)}
 .msjrow.on{background:var(--card)}
 .msjrow .mt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .msjrow .mt b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1142,14 +1149,14 @@ body.a11y .mon{font-size:12px !important}
 .msjrow .tm{font-size:10.5px;color:var(--mut);font-weight:700}
 .msjrow .fxi{width:44px;height:44px;border-radius:13px;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:18px;flex:none}
 .msjfx{display:flex;flex-direction:column}
-.msjnada{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:60dvh;text-align:center}
+.msjnada{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:60vh;min-height:60dvh;text-align:center}
 .msjnada span{font-size:42px}
 @media (min-width:1000px){
   body.msjdual #main{display:flex;align-items:stretch}
   /* pegado al riel (86px, no 224: el riel de escritorio es de puros iconos) y
      a pantalla COMPLETA — pedido de Carlos 20-ago: sin espacio muerto en medio */
-  body.msjdual #s-msgs{column-count:1;flex:none;width:398px;margin-left:86px;max-width:none;border-right:1px solid var(--line);height:100dvh;overflow-y:auto;padding:22px 18px 40px;position:sticky;top:0}
-  body.msjdual #s-thread{flex:1;min-width:0;max-width:none;margin-left:0;display:flex;flex-direction:column;height:100dvh;overflow:hidden;padding:20px 30px 14px}
+  body.msjdual #s-msgs{column-count:1;flex:none;width:398px;margin-left:86px;max-width:none;border-right:1px solid var(--line);height:100vh;height:100dvh;overflow-y:auto;padding:22px 18px 40px;position:sticky;top:0}
+  body.msjdual #s-thread{flex:1;min-width:0;max-width:none;margin-left:0;display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;padding:20px 30px 14px}
   body.msjdual #s-thread .msgs{flex:1;min-height:0;overflow-y:auto}
   body.msjdual #s-thread .chathead,body.msjdual #s-thread .composer,body.msjdual #s-thread .thfind{flex:none}
   body.msjdual .top .back{display:none}
@@ -1160,14 +1167,14 @@ body.a11y .msjrow .tm{font-size:12.5px !important}
 body.a11y .msjnada b{font-size:20px !important}
 /* ---- Calendario estilo agenda (20-ago): escritorio a dos columnas ---- */
 .calrow{display:flex;align-items:center;gap:9px;width:100%;background:none;border:1px solid transparent;border-radius:10px;padding:9px 10px;font-family:inherit;font-size:13.5px;font-weight:700;color:var(--txt);cursor:pointer;text-align:left;margin-bottom:2px}
-.calrow:hover{background:color-mix(in srgb,var(--txt) 5%,transparent)}
+.calrow:hover{background:rgba(var(--txt-rgb),.05);background:color-mix(in srgb,var(--txt) 5%,transparent)}
 .calrow.on{background:var(--card);border-color:var(--line)}
 .calrow .cdot{width:10px;height:10px;border-radius:3px;flex:none}
 .calrow .cnum{margin-left:auto;font-size:11.5px;color:var(--mut);font-weight:800}
 .calbig{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
 .calbig .wd{font-size:10.5px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;padding:2px 4px}
 .calbig .dcb{min-height:80px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:3px;align-items:stretch;cursor:pointer;font-family:inherit;color:var(--txt);text-align:left;min-width:0;overflow:hidden;transition:border-color .15s var(--ease-out)}
-.calbig .dcb:hover{border-color:color-mix(in srgb,var(--txt) 25%,transparent)}
+.calbig .dcb:hover{border-color:rgba(var(--txt-rgb),.25);border-color:color-mix(in srgb,var(--txt) 25%,transparent)}
 .calbig .dcb.fuera{opacity:.3;cursor:default;background:transparent;border-color:transparent}
 .calbig .dcb.sel{border-color:var(--accent2)}
 .calbig .dn{font-size:12px;font-weight:800;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none}
@@ -1240,7 +1247,7 @@ body.a11y .screen .tg{ font-size:13px !important; }
   .nav{top:0;bottom:0;left:0;right:auto;width:224px;max-width:none;margin:0;
     flex-direction:column;justify-content:flex-start;gap:5px;
     padding:18px 12px 16px;border-top:none;border-right:1px solid var(--line);
-    background:color-mix(in srgb,var(--bg) 94%,transparent)}
+    background:rgba(var(--bg-rgb),.94);background:color-mix(in srgb,var(--bg) 94%,transparent)}
   .nav:before{content:'Hules Banda';display:block;font-weight:900;font-size:15px;color:#fff;
     padding:8px 14px 4px;letter-spacing:.2px}
   .nav:after{content:'';position:absolute;top:44px;left:26px;width:30px;height:3px;border-radius:2px;background:#c4161c}
@@ -1248,11 +1255,11 @@ body.a11y .screen .tg{ font-size:13px !important; }
     gap:12px;padding:12px 14px;font-size:13.5px;border-radius:12px;margin-top:2px}
   .nav button:first-of-type{margin-top:18px}
   .nav button .ni{width:19px;height:19px}
-  .nav button.on{background:color-mix(in srgb,var(--accent) 15%,transparent);color:#fff}
+  .nav button.on{background:rgba(var(--accent-rgb),.15);background:color-mix(in srgb,var(--accent) 15%,transparent);color:#fff}
   /* en escritorio el "Inicio central" vuelve a ser un item normal de la barra lateral */
   .nav button.navmain{width:100%;height:auto;border-radius:12px;margin-top:2px;background:none;box-shadow:none;color:rgba(255,255,255,.72);flex-direction:row;justify-content:flex-start;gap:12px;padding:12px 14px;font-size:13.5px}
   .nav button.navmain .ni{width:19px;height:19px}
-  .nav button.navmain.on{background:color-mix(in srgb,var(--accent) 15%,transparent);color:#fff}
+  .nav button.navmain.on{background:rgba(var(--accent-rgb),.15);background:color-mix(in srgb,var(--accent) 15%,transparent);color:#fff}
   .nav button .nbadge{position:static;margin-left:auto}
   /* contenido: página ancha */
   .screen{margin-left:224px}
@@ -1290,7 +1297,7 @@ body.a11y .screen .tg{ font-size:13px !important; }
   .sec-t{column-span:all}
   /* pantallas de lectura / flujo: una columna cómoda */
   #s-chat,#s-thread,#s-nom,#s-nom35,#s-perm,#s-perfil,#s-course,#s-quiz,#s-result,#s-pay,#s-vac,#s-lineas,#s-newchat{max-width:880px}
-  .chatscreen{height:calc(100dvh - 150px)}
+  .chatscreen{height:calc(100vh;height:calc(100dvh - 150px)}
   .panel,.card{padding:18px}
   /* premios: estante ancho */
   .rgrid{grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:20px 12px}
@@ -1316,7 +1323,7 @@ body.a11y .screen .tg{ font-size:13px !important; }
     gap:0;padding:0;margin-top:6px;border-radius:14px;font-size:0;box-shadow:none;background:none;color:rgba(255,255,255,.62)}
   .nav button>span:not(.nbadge),.nav button.navmain>span:not(.nbadge){display:none}
   .nav button .ni,.nav button.navmain .ni{width:22px;height:22px}
-  .nav button.on,.nav button.navmain.on{background:color-mix(in srgb,var(--accent) 22%,transparent);color:#fff}
+  .nav button.on,.nav button.navmain.on{background:rgba(var(--accent-rgb),.22);background:color-mix(in srgb,var(--accent) 22%,transparent);color:#fff}
   .nav button .nbadge{position:absolute;top:4px;left:auto;right:4px;margin-left:0}
   .top{margin-left:86px;padding-left:22px;padding-right:22px}
   .screen{margin-left:86px}
@@ -3385,8 +3392,8 @@ function alimHoja(f){
       var cab='<div class="card" style="margin-bottom:12px"><b style="font-size:14px">'+esc(f.name)+'</b>'+
         (comoSeLlama&&comoSeLlama!==f.name?('<div class="note" style="margin-top:2px">'+esc(comoSeLlama)+'</div>'):'')+'</div>';
       if(!fmt){
-        c.innerHTML=cab+'<div class="card" style="border-color:color-mix(in srgb,var(--warn) 45%,transparent);'+
-          'background:color-mix(in srgb,var(--warn) 9%,transparent)">'+
+        c.innerHTML=cab+'<div class="card" style="border-color:rgba(var(--warn-rgb),.45);border-color:color-mix(in srgb,var(--warn) 45%,transparent);'+
+          'background:rgba(var(--warn-rgb),.09);background:color-mix(in srgb,var(--warn) 9%,transparent)">'+
           '<b style="font-size:13px;color:var(--warn)">No reconocí este formato</b>'+
           '<div class="note" style="margin-top:4px;line-height:1.55">Para que entre solo, Carlos tiene que registrar '+
           'este Excel una vez: le manda el archivo y de ahí en adelante lo reconoce.<br>'+
@@ -4036,7 +4043,7 @@ function calDayBlock(iso){
      y ese día hay una junta general, tienes que verla — si no, agendas encima. */
   var dia=evVisibles().filter(function(e){ return (e.fecha||'')===iso; })
           .sort(function(a,b){ return (a.hora||'99')<(b.hora||'99')?-1:1; });
-  var h='<div class="panel" id="calDayBox" style="border-color:color-mix(in srgb,var(--accent2) 35%,transparent)">'+
+  var h='<div class="panel" id="calDayBox" style="border-color:rgba(var(--accent2-rgb),.35);border-color:color-mix(in srgb,var(--accent2) 35%,transparent)">'+
     '<div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Ese día</div>'+
     '<b style="font-size:17px;text-transform:capitalize">'+esc(calDayLabel(iso))+'</b>'+
     '<p class="note" style="margin:3px 0 0">'+(dia.length? (dia.length===1?'1 cosa anotada':dia.length+' cosas anotadas') : 'No tienes nada anotado')+'</p></div>'+
@@ -4055,7 +4062,7 @@ function calLayerGo(l){ _calLayer=l; _evEdit=null; _calDay=null; _evInv=[]; _evF
 function calEdit(id){ _evEdit=id; var e=evGet().filter(function(x){return x.id===id;})[0]; if(e){ _calLayer=e.scope; _evInv=(e.invites||[]).map(function(i){return {n:+i.n,nombre:i.nombre};}); } renderCal(); var t=$('evTitle2'); if(t) t.focus(); }
 
 function evEstadoTag(st){ var m={aceptado:['Aceptó','var(--ok)'],rechazado:['No irá','var(--bad)'],pendiente:['Pendiente','var(--mut)']}[st]||['',''];
-  return m[0]?'<span class="chipst" style="border-color:color-mix(in srgb,'+m[1]+' 45%,transparent);color:'+m[1]+'">'+m[0]+'</span>':''; }
+  return m[0]?'<span class="chipst" style="border-color:'+m[1]+';border-color:color-mix(in srgb,'+m[1]+' 45%,transparent);color:'+m[1]+'">'+m[0]+'</span>':''; }
 
 function evRow(e){
   var me=S?S.emp:-1, p=(e.fecha||'').split('-');
@@ -4124,7 +4131,7 @@ function renderCal(){
     h='<div class="calwrap"><aside class="calside">';
     h+='<div style="margin-bottom:12px"><div class="eyebrow">Calendario</div><b style="font-size:20px">Calendario</b></div>';
     h+='<button class="btn" style="margin:0 0 10px" onclick="calNuevo()">＋ Nuevo evento</button>';
-    if(pendN) h+='<button class="btn ghost" style="margin:0 0 10px;border-color:color-mix(in srgb,var(--accent) 45%,transparent)" onclick="openInvit()">📩 '+pendN+' invitación'+(pendN===1?'':'es')+' por responder ›</button>';
+    if(pendN) h+='<button class="btn ghost" style="margin:0 0 10px;border-color:rgba(var(--accent-rgb),.45);border-color:color-mix(in srgb,var(--accent) 45%,transparent)" onclick="openInvit()">📩 '+pendN+' invitación'+(pendN===1?'':'es')+' por responder ›</button>';
     h+='<div class="sec-t">Calendarios<span class="ln"></span></div>';
     h+=layers.map(function(l){
       var nfut=evForLayer(l[0]).filter(function(e){ return (e.fecha||'')>=todayIso; }).length;
@@ -5261,7 +5268,7 @@ function renderHomeAdmin(){
      bandiHero()+'</div></div>';
   // Directorio interno (a quién llamar)
   h+='<div class="panel" style="cursor:pointer" onclick="renderDia()"><div class="hd" style="margin-bottom:0"><div style="display:flex;align-items:center;gap:12px;min-width:0">'+
-     '<span style="width:46px;height:46px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--data);background:color-mix(in srgb,var(--data) 13%,transparent)"><span style="width:23px;height:23px;display:block">'+IC2.phone+'</span></span>'+
+     '<span style="width:46px;height:46px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--data);background:rgba(var(--data-rgb),.13);background:color-mix(in srgb,var(--data) 13%,transparent)"><span style="width:23px;height:23px;display:block">'+IC2.phone+'</span></span>'+
      '<div style="min-width:0"><b>Directorio interno</b><div class="note" style="margin-top:2px">Extensiones: a quién llamar en la planta.</div></div></div><span class="chipst">Abrir ›</span></div></div>';
   $('s-home').innerHTML=h; show('home');
 }
@@ -5289,7 +5296,7 @@ function renderPend(){
   var h='';
   h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Inicio</div><b style="font-size:20px">Pendientes</b>'+
      '<p class="note" style="margin:4px 0 0;max-width:250px">Lo que te falta por hacer, en un solo lugar. Toca «Ir ahora» y te lleva.</p></div>'+
-     '<span class="chipst'+(pend.length?'':' mut')+'"'+(pend.length?' style="border-color:color-mix(in srgb,var(--accent2) 45%,transparent);color:var(--accent2)"':'')+'>'+pend.length+'</span></div></div>';
+     '<span class="chipst'+(pend.length?'':' mut')+'"'+(pend.length?' style="border-color:rgba(var(--accent2-rgb),.45);border-color:color-mix(in srgb,var(--accent2) 45%,transparent);color:var(--accent2)"':'')+'>'+pend.length+'</span></div></div>';
   if(!pend.length){
     h+='<div class="panel"><div class="line" style="border:none;padding:0"><span style="color:var(--ok);font-weight:700">✓ Vas al corriente</span></div>'+
        '<p class="note" style="margin-top:4px">No tienes nada pendiente. ¡Sigue así! 👏</p></div>';
@@ -6646,12 +6653,12 @@ function respPage(){
     var myAlerts=(qstats().alerts||[]).filter(function(a){ return a.area===area; });
     h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">'+esc(area)+'</div><b style="font-size:20px">Focos</b>'+
        '<div class="note" style="margin-top:3px">Alertas de seguridad detectadas por el Asistente en tu área. RRHH las atiende; tú cuida a tu gente en piso.</div></div>'+
-       '<span class="chipst'+(myAlerts.length?'':' mut')+'"'+(myAlerts.length?' style="border-color:color-mix(in srgb,var(--bad) 40%,transparent);color:var(--bad)"':'')+'>'+myAlerts.length+'</span></div></div>';
+       '<span class="chipst'+(myAlerts.length?'':' mut')+'"'+(myAlerts.length?' style="border-color:rgba(var(--bad-rgb),.40);border-color:color-mix(in srgb,var(--bad) 40%,transparent);color:var(--bad)"':'')+'>'+myAlerts.length+'</span></div></div>';
     if(!myAlerts.length){
       h+='<div class="panel"><div class="line" style="border:none;padding:0"><span style="color:var(--ok);font-weight:700">✓ Sin alertas en tu área</span></div>'+
          '<p class="note" style="margin-top:4px">Si el Asistente detecta una pregunta con intención de daño en tu departamento, aparecerá aquí.</p></div>';
     } else {
-      h+='<div class="panel" style="border-color:color-mix(in srgb,var(--accent2) 38%,transparent);background:rgba(192,57,43,0.08)">'+
+      h+='<div class="panel" style="border-color:rgba(var(--accent2-rgb),.38);border-color:color-mix(in srgb,var(--accent2) 38%,transparent);background:rgba(192,57,43,0.08)">'+
          myAlerts.map(function(a){
            return '<div class="line" style="align-items:flex-start;gap:10px">'+
              '<span style="width:9px;height:9px;border-radius:50%;flex:none;margin-top:6px;background:var(--bad);box-shadow:0 0 8px color-mix(in srgb,var(--bad) 65%,transparent)"></span>'+
@@ -6907,7 +6914,7 @@ function mgrPage(role){
   else if(p==='focos'){
     var focoN=ALERTS.length+(V3_ON?0:H.redFlags.length);
     h+=cab('Focos', 'Alertas de seguridad y pendientes que piden acción.',
-           '<span class="chipst'+(focoN?'':' mut')+'"'+(focoN?' style="border-color:color-mix(in srgb,var(--bad) 40%,transparent);color:var(--bad)"':'')+'>'+focoN+'</span>');
+           '<span class="chipst'+(focoN?'':' mut')+'"'+(focoN?' style="border-color:rgba(var(--bad-rgb),.40);border-color:color-mix(in srgb,var(--bad) 40%,transparent);color:var(--bad)"':'')+'>'+focoN+'</span>');
     h+='<div class="tgrid">';
     h+=htile("mgrGo('focos-alertas')",'focos','Alertas de sabotaje', ALERTS.length?(ALERTS.length+' por atender'):'Sin alertas ✓', {wide:true, cnt:ALERTS.length||''});
     if(!V3_ON && H.redFlags.length) h+=htile("mgrGo('focos-rojos')",'operacion','Focos rojos', 'Sin conexión al servidor');
@@ -6915,8 +6922,8 @@ function mgrPage(role){
   }
   else if(p==='focos-alertas'){
     if(ALERTS.length){
-      h+='<div class="panel" style="border-color:color-mix(in srgb,var(--accent2) 38%,transparent);background:rgba(192,57,43,0.08)">'+
-         '<div class="line" style="border:none;padding:0 0 6px"><b style="color:#ff6b5e;font-size:14px">Alertas de seguridad — posible sabotaje</b><span class="tg" style="flex:none;border-color:color-mix(in srgb,var(--bad) 45%,transparent);color:#ff6b5e">'+ALERTS.length+'</span></div>'+
+      h+='<div class="panel" style="border-color:rgba(var(--accent2-rgb),.38);border-color:color-mix(in srgb,var(--accent2) 38%,transparent);background:rgba(192,57,43,0.08)">'+
+         '<div class="line" style="border:none;padding:0 0 6px"><b style="color:#ff6b5e;font-size:14px">Alertas de seguridad — posible sabotaje</b><span class="tg" style="flex:none;border-color:rgba(var(--bad-rgb),.45);border-color:color-mix(in srgb,var(--bad) 45%,transparent);color:#ff6b5e">'+ALERTS.length+'</span></div>'+
          '<div class="note" style="margin:0 0 4px;line-height:1.45">El Asistente <b>no respondió</b> y registró al trabajador. Atiende de inmediato.</div>'+
          ALERTS.map(function(a,i){
            return '<div class="line" style="align-items:flex-start;gap:10px">'+
@@ -7515,7 +7522,7 @@ function dmWorkerBlock(){   // el trabajador ve los avisos generales de RRHH den
   function avisoCard(text,when){
     return '<div class="card" style="position:relative"><span style="position:absolute;top:10px;right:10px;z-index:2">'+speakBtn('Aviso de Recursos Humanos. '+text)+'</span>'+
       '<div class="line" style="border:none;padding:0;padding-right:46px"><span style="display:flex;align-items:center;gap:10px;min-width:0">'+
-      '<span style="width:40px;height:40px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)"><span style="width:21px;height:21px;display:block">'+MEGA+'</span></span>'+
+      '<span style="width:40px;height:40px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--warn);background:rgba(var(--warn-rgb),.14);background:color-mix(in srgb,var(--warn) 14%,transparent)"><span style="width:21px;height:21px;display:block">'+MEGA+'</span></span>'+
       '<b>Aviso de RRHH</b></span><span class="note" style="flex:none">'+when+'</span></div>'+
       '<p style="margin:9px 0 0;line-height:1.5">'+esc(text)+'</p></div>';
   }
@@ -7790,7 +7797,7 @@ function openTopic(id){
   for(var n=1;n<=10;n++){
     var lv=tp.levels[n-1], dn=clLevelDone(tp.id,n), name=CFG.clasesLevels[n-1];
     if(lv){
-      var ico= dn ? '<span class="ico" style="color:var(--ok);background:color-mix(in srgb,var(--ok) 13%,transparent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+AP.check+'</svg></span>'
+      var ico= dn ? '<span class="ico" style="color:var(--ok);background:rgba(var(--ok-rgb),.13);background:color-mix(in srgb,var(--ok) 13%,transparent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+AP.check+'</svg></span>'
                   : '<span class="ico" style="font-size:17px;font-weight:800">'+n+'</span>';
       h+='<div class="lvcard" onclick="openLesson(\''+tp.id+'\','+n+')">'+ico+'<b>Nivel '+n+' · '+esc(lv.title)+'</b><span>'+esc(name)+(dn?' · Hecho ✓':'')+'</span></div>';
     } else {
@@ -8569,7 +8576,7 @@ var PED_LOGO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAAB1CAYAAADJPOqx
 var PED_EST={ nuevo:{l:'Nuevo',c:'#e73b2f'}, asignado:{l:'Asignado',c:'#e0902a'}, reparando:{l:'En reparación',c:'#3b82f6'}, terminado:{l:'Terminado',c:'#22c55e'}, revisado:{l:'Revisado ✓',c:'#0e9e8e'}, cancelado:{l:'Cancelado',c:'#6a7080'} };
 var PED_TIPOS=[['mecanico','Mecánico'],['electrico','Eléctrico'],['electronico','Electrónico'],['hidraulico','Hidráulico'],['neumatico','Neumático'],['control','Control']];
 function pedTipoL(t){ for(var i=0;i<PED_TIPOS.length;i++){ if(PED_TIPOS[i][0]===t) return PED_TIPOS[i][1]; } return t||''; }
-function pedEstTag(e){ var x=PED_EST[e]||{l:e,c:'var(--mut)'}; return '<span class="chipst" style="border-color:color-mix(in srgb,'+x.c+' 45%,transparent);color:'+x.c+'">'+esc(x.l)+'</span>'; }
+function pedEstTag(e){ var x=PED_EST[e]||{l:e,c:'var(--mut)'}; return '<span class="chipst" style="border-color:'+x.c+';border-color:color-mix(in srgb,'+x.c+' 45%,transparent);color:'+x.c+'">'+esc(x.l)+'</span>'; }
 
 /* ---------- datos ---------- */
 var _pedTry=0, _pedFin=false, PED_PAGINA=300;
@@ -9144,7 +9151,7 @@ function renderPedidos(){
   var paros=act.filter(function(p){ return p.paroMaquina; }).length;
   var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Mantenimiento</div><b style="font-size:20px">Pedidos de reparación</b>'+
     '<div class="note" style="margin-top:3px">Las órdenes de trabajo de toda la planta, en vivo. Ya no se pierde ningún papelito.</div></div>'+
-    '<span class="chipst'+(nuevos?'':' mut')+'"'+(nuevos?' style="border-color:color-mix(in srgb,var(--bad) 40%,transparent);color:var(--bad)"':'')+'>'+nuevos+' nuevo'+(nuevos===1?'':'s')+'</span></div>'+
+    '<span class="chipst'+(nuevos?'':' mut')+'"'+(nuevos?' style="border-color:rgba(var(--bad-rgb),.40);border-color:color-mix(in srgb,var(--bad) 40%,transparent);color:var(--bad)"':'')+'>'+nuevos+' nuevo'+(nuevos===1?'':'s')+'</span></div>'+
     '<div class="gaugeWrap">'+
       '<div class="statile"><div class="n"'+(paros?' style="color:var(--bad)"':'')+'>'+paros+'</div><div class="l">Máquina parada</div></div>'+
       '<div class="statile"><div class="n">'+act.length+'</div><div class="l">Abiertos</div></div>'+
@@ -9177,7 +9184,7 @@ function renderPedidos(){
 }
 function pedCardAdmin(p, cerrado){
   var quien=esc(niceName(p.nombre||''))+' · Nº '+esc(p.clave||(''+p.emp));
-  var h='<div class="card'+((p.paroMaquina&&!cerrado)?'" style="border-color:color-mix(in srgb,var(--bad) 45%,transparent)':'')+'">'+
+  var h='<div class="card'+((p.paroMaquina&&!cerrado)?'" style="border-color:rgba(var(--bad-rgb),.45);border-color:color-mix(in srgb,var(--bad) 45%,transparent)':'')+'">'+
     '<div class="line"><b>#'+p.folio+' · '+esc(p.maquina||'')+'</b>'+pedEstTag(p.estado)+'</div>'+
     (p.paroMaquina?'<div class="note" style="color:var(--bad);margin-top:2px">⛔ Máquina parada'+(cerrado?'':' — atender primero')+'</div>':'')+
     '<p style="margin:6px 0 0;line-height:1.5;color:var(--mut)">'+esc(p.solicitado||'')+(p.descr?' — '+esc(p.descr):'')+'</p>'+
@@ -9397,7 +9404,7 @@ function renderPerfil(){
   var idTxt = v3 ? (esc(S.area)+' · clave '+esc(S.clave)) : (esc(S.area)+' · #'+(''+S.emp).padStart(3,'0'));
   var h='';
   if(v3 && window._forceProfile){
-    h+='<div class="panel" style="border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)">'+
+    h+='<div class="panel" style="border-color:var(--accent);background:rgba(var(--accent-rgb),.10);background:color-mix(in srgb,var(--accent) 10%,transparent)">'+
        '<div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Bienvenido a Hules Banda</div><b style="font-size:16px">Revisa tus datos para entrar</b>'+
        '<div class="note" style="margin-top:3px">Confirma que tu información esté correcta y complétala. Cuando termines, toca <b>Guardar y entrar</b>.</div></div>'+speakBtn('Bienvenido. Revisa que tus datos estén correctos y complétalos. Cuando termines, toca guardar y entrar.')+'</div></div>';
   }
@@ -10501,7 +10508,7 @@ function submitNom(){
 /* ---- Bloque para RRHH / Dirección: estatus, cadencia, resultados ---- */
 function nomAdminBlock(){
   var st=nomGet(), h='';
-  h+='<div class="panel"><div class="hd"><div><div class="eyebrow">NOM-035</div><b style="font-size:16px">Riesgo psicosocial</b></div><span class="chipst" style="border-color:color-mix(in srgb,var(--ok) 40%,transparent);background:color-mix(in srgb,var(--ok) 12%,transparent);color:var(--ok)">Al corriente</span></div>'+
+  h+='<div class="panel"><div class="hd"><div><div class="eyebrow">NOM-035</div><b style="font-size:16px">Riesgo psicosocial</b></div><span class="chipst" style="border-color:rgba(var(--ok-rgb),.40);border-color:color-mix(in srgb,var(--ok) 40%,transparent);background:rgba(var(--ok-rgb),.12);background:color-mix(in srgb,var(--ok) 12%,transparent);color:var(--ok)">Al corriente</span></div>'+
      '<p class="note" style="margin:0">Obligatoria por ley (STPS). Se aplica <b>cada 2 años</b>.<br>Última aplicación: <b>Noviembre 2025</b> ✓ · Próxima: <b>Noviembre 2027</b>.</p></div>';
   if(st.current){
     var tot=0,totm=0;
@@ -11042,7 +11049,7 @@ function docUploadForm(){
          '<button id="docAcl_ids" class="chip2" onclick="docAclSet(\'ids\')">Solo IDs autorizados</button>'+
          '<button id="docAcl_all" class="chip2" onclick="docAclSet(\'all\')">Toda la planta</button>'+
          /* FINANCIERO: solo aparece si el SERVIDOR dice que estoy en la lista blanca */
-         (_finOn?'<button id="docAcl_financiero" class="chip2" onclick="docAclSet(\'financiero\')" style="border-color:color-mix(in srgb,var(--warn) 45%,var(--line))">💰 Financiero</button>':'')+
+         (_finOn?'<button id="docAcl_financiero" class="chip2" onclick="docAclSet(\'financiero\')" style="border-color:rgba(var(--warn-rgb),.45);border-color:color-mix(in srgb,var(--warn) 45%,var(--line))">💰 Financiero</button>':'')+
        '</div>'+
        '<input id="docIds" class="fin" placeholder="Claves autorizadas, separadas por coma (ej. 0917, 0379)" style="margin-top:8px;display:none">'+
        (_finOn?'<div class="note" id="docFinNote" style="margin-top:7px;display:none">Costos, precios y finanzas: <b>solo el grupo financiero</b> lo verá (ni las otras cuentas de acceso total). Se guarda en la carpeta <b>financiero</b>.</div>':'');
@@ -11512,7 +11519,7 @@ function erroresBlock(){
        '<b style="display:block;font-size:13.5px;line-height:1.3">'+esc(e.msg||'(sin mensaje)')+'</b>'+
        '<span class="note">Pantalla: <b>'+esc(e.screen||'—')+'</b> · '+esc(e.rol||'')+(e.clave?(' · #'+esc(e.clave)):'')+(e.depto?(' · '+esc(e.depto)):'')+'</span>'+
        '<span class="note" style="display:block">'+fechaHora(e.ts)+'</span></span>'+
-       (veces>1?'<span class="chipst" style="border-color:color-mix(in srgb,var(--bad) 45%,transparent);color:var(--bad)">'+veces+' veces</span>':'')+
+       (veces>1?'<span class="chipst" style="border-color:rgba(var(--bad-rgb),.45);border-color:color-mix(in srgb,var(--bad) 45%,transparent);color:var(--bad)">'+veces+' veces</span>':'')+
        '</div></div>';
   });
   h+='<div class="note" style="margin-top:10px">Si ves una falla repetida, mándamela y la reparo.</div></div>';
@@ -11923,7 +11930,7 @@ function mzLoadDia(cb){
     _mzDia=(x&&x.ok)?x:{corridas:[],tm:[],programa:[]}; cb(); },function(){ _mzDia={corridas:[],tm:[],programa:[]}; cb(); });
 }
 function mzInp(id,ph,extra){ return '<input id="'+id+'" placeholder="'+ph+'" '+(extra||'')+' style="width:100%;padding:10px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'; }
-function mzBanner(){ return (_mzCat&&_mzCat.practica)?'<div class="card" style="border-color:color-mix(in srgb,var(--warn) 45%,transparent);background:color-mix(in srgb,var(--warn) 9%,transparent);margin-bottom:12px"><b style="color:var(--warn);font-size:13px">Periodo de prueba</b><div class="note" style="margin-top:3px">Lo que se captura hoy queda marcado como <b>prueba</b> y se conserva como historia — ya no se borra. <b>Del 1 de septiembre en adelante</b> lo que entre es real y definitivo, y se captura directo aquí (decisión de dirección, 24-ago).</div></div>':''; }
+function mzBanner(){ return (_mzCat&&_mzCat.practica)?'<div class="card" style="border-color:rgba(var(--warn-rgb),.45);border-color:color-mix(in srgb,var(--warn) 45%,transparent);background:rgba(var(--warn-rgb),.09);background:color-mix(in srgb,var(--warn) 9%,transparent);margin-bottom:12px"><b style="color:var(--warn);font-size:13px">Periodo de prueba</b><div class="note" style="margin-top:3px">Lo que se captura hoy queda marcado como <b>prueba</b> y se conserva como historia — ya no se borra. <b>Del 1 de septiembre en adelante</b> lo que entre es real y definitivo, y se captura directo aquí (decisión de dirección, 24-ago).</div></div>':''; }
 
 /* ===== «Esto trae datos de prueba» =========================================
    Julio y agosto se quedan en el sistema como historia (decisión de Carlos,
@@ -11955,7 +11962,7 @@ function mzSelloPrueba(d1,d2){
   if(!x || !x.corridas_practica) return '';
   var mezcla=(x.corridas_reales>0);   /* lo peligroso: reales y prueba revueltos */
   var col=mezcla?'var(--bad)':'var(--warn)';
-  return '<div class="card" style="border-color:color-mix(in srgb,'+col+' 45%,transparent);'+
+  return '<div class="card" style="border-color:'+col+';border-color:color-mix(in srgb,'+col+' 45%,transparent);'+
     'background:color-mix(in srgb,'+col+' 9%,transparent);margin-bottom:12px">'+
     '<b style="color:'+col+';font-size:13px">'+(mezcla?'Ojo: hay datos de prueba revueltos':'Datos de prueba')+'</b>'+
     '<div class="note" style="margin-top:3px">'+
@@ -12208,8 +12215,8 @@ function mzPendPinta(){
     '</span></div></div>';
 
   if(!lista.length){
-    h+='<div class="card" style="border-color:color-mix(in srgb,var(--ok) 40%,transparent);'+
-       'background:color-mix(in srgb,var(--ok) 7%,transparent)">'+
+    h+='<div class="card" style="border-color:rgba(var(--ok-rgb),.40);border-color:color-mix(in srgb,var(--ok) 40%,transparent);'+
+       'background:rgba(var(--ok-rgb),.07);background:color-mix(in srgb,var(--ok) 7%,transparent)">'+
        '<b style="font-size:15px;color:var(--ok)">Todo en orden</b>'+
        '<div class="note" style="margin-top:4px;line-height:1.6">No hay nada que el sistema no haya podido '+
        'entender de lo que subió tu área. Si acabas de cargar un Excel y esperabas ver algo aquí, '+
@@ -12228,7 +12235,7 @@ function mzPendPinta(){
   lista.forEach(function(p,i){
     var urg=(p.urgencia==='alta');
     h+='<div class="card" style="margin-bottom:10px'+
-       (urg?';border-color:color-mix(in srgb,var(--warn) 45%,transparent)':'')+'">'+
+       (urg?';border-color:rgba(var(--warn-rgb),.45);border-color:color-mix(in srgb,var(--warn) 45%,transparent)':'')+'">'+
        '<div class="line" style="border:none;padding:0 0 6px"><span style="flex:1;min-width:0">'+
          '<b style="font-size:14.5px">'+esc(p.titulo||'')+'</b>'+
          (urg?'<span class="tg" style="margin-left:6px;color:var(--warn)">urgente</span>':'')+
@@ -12251,7 +12258,7 @@ function mzPendPinta(){
     }
     if(p.que_hacer){
       h+='<div class="note" style="margin-top:9px;line-height:1.6;padding:8px 10px;border-radius:10px;'+
-         'background:color-mix(in srgb,var(--data) 8%,transparent)">'+
+         'background:rgba(var(--data-rgb),.08);background:color-mix(in srgb,var(--data) 8%,transparent)">'+
          '<b>Qué hay que hacer:</b> '+esc(p.que_hacer)+'</div>';
     }
     h+='</div>';
@@ -12517,7 +12524,7 @@ function lvGuarda(){
   },function(){ lvAvisa(mzErr(), true); });
 }
 function lvResultado(x){
-  var h='<div class="card" style="margin-top:11px;border-color:color-mix(in srgb,var(--ok) 40%,transparent)">'+
+  var h='<div class="card" style="margin-top:11px;border-color:rgba(var(--ok-rgb),.40);border-color:color-mix(in srgb,var(--ok) 40%,transparent)">'+
     '<b style="font-size:14px;color:var(--ok)">Listo</b>'+
     '<div class="note" style="margin-top:5px;line-height:1.6">'+
       '<b>'+mzN(x.cambiadas)+'</b> versión(es) cambiaron de vigente · <b>'+mzN(x.ya_estaban)+
@@ -12529,7 +12536,7 @@ function lvResultado(x){
         esc(c.compuesto)+': <b>'+esc(c.antes)+'</b> → <b style="color:var(--ok)">'+esc(c.ahora)+'</b></div>'; }).join('')+'</div>';
   }
   if((x.conflictos||[]).length){
-    h+='<div style="margin-top:11px;padding:10px 12px;border-radius:11px;background:color-mix(in srgb,var(--warn) 10%,transparent)">'+
+    h+='<div style="margin-top:11px;padding:10px 12px;border-radius:11px;background:rgba(var(--warn-rgb),.10);background:color-mix(in srgb,var(--warn) 10%,transparent)">'+
       '<b style="font-size:12.5px;color:var(--warn)">No los toqué: la hoja los trae repetidos</b>'+
       '<div class="note" style="margin-top:4px;line-height:1.55">Estos compuestos vienen en más de un '+
       'renglón con letras distintas, así que no puedo saber cuál manda. Lo decide Laboratorio.</div>'+
@@ -12863,7 +12870,7 @@ function labRecPinta(){
   /* ── lo que no se puede atribuir ── */
   var sl=x.sin_letra||{};
   if((+sl.mezclas||0)>0){
-    h+='<div class="card" style="margin-bottom:12px;border-color:color-mix(in srgb,var(--warn) 40%,transparent)">'+
+    h+='<div class="card" style="margin-bottom:12px;border-color:rgba(var(--warn-rgb),.40);border-color:color-mix(in srgb,var(--warn) 40%,transparent)">'+
        '<b style="font-size:13px;color:var(--warn)">'+mzN(sl.mezclas)+' mezclas sin letra</b>'+
        '<div class="note" style="margin-top:3px">'+mzN(sl.corridas)+' corridas y '+mzN(sl.kg)+' kg que la hoja no dice de qué versión son, '+
        'así que no se pueden colgar de ninguna. Si el Excel trae la letra, entran solas.</div></div>';
@@ -12876,8 +12883,8 @@ function labRecPinta(){
   }
 
   /* ── lo que el sistema NO sabe, dicho de frente ── */
-  h+='<div class="card" style="border-color:color-mix(in srgb,var(--warn) 40%,transparent);'+
-     'background:color-mix(in srgb,var(--warn) 7%,transparent)">'+
+  h+='<div class="card" style="border-color:rgba(var(--warn-rgb),.40);border-color:color-mix(in srgb,var(--warn) 40%,transparent);'+
+     'background:rgba(var(--warn-rgb),.07);background:color-mix(in srgb,var(--warn) 7%,transparent)">'+
      '<b style="font-size:13px;color:var(--warn)">Lo que todavía no se puede medir</b>'+
      '<div class="note" style="margin-top:4px;line-height:1.6">'+esc(x.sin_medir.que)+' '+
      esc(x.sin_medir.consecuencia)+'</div>'+
@@ -12947,8 +12954,8 @@ function labDiffPinta(){
 
   /* ⭐ el candado: si los aportes no suman la diferencia, no se dibuja el desglose */
   if(!d.cuadra){
-    h+='<div class="card" style="border-color:color-mix(in srgb,var(--bad) 45%,transparent);'+
-       'background:color-mix(in srgb,var(--bad) 8%,transparent)">'+
+    h+='<div class="card" style="border-color:rgba(var(--bad-rgb),.45);border-color:color-mix(in srgb,var(--bad) 45%,transparent);'+
+       'background:rgba(var(--bad-rgb),.08);background:color-mix(in srgb,var(--bad) 8%,transparent)">'+
        '<b style="font-size:13px;color:var(--bad)">No se dibuja el desglose</b>'+
        '<div class="note" style="margin-top:4px;line-height:1.6">'+esc(d.aviso||
        'Los aportes de cada material no suman la diferencia de costo.')+' '+
@@ -13094,7 +13101,7 @@ function mzCapPaint(){
   rows.forEach(function(c){
     var nom=(c.compuesto||c.compuesto_txt||'¿?')+(c.letra?' · '+c.letra:'')+(c.num_corrida?' · corrida '+(''+c.num_corrida).padStart(2,'0'):'');
     var leer=nom+'. '+c.mezclas+' mezclas'+(c.quemadas?', '+c.quemadas+' quemadas':'')+(c.es_reproceso?'. Reproceso, origen '+mzOrgTxt(c.origen):'');
-    h+='<div class="card" style="margin-bottom:8px'+(c.es_reproceso?';border-color:color-mix(in srgb,var(--warn) 40%,transparent)':'')+'">'+
+    h+='<div class="card" style="margin-bottom:8px'+(c.es_reproceso?';border-color:rgba(var(--warn-rgb),.40);border-color:color-mix(in srgb,var(--warn) 40%,transparent)':'')+'">'+
        '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div style="min-width:0">'+
        '<b style="font-size:14px'+(c.es_reproceso?';color:var(--warn)':'')+'">'+esc(nom)+'</b>'+
        '<div class="note" style="margin-top:3px">'+
@@ -13829,8 +13836,8 @@ function mzPegaPrev(){
     var _f=_mzFmt.formato, _dest={corridas:'la bitácora de producción (corridas de banbury)',
       paros:'los paros', entradas:'las entradas de materia prima', precios:'los precios',
       ciclos:'los tiempos de ciclo de las fórmulas', existencias:'las existencias de almacén'};
-    h+='<div class="card" style="margin-top:10px;border-color:color-mix(in srgb,var(--ok) 45%,transparent);'+
-       'background:color-mix(in srgb,var(--ok) 8%,transparent)">'+
+    h+='<div class="card" style="margin-top:10px;border-color:rgba(var(--ok-rgb),.45);border-color:color-mix(in srgb,var(--ok) 45%,transparent);'+
+       'background:rgba(var(--ok-rgb),.08);background:color-mix(in srgb,var(--ok) 8%,transparent)">'+
        '<b style="font-size:13px;color:var(--ok)">✓ Reconocí este archivo</b>'+
        '<div class="note" style="margin-top:4px;line-height:1.55">Es <b>'+esc(_f.nombre)+'</b>'+
        (_f.quien?(' de '+esc(_f.quien)):'')+'. Los títulos vienen en el renglón <b>'+
@@ -13842,8 +13849,8 @@ function mzPegaPrev(){
     /* ⭐ 27-ago · si el sistema NO reconoce el Excel, se dice FUERTE. Antes se
        leía buscando los títulos por nombre y se seguía de largo: así fue como
        julio y agosto entraron con las columnas corridas y nadie se enteró. */
-    h+='<div class="card" style="margin-top:10px;border-color:color-mix(in srgb,var(--warn) 55%,transparent);'+
-       'background:color-mix(in srgb,var(--warn) 9%,transparent)">'+
+    h+='<div class="card" style="margin-top:10px;border-color:rgba(var(--warn-rgb),.55);border-color:color-mix(in srgb,var(--warn) 55%,transparent);'+
+       'background:rgba(var(--warn-rgb),.09);background:color-mix(in srgb,var(--warn) 9%,transparent)">'+
        '<b style="font-size:13px;color:var(--warn)">Este archivo no lo tengo registrado</b>'+
        '<div class="note" style="margin-top:4px;line-height:1.55">Lo voy a leer buscando los títulos por su '+
        'nombre, que casi siempre funciona. Pero <b>revisa abajo que cada columna haya caído en su casilla</b> '+
@@ -13870,7 +13877,7 @@ function mzPegaPrev(){
           }
           var f=(x.faltan||[]), so=(x.sobran||[]);
           el.innerHTML='<div style="margin-top:8px;padding:9px 11px;border-radius:10px;line-height:1.55;'+
-            'background:color-mix(in srgb,var(--bad) 10%,transparent);border:1px solid color-mix(in srgb,var(--bad) 40%,transparent)">'+
+            'background:rgba(var(--bad-rgb),.10);background:color-mix(in srgb,var(--bad) 10%,transparent);border:1px solid color-mix(in srgb,var(--bad) 40%,transparent)">'+
             '<b style="font-size:12.5px;color:var(--bad)">Le cambiaron las columnas a este Excel</b>'+
             '<div class="note" style="margin-top:3px">'+
             (f.length?('<b>Ya no viene:</b> '+f.map(esc).join(', ')+'. '):'')+
@@ -14031,7 +14038,7 @@ function mzVerifica(filas, totalHoja){
       if(!(x&&x.ok)){ c.innerHTML=''; return; }
       var col = x.veredicto==='rojo' ? 'var(--bad)' : x.veredicto==='ambar' ? 'var(--warn)' : 'var(--ok)';
       var ico = x.veredicto==='rojo' ? '⛔' : x.veredicto==='ambar' ? '⚠️' : '✓';
-      var h='<div class="card" style="margin-top:10px;border-color:color-mix(in srgb,'+col+' 50%,transparent);'+
+      var h='<div class="card" style="margin-top:10px;border-color:'+col+';border-color:color-mix(in srgb,'+col+' 50%,transparent);'+
         'background:color-mix(in srgb,'+col+' 8%,transparent)">'+
         '<b style="font-size:14px;color:'+col+'">'+ico+' '+esc(x.resumen)+'</b>';
       (x.avisos||[]).forEach(function(a){
@@ -14808,8 +14815,8 @@ function mzSemPaint(){
   var cobs=x.cobertura||null;
   if(cobs && (cobs.mezclas_sin_receta||0)>0){
     var _cl=cobs.compuestos_sin_receta||[];
-    h+='<div class="card" style="margin-bottom:12px;border-color:color-mix(in srgb,var(--bad) 45%,transparent);'+
-       'background:color-mix(in srgb,var(--bad) 8%,transparent)">'+
+    h+='<div class="card" style="margin-bottom:12px;border-color:rgba(var(--bad-rgb),.45);border-color:color-mix(in srgb,var(--bad) 45%,transparent);'+
+       'background:rgba(var(--bad-rgb),.08);background:color-mix(in srgb,var(--bad) 8%,transparent)">'+
        '<b style="font-size:13.5px;color:var(--bad)">Antes de comprar con este número, léelo completo</b>'+
        '<div class="note" style="margin-top:5px;line-height:1.6">Este consumo cubre <b>'+
        mzN(cobs.mezclas_contadas)+' de '+mzN((cobs.mezclas_contadas||0)+(cobs.mezclas_sin_receta||0))+
@@ -15022,14 +15029,14 @@ function mzFicha(cid){
     h+='<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
        '<div><b style="font-size:16px">'+esc(c.nombre)+'</b><div class="note" style="margin-top:2px">Familia '+esc(c.familia)+' · '+esc(c.tipo)+'</div></div>'+speakBtn('Ficha de '+c.nombre)+'</div></div>';
     if(x.costo&&x.costo.ok&&x.costo.fx){
-      h+='<div class="card" style="margin-bottom:10px;border-color:color-mix(in srgb,var(--data) 35%,transparent)"><b style="font-size:13px">Costo de materia prima (solo dirección)</b>'+
+      h+='<div class="card" style="margin-bottom:10px;border-color:rgba(var(--data-rgb),.35);border-color:color-mix(in srgb,var(--data) 35%,transparent)"><b style="font-size:13px">Costo de materia prima (solo dirección)</b>'+
         '<div style="display:flex;gap:16px;margin-top:6px;flex-wrap:wrap;font-size:13px">'+
         '<span><b style="font-size:18px;color:var(--data)">'+(x.costo.costo_kg_mxn!=null?('$'+x.costo.costo_kg_mxn):'—')+'</b> <span class="note">MXN/kg</span></span>'+
         '<span><b style="font-size:18px">$'+(x.costo.costo_batch_mxn||0).toLocaleString()+'</b> <span class="note">por mezcla ('+(x.costo.peso_total_kg||'?')+' kg)</span></span></div>'+
         '<div class="note" style="margin-top:5px">Tasa DOF $'+x.costo.fx+' del '+esc(x.costo.fx_fecha||'')+'</div>'+
         ((x.costo.faltantes||[]).length?('<div class="note" style="margin-top:5px;color:var(--warn)">Sin precio de compra: '+esc(x.costo.faltantes.join(', '))+' — no van en el total.</div>'):'')+'</div>';
     } else if(x.costo&&x.costo.ok&&!x.costo.fx){
-      h+='<div class="card" style="margin-bottom:10px;border-color:color-mix(in srgb,var(--warn) 40%,transparent)"><b style="font-size:13px;color:var(--warn)">Costo pendiente: falta la tasa del día</b>'+
+      h+='<div class="card" style="margin-bottom:10px;border-color:rgba(var(--warn-rgb),.40);border-color:color-mix(in srgb,var(--warn) 40%,transparent)"><b style="font-size:13px;color:var(--warn)">Costo pendiente: falta la tasa del día</b>'+
         '<div class="note" style="margin-top:4px">La mayoría de los materiales se compran en dólares. Captura la tasa DOF en <b>Gráficos → Corregir/capturar</b> (o dame el token de Banxico) y el costo aparece solo.</div></div>';
     } else if(x.costo&&!x.costo.ok){
       h+='<div class="card" style="margin-bottom:10px"><b style="font-size:13px;color:var(--warn)">'+esc(mzErr(x.costo))+'</b></div>';
@@ -15590,7 +15597,7 @@ function mzTabPaint(x){
   var hace7=(function(){ var d=new Date(hoy+'T12:00:00'); d.setDate(d.getDate()-6); return d.toISOString().slice(0,10); })();
   var h='';
   h+=mzSelloPrueba(_mztD1,_mztD2);
-  if(x.practica) h+='<div class="card" style="border-color:color-mix(in srgb,var(--warn) 45%,transparent);background:color-mix(in srgb,var(--warn) 9%,transparent);margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><b style="color:var(--warn);font-size:13px">Modo práctica activo</b><div class="note" style="margin-top:2px">Lo que se capture hoy queda marcado como prueba y <b>se conserva</b>. El botón solo abre el periodo real: <b>no borra nada</b>.</div></div>'+
+  if(x.practica) h+='<div class="card" style="border-color:rgba(var(--warn-rgb),.45);border-color:color-mix(in srgb,var(--warn) 45%,transparent);background:rgba(var(--warn-rgb),.09);background:color-mix(in srgb,var(--warn) 9%,transparent);margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><b style="color:var(--warn);font-size:13px">Modo práctica activo</b><div class="note" style="margin-top:2px">Lo que se capture hoy queda marcado como prueba y <b>se conserva</b>. El botón solo abre el periodo real: <b>no borra nada</b>.</div></div>'+
       (S.admin?'<button class="btn ghost" style="margin:0;width:auto;padding:9px 12px;font-size:12px" onclick="mzArranque()">Abrir el periodo real</button>':'')+'</div></div>';
   h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">'+
      '<b style="font-size:14px;flex:1;min-width:130px">Gráficos · Mezclado</b>'+
@@ -15664,8 +15671,8 @@ function mzTabPaint(x){
       mzN(t.corridas_estimadas||0)+' corridas están <b>estimados</b> con el peso de la fórmula, porque la hoja no trajo sus kilos');
     if((t.mezclas_sin_kg||0)>0) _av.push('<b>'+mzN(t.mezclas_sin_kg)+' mezclas</b> ('+
       mzN(t.corridas_sin_kg||0)+' renglones) se produjeron pero <b>quedaron en cero kilos</b>: ni la hoja los trae ni hay fórmula con peso');
-    h+='<div class="card" style="margin-bottom:12px;border-color:color-mix(in srgb,var(--warn) 40%,transparent);'+
-       'background:color-mix(in srgb,var(--warn) 7%,transparent)">'+
+    h+='<div class="card" style="margin-bottom:12px;border-color:rgba(var(--warn-rgb),.40);border-color:color-mix(in srgb,var(--warn) 40%,transparent);'+
+       'background:rgba(var(--warn-rgb),.07);background:color-mix(in srgb,var(--warn) 7%,transparent)">'+
        '<b style="font-size:13px;color:var(--warn)">De dónde salen los kilos</b>'+
        '<div class="note" style="margin-top:4px;line-height:1.6">De los <b>'+mzN(t.kg)+' kg</b> del periodo, '+
        mzN(t.kg_medidos||0)+' kg los <b>reportó producción</b> en su hoja. '+_av.join('. ')+'.</div></div>';
@@ -15863,7 +15870,7 @@ function mzAlmPinta(){
     '<h2>Almacén de materia prima</h2>'+
     '<p class="note" style="margin:4px 0 0">Lo que entra, lo que falta emparejar y el inventario de corte.</p></div></div>';
   if(_almErr){
-    h+='<div class="card" style="margin-bottom:12px;border-color:color-mix(in srgb,var(--bad) 50%,transparent)">'+
+    h+='<div class="card" style="margin-bottom:12px;border-color:rgba(var(--bad-rgb),.50);border-color:color-mix(in srgb,var(--bad) 50%,transparent)">'+
        '<b style="font-size:13px;color:var(--bad)">No pude cargar el almacén</b>'+
        '<div class="note" style="margin-top:4px;line-height:1.5">'+esc(_almErr)+
        '. Los números de abajo pueden estar incompletos: <b>no los tomes como que no hubo movimiento</b>.</div></div>';
@@ -16194,7 +16201,7 @@ function iaLlavesPinta(){
          '<b style="font-size:16px">'+esc(q.t)+'</b>'+
          '<div class="note" style="margin-top:2px"><b>'+esc(q.p)+'</b> — '+esc(q.d)+'</div></div>'+
          (p.cargada
-           ? '<span class="chipst" style="border-color:color-mix(in srgb,var(--ok) 45%,transparent);color:var(--ok)">Encendida</span>'
+           ? '<span class="chipst" style="border-color:rgba(var(--ok-rgb),.45);border-color:color-mix(in srgb,var(--ok) 45%,transparent);color:var(--ok)">Encendida</span>'
            : '<span class="chipst mut">Apagada</span>')+
        '</div>';
     if(p.cargada){
@@ -16465,8 +16472,8 @@ function mzDesgPaint(){
     var cob=(cd&&cd.cobertura)?cd.cobertura:(x.cobertura||null);
     if(cob && (cob.mezclas_sin_receta||0)>0){
       var _cs=cob.compuestos_sin_receta||[];
-      h+='<div class="card" style="margin-bottom:12px;border-color:color-mix(in srgb,var(--warn) 45%,transparent);'+
-         'background:color-mix(in srgb,var(--warn) 8%,transparent)">'+
+      h+='<div class="card" style="margin-bottom:12px;border-color:rgba(var(--warn-rgb),.45);border-color:color-mix(in srgb,var(--warn) 45%,transparent);'+
+         'background:rgba(var(--warn-rgb),.08);background:color-mix(in srgb,var(--warn) 8%,transparent)">'+
          '<b style="font-size:13px;color:var(--warn)">Este costo NO cubre todo lo que se produjo</b>'+
          '<div class="note" style="margin-top:4px;line-height:1.6">Alcanza <b>'+mzN(cob.mezclas_costeadas)+
          ' de '+mzN((cob.mezclas_costeadas||0)+(cob.mezclas_sin_receta||0))+' mezclas</b> ('+esc(String(cob.pct))+'%). '+
@@ -16961,8 +16968,8 @@ function mzPrePrev(){
      revisar contra su Excel — misma lección que la bitácora */
   $('mzp-prev').innerHTML='<div class="note" style="margin-top:8px"><b>'+filas.length+' precios</b>'+
       (malas?(' · <span style="color:var(--warn)">'+malas+' renglones no se leyeron</span>'):'')+'</div>'+
-    (raras?('<div class="card" style="margin-top:8px;border-color:color-mix(in srgb,var(--warn) 50%,transparent);'+
-      'background:color-mix(in srgb,var(--warn) 9%,transparent)"><b style="font-size:13px;color:var(--warn)">'+
+    (raras?('<div class="card" style="margin-top:8px;border-color:rgba(var(--warn-rgb),.50);border-color:color-mix(in srgb,var(--warn) 50%,transparent);'+
+      'background:rgba(var(--warn-rgb),.09);background:color-mix(in srgb,var(--warn) 9%,transparent)"><b style="font-size:13px;color:var(--warn)">'+
       'Revisa '+raras+(raras===1?' fecha':' fechas')+'</b><div class="note" style="margin-top:3px;line-height:1.5">'+
       (raras===1?'Hay un precio con fecha':'Hay precios con fechas')+' de hace más de 6 meses o en el futuro '+
       '(van marcadas abajo). Ojo con el año: escribir «25» en vez de «2025» o «2026» cambia el precio de lugar en la '+
@@ -17471,14 +17478,14 @@ function mzCompPaint(x){
         filas.push(['Precio de venta ('+esc(vt.unidad||'kg')+')', mzMx(pv,2), mzUs(co.fx?pv/co.fx:null,4)]);
         filas.push(['<b>Utilidad por '+esc(vt.unidad||'kg')+'</b>', '<b style="color:'+((pv-cu)>=0?'var(--ok)':'var(--bad)')+'">'+mzMx(pv-cu,2)+'</b>', mzN(pv?(pv-cu)/pv*100:0,2)+'%']);
       }
-      h+='<div class="card" style="margin-bottom:12px;border-color:color-mix(in srgb,var(--data) 35%,transparent)">'+
+      h+='<div class="card" style="margin-bottom:12px;border-color:rgba(var(--data-rgb),.35);border-color:color-mix(in srgb,var(--data) 35%,transparent)">'+
          '<b style="font-size:13px">Dinero (solo dirección)</b>'+
          '<div class="note" style="margin-top:2px">Tasa DOF $'+mzN(co.fx,4)+' del '+esc(co.fx_fecha||'')+' — cada día usa la suya.</div>'+
          mzTabla(['Concepto','MXN','USD'], filas.map(function(f){ return mzTd(f); }))+
          /* la advertencia que evita que alguien sume entre compuestos (27-ago) */
          ((cdz && cdz.mxn!=null && ct && (+ct.mxn||0) > (+cdz.mxn||0)*1.15)
            ? '<div class="note" style="margin-top:8px;line-height:1.5;padding:9px 11px;border-radius:10px;'+
-             'background:color-mix(in srgb,var(--warn) 9%,transparent)">'+
+             'background:rgba(var(--warn-rgb),.09);background:color-mix(in srgb,var(--warn) 9%,transparent)">'+
              '<b>Los dos números de arriba no son lo mismo.</b> El <b>valor en material</b> incluye el '+
              'hule del master, que ya se pagó cuando el master se corrió — sirve para ponerle precio al '+
              'producto, pero <b>no se puede sumar entre compuestos</b> o el mismo hule se cuenta dos veces. '+
@@ -17531,7 +17538,7 @@ function mzCompPaint(x){
       if(resto.length){ var rv=0; resto.forEach(function(g){ rv+=g.v; }); top.push({t:'Los demás', v:rv, dec:0}); }
       if(top.length){
         var totG=0; top.forEach(function(g){ totG+=g.v; });
-        h+='<div class="card" style="margin-bottom:12px;border-color:color-mix(in srgb,var(--data) 35%,transparent)">'+
+        h+='<div class="card" style="margin-bottom:12px;border-color:rgba(var(--data-rgb),.35);border-color:color-mix(in srgb,var(--data) 35%,transparent)">'+
            mzTitulo('A dónde se va el dinero de una mezcla','cmpgas',[['barras','Barras'],['dona','Dona'],['pastel','Pastel']],'barras')+
            mzCatGraf('cmpgas', top, 'MXN', mzCompBarras(top,'MXN'), 'barras')+
            '<div class="note" style="font-size:11px;margin-top:6px">'+mzMx(totG,2)+' de materia prima por mezcla'+

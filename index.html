@@ -3126,7 +3126,14 @@ function bootV3(forceProfile){
     // Nombre/datos en el perfil SOLO en caché local (NO al servidor): así no pisamos
     // la foto/firma que ya vive en el servidor. kvInit cargará el perfil real (con
     // foto) unos instantes después y lo reconcilia.
-    try{ var pf=profGet(d.n); var ch=false; if(!pf.nombre && d.nombre){ pf.nombre=d.nombre; ch=true; } if(d.privado){ pf.datos=d.privado; ch=true; } if(ch) profSaveLocal(d.n,pf); }catch(e){}
+    /* ⭐ 31-ago-2026: aquí decía «if(!pf.nombre && d.nombre)» — la copia solo se
+       llenaba cuando estaba VACÍA, así que un cambio de nombre hecho por Recursos
+       Humanos no entraba nunca y la barra de arriba se quedaba con el viejo para
+       siempre. Ahora el nombre del servidor SIEMPRE pone al día la copia. */
+    try{ var pf=profGet(d.n); var ch=false;
+      if(d.nombre && pf.nombre!==d.nombre){ pf.nombre=d.nombre; ch=true; }
+      if(d.privado){ pf.datos=d.privado; ch=true; }
+      if(ch) profSaveLocal(d.n,pf); }catch(e){}
     var saved=load(d.n)||{};
     startSession(cfg, saved, forceProfile);
   }, function(){ lgBusy(false); lgSay('No hay conexión con el servidor.',true); });
@@ -3569,11 +3576,21 @@ var HB_MARK=(function(){
    (pedido de Carlos 24-ago). Se toca y abre tu perfil. Si el nombre todavía no
    llega del servidor, se usa el del login; si tampoco, no se pinta nada — nunca
    un nombre inventado. */
+/* ⭐ 31-ago-2026 · UN SOLO NOMBRE, EN TODOS LADOS.
+   Había dos: el del roster (el oficial, el que edita Recursos Humanos y el que
+   ve el directorio) y una copia en el perfil que se guardaba en el aparato. La
+   barra de arriba leía la copia y el perfil leía el oficial, así que cuando a
+   alguien le corregían el nombre, el perfil enseñaba el nuevo y junto al logo
+   seguía el viejo. Ahora manda el oficial y la copia es solo respaldo sin señal. */
+function hbNombre(){
+  if(!S) return '';
+  var n=(S.nombre||'').trim();                       // el oficial, del servidor
+  if(!n){ try{ n=(profGet(S.emp).nombre||'').trim(); }catch(e){} }  // respaldo sin señal
+  return n;
+}
 function hbQuienSoy(hayAtras){
   if(!S) return '';
-  var n='';
-  try{ n=(profGet(S.emp).nombre||'').trim(); }catch(e){}
-  if(!n) n=(S.nombre||'').trim();
+  var n=hbNombre();
   if(!n) return '';
   var largo=niceName(n), pila=largo.split(/\s+/)[0];
   var b=function(txt,cls){ return '<button class="tname'+(cls?' '+cls:'')+'" onclick="renderPerfil()" title="Tu perfil">'+esc(txt)+'</button>'; };
@@ -9331,7 +9348,7 @@ function renderPerfil(){
   var p=profGet(S.emp);
   var v3=!!(V3_ON && S.clave);
   var dz=(p.datos)||{};
-  var nombre=(S.nombre||p.nombre||'').trim();
+  var nombre=hbNombre();   /* ⭐ el mismo que pinta la barra de arriba: nunca dos nombres */
   var idTxt = v3 ? (esc(S.area)+' · clave '+esc(S.clave)) : (esc(S.area)+' · #'+(''+S.emp).padStart(3,'0'));
   var h='';
   if(v3 && window._forceProfile){
@@ -9367,7 +9384,14 @@ function renderPerfil(){
   } else {
     // Demo: información local
     h+='<div class="panel"><div class="hd"><b>Mi información</b></div>'+
-       '<div class="note" style="margin-bottom:3px">Nombre completo</div><input id="pfNombre" class="fin" autocomplete="off" placeholder="Tu nombre y apellidos" value="'+esc(p.nombre||'')+'">'+
+       /* ⭐ 31-ago-2026: era un campo libre y creaba un SEGUNDO nombre que se
+          separaba del oficial. El nombre viene de tu expediente; si está mal
+          escrito lo corrige Recursos Humanos y el cambio se ve en todas partes. */
+       '<div class="note" style="margin-bottom:3px">Nombre completo</div>'+
+       '<input id="pfNombre" class="fin" autocomplete="off" value="'+esc(nombre)+'" readonly '+
+         'style="opacity:.72;cursor:not-allowed" title="Lo cambia Recursos Humanos">'+
+       '<div class="note" style="margin-top:3px;font-size:11px">Así aparece en tu expediente. '+
+         '¿Está mal escrito? Avísale a Recursos Humanos y se corrige en todo el sistema.</div>'+
        '<div class="note" style="margin:9px 0 3px">Teléfono</div><input id="pfTel" class="fin" inputmode="tel" autocomplete="off" placeholder="Tu número de celular" value="'+esc(p.tel||'')+'">'+
        '<div class="note" style="margin:9px 0 3px">Contacto de emergencia (nombre y teléfono)</div><input id="pfEmg" class="fin" autocomplete="off" placeholder="Ej. María Pérez · 33 1234 5678" value="'+esc(p.emg||'')+'">'+
        '<button class="btn" style="margin-top:12px" onclick="savePerfil()">Guardar mi información</button></div>';
@@ -9426,7 +9450,9 @@ function pfFirmaSave(){
 }
 function savePerfil(){
   var p=profGet(S.emp);
-  p.nombre=(($('pfNombre')||{}).value||'').trim().slice(0,60);
+  /* ⭐ el nombre ya no se guarda desde aquí: es el del expediente (ver arriba).
+     Se copia el oficial para que el respaldo sin señal diga lo mismo. */
+  p.nombre=hbNombre();
   p.tel=(($('pfTel')||{}).value||'').trim().slice(0,20);
   p.emg=(($('pfEmg')||{}).value||'').trim().slice(0,80);
   profSaveServer(p,'Información guardada'); renderTop(_screen); renderPerfil();
@@ -14719,9 +14745,17 @@ function mzSemPaint(){
        (_cl.length ? '<details style="margin-top:8px"><summary class="note" style="cursor:pointer">Ver los '+_cl.length+' compuestos que no están contando</summary>'+
           '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">'+
           _cl.map(function(n){ return '<span class="tg">'+esc(n)+'</span>'; }).join('')+'</div></details>' : '')+
+       /* ⭐ 31-ago-2026: este número y el de «Reproceso» del tablero NO son el mismo,
+          y parecerlo confundía. El de arriba cuenta las corridas que la hoja marcó
+          con paso REPROCESO; este cuenta las que por su LETRA no consumen materia
+          prima nueva. Son dos preguntas distintas, así que se dice. */
        ((cobs.mezclas_retrabajo||0)>0 ? '<div class="note" style="margin-top:8px;line-height:1.5">Aparte, '+
           mzN(cobs.mezclas_retrabajo)+' mezclas son de <b>retrabajo</b> y no descuentan material: se corren con '+
-          'recuperado de tubuladoras y Pathex. Eso sí está bien contado.</div>' : '')+
+          'recuperado de tubuladoras y Pathex. Eso sí está bien contado.'+
+          '<br><b>Ojo:</b> este número no es el mismo que «Reproceso» del tablero y no tiene por qué serlo. '+
+          '«Reproceso» cuenta las corridas que la hoja marcó con paso REPROCESO; este cuenta las que, '+
+          'por su letra de versión, <b>no consumieron materia prima nueva</b>. '+
+          'Una corrida puede ser paso FINAL y aun así hacerse con material recuperado.</div>' : '')+
        '</div>';
   }
   var rojos=mats.filter(function(m){ return mzSemLuz(m,dias).k===0; });
@@ -15508,6 +15542,15 @@ function mzTabPaint(x){
      kpi('produccion','Kilos producidos',
          (totKg>=1000000?(mzN(totKg/1000000,2)+' M'):mzN(totKg)), null,
          'mezclas × peso de fórmula')+
+     /* ⭐ 31-ago-2026 · LOS DOS KILOS, pedido de Carlos. El titular suma TODAS las
+        pasadas por el banbury, así que el master se cuenta otra vez cuando regresa
+        dentro de la mezcla final. «Kilos finales» es lo que sale de mezclado hacia
+        el siguiente proceso: paso FINAL o DIRECTA, dato de la propia hoja. */
+     (t.kg_final!=null
+       ? kpi('produccion','Kilos finales',
+             (t.kg_final>=1000000?(mzN(t.kg_final/1000000,2)+' M'):mzN(t.kg_final)), 'var(--ok)',
+             'lo que sale de mezclado')
+       : '')+
      kpi('produccion','Corridas', mzN(t.corridas||0), null)+
      /* «0 quemadas» y «nadie las capturó» son cosas distintas: en julio la
         columna del Excel venía vacía en los 950 renglones y el tablero lo
@@ -15529,6 +15572,12 @@ function mzTabPaint(x){
      (mzVeDinero()?kpi('costos','Costo de materia prima','ver','var(--ok)','costos y utilidad'):
        '<div class="card"><div class="note">En bandeja</div><b style="font-size:22px;color:var(--warn)">'+mzN(t.pendientes||0)+'</b></div>')+
      '</div>';
+  /* ⭐ la nota que pidió Carlos, textual: que quede claro que un número trae los
+     masters repetidos y el otro no. Va pegada a los cuadros, chiquita. */
+  if(t.kg_final!=null && (t.kg||0)>0){
+    h+='<div class="note" style="margin:-6px 0 12px;line-height:1.5;font-size:11.5px">'+
+       'Kilos con masters que se vuelven a contar, y los otros son kg finales.</div>';
+  }
   /* DE DÓNDE SALEN LOS KILOS. Regla de oro: si un dato no está, se dice —
      no se rellena. (25-ago: el tablero los calculaba con el peso de la fórmula y
      no daban igual que el Excel; ahora son los que reporta producción.) */

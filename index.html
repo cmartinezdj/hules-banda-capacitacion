@@ -3597,6 +3597,12 @@ var HB_MARK=(function(){
    los lugares a la vez. */
 function hbNombre(){
   if(!S) return '';
+  /* Si la persona ya escribió su nombre por partes en el perfil, el corte lo
+     sabemos de cierto y no hay que deducirlo. Con dos palabras es imposible
+     adivinar («Cesar Romero» va al revés que «Ortes Ana»), y ahí es donde se veía
+     mal. (31-ago-2026) */
+  try{ var _d=(profGet(S.emp).datos)||{};
+       if(_d.nombre_corto) return String(_d.nombre_corto).trim(); }catch(e){}
   var of=(S.nombre||'').trim();                                        // el expediente manda
   if(!of){ try{ of=(profGet(S.emp).nombre||'').trim(); }catch(e){} }   // respaldo sin señal
   return of ? niceName(of) : '';
@@ -5299,6 +5305,24 @@ function renderPend(){
 }
 /* "APELLIDOS NOMBRE(S)" -> "PrimerNombre PrimerApellido" (formato de nómina; respeta
    partículas DE/DEL/LA/...: DEL ANGEL GONZALEZ JUAN CARLOS -> Juan Del Angel). */
+/* ⭐ 31-ago-2026 · Parte el nombre del expediente («MARTINEZ ROMAN CARLOS AUGUSTO»)
+   en sus dos mitades para poder editarlas por separado. Usa la MISMA regla que
+   niceName: los dos primeros bloques son apellidos (completando partículas como
+   «DE LA»), el resto son nombres de pila. */
+function hbParteNombre(full){
+  var t=(full||'').trim().split(/\s+/).filter(Boolean);
+  if(!t.length) return {ape:'', nom:''};
+  if(t.length===1) return {ape:'', nom:tcase(t[0])};
+  if(t.length===2) return {ape:tcase(t[0]), nom:tcase(t[1])};
+  var PART={'DE':1,'DEL':1,'LA':1,'LAS':1,'LOS':1,'SAN':1,'SANTA':1,'Y':1,'MC':1,'VAN':1,'VON':1};
+  var i=0, ap=[t[i++]];
+  while(i<t.length-1 && PART[ap[ap.length-1].toUpperCase()]) ap.push(t[i++]);
+  ap.push(t[i++]);
+  while(i<t.length-1 && PART[ap[ap.length-1].toUpperCase()]) ap.push(t[i++]);
+  var nom=t.slice(i);
+  if(!nom.length){ nom=[ap.pop()]; }
+  return {ape:tcase(ap.join(' ')), nom:tcase(nom.join(' '))};
+}
 function niceName(full){
   var t=(full||'').trim().split(/\s+/); if(t.length<2) return tcase(t.join(' '));
   if(t.length===2) return tcase(t[0]+' '+t[1]);   // alta manual corta: se muestra tal cual
@@ -9362,6 +9386,9 @@ function renderPerfil(){
   var v3=!!(V3_ON && S.clave);
   var dz=(p.datos)||{};
   var nombre=hbNombre();   /* ⭐ el mismo que pinta la barra de arriba: nunca dos nombres */
+  var _pn=(dz.nombre_pila&&dz.apellidos)
+            ? {nom:dz.nombre_pila, ape:dz.apellidos}      /* lo que ya declaró */
+            : hbParteNombre(S.nombre||nombre);            /* la mejor deducción */
   var idTxt = v3 ? (esc(S.area)+' · clave '+esc(S.clave)) : (esc(S.area)+' · #'+(''+S.emp).padStart(3,'0'));
   var h='';
   if(v3 && window._forceProfile){
@@ -9384,7 +9411,13 @@ function renderPerfil(){
   if(v3){
     // Datos personales oficiales (editables por el trabajador; se guardan en el servidor)
     h+='<div class="panel"><div class="hd"><div><div class="eyebrow">Datos personales</div><b style="font-size:16px">Tu información</b></div><span class="chipst mut">se guarda en el servidor</span></div>'+
-       '<div class="note" style="margin:2px 0 8px">Tu nombre y tu puesto los administra la empresa. Tú puedes mantener al día tu dirección y tus teléfonos.</div>'+
+       '<div class="note" style="margin:2px 0 8px">Así te va a nombrar el sistema en todas partes. '+
+         'Si tu nombre está mal escrito, corrígelo aquí y el cambio se ve en el acto.</div>'+
+       fRow('Nombre(s)','pfNom', _pn.nom, 'text','Tus nombres de pila')+
+       fRow('Apellidos','pfApe', _pn.ape, 'text','Tus dos apellidos')+
+       '<button class="btn ghost" style="margin:6px 0 14px" onclick="saveMiNombre()">Guardar mi nombre</button>'+
+       '<div class="note" style="margin:0 0 10px;padding-top:10px;border-top:1px solid var(--line)">'+
+         'Tu puesto y tu departamento sí los administra la empresa.</div>'+
        fRow('Teléfono','pfTel', dz.tel||'', 'tel','Tu número de celular')+
        fRow('Contacto de emergencia','pfEmg', dz.emg||'', 'text','Ej. María Pérez · 33 1234 5678')+
        fRow('Calle y número','pfCalle', dz.calle||'', 'text','Tu calle y número')+
@@ -9489,6 +9522,29 @@ function savePin(){
   p.pin=n1; profSave(S.emp,p); burst(); flash('PIN guardado. Te lo pedirá al entrar.'); renderPerfil();
 }
 /* V3: guardar datos personales en el servidor (RPC con lista blanca de campos) */
+/* ⭐ 31-ago-2026 · Guardar mi nombre. Va al expediente, que es de donde salen
+   TODOS los lugares donde aparece un nombre — así que al guardar se ve en el acto
+   junto al logo, en el saludo y en lo que se firme. */
+function saveMiNombre(){
+  var nom=val('pfNom',40), ape=val('pfApe',40);
+  if(!nom || !ape){ flash('Escribe tu nombre y tus apellidos'); return; }
+  if(!sbReady()){ flash('Sin conexión: intenta más tarde'); return; }
+  SB.rpc('hb_mi_nombre',{p_nombres:nom, p_apellidos:ape}).then(function(r){
+    var x=r&&r.data;
+    if(r.error || !(x&&x.ok)){
+      flash('⚠ No se pudo guardar: '+((x&&x.detalle)||(x&&x.error)||(r.error&&r.error.message)||'intenta de nuevo'));
+      return;
+    }
+    if(x.sin_cambio){ flash('Tu nombre ya estaba así'); return; }
+    S.nombre=x.nombre;                                   // la sesión, al día
+    try{ var pf=profGet(S.emp); pf.nombre=x.nombre;
+         pf.datos=Object.assign({}, pf.datos||{},
+           {nombre_pila:nom, apellidos:ape, nombre_corto:x.corto||''});
+         profSaveLocal(S.emp,pf); }catch(e){}
+    burst(); flash('✓ Tu nombre quedó guardado');
+    renderTop(_screen); renderPerfil();                  // se ve en el acto
+  }, function(){ flash('Sin conexión: intenta más tarde'); });
+}
 function savePerfilV3(){
   var d={ tel:val('pfTel',20), emg:val('pfEmg',80), calle:val('pfCalle',120), colonia:val('pfCol',80),
           municipio:val('pfMun',60), ciudad:val('pfCiu',60), entidad:val('pfEnt',40), cp:val('pfCp',10) };

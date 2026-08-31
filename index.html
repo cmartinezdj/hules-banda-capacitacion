@@ -5325,7 +5325,12 @@ function hbParteNombre(full){
 }
 function niceName(full){
   var t=(full||'').trim().split(/\s+/); if(t.length<2) return tcase(t.join(' '));
-  if(t.length===2) return tcase(t[0]+' '+t[1]);   // alta manual corta: se muestra tal cual
+  /* ⭐ 31-ago-2026 · SIEMPRE «Nombre Apellido», sin excepción (regla de Carlos).
+     Aquí se devolvían tal cual, y por eso Ana salía «Ortes Ana». El expediente
+     guarda APELLIDOS primero en todo el padrón — se enderezaron los 2 que estaban
+     al revés (v3_170) — así que con dos palabras se le da la misma vuelta que a
+     los demás: apellido primero, nombre después. */
+  if(t.length===2) return tcase(t[1]+' '+t[0]);
   var PART={'DE':1,'DEL':1,'LA':1,'LAS':1,'LOS':1,'SAN':1,'SANTA':1,'Y':1,'MC':1,'VAN':1,'VON':1};
   var i=0, ap1=[t[i++]];
   while(i<t.length-1 && PART[ap1[ap1.length-1].toUpperCase()]) ap1.push(t[i++]);   // completa partícula (DE LA …)
@@ -18056,6 +18061,20 @@ function swRegistra(){
         if(!S){ location.reload(); }
         else{ window._hbVerNueva=true; flash('✨ Hay una versión nueva. Se aplica sola en cuanto cambies de pantalla.'); }
       }catch(e){}
+    });
+    /* ⭐ 31-ago-2026 · pedido de Carlos: que la app le pregunte al servidor cada
+       cierto tiempo y cada vez que vuelvan a ella, no solo al abrirla. Sin esto,
+       alguien que deja la app abierta todo el día se queda con la versión vieja
+       aunque arreglemos algo urgente. */
+    var _swChk=function(){
+      try{ navigator.serviceWorker.getRegistration().then(function(g){
+        if(g && g.update) g.update();
+      }); }catch(e){}
+    };
+    setInterval(_swChk, 10*60*1000);                    // cada 10 minutos
+    window.addEventListener('focus', _swChk);           // al volver a la ventana
+    document.addEventListener('visibilitychange', function(){
+      if(document.visibilityState==='visible') _swChk();
     });
   }catch(e){}
 }

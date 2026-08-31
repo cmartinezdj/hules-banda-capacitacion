@@ -38,7 +38,7 @@
    ============================================================================ */
 
 var MODO_APAGADO = false;      // true = el service worker se desinstala solo
-var VER   = 'v2';              // subir esto solo si cambia ESTE archivo
+var VER   = 'v3';              // subir esto solo si cambia ESTE archivo
 var CACHE = 'hb-app-' + VER;
 var INDEX = './index.html';
 
@@ -89,7 +89,13 @@ function armazon(e){
   e.respondWith(
     caches.open(CACHE).then(function(c){
       return c.match(INDEX).then(function(guardado){
-        var red = fetch(e.request).then(function(r){
+        /* ⭐ 31-ago-2026 · «cache:reload» NO estaba, y por eso esto nunca avisaba.
+           Sin él, el navegador le contestaba a esta revisión con SU PROPIA copia
+           guardada (GitHub Pages manda cache-control de varios minutos): mismo
+           ETag siempre, así que nunca detectaba versión nueva. Se comprobó en
+           vivo: cuatro recargas seguidas y la app seguía con el paquete viejo.
+           Con «reload» la pregunta llega al servidor de verdad, cada vez. */
+        var red = fetch(new Request(e.request.url, {cache:'reload', credentials:'same-origin'})).then(function(r){
           if (!r || !r.ok) return r;
           var viejo = guardado && guardado.headers.get('etag');
           var nuevo = r.headers.get('etag');

@@ -226,4 +226,109 @@
   }
 })();
 </script>
+<!-- ══════════════════════════════════════════════════════════════════════════
+     TU NAVEGADOR (agregado 31-ago-2026)
+     POR QUÉ: los tres problemas de Safari de hoy fueron el mismo patrón — la app
+     usa CSS moderno, el navegador no entiende UNA declaración, y la descarta EN
+     SILENCIO. No hay error: solo se ve mal. Y sin saber qué navegador y qué
+     versión tiene la persona, arreglarlo es adivinar.
+     Ahora: quien vea algo raro abre esta página, manda la foto, y se sabe al
+     instante qué le falta a su navegador y si está corriendo la versión nueva.
+     Vive en prueba.html a propósito: fuera de la app y fuera de su caché.
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="card">
+  <p class="t">5 · Tu navegador</p>
+  <div class="v" id="nav-cual">…</div>
+  <div class="chico" id="nav-detalle" style="margin-top:8px"></div>
+</div>
+
+<div class="card">
+  <p class="t">6 · Lo que tu navegador entiende</p>
+  <div id="css-lista"></div>
+  <div class="chico" id="css-veredicto" style="margin-top:10px"></div>
+</div>
+
+<div class="card">
+  <p class="t">7 · Qué versión de la app tienes</p>
+  <div class="v" id="ver-app">Revisando…</div>
+  <div class="chico" id="ver-detalle" style="margin-top:8px"></div>
+</div>
+
+<script>
+(function(){
+  /* ---- qué navegador es ---- */
+  var ua=navigator.userAgent, cual='No lo reconocí', ver='';
+  var m;
+  if((m=ua.match(/Edg\/([\d.]+)/)))            { cual='Microsoft Edge'; ver=m[1]; }
+  else if((m=ua.match(/OPR\/([\d.]+)/)))       { cual='Opera'; ver=m[1]; }
+  else if((m=ua.match(/Chrome\/([\d.]+)/)))    { cual='Google Chrome'; ver=m[1]; }
+  else if((m=ua.match(/Version\/([\d.]+).*Safari/))) { cual='Safari'; ver=m[1]; }
+  else if((m=ua.match(/Firefox\/([\d.]+)/)))   { cual='Firefox'; ver=m[1]; }
+  document.getElementById('nav-cual').textContent = cual + (ver? (' ' + ver) : '');
+  document.getElementById('nav-detalle').textContent =
+    'Pantalla ' + window.innerWidth + ' × ' + window.innerHeight +
+    '  ·  ' + (window.devicePixelRatio||1) + 'x  ·  ' + (navigator.platform||'');
+
+  /* ---- qué entiende de CSS ---- */
+  /* Cada una de estas se usa en la app. Si alguna sale en rojo, ESA es la que
+     rompe la pantalla en ese aparato. */
+  var pruebas=[
+    ['Mezcla de colores',        'color: color-mix(in srgb, red 40%, transparent)',  'bordes y fondos'],
+    ['Tamaños que se adaptan',   'font-size: clamp(9px, calc(1vw + 2px), 20px)',     'los números grandes'],
+    ['Aritmética sin calc()',    'font-size: clamp(9px, 1vw + 2px, 20px)',           'lo que rompió el panel'],
+    ['Altura real de pantalla',  'height: 100dvh',                                    'pantallas completas'],
+    ['Separación en filas',      'gap: 10px',                                         'el acomodado'],
+    ['Selector :has()',          'color: red',                                        '—']
+  ];
+  var lista=document.getElementById('css-lista'), fallan=[];
+  pruebas.forEach(function(p){
+    var ok;
+    if(p[0]==='Selector :has()'){ try{ ok=!!(CSS && CSS.supports && CSS.supports('selector(:has(*))')); }catch(e){ ok=false; } }
+    else { var t=p[1].split(':'); try{ ok=!!(CSS && CSS.supports && CSS.supports(t[0].trim(), t.slice(1).join(':').trim())); }catch(e){ ok=false; } }
+    if(!ok && p[2]!=='—') fallan.push(p[0]+' ('+p[2]+')');
+    var d=document.createElement('div');
+    d.style.cssText='display:flex;gap:8px;align-items:baseline;padding:5px 0;border-bottom:1px solid #1e2230';
+    d.innerHTML='<span class="'+(ok?'ok':'mal')+'" style="font-weight:800;flex:none;width:18px">'+(ok?'✓':'✗')+'</span>'+
+                '<span style="flex:1;font-size:14px">'+p[0]+'</span>'+
+                '<span class="chico" style="margin:0;flex:none">'+p[2]+'</span>';
+    lista.appendChild(d);
+  });
+  var vd=document.getElementById('css-veredicto');
+  if(!fallan.length){ vd.innerHTML='<span class="ok" style="font-weight:800">Tu navegador entiende todo lo que la app necesita.</span>'; }
+  else { vd.innerHTML='<span class="mal" style="font-weight:800">Le faltan '+fallan.length+':</span> '+fallan.join(' · ')+
+         '<br>Mándale esta foto a Carlos: con esto sabe exactamente qué arreglar.'; }
+
+  /* ---- qué versión de la app tiene ---- */
+  /* Se le pide al servidor SIN caché y se compara con la que el aparato tiene
+     guardada. Si no son la misma, está corriendo una vieja. */
+  var caja=document.getElementById('ver-app'), det=document.getElementById('ver-detalle');
+  /* La huella se saca del CONTENIDO, no de una marca que alguien tenga que
+     acordarse de subir: si me olvido de bumpearla, diría «tienes la nueva»
+     cuando no. Así es automática y no se puede quedar vieja. */
+  function marca(txt){
+    var h=0;
+    for(var i=0;i<txt.length;i++){ h=((h<<5)-h+txt.charCodeAt(i))|0; }
+    return (h>>>0).toString(16) + '·' + txt.length;
+  }
+  Promise.all([
+    fetch('index.html?nocache='+Date.now(), {cache:'reload'}).then(function(r){ return r.text(); }),
+    fetch('index.html').then(function(r){ return r.text(); }).catch(function(){ return ''; })
+  ]).then(function(res){
+    var servidor=marca(res[0]), aparato=res[1]?marca(res[1]):'(no pude leerla)';
+    if(servidor===aparato){
+      caja.className='v ok'; caja.textContent='✓ Tienes la versión más nueva';
+      det.textContent='La del servidor y la de tu aparato son la misma: '+servidor;
+    } else {
+      caja.className='v mal'; caja.textContent='✗ Tu aparato tiene una versión VIEJA';
+      det.innerHTML='Servidor: <code>'+servidor+'</code><br>Tu aparato: <code>'+aparato+'</code>'+
+        '<br><br><b>Cómo arreglarlo:</b> en iPhone o iPad, cierra la pestaña y vuelve a abrirla. '+
+        'En computadora, mantén Shift y recarga (⌘⇧R en Mac, Ctrl+Shift+R en Windows).';
+    }
+  }).catch(function(e){
+    caja.className='v esp'; caja.textContent='No pude comparar las versiones';
+    det.textContent=(e&&e.message)||String(e);
+  });
+})();
+</script>
+
 </body></html>

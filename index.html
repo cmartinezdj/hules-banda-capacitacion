@@ -3131,6 +3131,9 @@ function bootV3(forceProfile){
        Humanos no entraba nunca y la barra de arriba se quedaba con el viejo para
        siempre. Ahora el nombre del servidor SIEMPRE pone al día la copia. */
     try{ var pf=profGet(d.n); var ch=false;
+      /* ⭐ SIEMPRE se pone al día. Aquí decía «if(!pf.nombre && ...)»: la copia solo
+         se llenaba cuando estaba vacía, así que una corrección de nombre hecha en el
+         Directorio no entraba nunca y la barra se quedaba con el viejo para siempre. */
       if(d.nombre && pf.nombre!==d.nombre){ pf.nombre=d.nombre; ch=true; }
       if(d.privado){ pf.datos=d.privado; ch=true; }
       if(ch) profSaveLocal(d.n,pf); }catch(e){}
@@ -3582,17 +3585,27 @@ var HB_MARK=(function(){
    barra de arriba leía la copia y el perfil leía el oficial, así que cuando a
    alguien le corregían el nombre, el perfil enseñaba el nuevo y junto al logo
    seguía el viejo. Ahora manda el oficial y la copia es solo respaldo sin señal. */
+/* ⭐ 31-ago-2026 · EL NOMBRE SALE DE AQUÍ Y DE NINGÚN OTRO LADO.
+   En el sistema real nadie se cambia el nombre solo: lo administra la empresa
+   (expediente / Directorio). Antes había dos caminos con dos formatos — la barra
+   de arriba enseñaba «Carlos Martinez» y el perfil «MARTINEZ ROMAN CARLOS
+   AUGUSTO» — y además, si le corregían el nombre a alguien, la barra se quedaba
+   con el viejo porque leía una copia guardada en el aparato.
+   Ahora: una sola fuente (el expediente) y un solo formato, en todas partes.
+   ¿Se quiere ver el nombre completo tal como está en el expediente en vez del
+   corto? Es cambiar niceName(of) por of en la última línea, y cambia en todos
+   los lugares a la vez. */
 function hbNombre(){
   if(!S) return '';
-  var n=(S.nombre||'').trim();                       // el oficial, del servidor
-  if(!n){ try{ n=(profGet(S.emp).nombre||'').trim(); }catch(e){} }  // respaldo sin señal
-  return n;
+  var of=(S.nombre||'').trim();                                        // el expediente manda
+  if(!of){ try{ of=(profGet(S.emp).nombre||'').trim(); }catch(e){} }   // respaldo sin señal
+  return of ? niceName(of) : '';
 }
 function hbQuienSoy(hayAtras){
   if(!S) return '';
   var n=hbNombre();
   if(!n) return '';
-  var largo=niceName(n), pila=largo.split(/\s+/)[0];
+  var largo=n, pila=largo.split(/\s+/)[0];   /* ⭐ ya viene listo de hbNombre() */
   var b=function(txt,cls){ return '<button class="tname'+(cls?' '+cls:'')+'" onclick="renderPerfil()" title="Tu perfil">'+esc(txt)+'</button>'; };
   /* En el TELÉFONO, cuando además está el botón «Atrás», el nombre completo se
      partía a media palabra: ahí va solo el nombre de pila, entero y legible.
@@ -5236,7 +5249,7 @@ function renderHomeAdmin(){
   var h='';
   h+='<div class="panel"><div class="hd" style="align-items:flex-end">'+
      '<div style="flex:1;min-width:0"><div class="eyebrow">'+esc(S.area)+'</div>'+
-     '<b style="font-size:20px">Hola'+(hbNombre()?', '+esc(niceName(hbNombre())):'')+'</b>'+
+     '<b style="font-size:20px">Hola'+(hbNombre()?', '+esc(hbNombre().split(/\s+/)[0]):'')+'</b>'+
      '<p class="note" style="margin:4px 0 0;max-width:230px">Tu espacio personal. El tablero de la planta vive en su pestaña.</p>'+
      '<span class="status" style="margin-top:6px"><span class="d"></span>En línea</span></div>'+
      bandiHero()+'</div></div>';
@@ -9384,14 +9397,12 @@ function renderPerfil(){
   } else {
     // Demo: información local
     h+='<div class="panel"><div class="hd"><b>Mi información</b></div>'+
-       /* ⭐ 31-ago-2026: era un campo libre y creaba un SEGUNDO nombre que se
-          separaba del oficial. El nombre viene de tu expediente; si está mal
-          escrito lo corrige Recursos Humanos y el cambio se ve en todas partes. */
+       /* ⭐ 31-ago-2026 · pedido de Carlos: lo que escribas aquí es como te va a
+          nombrar el sistema en TODAS partes, tal cual lo escribas. */
        '<div class="note" style="margin-bottom:3px">Nombre completo</div>'+
-       '<input id="pfNombre" class="fin" autocomplete="off" value="'+esc(nombre)+'" readonly '+
-         'style="opacity:.72;cursor:not-allowed" title="Lo cambia Recursos Humanos">'+
-       '<div class="note" style="margin-top:3px;font-size:11px">Así aparece en tu expediente. '+
-         '¿Está mal escrito? Avísale a Recursos Humanos y se corrige en todo el sistema.</div>'+
+       '<input id="pfNombre" class="fin" autocomplete="off" placeholder="Tu nombre y apellidos" value="'+esc(nombre)+'">'+
+       '<div class="note" style="margin-top:3px;font-size:11px">Así te va a nombrar el sistema en todas partes, '+
+         'tal como lo escribas aquí — arriba junto al logo, en el saludo y en lo que firmes.</div>'+
        '<div class="note" style="margin:9px 0 3px">Teléfono</div><input id="pfTel" class="fin" inputmode="tel" autocomplete="off" placeholder="Tu número de celular" value="'+esc(p.tel||'')+'">'+
        '<div class="note" style="margin:9px 0 3px">Contacto de emergencia (nombre y teléfono)</div><input id="pfEmg" class="fin" autocomplete="off" placeholder="Ej. María Pérez · 33 1234 5678" value="'+esc(p.emg||'')+'">'+
        '<button class="btn" style="margin-top:12px" onclick="savePerfil()">Guardar mi información</button></div>';
@@ -9450,9 +9461,7 @@ function pfFirmaSave(){
 }
 function savePerfil(){
   var p=profGet(S.emp);
-  /* ⭐ el nombre ya no se guarda desde aquí: es el del expediente (ver arriba).
-     Se copia el oficial para que el respaldo sin señal diga lo mismo. */
-  p.nombre=hbNombre();
+  p.nombre=(($('pfNombre')||{}).value||'').trim().slice(0,60);
   p.tel=(($('pfTel')||{}).value||'').trim().slice(0,20);
   p.emg=(($('pfEmg')||{}).value||'').trim().slice(0,80);
   profSaveServer(p,'Información guardada'); renderTop(_screen); renderPerfil();
@@ -17596,14 +17605,6 @@ function kvInit(){
   try{ SB.from('kv').select('k,data').then(function(r){
     if(!r.error && r.data){
       r.data.forEach(function(row){ DBC.kv[row.k]=row.data; try{ localStorage.setItem(row.k, JSON.stringify(row.data)); }catch(e){}
-        /* ⭐ 31-ago-2026: esta sincronización traía de vuelta el perfil guardado en el
-           servidor, y con él un nombre viejo. Lo que se PINTA ya sale del expediente
-           (hbNombre), así que en pantalla nunca se ve mal; pero el respaldo que se usa
-           sin señal sí se quedaba atrás. Aquí se le vuelve a poner el oficial. */
-        try{ if(S && S.nombre && row.k==='hb_profile_'+S.emp && row.data && row.data.nombre!==S.nombre){
-          row.data.nombre=S.nombre; DBC.kv[row.k]=row.data;
-          localStorage.setItem(row.k, JSON.stringify(row.data));
-        } }catch(e){}
         if(S) kvApplySession(row.k,row.data); });
       kvSeed(); sbRerender(); try{ if(S) renderTop(_screen); }catch(e){}
     }

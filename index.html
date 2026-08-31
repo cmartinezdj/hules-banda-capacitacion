@@ -700,9 +700,14 @@ textarea.fin{resize:vertical;line-height:1.45;min-height:78px}
 /* kit de gráficos interactivos (tableros) */
 .gaugeWrap{display:flex;gap:10px;align-items:stretch}
 .statile{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px 14px;text-align:left;display:flex;flex-direction:column;justify-content:center}
-/* número FLUIDO: crece con el recuadro (móvil ~22px · escritorio hasta 46px) */
-.statile .n{font-size:clamp(22px,2vw + 12px,38px);font-weight:850;letter-spacing:-.02em;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:auto 0;font-variant-numeric:tabular-nums}
-.statile .l{font-size:clamp(9px,.4vw + 7.5px,11px);color:var(--mut);font-weight:700;letter-spacing:.08em;margin-top:6px;text-transform:uppercase;line-height:1.2}
+/* número FLUIDO: crece con el recuadro (móvil ~22px · escritorio hasta 46px).
+   ⭐ 31-ago-2026: la aritmética va envuelta en calc() a propósito. El estándar
+   permite «clamp(22px, 2vw + 12px, 38px)» sin calc y Chrome lo entiende, pero
+   Safari descarta la declaración ENTERA — y entonces el número hereda un tamaño
+   enorme que, con nowrap y overflow:hidden, sale gigante y cortado. Es lo que le
+   pasaba a Carlos en Safari 17.6 en el panel de inicio. */
+.statile .n{font-size:clamp(22px,calc(2vw + 12px),38px);font-weight:850;letter-spacing:-.02em;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:auto 0;font-variant-numeric:tabular-nums}
+.statile .l{font-size:clamp(9px,calc(.4vw + 7.5px),11px);color:var(--mut);font-weight:700;letter-spacing:.08em;margin-top:6px;text-transform:uppercase;line-height:1.2}
 /* stat tile INTERACTIVO: toca el cuadro para abrir su detalle */
 .statile.stbtn{cursor:pointer;transition:transform .13s var(--ease-out),border-color .2s var(--ease-out)}
 .statile.stbtn:active{transform:scale(.96)}

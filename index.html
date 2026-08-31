@@ -1344,6 +1344,11 @@ body.a11y .screen .tg{ font-size:13px !important; }
 .mpkpi>b{display:block;font-size:19px;font-variant-numeric:tabular-nums;margin-top:1px;
   overflow:hidden;text-overflow:ellipsis}
 body.a11y .mpsel{font-size:15px;padding:9px 13px}
+/* ⭐ 31-ago-2026: las tablas de Producción (.mzt) nunca entraron a Texto grande.
+   Un trabajador prendía el modo, toda la app crecía, y las tablas y los números
+   del módulo se quedaban chiquitos sin avisar. Es justo lo que la regla advierte. */
+body.a11y .mzt th{font-size:12px}
+body.a11y .mzt td{font-size:15px;padding:10px}
 body.a11y .mpkpi>.note{font-size:12.5px}
 body.a11y .mpkpi>b{font-size:22px}
 body.a11y .mpkpis{grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
@@ -13910,7 +13915,14 @@ function mzVerifica(filas, totalHoja){
   var c=$('mz-verif'); if(!c) return;
   if(!(V3_ON && sbReady() && SB) || !filas || !filas.length){ if(c) c.innerHTML=''; return; }
   c.innerHTML='<div class="note" style="margin-top:8px">Revisando que cuadre…</div>';
-  SB.rpc('hb_mez_verifica',{p_filas:filas.slice(0,600), p_total_hoja:(totalHoja||null)})
+  /* ⭐ 31-ago-2026: aquí decía filas.slice(0,600) y un mes real trae ~760 renglones.
+     Dos daños: el aviso «la suma no cuadra con el total de tu hoja» comparaba el total
+     de la hoja contra la cuenta de 600 (nunca cuadraba, y la gente aprende a ignorar el
+     rojo), y el rango de días que borra la casilla «reemplazar» salía de esa muestra.
+     hb_mez_verifica NO tiene tope de renglones: se le manda el archivo completo.
+     El 3000 es solo un freno por si alguien sube varios meses de un jalón. */
+  var _MUESTRA=3000, _recortado=(filas.length>_MUESTRA);
+  SB.rpc('hb_mez_verifica',{p_filas:(_recortado?filas.slice(0,_MUESTRA):filas), p_total_hoja:(totalHoja||null)})
     .then(function(r){
       var x=r&&r.data;
       if(!(x&&x.ok)){ c.innerHTML=''; return; }
@@ -13925,6 +13937,12 @@ function mzVerifica(filas, totalHoja){
            '<b style="font-size:12.5px">'+esc(a.t)+'</b>'+
            '<div class="note" style="margin-top:2px;line-height:1.5">'+esc(a.d)+'</div></div>';
       });
+      if(_recortado){
+        h+='<div style="margin-top:9px;padding-left:11px;border-left:2px solid var(--warn)">'+
+           '<b style="font-size:12.5px">Revisé una parte, no todo</b>'+
+           '<div class="note" style="margin-top:2px;line-height:1.5">El archivo trae '+mzN(filas.length)+
+           ' renglones y revisé los primeros '+mzN(_MUESTRA)+'. Súbelo por mes para que lo revise completo.</div></div>';
+      }
       if(x.veredicto==='verde' && x.mezclas!=null){
         h+='<div class="note" style="margin-top:5px">'+mzN(x.mezclas)+' mezclas'+
            (totalHoja?(', igual que el total de tu hoja'):'')+'.</div>';
@@ -13934,12 +13952,17 @@ function mzVerifica(filas, totalHoja){
          y se vuelve a subir. El archivo anterior queda guardado, así que
          siempre se puede ver qué decía la versión previa y quién la subió. */
       var _rep=(x.avisos||[]).filter(function(a){ return a.t.indexOf('YA tienen') > -1; }).length>0;
-      if(_rep && x.desde && x.hasta){
-        window._mzRep={d1:x.desde, d2:x.hasta};
+      /* ⭐ el rango que se va a BORRAR sale del archivo COMPLETO, nunca de lo que se
+         mandó a verificar. Si sale de la muestra, «reemplazar» borra menos días de los
+         que trae el archivo y los últimos quedan duplicados, en silencio. */
+      var _fx=filas.map(function(f){ return f && f.fecha; }).filter(Boolean).sort();
+      var _rd1=_fx.length?_fx[0]:x.desde, _rd2=_fx.length?_fx[_fx.length-1]:x.hasta;
+      if(_rep && _rd1 && _rd2){
+        window._mzRep={d1:_rd1, d2:_rd2};
         h+='<div style="margin-top:12px;padding-top:11px;border-top:1px solid var(--line)">'+
            '<b style="font-size:12.5px">¿Es una corrección?</b>'+
            '<div class="note" style="margin-top:3px;line-height:1.5">Si este Excel es la versión corregida '+
-           'de esos días, reemplázalos: se borra lo que había del <b>'+esc(x.desde)+'</b> al <b>'+esc(x.hasta)+
+           'de esos días, reemplázalos: se borra lo que había del <b>'+esc(_rd1)+'</b> al <b>'+esc(_rd2)+
            '</b> y queda tal como viene aquí. Si no, al guardar se van a <b>sumar</b>.</div>'+
            '<label style="display:flex;gap:7px;align-items:flex-start;margin-top:9px;font-size:12.5px;cursor:pointer">'+
            '<input type="checkbox" id="mz-reemplaza" style="margin-top:2px">'+
@@ -15689,22 +15712,36 @@ function mzAlmTab(t){ _almTab=t; mzAlmPinta(); window.scrollTo(0,0); }
 function mzAlmCarga(){
   var hoy=mxToday(), d1=hoy.slice(0,4)+'-01-01';
   var pend=0;
+  /* ⭐ 31-ago-2026: antes, si el servidor negaba el permiso o mandaba error, la
+     variable quedaba en null EN SILENCIO y la pantalla pintaba «Entradas del año: 0»,
+     idéntico a un año sin movimiento. Un cero miente. Ahora se guarda el motivo y
+     se dice en pantalla. */
+  _almErr=null;
   SB.rpc('hb_mez_entradas',{p_desde:d1,p_hasta:hoy,p_filtro:{limite:40}}).then(function(r){
     _almDatos=(r&&r.data&&r.data.ok)?r.data:null;
+    if(!_almDatos) _almErr=mzErr(r&&r.data, r&&r.error);
     return SB.rpc('hb_mez_pendientes_mat');
   }).then(function(r){
     _almPend=(r&&r.data&&r.data.ok)?r.data:null;
+    if(!_almPend && !_almErr) _almErr=mzErr(r&&r.data, r&&r.error);
     return SB.rpc('hb_mez_existencias_lista',{p_fecha:null});
   }).then(function(r){
     _almExis=(r&&r.data&&r.data.ok)?r.data:null;
     mzAlmPinta();
   },function(){ $('s-mezalm').innerHTML='<div class="card"><b>Sin conexión</b></div>'; });
 }
+var _almErr=null;
 function mzAlmPinta(){
   var d=_almDatos, p=_almPend, e=_almExis;
   var h='<div class="scr-h"><div style="flex:1;min-width:0"><div class="eyebrow">Producción</div>'+
     '<h2>Almacén de materia prima</h2>'+
     '<p class="note" style="margin:4px 0 0">Lo que entra, lo que falta emparejar y el inventario de corte.</p></div></div>';
+  if(_almErr){
+    h+='<div class="card" style="margin-bottom:12px;border-color:color-mix(in srgb,var(--bad) 50%,transparent)">'+
+       '<b style="font-size:13px;color:var(--bad)">No pude cargar el almacén</b>'+
+       '<div class="note" style="margin-top:4px;line-height:1.5">'+esc(_almErr)+
+       '. Los números de abajo pueden estar incompletos: <b>no los tomes como que no hubo movimiento</b>.</div></div>';
+  }
   h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">'+
      [['entradas','Entradas'],['pend','Por emparejar'+((p&&p.total)?(' ('+mzN(p.total)+')'):'')],['exis','Existencia de corte']]
      .map(function(t){ return '<button class="btn'+(_almTab===t[0]?'':' ghost')+'" style="margin:0;width:auto;padding:9px 14px;font-size:13px" onclick="mzAlmTab(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+
@@ -16939,7 +16976,19 @@ function mzCierrePinta(tipo,d1,d2,res){
   var diasSinQuem=dias.filter(function(d){ return !(+d.quemadas||0); }).length;
   /* eficiencia: los paros, dichos en algo que se entienda en una junta */
   var parosH=paros/60;
-  var jm=(e&&+e.jornada_min)||0;
+  /* ⭐ 31-ago-2026: aquí decía +e.jornada_min. Pero jornada_min es un OBJETO
+     ({"1":420,"2":390,"3":450}, un valor por turno), así que el + daba NaN, luego 0,
+     y el renglón «los paros equivalen a N jornadas» se omitía en silencio: justo la
+     traducción que hace entendible el paro en una junta. Se toma el promedio de los
+     tres turnos, que es lo que significa «una jornada de un banbury». */
+  var jm=0;
+  if(e && e.jornada_min!=null){
+    if(typeof e.jornada_min==='object'){
+      var _js=[], _k;
+      for(_k in e.jornada_min){ if(+e.jornada_min[_k]>0) _js.push(+e.jornada_min[_k]); }
+      if(_js.length){ jm=Math.round(_js.reduce(function(a,b){return a+b;},0)/_js.length); }
+    } else if(+e.jornada_min>0){ jm=+e.jornada_min; }
+  }
   var parosJornadas=jm?(paros/jm):null;                       // "equivalen a N jornadas de un banbury"
   var parosDia=nd?(paros/nd):null;
   var parosVeces=(e&&e.paros||[]).reduce(function(a,x){ return a+(+x.veces||0); },0);

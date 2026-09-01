@@ -9497,6 +9497,13 @@ function vcGente(cb){
     if(cb) cb();
   }, function(){ window._vcGenteBusy=false; if(cb) cb(); });
 }
+/* buscar SIN acentos ni Ñ: 19 personas del padrón traen Ñ o acento (GUDIÑO,
+   MUÑOZ, NUÑEZ, PATIÑO, SALDAÑA, PEÑA…) y nadie las escribe con la tilde al
+   buscar. Mismo patrón que ya usa el buscador de documentos. */
+function vcSa(t){ return String(t==null?'':t).toLowerCase()
+  .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+  .replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim(); }
+
 /* iniciales sin depender del directorio: la gente sin activar no está ahí */
 function vcIni(nombre,n){
   var nm=niceName(nombre||'');
@@ -9529,15 +9536,14 @@ function vcAbrir(){
 function vcCierra(){ var v=$('vcModal'); if(v){ v.classList.add('hide'); v.innerHTML=''; } }
 
 function vcFiltra(){
-  var q=((($('vcQ')||{}).value)||'').trim().toLowerCase();
+  var qRaw=((($('vcQ')||{}).value)||'').trim();
+  var q=vcSa(qRaw);
   var D=(_vcGente || DBC.dir || []);
   var cargando=(!_vcGente && window._vcGenteBusy);
   var out=D;
   if(q) out=D.filter(function(p){
-    return (''+(p.clave||'')).toLowerCase().indexOf(q)>=0
-        || (p.nombre||'').toLowerCase().indexOf(q)>=0
-        || (p.depto||'').toLowerCase().indexOf(q)>=0
-        || (p.puesto||'').toLowerCase().indexOf(q)>=0; });
+    if(!p._sa) p._sa = vcSa((p.clave||'')+' '+(p.nombre||'')+' '+(p.depto||'')+' '+(p.puesto||''));
+    return p._sa.indexOf(q)>=0; });
   var hay=out.length;
   out=out.slice(0,40);
   var h='';
@@ -9548,8 +9554,8 @@ function vcFiltra(){
     h+='<div class="note" style="padding:6px 2px 8px;font-size:11px">'+hay+
        ' coinciden; te muestro las primeras 40. Afina la b\u00fasqueda.</div>';
   }
-  if(/^[0-9]{1,4}$/.test(q)){
-    var cl=('0000'+q).slice(-4);
+  if(/^[0-9]{1,4}$/.test(qRaw)){
+    var cl=('0000'+qRaw).slice(-4);
     h+='<button class="tmit" style="width:100%" onclick="vcGo(\''+jsAttr(cl)+'\')">'+
        '<span class="tbico" style="pointer-events:none">\u2192</span>'+
        '<span style="text-align:left"><b style="font-size:13px">Abrir la clave '+esc(cl)+'</b>'+

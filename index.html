@@ -1339,6 +1339,28 @@ body.a11y .screen .tg{ font-size:13px !important; }
   .screen{margin-left:86px}
   #s-chat{max-width:1300px}   /* el asistente ahora lleva 3 columnas; el 880px era de una */
 }
+
+/* ===== VER COMO (acceso total): pastilla flotante, NO mueve el layout ===== */
+#vcBar{position:fixed;left:50%;transform:translateX(-50%);z-index:900;
+  bottom:88px;bottom:calc(88px + env(safe-area-inset-bottom,0px));
+  display:flex;gap:10px;align-items:center;padding:9px 10px 9px 14px;border-radius:999px;
+  background:rgba(255,191,71,.97);color:#241a00;font-size:12.5px;font-weight:600;
+  box-shadow:0 8px 22px rgba(0,0,0,.38);max-width:calc(100% - 24px)}
+#vcBar .vcb-t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#vcBar .vcb-x{flex:none;border:0;cursor:pointer;border-radius:999px;padding:7px 12px;
+  font-size:12px;font-weight:700;background:#241a00;color:#ffd77a;font-family:inherit}
+/* en pantalla angosta el nombre manda: se van las palabras de relleno y el
+   boton se acorta (mismo patron que .tn-largo/.tn-corto de la barra de arriba) */
+#vcBar .vcb-s,#vcBar .vcb-pre2{display:none}
+@media(max-width:560px){
+  #vcBar{padding:8px 8px 8px 13px;gap:8px}
+  #vcBar .vcb-pre,#vcBar .vcb-cl,#vcBar .vcb-l{display:none}
+  #vcBar .vcb-s,#vcBar .vcb-pre2{display:inline}
+}
+body.vercomo .top{box-shadow:inset 0 -3px 0 rgba(255,191,71,.95)}
+body.a11y #vcBar{font-size:15px;padding:11px 12px 11px 16px}
+body.a11y #vcBar .vcb-x{font-size:14px;padding:9px 14px}
+@media(min-width:900px){ #vcBar{left:auto;right:20px;bottom:20px;transform:none} }
 </style>
 <!-- Supabase SDK HOSPEDADO JUNTO A LA APP (mismo origen = tan confiable como que cargue la
      página). 'defer' = NO bloquea el dibujado, así la portada aparece al instante aunque la
@@ -2739,7 +2761,8 @@ function statusOf(id){ return S.done[id]; }
 function doneCount(){ var c=myCourses(),n=0; for(var i=0;i<c.length;i++) if(S.done[c[i].id]) n++; return n; }
 
 /* ---------- persistencia (localStorage; si no está disponible, queda en memoria) ---------- */
-function save(){ try{ kvSet('hb_'+S.emp, {points:S.points,streak:S.streak,done:S.done,attempts:S.attempts,best:S.best,redeemed:S.redeemed,role:S.role,clases:S.clases,accessible:S.accessible,rate:S.rate,watched:S.watched}); }catch(e){} }
+function save(){ if(VC) return;   /* Ver como: nada se guarda */
+  try{ kvSet('hb_'+S.emp, {points:S.points,streak:S.streak,done:S.done,attempts:S.attempts,best:S.best,redeemed:S.redeemed,role:S.role,clases:S.clases,accessible:S.accessible,rate:S.rate,watched:S.watched}); }catch(e){} }
 function load(emp){ try{ var d=kvGet('hb_'+emp); return d||null; }catch(e){ return null; } }
 
 /* ====================== LOGIN ====================== */
@@ -2753,7 +2776,11 @@ function buildLoginHelp(){
 }
 function quickLogin(id){ $('inEmp').value=id; login(); }
 /* ===== Perfil por empleado (foto · datos · PIN) — por dispositivo (demo); Fase 2: servidor ===== */
-function profGet(emp){ try{ return kvGet('hb_profile_'+emp)||{}; }catch(e){ return {}; } }
+function profGet(emp){
+  /* en modo Ver como el perfil de esa persona vive SOLO en memoria: no se
+     escribe en el telefono del que revisa, y al salir no queda residuo. */
+  try{ if(VC && +emp===+VC.n && VC.perfil) return VC.perfil; }catch(e){}
+  try{ return kvGet('hb_profile_'+emp)||{}; }catch(e){ return {}; } }
 function profSave(emp,p){ kvSet('hb_profile_'+emp, p); }
 /* Solo caché local (NO toca el servidor): se usa al armar la sesión para no pisar
    la foto/firma que ya vive en el servidor con una copia recién hecha del roster. */
@@ -2820,7 +2847,13 @@ function pubFresh(n, cb){
 /* Foto de una persona para los avatares de mensajería (la mía o, si la cargó el
    servidor, la de la otra persona). */
 function personFoto(n){ if(+n===S.emp) return profGet(S.emp).foto||''; var p=pubGet(n); return (p&&p.foto)||''; }
-function profInitials(){ var p=profGet(S.emp); var nm=(p.nombre||'').trim();
+function profInitials(){
+  /* ⭐ 31-ago-2026: aqui se leia el nombre de EXPEDIENTE (apellidos primero), asi
+     que a «CORTES MONTES DE OCA DIONICIO» le salian las iniciales «CM» junto a un
+     nombre que decia «Dionicio Cortes». Las iniciales tienen que salir del MISMO
+     nombre que se muestra: hbNombre(), como en personAvatar(). */
+  var nm=(hbNombre()||'').trim();
+  if(!nm){ try{ nm=(profGet(S.emp).nombre||'').trim(); }catch(e){} }
   if(nm){ return nm.split(/\s+/).map(function(w){return (w[0]||'');}).slice(0,2).join('').toUpperCase(); }
   return (''+S.emp).padStart(3,'0'); }
 function profAvatar(size,fs){ var p=profGet(S.emp);
@@ -5355,6 +5388,17 @@ function niceName(full){
   while(i<t.length-1 && PART[ap2[ap2.length-1].toUpperCase()]) ap2.push(t[i++]);
   var nombres=t.slice(i);
   if(!nombres.length){ nombres=[t[t.length-1]]; }
+  /* ⭐ 31-ago-2026 · dos correcciones que salieron de probar esta función contra el
+     padrón COMPLETO (505 personas), no contra ejemplos inventados:
+     1) apellido compuesto con la partícula EN MEDIO — «CORTES MONTES DE OCA
+        DIONICIO» salía «De Cortes». El bucle de arriba solo mira hacia atrás
+        (¿la palabra que acabo de tomar es partícula?), así que «DE OCA» se quedó
+        del lado de los nombres. Si el nombre ARRANCA con partícula, el corte
+        estuvo mal: esa partícula y la palabra que le sigue son del apellido.
+     2) nombre abreviado — «MAYA PEREZ J. JESUS» salía «J. Maya». Una inicial
+        con punto no es un nombre que se pueda mostrar; se pasa al siguiente. */
+  while(nombres.length>2 && PART[nombres[0].toUpperCase()]) nombres=nombres.slice(2);
+  while(nombres.length>1 && /^[A-ZÑÁÉÍÓÚ]\.?$/i.test(nombres[0])) nombres=nombres.slice(1);
   return tcase(nombres[0]+' '+ap1.join(' '));
 }
 function tcase(s){ return (s||'').toLowerCase().replace(/(^|\s)\S/g, function(c){ return c.toUpperCase(); }); }
@@ -9403,6 +9447,128 @@ function mxToday(){ var d=mxNow(); return d.getFullYear()+'-'+('0'+(d.getMonth()
    MI PERFIL — foto, información personal y PIN (por dispositivo en la demo;
    en Fase 2 vive en el servidor con el ID real del trabajador).
    ============================================================================ */
+/* ═════════════════════════════════════════════════════════════════
+   VER COMO · 31-ago-2026, pedido de Carlos: «quiero poder desde mi cuenta
+   log in a la cuenta de los demas, solo en mi perfil, un boton que diga
+   log in, para ver como el usuario ve su perfil».
+
+   QUÉ SÍ HACE: abre la app con la identidad de esa persona. Ves sus
+   pestañas, sus permisos, su inicio y su perfil tal como los ve ella.
+
+   QUÉ NO HACE, y es a propósito:
+    · NO entra a su cuenta. La sesión del servidor sigue siendo la tuya,
+      así que lo que está bajo llave por persona —sus mensajes, sus
+      recibos— no se lee ni desde aquí ni desde ningún lado.
+    · Sus datos de domicilio y teléfono salen tapados (•••): ves SI los
+      llenó, no qué dicen. El punto 4 de los Términos que firmaron los 505
+      —«cada quien ve únicamente su propia información»— sigue en pie.
+    · Nada se guarda mientras dure el modo (candados en save y sbSyncOne).
+    · Los números vivos que pida una pantalla los sigue contestando el
+      servidor con TUS permisos: la FORMA de la app es fiel, las cifras no
+      son prueba de qué alcanza a ver esa persona.
+
+   Y todo uso queda en la bitácora del servidor (ver_como_log): no se puede
+   usar sin dejar rastro. Servidor: hb_ver_como() · migración v3_174.
+   ═════════════════════════════════════════════════════════════════ */
+var VC=null;   /* {de,clave,n,nombre,perfil} mientras dure el modo */
+
+function vcPuede(){ return !!(V3_ON && S && S.clave && docIsTotal()); }
+
+/* candado visible: si algo intenta guardar, se explica en lugar de fallar callado */
+function vcBloqueo(){
+  if(!VC) return false;
+  hbConfirm('Est\u00e1s viendo la app como '+niceName(VC.nombre||VC.clave)+
+    '. En este modo nada se guarda: es solo para revisar lo que esa persona ve. '+
+    'Vuelve a tu cuenta para hacer cambios.', null, {solo:true, si:'Entendido'});
+  return true;
+}
+
+function vcAbrir(){
+  if(!vcPuede()) return;
+  var v=$('vcModal');
+  if(!v){ v=document.createElement('div'); v.id='vcModal'; v.className='modal hide'; document.body.appendChild(v); }
+  v.innerHTML='<div class="box" style="max-width:440px;max-height:86vh;display:flex;flex-direction:column;text-align:left">'+
+    '<div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Acceso total</div>'+
+      '<b style="font-size:18px">Ver la app como otra persona</b>'+
+      '<div class="note" style="margin-top:4px">Escribe una clave o busca un nombre. Vas a ver sus pesta\u00f1as y su perfil tal como los ve esa persona.</div></div></div>'+
+    '<input id="vcQ" class="fin" autocomplete="off" placeholder="Clave (ej. 0231) o nombre" oninput="vcFiltra()">'+
+    '<div id="vcList" style="overflow:auto;margin:10px 0 4px;min-height:70px"></div>'+
+    '<div class="note" style="font-size:11px;margin:8px 0 11px;padding-top:9px;border-top:1px solid var(--line)">'+
+      'En este modo <b>nada se guarda</b>. Su domicilio y su tel\u00e9fono salen tapados '+
+      '(\u2022\u2022\u2022): ves si los llen\u00f3, no qu\u00e9 dicen. Cada vez que lo uses queda registrado en el servidor.</div>'+
+    '<button class="btn ghost" style="margin:0" onclick="vcCierra()">Cancelar</button></div>';
+  v.classList.remove('hide');
+  vcFiltra();
+  dirLoad(function(){ if(!$('vcModal').classList.contains('hide')) vcFiltra(); });
+  try{ $('vcQ').focus(); }catch(e){}
+}
+function vcCierra(){ var v=$('vcModal'); if(v){ v.classList.add('hide'); v.innerHTML=''; } }
+
+function vcFiltra(){
+  var q=((($('vcQ')||{}).value)||'').trim().toLowerCase();
+  var D=(DBC.dir||[]);
+  var out=D;
+  if(q) out=D.filter(function(p){
+    return (''+(p.clave||'')).toLowerCase().indexOf(q)>=0
+        || (p.nombre||'').toLowerCase().indexOf(q)>=0
+        || (p.depto||'').toLowerCase().indexOf(q)>=0; });
+  out=out.slice(0,60);
+  var h='';
+  if(/^[0-9]{1,4}$/.test(q)){
+    var cl=('0000'+q).slice(-4);
+    h+='<button class="tmit" style="width:100%" onclick="vcGo(\''+jsAttr(cl)+'\')">'+
+       '<span class="tbico" style="pointer-events:none">\u2192</span>'+
+       '<span style="text-align:left"><b style="font-size:13px">Abrir la clave '+esc(cl)+'</b>'+
+       '<span class="note" style="display:block;font-size:10.5px">aunque todav\u00eda no haya activado su cuenta</span></span></button>';
+  }
+  out.forEach(function(p){
+    h+='<button class="tmit" style="width:100%" onclick="vcGo(\''+jsAttr(p.clave)+'\')">'+personAvatar(p.n,30)+
+       '<span style="text-align:left;min-width:0"><b style="font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+
+       esc(niceName(p.nombre||('#'+p.n)))+'</b>'+
+       '<span class="note" style="display:block;font-size:10.5px">'+esc(p.clave)+' \u00b7 '+esc(p.depto||'')+
+       (p.admin?' \u00b7 Administraci\u00f3n':(p.mando?' \u00b7 Responsable':''))+'</span></span></button>';
+  });
+  if(!h) h='<div class="note" style="text-align:center;padding:14px">Nadie coincide. Escribe la clave de 4 d\u00edgitos y se abre igual.</div>';
+  var L=$('vcList'); if(L) L.innerHTML=h;
+}
+
+function vcGo(clave){
+  if(!vcPuede()) return;
+  vcCierra(); flash('Abriendo\u2026');
+  SB.rpc('hb_ver_como',{p_clave:String(clave)}).then(function(r){
+    var d=r&&r.data;
+    if(r.error || !d || !d.ok){
+      hbConfirm((d&&d.msg)||'No se pudo abrir esa clave.', null, {solo:true, si:'Cerrar'}); return; }
+    var akey=DEPTO_AREA[d.depto]||'produccion', ac=areaCfgOf(akey);
+    var admin=!!d.admin, mando=!!d.mando;
+    VC={ de:S.clave, deNombre:hbNombre(), clave:d.clave, n:d.n, nombre:d.nombre||('#'+d.n),
+         perfil:{ nombre:(d.nombre||''), datos:(d.privado||{}) } };
+    var cfg={ emp:d.n, clave:d.clave, key:akey, area:d.depto, accent:ac.accent, accent2:ac.accent2,
+              admin:admin, dash:(admin?'rrhh':(mando?'resp':null)), mando:mando, nombre:d.nombre,
+              demo:!!d.demo,
+              greet:'\u00a1Hola, '+(niceName(d.nombre||'').split(' ')[0]||'')+'! Aqu\u00ed nace la banda que rueda por +50 pa\u00edses.' };
+    startSession(cfg, {}, false);
+    vcBarra();
+    renderPerfil();   /* lo que pidi\u00f3: caer directo en SU perfil */
+  }, function(){ hbConfirm('No hay conexi\u00f3n con el servidor.', null, {solo:true, si:'Cerrar'}); });
+}
+
+function vcBarra(){
+  var b=$('vcBar');
+  if(!VC){ if(b && b.parentNode) b.parentNode.removeChild(b); document.body.classList.remove('vercomo'); return; }
+  if(!b){ b=document.createElement('div'); b.id='vcBar'; document.body.appendChild(b); }
+  b.innerHTML='<span class="vcb-t"><span class="vcb-pre">Viendo como </span><span class="vcb-pre2">Como </span><b>'+esc(niceName(VC.nombre||VC.clave))+'</b>'+
+      '<span class="vcb-cl"> \u00b7 '+esc(VC.clave)+'</span></span>'+
+    '<button class="vcb-x" onclick="vcSalir()" aria-label="Volver a mi cuenta">'+
+      '<span class="vcb-l">Volver a mi cuenta</span><span class="vcb-s">Volver</span></button>';
+  document.body.classList.add('vercomo');
+}
+function vcSalir(){
+  if(!VC) return;
+  VC=null; vcBarra(); flash('Volviendo a tu cuenta\u2026');
+  bootV3(false);   /* la sesi\u00f3n del servidor nunca cambi\u00f3: vuelve limpio */
+}
+
 function renderPerfil(){
   var p=profGet(S.emp);
   var v3=!!(V3_ON && S.clave);
@@ -9422,6 +9588,23 @@ function renderPerfil(){
      '<div class="hd" style="align-items:flex-start;margin-bottom:0;padding-right:46px"><div style="display:flex;gap:14px;align-items:center;min-width:0">'+profAvatar(64,20)+
      '<div style="min-width:0"><div class="eyebrow">Mi perfil</div><b style="font-size:20px;display:block">'+esc(nombre||('Empleado #'+(''+S.emp).padStart(3,'0')))+'</b>'+
      '<span class="note">'+idTxt+'</span>'+(v3&&S.mando?'<br><span class="tg g" style="margin-top:5px;display:inline-block">Responsable · '+esc(S.area)+'</span>':'')+'</div></div></div></div>';
+  /* ⭐ Ver como (solo acceso total): revisar la app con los ojos de otra persona */
+  if(vcPuede() && !VC){
+    h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div>'+
+       '<div class="eyebrow">Solo tú ves esto</div><b style="font-size:16px">Ver la app como otra persona</b>'+
+       '<p class="note" style="margin:4px 0 0">Abre el sistema con los ojos de cualquier clave para revisar qué ve. '+
+         'Nada se guarda, su domicilio y teléfono salen tapados, y queda registrado.</p></div>'+
+       '<span class="chipst mut">acceso total</span></div>'+
+       '<button class="btn" style="margin-top:11px" onclick="vcAbrir()">Ver como…</button></div>';
+  }
+  if(VC){
+    h+='<div class="panel" style="border-color:rgba(255,191,71,.75)">'+
+       '<div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Estás revisando</div>'+
+       '<b style="font-size:16px">Este es el perfil de '+esc(niceName(VC.nombre||VC.clave))+'</b>'+
+       '<p class="note" style="margin:4px 0 0">Lo ves tal como lo ve esa persona. Los datos tapados con ••• son suyos y no se muestran. '+
+         'Nada de lo que toques aquí se guarda.</p></div></div>'+
+       '<button class="btn ghost" style="margin-top:11px" onclick="vcSalir()">Volver a mi cuenta</button></div>';
+  }
   // Foto
   h+='<div class="panel"><div class="hd"><b>Mi foto</b>'+
        '<span style="display:flex;gap:7px;align-items:center">'+
@@ -9514,14 +9697,14 @@ function pfFirmaSave(){
   var p=profGet(S.emp); p.firma=img; profSaveServer(p,'Firma guardada. Ya puedes firmar tus recibos.');
   burst(); renderPerfil();
 }
-function savePerfil(){
+function savePerfil(){ if(vcBloqueo()) return;
   var p=profGet(S.emp);
   p.nombre=(($('pfNombre')||{}).value||'').trim().slice(0,60);
   p.tel=(($('pfTel')||{}).value||'').trim().slice(0,20);
   p.emg=(($('pfEmg')||{}).value||'').trim().slice(0,80);
   profSaveServer(p,'Información guardada'); renderTop(_screen); renderPerfil();
 }
-function pfFotoLoad(inp){
+function pfFotoLoad(inp){ if(vcBloqueo()) return;
   var f=inp.files&&inp.files[0]; if(!f) return;
   var rd=new FileReader();
   rd.onload=function(e){ var img=new Image();
@@ -9547,7 +9730,7 @@ function savePin(){
 /* ⭐ 31-ago-2026 · Guardar mi nombre. Va al expediente, que es de donde salen
    TODOS los lugares donde aparece un nombre — así que al guardar se ve en el acto
    junto al logo, en el saludo y en lo que se firme. */
-function saveMiNombre(){
+function saveMiNombre(){ if(vcBloqueo()) return;
   var nom=val('pfNom',40), ape=val('pfApe',40);
   if(!nom || !ape){ flash('Escribe tu nombre y tus apellidos'); return; }
   if(!sbReady()){ flash('Sin conexión: intenta más tarde'); return; }
@@ -9567,7 +9750,7 @@ function saveMiNombre(){
     renderTop(_screen); renderPerfil();                  // se ve en el acto
   }, function(){ flash('Sin conexión: intenta más tarde'); });
 }
-function savePerfilV3(){
+function savePerfilV3(){ if(vcBloqueo()) return;
   var d={ tel:val('pfTel',20), emg:val('pfEmg',80), calle:val('pfCalle',120), colonia:val('pfCol',80),
           municipio:val('pfMun',60), ciudad:val('pfCiu',60), entidad:val('pfEnt',40), cp:val('pfCp',10) };
   if(!sbReady()){ flash('Sin conexión: intenta más tarde'); return; }
@@ -11635,6 +11818,10 @@ function sbSync(tbl, arr, cb){   // sube/actualiza el arreglo completo; cb(error
    re-subir toda la lista con imágenes excede el límite del servidor y fallaba en
    silencio (por eso una noticia con foto no le llegaba a los demás). */
 function sbSyncOne(tbl, obj, cb){
+  /* CANDADO Ver como: ni un registro sale del cliente con la identidad
+     prestada. Sin esto, un mensaje escrito «como Ana» se guardaría
+     firmado por Ana. */
+  if(VC){ if(cb) cb('en modo Ver como no se guarda nada'); return; }
   if(!sbReady()){ if(cb) cb('sin conexión'); return; }
   try{ SB.from(tbl).upsert({id:obj.id, data:obj, ts:(obj.ts||Date.now())}).then(function(r){
     if(cb) cb(r&&r.error ? (r.error.message||'error del servidor') : null);

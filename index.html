@@ -15786,10 +15786,25 @@ function renderMezTab(){
   if(!(S.admin||S.mezCap||(S.mando&&S.mezCap))){ alert('Solo dirección, jefatura de producción y los capturistas de mezclado.'); return; }
   if(mzVeDineroMp()) mzFxLoad(1);   /* el dólar solo para quien ve dinero */
   var hoy=mxToday();
-  if(!_mztD1){ /* default: los últimos 31 días (si el mes va empezando, aún se ve el pasado) */
-    var d0=new Date(hoy+'T12:00:00'); d0.setDate(d0.getDate()-30);
-    _mztD1=d0.toISOString().slice(0,10); _mztD2=hoy; }
   $('s-meztab').innerHTML='<div class="card"><div class="note">Cargando el tablero…</div></div>'; show('meztab');
+  if(!_mztD1){
+    /* ⭐ 1-sep-2026 · el arranque eran «los últimos 31 días» contados desde HOY, y
+       hoy puede no tener producción: con datos hasta el 27-ago, el panel abría
+       con 5 días vacíos al final. Ahora abre en el ÚLTIMO MES CON DATOS. Si la
+       lista no llega, se cae a los 31 días de antes. */
+    mzMesesCarga(function(){
+      var h2=mxToday();
+      if(_mzMeses && _mzMeses.meses && _mzMeses.meses.length){
+        var m=_mzMeses.meses[0];                 /* vienen del más reciente al más viejo */
+        _mztD1=m.d1; _mztD2=m.d2;
+      } else {
+        var d0=new Date(h2+'T12:00:00'); d0.setDate(d0.getDate()-30);
+        _mztD1=d0.toISOString().slice(0,10); _mztD2=h2;
+      }
+      renderMezTab();
+    });
+    return;
+  }
   SB.rpc('hb_mez_tablero',{p_desde:_mztD1,p_hasta:_mztD2}).then(function(r){ var x=r&&r.data;
     if(!(x&&x.ok)){ $('s-meztab').innerHTML='<div class="card"><b>'+esc(mzErr(x))+'</b></div>'; return; }
     mzTabPaint(x); },function(){ $('s-meztab').innerHTML='<div class="card"><b>'+esc(mzErr())+'</b></div>'; });

@@ -19192,7 +19192,14 @@ function swRegistra(){
        aunque arreglemos algo urgente. */
     var _swChk=function(){
       try{ navigator.serviceWorker.getRegistration().then(function(g){
-        if(g && g.update) g.update();
+        if(g && g.update) g.update();          /* esto revisa sw.js */
+        /* ⭐ 2-sep-2026 · …y ESTO revisa la app. g.update() mira SOLO sw.js, así
+           que el chequeo cada 10 minutos nunca detectaba una versión nueva de
+           index.html: se comprobó en vivo que «?v=» tampoco sirve, porque el
+           service worker empareja siempre contra la misma llave. Ahora se le
+           pide la revisión de frente. */
+        var act=(g && (g.active||g.waiting)) || navigator.serviceWorker.controller;
+        if(act){ try{ act.postMessage({hb:'revisa'}); }catch(e){} }
       }); }catch(e){}
     };
     setInterval(_swChk, 10*60*1000);                    // cada 10 minutos

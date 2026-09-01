@@ -38,7 +38,11 @@
    ============================================================================ */
 
 var MODO_APAGADO = false;      // true = el service worker se desinstala solo
-var VER   = 'v3';              // subir esto solo si cambia ESTE archivo
+var VER   = 'v4';              // subir esto solo si cambia ESTE archivo
+/* v4 (2-sep-2026): al subirlo, cada aparato tira su bodega vieja y se baja
+   el index.html de HOY en la siguiente revisión. Se subió a propósito: había
+   teléfonos con paquetes de varios despliegues atrás por el agujero de
+   revisaIndex(), y así entran todos parejos sin que nadie haga nada. */
 var CACHE = 'hb-app-' + VER;
 var INDEX = './index.html';
 
@@ -74,6 +78,7 @@ self.addEventListener('activate', function(e){
       return Promise.all(ks.filter(function(k){ return k !== CACHE; })
                           .map(function(k){ return caches.delete(k); }));
     }).then(function(){ return self.clients.claim(); })
+     .then(function(){ return revisaIndex(); })   /* al tomar el control, revisar de una */
   );
 });
 
@@ -82,6 +87,38 @@ function avisaALaApp(tipo){
     cs.forEach(function(c){ try{ c.postMessage({hb:tipo}); }catch(e){} });
   });
 }
+
+/* ⭐ 2-sep-2026 · EL AGUJERO QUE PIDIÓ CARLOS QUE SE ARREGLARA.
+   La app pregunta cada 10 minutos si hay versión nueva, pero lo hacía con
+   registration.update(), que revisa SOLO ESTE ARCHIVO (sw.js). Como sw.js casi
+   nunca cambia, esa revisión siempre decía «nada nuevo» aunque index.html
+   llevara diez despliegues encima. La única revisión real de index.html vivía
+   en armazon(), que solo corre cuando se CARGA la página.
+   Resultado: tras cada despliegue la primera apertura servía la versión vieja,
+   y quien dejaba la app abierta todo el día no veía un arreglo nunca.
+   Ahora la app puede pedir la revisión con un mensaje, y esto la hace de
+   verdad: pregunta al servidor, compara el ETag y avisa si cambió. */
+function revisaIndex(){
+  return caches.open(CACHE).then(function(c){
+    return c.match(INDEX).then(function(guardado){
+      return fetch(new Request(INDEX, {cache:'reload', credentials:'same-origin'}))
+        .then(function(r){
+          if (!r || !r.ok) return;
+          var viejo = guardado && guardado.headers.get('etag');
+          var nuevo = r.headers.get('etag');
+          return c.put(INDEX, r.clone()).then(function(){
+            if (guardado && viejo && nuevo && viejo !== nuevo) return avisaALaApp('nueva-version');
+          });
+        }).catch(function(){});   /* sin señal: se queda con lo guardado, en silencio */
+    });
+  });
+}
+
+self.addEventListener('message', function(e){
+  if (MODO_APAGADO) return;
+  if (!e.data || e.data.hb !== 'revisa') return;
+  e.waitUntil(revisaIndex());
+});
 
 /* EL ARMAZÓN DE LA APP (index.html): se entrega de la bodega al instante y se
    revisa contra el servidor por detrás. Si el ETag cambió, hay versión nueva. */

@@ -12305,6 +12305,11 @@ var MZ_ORG=[['banbury','Banbury (mezclado)'],
             ['pathex','Pathex'],
             ['vulcanizado','Sobrante de rollos al vulcanizar'],
             ['laboratorio','Laboratorio'],
+            /* ⭐ 1-sep-2026 · la hoja de producción trae ÁREA = «PRENSADO / EXTRUIDO».
+               Alejandro Escamilla: corresponde a tubuladora de precurado Y a Pathex,
+               pero la hoja no separa las dos máquinas. Decisión de Carlos: se registra
+               tal como lo dice la fuente. Antes caía en «Otro» (989 mezclas en agosto). */
+            ['prensado_extruido','Prensado / extruido (tubuladora de precurado y Pathex)'],
             ['otro','Otro']];
 function mzOrgTxt(k){ for(var i=0;i<MZ_ORG.length;i++) if(MZ_ORG[i][0]===k) return MZ_ORG[i][1]; return k==='sin_origen'?'Sin origen':(k||''); }
 var _mzRTt=null;
@@ -14278,6 +14283,7 @@ function mzPegaPrev(){
                     : ar.indexOf('VULCAN')>-1  ? 'vulcanizado'
                     : (ar.indexOf('TUBUL')>-1 && ar.indexOf('COJIN')>-1) ? 'tubuladora_cojin'
                     : ar.indexOf('TUBUL')>-1   ? 'tubuladora_precurado'
+                    : (ar.indexOf('PRENSADO')>-1 || ar.indexOf('EXTRUI')>-1) ? 'prensado_extruido'
                     : ar ? 'otro' : null;
       }
       if(map.op!=null){ var on=parseInt(String(c[map.op]||'').replace(/[^0-9]/g,''),10); if(on>0) fila.operador_n=on; }

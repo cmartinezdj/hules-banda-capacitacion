@@ -1534,6 +1534,18 @@ body.a11y #vcBar .vcb-x{font-size:14px;padding:9px 14px}
   .mzrp .mzrap{width:100%;min-width:0}
 }
 
+
+/* --- pastel / dona interactivos --- */
+.mzpiew svg{max-width:330px;margin:0 auto}
+.mzpiew .mzsl{cursor:pointer;transition:opacity 130ms var(--ease-out),transform 170ms var(--ease-out)}
+.mzpleg{display:flex;flex-direction:column;gap:5px;margin-top:6px}
+.mzpli{display:flex;align-items:center;gap:8px;font-size:12px;min-width:0}
+.mzpli i{width:9px;height:9px;border-radius:50%;flex:none}
+.mzpli b{font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.mzpli>span{margin-left:auto;color:var(--mut);font-variant-numeric:tabular-nums;flex:none}
+body.a11y .mzpli{font-size:14px}
+@media(prefers-reduced-motion:reduce){.mzpiew .mzsl{transition:opacity 130ms linear}}
+
 /* --- TEXTO GRANDE: sin esto el modo accesible se rompe en silencio --- */
 body.a11y .mzpH .mzsub{font-size:14px}
 body.a11y .mzseg>button{font-size:15px;padding:9px 19px}
@@ -15999,12 +16011,13 @@ function mzChart(cfg){
   var tipo=cfg.tipo||'barras', id=cfg.id, n=(cfg.cats||[]).length;
   if(!n) return '<div class="note" style="margin-top:6px">Sin datos en el rango.</div>';
 
-  /* pastel, dona y tabla ya existían y funcionan: se delega, no se rehace */
-  if(tipo==='pastel'||tipo==='dona'||tipo==='tabla'){
+  /* la tabla ya existía y es además la vista accesible: se delega */
+  if(tipo==='tabla'){
     var items=cfg.cats.map(function(c,i){ return {l:(cfg.tips&&cfg.tips[i])||c, v:+((cfg.series[0].datos||[])[i])||0}; });
-    if(tipo==='tabla') return mzTablaG(items, cfg.unidad||'');
-    return mzPie(items, tipo==='dona');
+    return mzTablaG(items, cfg.unidad||'');
   }
+  /* el pastel y la dona llevan la MISMA tarjetita que los demás */
+  if(tipo==='pastel'||tipo==='dona'){ cfg.tipo=tipo; return mzChPie(cfg); }
 
   var W=700, H=cfg.alto||200, PL=40, PR=10, PT=12, PB=24;
   var pw=W-PL-PR, ph=H-PT-PB;
@@ -16148,8 +16161,113 @@ function mzChPinta(id,i,r){
 }
 function mzChOut(id){
   var w=document.getElementById('mzchw-'+id);
-  if(w) w.className=w.className.replace(/\s*\bon\b/,'');
+  if(w){
+    w.className=w.className.replace(/\s*\bon\b/,'');
+    /* el pastel: devolver las rebanadas a su sitio y a su color */
+    var ps=w.getElementsByClassName('mzsl');
+    for(var k=0;k<ps.length;k++){ ps[k].setAttribute('opacity','1'); ps[k].setAttribute('transform','translate(0,0)'); }
+  }
   var c=MZCH[id]; if(c) c._i=null;
+}
+/* ── PASTEL / DONA interactivos ─────────────────────────────────────────────
+   El pastel viejo (mzPie) no tenía información al pasar el mouse, así que si
+   alguien tenía elegido «Pastel» se quedaba sin lo que Carlos pidió. Este usa
+   la MISMA tarjetita que los demás gráficos.
+   Al pasar el mouse la rebanada se separa un poco hacia afuera (por su
+   bisectriz, con un translate: nada de transform-box, que la Safari vieja no
+   pinta) y las otras se apagan.                                             */
+function mzChPie(cfg){
+  var id=cfg.id, dona=(cfg.tipo==='dona');
+  var vals=(cfg.series[0].datos||[]).map(function(v){ return Math.max(0,+v||0); });
+  var tot=vals.reduce(function(a,v){ return a+v; },0);
+  if(!tot) return '<div class="note" style="margin-top:6px">Sin datos en el rango.</div>';
+  var W=320, H=250, cx=W/2, cy=H/2-6, R=Math.min(W,H)/2-26, Ri=dona?R*0.58:0;
+  cfg.n=vals.length; cfg._tot=tot; MZCH[id]=cfg;
+
+  function pt(a,r){ return [ (cx+r*Math.cos(a)).toFixed(2), (cy+r*Math.sin(a)).toFixed(2) ]; }
+  var ang=-Math.PI/2, reb='', med=[];
+  vals.forEach(function(v,i){
+    var da=(v/tot)*Math.PI*2, a2=ang+da;
+    var col=MZ_COL[i%MZ_COL.length];
+    var grande=(da>Math.PI)?1:0;
+    var p1=pt(ang,R), p2=pt(a2,R);
+    var d;
+    if(dona){
+      var q1=pt(a2,Ri), q2=pt(ang,Ri);
+      d='M'+p1[0]+' '+p1[1]+'A'+R+' '+R+' 0 '+grande+' 1 '+p2[0]+' '+p2[1]+
+        'L'+q1[0]+' '+q1[1]+'A'+Ri.toFixed(2)+' '+Ri.toFixed(2)+' 0 '+grande+' 0 '+q2[0]+' '+q2[1]+'Z';
+    } else {
+      d='M'+cx+' '+cy+'L'+p1[0]+' '+p1[1]+'A'+R+' '+R+' 0 '+grande+' 1 '+p2[0]+' '+p2[1]+'Z';
+    }
+    var bis=ang+da/2;
+    med.push([Math.cos(bis), Math.sin(bis)]);
+    reb+='<path class="mzsl" data-i="'+i+'" d="'+d+'" fill="'+col+'" stroke="#121215" stroke-width="1.5"'+
+      ' onmousemove="mzPieMove(event,\''+id+'\','+i+')" onmouseleave="mzChOut(\''+id+'\')"'+
+      ' ontouchstart="mzPieMove(event,\''+id+'\','+i+')" ontouchend="mzChOut(\''+id+'\')"></path>';
+    ang=a2;
+  });
+  cfg._med=med;
+
+  var centro = dona
+    ? '<text x="'+cx+'" y="'+(cy-2)+'" text-anchor="middle" font-size="21" font-weight="850" fill="#f4f5f7">'+mzKf(tot)+'</text>'+
+      '<text x="'+cx+'" y="'+(cy+15)+'" text-anchor="middle" font-size="10" fill="#8f95a3">'+esc(cfg.unidad||'total')+'</text>'
+    : '';
+
+  /* la lista de colores, con su valor y su porcentaje */
+  var leyenda='<div class="mzpleg">'+vals.map(function(v,i){
+    return '<span class="mzpli"><i style="background:'+MZ_COL[i%MZ_COL.length]+'"></i>'+
+      '<b>'+esc(String((cfg.tips&&cfg.tips[i])||cfg.cats[i]))+'</b>'+
+      '<span>'+(cfg.fmt||mzMiles)(v)+' · '+Math.round(v/tot*100)+'%</span></span>';
+  }).join('')+'</div>';
+
+  return '<div class="mzchw mzpiew" id="mzchw-'+id+'">'+
+    '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc((cfg.unidad||'')+': '+mzMiles(tot))+'">'+
+      reb+centro+'</svg>'+leyenda+
+    '<div class="mztip" id="mztip-'+id+'" role="status" aria-live="polite"></div></div>';
+}
+function mzPieMove(e,id,i){
+  var c=MZCH[id]; if(!c) return;
+  var w=document.getElementById('mzchw-'+id); if(!w) return;
+  var svg=w.getElementsByTagName('svg')[0]; if(!svg) return;
+  if(c._i!==i){
+    c._i=i;
+    /* la rebanada de abajo del cursor se separa; las demás se apagan */
+    var ps=svg.getElementsByClassName('mzsl');
+    for(var k=0;k<ps.length;k++){
+      var sel=(+ps[k].getAttribute('data-i')===i);
+      ps[k].setAttribute('opacity', sel?'1':'.45');
+      var m=c._med[k]||[0,0];
+      ps[k].setAttribute('transform', sel?('translate('+(m[0]*5).toFixed(2)+','+(m[1]*5).toFixed(2)+')'):'translate(0,0)');
+    }
+    var tip=document.getElementById('mztip-'+id);
+    if(tip){
+      var v=+((c.series[0].datos||[])[i])||0, f=c.fmt||mzMiles;
+      tip.innerHTML='<div class="mztt">'+esc(String((c.tips&&c.tips[i])||c.cats[i]))+'</div>'+
+        '<div class="mztr"><i style="background:'+MZ_COL[i%MZ_COL.length]+'"></i>'+
+        '<span class="mznm">'+esc(c.series[0].nom||'')+'</span><span class="mzvl">'+f(v)+'</span></div>'+
+        '<div class="mztr"><i style="background:transparent"></i><span class="mznm">del total</span>'+
+        '<span class="mzvl">'+Math.round(v/c._tot*100)+'%</span></div>'+
+        (c.nota&&c.nota[i]?('<div class="mznota">'+esc(c.nota[i])+'</div>'):'');
+    }
+  }
+  /* la tarjetita sigue al cursor dentro del gráfico */
+  var tip2=document.getElementById('mztip-'+id);
+  if(tip2){
+    var r=w.getBoundingClientRect();
+    var mx=(e.touches&&e.touches[0])?e.touches[0].clientX:e.clientX;
+    var my=(e.touches&&e.touches[0])?e.touches[0].clientY:e.clientY;
+    if(mx!=null){
+      var tw=tip2.offsetWidth||130, th=tip2.offsetHeight||70;
+      var lx=mx-r.left+14, ly=my-r.top-th/2, flip=false;
+      if(lx+tw>r.width-2){ lx=mx-r.left-tw-14; flip=true; }
+      if(lx<0) lx=0;
+      if(ly<0) ly=0; if(ly+th>r.height) ly=Math.max(0,r.height-th);
+      tip2.style.left=Math.round(lx)+'px';
+      tip2.style.top=Math.round(ly)+'px';
+      tip2.style.transformOrigin=flip?'right center':'left center';
+    }
+  }
+  if(w.className.indexOf('on')<0) w.className+=' on';
 }
 /* el selector de tipo, con look de pastilla */
 function mzChTipo(txt,key,ops,def,extra){

@@ -331,4 +331,71 @@
 })();
 </script>
 
+<!-- ══════════════════════════════════════════════════════════════════════════
+     9 · MEDICIÓN FINA (31-ago-2026)
+     POR QUÉ: el panel de inicio se ve descuadrado en Safari 17.6 y todas las
+     pruebas de soporte salen en verde, o sea que el navegador SÍ entiende las
+     funciones. Entonces el problema no es que no las entienda: es que las
+     CALCULA distinto. Adivinar cual ya fallo dos veces, asi que aqui se
+     reproduce el panel con las MISMAS reglas del sistema y se reporta lo que
+     este navegador calcula de verdad. Con esos numeros se sabe cual es.
+     ══════════════════════════════════════════════════════════════════════════ -->
+<style>
+  /* copiadas TAL CUAL del sistema, para medir lo mismo que alla */
+  .m-statile{flex:1;min-width:0;background:#14161d;border:1px solid #262a36;border-radius:16px;
+             padding:13px 14px;text-align:left;display:flex;flex-direction:column;justify-content:center}
+  .m-statile .n{font-size:clamp(22px,calc(2vw + 12px),38px);font-weight:850;letter-spacing:-.02em;
+                line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:auto 0}
+  .m-statile .l{font-size:clamp(9px,calc(.4vw + 7.5px),11px);color:#9aa0ae;font-weight:700;
+                letter-spacing:.08em;margin-top:6px;text-transform:uppercase;line-height:1.2}
+  .m-wrap{display:flex;gap:10px;align-items:stretch}
+</style>
+
+<div class="card">
+  <p class="t">9 · Medición fina del panel</p>
+  <div class="m-wrap" id="m-demo" style="margin-bottom:12px">
+    <div class="m-statile" style="flex:1.25"><svg viewBox="0 0 120 68" style="width:100%;display:block"><path d="M14 60 A46 46 0 0 1 106 60" fill="none" stroke="#333" stroke-width="11" stroke-linecap="round"/></svg><div class="l">Global</div></div>
+    <div class="m-statile"><div class="n">0</div><div class="l">Focos</div></div>
+    <div class="m-statile"><div class="n">515</div><div class="l">Equipo</div></div>
+    <div class="m-statile"><div class="n">25</div><div class="l">Deptos</div></div>
+  </div>
+  <div id="m-datos" style="font-size:13px;line-height:1.7"></div>
+  <div class="chico" id="m-veredicto" style="margin-top:10px"></div>
+</div>
+
+<script>
+(function(){
+  var w=document.getElementById('m-demo');
+  var n=w.querySelector('.n'), l=w.querySelector('.l'), svg=w.querySelector('svg');
+  var cn=getComputedStyle(n), cl=getComputedStyle(l);
+  var bs=svg.getBoundingClientRect(), bw=w.getBoundingClientRect();
+  var altoEsperado=Math.round(bs.width*68/120);
+  var altoReal=Math.round(bs.height);
+
+  /* Lo que DEBE dar: el numero tope a 38px, la etiqueta a 11px (en pantalla
+     grande), y el dibujo con la altura de su proporcion. */
+  var filas=[
+    ['Tamaño del número',      cn.fontSize,  'entre 22 y 38 px',  parseFloat(cn.fontSize)>=22 && parseFloat(cn.fontSize)<=38],
+    ['Tamaño de la etiqueta',  cl.fontSize,  'entre 9 y 11 px',   parseFloat(cl.fontSize)>=9  && parseFloat(cl.fontSize)<=11],
+    ['Alto del dibujo',        altoReal+'px', altoEsperado+'px (su proporción)', Math.abs(altoReal-altoEsperado)<=2],
+    ['Alto de la fila',        Math.round(bw.height)+'px', 'menos de 200 px',  bw.height<200]
+  ];
+  var mal=[], html='';
+  filas.forEach(function(f){
+    if(!f[3]) mal.push(f[0]);
+    html+='<div style="display:flex;gap:8px;align-items:baseline;padding:4px 0;border-bottom:1px solid #1e2230">'+
+      '<span class="'+(f[3]?'ok':'mal')+'" style="font-weight:800;flex:none;width:18px">'+(f[3]?'✓':'✗')+'</span>'+
+      '<span style="flex:1">'+f[0]+'</span>'+
+      '<b style="flex:none;'+(f[3]?'':'color:#ef4444')+'">'+f[1]+'</b>'+
+      '<span class="chico" style="margin:0;flex:none;width:150px;text-align:right">debe dar '+f[2]+'</span></div>';
+  });
+  document.getElementById('m-datos').innerHTML=html;
+  var v=document.getElementById('m-veredicto');
+  if(!mal.length){ v.innerHTML='<span class="ok" style="font-weight:800">El panel se calcula bien en este navegador.</span> '+
+      'Si aun asi lo ves descuadrado, el problema NO es de tamaños — es de acomodado, y hay que buscar por otro lado.'; }
+  else { v.innerHTML='<span class="mal" style="font-weight:800">ESTO ES LO QUE ESTA MAL: '+mal.join(' · ')+'</span>'+
+      '<br>Mándale esta foto a Carlos: con estos números se arregla dirigido, sin adivinar.'; }
+})();
+</script>
+
 </body></html>

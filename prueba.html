@@ -378,7 +378,9 @@
     ['Tamaño del número',      cn.fontSize,  'entre 22 y 38 px',  parseFloat(cn.fontSize)>=22 && parseFloat(cn.fontSize)<=38],
     ['Tamaño de la etiqueta',  cl.fontSize,  'entre 9 y 11 px',   parseFloat(cl.fontSize)>=9  && parseFloat(cl.fontSize)<=11],
     ['Alto del dibujo',        altoReal+'px', altoEsperado+'px (su proporción)', Math.abs(altoReal-altoEsperado)<=2],
-    ['Alto de la fila',        Math.round(bw.height)+'px', 'menos de 200 px',  bw.height<200]
+    /* la fila debe medir lo del dibujo mas su relleno; un tope fijo daba falsa
+       alarma porque aqui el panel va mas ancho que en la app */
+    ['Alto de la fila',        Math.round(bw.height)+'px', 'como '+(altoEsperado+48)+'px', bw.height <= altoEsperado+70]
   ];
   var mal=[], html='';
   filas.forEach(function(f){

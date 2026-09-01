@@ -211,8 +211,13 @@ body.a11y .pqscroll{max-height:none;overflow:visible}
   filter:drop-shadow(0 9px 20px rgba(0,0,0,.34));pointer-events:none;user-select:none}
 /* el cuerpo manda el tamaño; la mano se coloca en porcentajes sobre él, así
    escala solo en celular y en Texto grande sin descuadrarse */
-.bandihero .bcuerpo{display:block;height:100px;width:auto;image-rendering:auto}
-.bandihero .bmano{position:absolute;left:0;top:18.82%;width:30.4%;height:auto;
+/* ⭐ 31-ago-2026 · la PROPORCIÓN va declarada (la imagen es 250x340). Sin ella el
+   navegador no sabe cuánto ocupa Bandi hasta que la imagen termina de cargar, y
+   ahí la página se recorre. Chrome repinta bien; Safari se quedaba con lo que ya
+   había dibujado y aparecía un panel fantasma encimado en el encabezado. Con la
+   proporción declarada el espacio se reserva desde el principio y no hay brinco. */
+.bandihero .bcuerpo{display:block;height:100px;width:auto;aspect-ratio:250/340;image-rendering:auto}
+.bandihero .bmano{position:absolute;left:0;top:18.82%;width:30.4%;height:auto;aspect-ratio:76/60;
   transform-origin:100% 100%;   /* la muñeca */
   animation:bandiSaluda 8s ease-in-out infinite}
 /* Bandi está QUIETO (pedido de Carlos 26-ago: nada de flotar de lado a lado).
@@ -342,7 +347,7 @@ body.a11y .tname{font-size:16px !important}
 .chdupla{display:flex;align-items:flex-end;justify-content:center;margin-bottom:10px}
 .chdupla .chbandi{display:inline-block;line-height:0;margin:0 -13px 0 0;transform:rotate(9deg);transform-origin:82% 96%;position:relative;z-index:1;filter:drop-shadow(0 10px 20px rgba(0,0,0,.45))}
 .chdupla .chbandi .bcuerpo{display:block;height:84px;width:auto}
-.chdupla .chbandi .bmano{position:absolute;left:0;top:18.82%;width:30.4%;height:auto;transform-origin:100% 100%;animation:bandiSaluda 8s ease-in-out infinite}
+.chdupla .chbandi .bmano{position:absolute;left:0;top:18.82%;width:30.4%;height:auto;aspect-ratio:76/60;transform-origin:100% 100%;animation:bandiSaluda 8s ease-in-out infinite}
 .chdupla .chlogo{width:auto;height:38px;max-width:150px;object-fit:contain;margin:0 0 5px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.4))}
 .chhello b{font-size:24px;font-weight:850;letter-spacing:-.02em}
 .chhello span{font-size:14px;color:var(--txt)}

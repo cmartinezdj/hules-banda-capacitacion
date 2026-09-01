@@ -1535,6 +1535,42 @@ body.a11y #vcBar .vcb-x{font-size:14px;padding:9px 14px}
 }
 
 
+/* --- el campo de fechas en dígitos, como el DateRangePicker de la referencia --- */
+.mzdrp .mzfec{letter-spacing:.02em}
+
+/* --- el mes como botón, con su « › » para saltar a otro mes --- */
+.mzmestrig{display:inline-flex;align-items:center;gap:3px;border:0;background:none;color:var(--txt);
+  font:inherit;font-size:13.5px;font-weight:700;padding:4px 6px;border-radius:9px;cursor:pointer;
+  text-transform:capitalize;
+  transition:background-color 120ms var(--ease-out),transform 200ms var(--ease-out)}
+@media(hover:hover){.mzmestrig:hover{background:var(--card2)}}
+.mzmestrig:active{transform:scale(.97)}
+.mzmestrig:focus-visible{outline:2px solid var(--accent2);outline-offset:1px}
+.mzmestrig svg{width:13px;height:13px;display:block;opacity:.65;
+  transition:transform 200ms var(--ease-out)}
+.mzmestrig.on svg{transform:rotate(90deg)}
+
+/* --- la lista de meses dentro del calendario --- */
+.mzmesgr{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px 0 2px}
+.mzmesb{display:flex;flex-direction:column;align-items:flex-start;gap:1px;border:1px solid var(--line);
+  background:var(--card2);color:var(--txt);font:inherit;border-radius:12px;padding:9px 11px;cursor:pointer;
+  text-align:left;min-width:0;
+  transition:border-color 170ms var(--ease-out),transform 130ms var(--ease-out)}
+.mzmesb b{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.mzmesb span{font-size:10.5px;color:var(--mut);white-space:nowrap}
+.mzmesb:active{transform:scale(.97)}
+@media(hover:hover){.mzmesb:hover{border-color:rgba(var(--accent2-rgb),.45);border-color:color-mix(in srgb,var(--accent2) 45%,var(--line))}}
+.mzmesb.on{border-color:var(--accent);background:rgba(var(--accent2-rgb),.14);background:color-mix(in srgb,var(--accent2) 14%,transparent)}
+.mzmesb:focus-visible{outline:2px solid var(--accent2);outline-offset:1px}
+
+/* --- el subtítulo de cada atajo de la izquierda --- */
+.mzrap button{display:flex;flex-direction:column;align-items:flex-start;gap:1px}
+.mzrsub{font-size:10.5px;color:var(--mut);font-weight:600}
+
+/* --- los días donde NO hay producción: se ven, pero no se pueden escoger --- */
+.mzcal .mzd.nodata{opacity:.24;cursor:default}
+.mzcal .mzd.nodata>span{background:none}
+
 /* --- pastel / dona interactivos --- */
 .mzpiew svg{max-width:330px;margin:0 auto}
 .mzpiew .mzsl{cursor:pointer;transition:opacity 130ms var(--ease-out),transform 170ms var(--ease-out)}
@@ -1564,12 +1600,19 @@ body.a11y .mzrp .mzrap button{font-size:14.5px}
 body.a11y .mzcal .mzd{font-size:14px}
 body.a11y .mzcal .mzdow{font-size:12.5px}
 body.a11y .mzcal .mzpie{font-size:13.5px}
+body.a11y .mzmestrig{font-size:15.5px}
+body.a11y .mzmesb b{font-size:14px}
+body.a11y .mzmesb span,body.a11y .mzrsub{font-size:12.5px}
+body.a11y .mzdrp .mzfec{font-size:14.5px}
 
 /* --- MENOS MOVIMIENTO: se quedan los cambios de opacidad, se va el movimiento --- */
 @media(prefers-reduced-motion:reduce){
   .mzseg .mzind,.mzpill,.mzdrp,.mzk.tap,.mzcal .mzcnav,.mzcal .mzd>span,.mzrp .mzrap button{transition-property:opacity,background-color,border-color,color}
   .mzseg>button:active,.mzpill:active,.mzdrp:active,.mzk.tap:active,.mzcal .mzcnav:active,
   .mzcal .mzd:not([disabled]):active>span,.mzrp .mzrap button:active{transform:none}
+  .mzmestrig,.mzmesb,.mzmestrig svg{transition-property:background-color,border-color,color}
+  .mzmestrig:active,.mzmesb:active{transform:none}
+  .mzmestrig.on svg{transform:none}
   .mztip{transition:opacity 120ms linear;transform:none}
   .mzchw.on .mztip{transform:none}
 }
@@ -15855,17 +15898,28 @@ function mzCols(items){  /* columnas verticales con el número arriba */
 function mzTablaG(items,unidad,totReal,nTotal){  /* tabla de números puros */
   /* totReal = el total DE VERDAD cuando la lista viene recortada (el servidor manda
      los 12 principales). Sin esto el renglón «Total» y los porcentajes salían sobre
-     la lista recortada, o sea falsos (26-ago). */
+     la lista recortada, o sea falsos (26-ago).
+     ⭐ 1-sep-2026 · Carlos: «haz todo simetrico, que sea lineal, los numeros de los
+     minutos se ven mas arriba, no centrados». Era un flex con space-between y el
+     número sin ancho fijo: cada renglón alineaba distinto y el número quedaba a otra
+     altura que su unidad. Ahora es una REJA de 4 columnas fijas, todo centrado
+     verticalmente y con el mismo tamaño de letra. */
   var tot=0; items.forEach(function(i){ tot+=(i.v||0); });
   var recorte=(totReal!=null && totReal>tot);
   if(totReal!=null) tot=totReal;
-  return '<div style="margin-top:8px">'+items.map(function(i){
-    return '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px;font-variant-numeric:tabular-nums">'+
-      '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(i.l)+'</span>'+
-      '<b>'+Number(i.v||0).toLocaleString()+'</b><span class="note" style="width:70px;text-align:right">'+esc(unidad||'')+'</span>'+
-      '<span class="note" style="width:40px;text-align:right">'+(tot?Math.round((i.v||0)/tot*100):0)+'%</span></div>'; }).join('')+
-    '<div style="display:flex;justify-content:space-between;padding:7px 0;font-size:12.5px"><b>Total</b><b style="font-variant-numeric:tabular-nums">'+tot.toLocaleString()+'</b></div>'+
-    (recorte?'<div class="note" style="font-size:11px;margin-top:2px">Arriba se listan los '+items.length+
+  var REJA='display:grid;grid-template-columns:minmax(0,1fr) 84px 62px 44px;gap:10px;align-items:center;'+
+           'font-size:12.5px;line-height:1.45;font-variant-numeric:tabular-nums';
+  return '<div class="mztbl" style="margin-top:8px">'+items.map(function(i){
+    return '<div style="'+REJA+';padding:7px 0;border-bottom:1px solid var(--line)">'+
+      '<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+escA(String(i.l==null?'':i.l))+'">'+esc(i.l)+'</span>'+
+      '<b style="text-align:right">'+Number(i.v||0).toLocaleString()+'</b>'+
+      '<span class="note" style="text-align:left;margin:0">'+esc(unidad||'')+'</span>'+
+      '<span class="note" style="text-align:right;margin:0">'+(tot?Math.round((i.v||0)/tot*100):0)+'%</span></div>'; }).join('')+
+    '<div style="'+REJA+';padding:9px 0 2px">'+
+      '<b>Total</b><b style="text-align:right">'+tot.toLocaleString()+'</b>'+
+      '<span class="note" style="text-align:left;margin:0">'+esc(unidad||'')+'</span>'+
+      '<span class="note" style="text-align:right;margin:0">100%</span></div>'+
+    (recorte?'<div class="note" style="font-size:11px;margin-top:4px">Arriba se listan los '+items.length+
       (nTotal?' mayores de '+nTotal:' mayores')+'; el Total es de todos.</div>':'')+'</div>'; }
 function mzArea(dias,maxD){  /* área bajo la curva */
   var n=dias.length,W=640,H=150,PL=10,PR=10,PT=18,PB=18;
@@ -16077,11 +16131,16 @@ function mzChart(cfg){
     });
   }
 
-  /* etiquetas de abajo: se saltan las que no caben */
+  /* Etiquetas de abajo. ⭐ 1-sep: antes se recortaban A CIEGAS con slice(0,10)
+     desde quien llamaba, y «Laboratorio» salía «Laboratori». Ahora se recorta
+     aquí, donde SÍ se sabe cuánto mide la columna, y solo si no cabe. */
+  var caben=Math.max(3, Math.floor(band/5.4));      /* ~5.4 unidades por letra a 9.5 */
+  var corta=function(t){ t=String(t==null?'':t);
+    return t.length<=caben ? t : (t.slice(0,Math.max(1,caben-1))+'\u2026'); };
   var paso=Math.ceil(n/13), xl='';
   (cfg.cats||[]).forEach(function(c,i){
     if(i%paso===0 || i===n-1)
-      xl+='<text x="'+X(i).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" font-size="9.5" fill="#8f95a3">'+esc(String(c))+'</text>';
+      xl+='<text x="'+X(i).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" font-size="9.5" fill="#8f95a3">'+esc(corta(c))+'</text>';
   });
 
   /* resumen para quien no ve el gráfico (y la vista Tabla siempre está a un clic) */
@@ -16298,11 +16357,37 @@ function mzFCorta(f){
   try{ var p=String(f||'').split('-'); return (+p[2])+' '+(MESES[+p[1]-1]||'').slice(0,3).toLowerCase()+' '+p[0].slice(2); }
   catch(e){ return f; }
 }
-/* el control: dos fechas + el icono, como la referencia */
+/* la fecha en DÍGITOS: «08 / 09 / 2026», igual que el DateRangePicker que
+   mandó Carlos. Día / mes / año, como se escribe en México. */
+function mzFDig(f){
+  var p=String(f||'').split('-');
+  if(p.length<3) return f||'';
+  return p[2]+' / '+p[1]+' / '+p[0];
+}
+/* el control: las dos fechas y el icono del calendario */
 function mzRangoCtl(){
   return '<button class="mzdrp" onclick="mzCalTog()" aria-haspopup="dialog" aria-label="Elegir el periodo">'+
-    '<span>'+esc(mzFCorta(_mztD1))+'</span><span class="mzsep">–</span><span>'+esc(mzFCorta(_mztD2))+'</span>'+IC_CAL+'</button>';
+    '<span class="mzfec">'+esc(mzFDig(_mztD1))+'</span><span class="mzsep">-</span>'+
+    '<span class="mzfec">'+esc(mzFDig(_mztD2))+'</span>'+IC_CAL+'</button>';
 }
+
+/* ── QUÉ MESES HAY DE VERDAD ────────────────────────────────────────────────
+   Antes esta lista salía de un cálculo a ciegas: los últimos 10 meses. Carlos:
+   «pones meses que el sistema no tiene informacion». Ahora la manda el
+   servidor (hb_mez_meses, v3_176), así se mantiene sola cuando carguen
+   septiembre — y el calendario no deja escoger días donde no hay nada.       */
+var _mzMeses=null;
+function mzMesesCarga(cb){
+  if(_mzMeses || window._mzMesesBusy){ if(cb) cb(); return; }
+  window._mzMesesBusy=true;
+  SB.rpc('hb_mez_meses').then(function(r){
+    window._mzMesesBusy=false;
+    if(r && r.data && r.data.ok) _mzMeses=r.data;
+    if(cb) cb();
+  }, function(){ window._mzMesesBusy=false; if(cb) cb(); });
+}
+function mzDatoDesde(){ return (_mzMeses&&_mzMeses.desde)||null; }
+function mzDatoHasta(){ return (_mzMeses&&_mzMeses.hasta)||mxToday(); }
 /* el panel vive en la pantalla VISIBLE: buscarlo por id abría el de una escondida */
 function mzRpEl(){
   var sec=$('s-'+_screen), el=null;
@@ -16311,11 +16396,24 @@ function mzRpEl(){
 }
 function mzCalTog(){
   var el=mzRpEl(); if(!el) return;
-  if(el.className.indexOf('on')>=0){ el.className='mz-rangopanel mzrp'; el.innerHTML=''; return; }
-  _mzCalA=_mztD1; _mzCalB=_mztD2; _mzCalM=String(_mztD2||mxToday()).slice(0,7);
+  if(el.className.indexOf('on')>=0){ mzCalCierra(); return; }
+  _mzCalA=_mztD1; _mzCalB=_mztD2; _mzCalMesAbierto=false;
   el.className='mz-rangopanel mzrp on';
+  el.innerHTML='<div class="mzbox"><div class="note">Buscando qué meses hay…</div></div>';
+  mzMesesCarga(function(){
+    /* abrir en el ÚLTIMO mes con producción, no en el mes de hoy: septiembre
+       está vacío y el calendario se veía en blanco al abrirlo. */
+    var ref=_mztD2||mzDatoHasta();
+    var lim=mzDatoHasta();
+    if(mzDatoDesde() && ref>lim) ref=lim;
+    _mzCalM=String(ref).slice(0,7);
+    mzCalPinta();
+  });
   mzCalPinta();
 }
+var _mzCalMesAbierto=false;
+function mzCalMesTog(){ _mzCalMesAbierto=!_mzCalMesAbierto; mzCalPinta(); }
+function mzCalVaAMes(ym){ _mzCalM=ym; _mzCalMesAbierto=false; mzCalPinta(); }
 function mzCalCierra(){ var el=mzRpEl(); if(el){ el.className='mz-rangopanel mzrp'; el.innerHTML=''; } }
 function mzCalMes(p){
   var y=+_mzCalM.slice(0,4), m=+_mzCalM.slice(5,7)+p;
@@ -16323,68 +16421,110 @@ function mzCalMes(p){
   _mzCalM=y+'-'+('0'+m).slice(-2);
   mzCalPinta();
 }
-/* los últimos 10 meses con nombre, para «escoger por mes» */
+/* SOLO los meses con producción, y con su tamaño para que se vea de un ojo */
 function mzMesesLista(){
-  var hoy=mxToday(), y=+hoy.slice(0,4), m=+hoy.slice(5,7), out=[];
-  for(var k=0;k<10;k++){
-    var yy=y, mm=m-k;
-    while(mm<1){ mm+=12; yy--; }
-    var d1=yy+'-'+('0'+mm).slice(-2)+'-01';
-    var fin=new Date(Date.UTC(yy,mm,0)).getUTCDate();
-    var d2=yy+'-'+('0'+mm).slice(-2)+'-'+('0'+fin).slice(-2);
-    if(d2>hoy) d2=hoy;                                  /* el mes en curso va hasta hoy */
-    out.push({t:(MZ_MESL[mm-1]||'')+' '+yy, d1:d1, d2:d2});
-  }
-  return out;
+  if(!_mzMeses || !_mzMeses.meses) return [];
+  return _mzMeses.meses.map(function(m){
+    var y=+String(m.mes).slice(0,4), mm=+String(m.mes).slice(5,7);
+    return { t:(MZ_MESL[mm-1]||'')+' '+y, d1:m.d1, d2:m.d2,
+             sub: mzMiles(m.mezclas)+' mezclas' };
+  });
+}
+/* los atajos, contados desde el ÚLTIMO DÍA CON DATOS y no desde hoy: hoy
+   puede no traer nada, y «Últimos 7 días» saldría vacío. */
+function mzRapidos(){
+  var d1=mzDatoDesde(); if(!d1) return [];
+  var d2=mzDatoHasta();
+  var atras=function(n){
+    var x=new Date(d2+'T12:00:00'); x.setDate(x.getDate()-n+1);
+    var v=x.toISOString().slice(0,10); return v<d1?d1:v;
+  };
+  return [
+    {t:'Todo lo que hay',  d1:d1,        d2:d2, sub:mzFDig(d1)+' a '+mzFDig(d2)},
+    {t:'Último día',       d1:d2,        d2:d2, sub:mzFDig(d2)},
+    {t:'Últimos 7 días',   d1:atras(7),  d2:d2, sub:'con producción'},
+    {t:'Últimos 30 días',  d1:atras(30), d2:d2, sub:'con producción'}
+  ];
 }
 function mzCalPinta(){
   var el=mzRpEl(); if(!el || el.className.indexOf('on')<0) return;
+  if(!_mzCalM) _mzCalM=String(_mztD2||mxToday()).slice(0,7);
   var hoy=mxToday();
+  var lim1=mzDatoDesde(), lim2=mzDatoHasta();
   var y=+_mzCalM.slice(0,4), m=+_mzCalM.slice(5,7);
   var dow=(new Date(Date.UTC(y,m-1,1)).getUTCDay()+6)%7;          /* lunes = 0 */
   var nd=new Date(Date.UTC(y,m,0)).getUTCDate();
   var ndPrev=new Date(Date.UTC(y,m-1,0)).getUTCDate();
   var A=_mzCalA, B=_mzCalB;
   var lo=(A&&B)?(A<B?A:B):A, hi=(A&&B)?(A<B?B:A):A;
+  var meses=mzMesesLista(), raps=mzRapidos();
+  var esteI=function(d1,d2){ return (d1===_mztD1&&d2===_mztD2)?' class="on"':''; };
 
-  var celdas='';
-  for(var k=0;k<42;k++){
-    var dnum, iso, fuera=false;
-    if(k<dow){ dnum=ndPrev-dow+1+k; var pm=m-1, py=y; if(pm<1){ pm=12; py--; }
-      iso=py+'-'+('0'+pm).slice(-2)+'-'+('0'+dnum).slice(-2); fuera=true; }
-    else if(k-dow<nd){ dnum=k-dow+1; iso=y+'-'+('0'+m).slice(-2)+'-'+('0'+dnum).slice(-2); }
-    else { dnum=k-dow-nd+1; var nm2=m+1, ny=y; if(nm2>12){ nm2=1; ny++; }
-      iso=ny+'-'+('0'+nm2).slice(-2)+'-'+('0'+dnum).slice(-2); fuera=true; }
-    if(k>=35 && fuera) continue;                                  /* no pintar una 6ª fila vacía */
-    var cls='d'+(fuera?' out':'');
-    if(lo&&hi&&iso>=lo&&iso<=hi){ cls+=' band'; if(iso===lo) cls+=' b1'; if(iso===hi) cls+=' b2'; }
-    if(iso===lo||iso===hi) cls+=' sel';
-    if(iso===hoy) cls+=' hoy';
-    var futuro=(iso>hoy);
-    celdas+='<button type="button" class="'+cls+'"'+(futuro?' disabled':'')+
-      ' onclick="mzCalPick(\''+iso+'\')" aria-label="'+esc(mzFCorta(iso))+'"><span>'+dnum+'</span></button>';
+  /* ── el cuerpo: los días, o la lista de meses si tocaron el « › » ── */
+  var cuerpo='';
+  if(_mzCalMesAbierto){
+    cuerpo='<div class="mzmesgr">'+ (meses.length
+      ? meses.map(function(x){
+          var ym=String(x.d1).slice(0,7);
+          return '<button type="button" class="mzmesb'+(ym===_mzCalM?' on':'')+'" onclick="mzCalVaAMes(\''+ym+'\')">'+
+                 '<b>'+esc(x.t)+'</b><span>'+esc(x.sub||'')+'</span></button>';
+        }).join('')
+      : '<div class="note">Todavía no hay ningún mes cargado.</div>')+'</div>';
+  } else {
+    var celdas='';
+    for(var k=0;k<42;k++){
+      var dnum, iso, fuera=false;
+      if(k<dow){ dnum=ndPrev-dow+1+k; var pm=m-1, py=y; if(pm<1){ pm=12; py--; }
+        iso=py+'-'+('0'+pm).slice(-2)+'-'+('0'+dnum).slice(-2); fuera=true; }
+      else if(k-dow<nd){ dnum=k-dow+1; iso=y+'-'+('0'+m).slice(-2)+'-'+('0'+dnum).slice(-2); }
+      else { dnum=k-dow-nd+1; var nm2=m+1, ny=y; if(nm2>12){ nm2=1; ny++; }
+        iso=ny+'-'+('0'+nm2).slice(-2)+'-'+('0'+dnum).slice(-2); fuera=true; }
+      if(k>=35 && fuera) continue;                                /* sin 6ª fila vacía */
+      /* ⭐ la clase es «mzd», con prefijo: «d» es el puntito verde de «En línea»
+         de la app, y sin prefijo los días del calendario salían como puntos. */
+      var cls='mzd'+(fuera?' out':'');
+      if(lo&&hi&&iso>=lo&&iso<=hi){ cls+=' band'; if(iso===lo) cls+=' b1'; if(iso===hi) cls+=' b2'; }
+      if(iso===lo||iso===hi) cls+=' sel';
+      if(iso===hoy) cls+=' hoy';
+      /* no se puede escoger donde no hay produccion: ni el futuro, ni antes
+         del primer dia cargado (Carlos 1-sep: «meses que el sistema no tiene
+         informacion»). Si aun no llega la lista, solo se bloquea el futuro. */
+      var muerto = (iso>hoy) || (lim1 ? (iso<lim1 || iso>lim2) : false);
+      if(muerto) cls+=' nodata';
+      celdas+='<button type="button" class="'+cls+'"'+(muerto?' disabled':'')+
+        ' onclick="mzCalPick(\''+iso+'\')" aria-label="'+esc(mzFCorta(iso))+'"><span>'+dnum+'</span></button>';
+    }
+    cuerpo='<div class="mzdow"><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span></div>'+
+           '<div class="mzgr">'+celdas+'</div>';
   }
 
-  var raps=mzRangos().slice(0,5);
-  var meses=mzMesesLista();
-  var esteI=function(d1,d2){ return (d1===_mztD1&&d2===_mztD2)?' class="on"':''; };
+  var pie = (_mzCalA && !_mzCalB)
+    ? 'Empieza el <b>'+esc(mzFDig(_mzCalA))+'</b>. Toca el día en que termina.'
+    : (lim1 ? ('Hay producción cargada del <b>'+esc(mzFDig(lim1))+'</b> al <b>'+esc(mzFDig(lim2))+'</b>. Los días en gris no tienen nada.')
+            : 'Toca el primer día y luego el último.');
 
   el.innerHTML='<div class="mzbox" role="dialog" aria-label="Elegir el periodo">'+
     '<div class="mzrap">'+
-      '<div class="mzgrp">Rápido</div>'+
-      raps.map(function(x){ return '<button type="button"'+esteI(x.d1,x.d2)+' onclick="mzCalGo(\''+x.d1+'\',\''+x.d2+'\')">'+esc(x.t)+'</button>'; }).join('')+
+      (raps.length?('<div class="mzgrp">Rápido</div>'+
+        raps.map(function(x){ return '<button type="button"'+esteI(x.d1,x.d2)+' onclick="mzCalGo(\''+x.d1+'\',\''+x.d2+'\')">'+
+          esc(x.t)+(x.sub?('<span class="mzrsub">'+esc(x.sub)+'</span>'):'')+'</button>'; }).join('')):'')+
       '<div class="mzgrp">Por mes</div>'+
-      meses.map(function(x){ return '<button type="button"'+esteI(x.d1,x.d2)+' onclick="mzCalGo(\''+x.d1+'\',\''+x.d2+'\')">'+esc(x.t)+'</button>'; }).join('')+
+      (meses.length
+        ? meses.map(function(x){ return '<button type="button"'+esteI(x.d1,x.d2)+' onclick="mzCalGo(\''+x.d1+'\',\''+x.d2+'\')">'+
+            esc(x.t)+'<span class="mzrsub">'+esc(x.sub||'')+'</span></button>'; }).join('')
+        : '<div class="note" style="padding:4px 10px">'+(window._mzMesesBusy?'buscando…':'ninguno cargado')+'</div>')+
     '</div>'+
     '<div class="mzcal">'+
-      '<div class="mzcab"><b>'+esc((MZ_MESL[m-1]||'')+' '+y)+'</b>'+
-        '<button type="button" class="mzcnav" onclick="mzCalMes(-1)" aria-label="Mes anterior">'+IC_CHL+'</button>'+
-        '<button type="button" class="mzcnav" onclick="mzCalMes(1)" aria-label="Mes siguiente">'+IC_CHR+'</button></div>'+
-      '<div class="mzdow"><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span></div>'+
-      '<div class="mzgr">'+celdas+'</div>'+
-      '<div class="mzpie">'+(( _mzCalA && !_mzCalB )
-        ? 'Empieza el <b>'+esc(mzFCorta(_mzCalA))+'</b>. Toca el día en que termina.'
-        : 'Toca el primer día y luego el último. También puedes elegir un mes de la lista.')+'</div>'+
+      '<div class="mzcab">'+
+        '<button type="button" class="mzmestrig'+(_mzCalMesAbierto?' on':'')+'" onclick="mzCalMesTog()" aria-expanded="'+(_mzCalMesAbierto?'true':'false')+'">'+
+          esc((MZ_MESL[m-1]||'')+' '+y)+IC_CHR+'</button>'+
+        '<span style="flex:1"></span>'+
+        (_mzCalMesAbierto?'':
+          '<button type="button" class="mzcnav" onclick="mzCalMes(-1)" aria-label="Mes anterior">'+IC_CHL+'</button>'+
+          '<button type="button" class="mzcnav" onclick="mzCalMes(1)" aria-label="Mes siguiente">'+IC_CHR+'</button>')+
+      '</div>'+
+      cuerpo+
+      '<div class="mzpie">'+pie+'</div>'+
     '</div></div>';
 }
 function mzCalPick(iso){
@@ -16591,7 +16731,7 @@ function mzTabPaint(x){
                           ['repro','Más reproceso'],['quemadas','Más quemadas'],
                           ['az','Compuesto (A-Z)']],'mezclas'))+
        mzChart({ id:'top', tipo:mzGT('top','barras'), alto:210, unidad:'mezclas',
-         cats: tc.map(function(c){ return String(c.compuesto||'¿?').slice(0,9); }),
+         cats: tc.map(function(c){ return c.compuesto||'¿?'; }),
          tips: tc.map(function(c){ return c.compuesto||'¿?'; }),
          series:[{nom:'Mezclas', color:MZ_S1, datos:tc.map(function(c){ return c.mezclas||0; })}],
          nota: tc.map(function(c){
@@ -16625,7 +16765,7 @@ function mzTabPaint(x){
   else{
     var totR=repro.reduce(function(a,o){ return a+(o.mezclas||0); },0);
     h+=mzChart({ id:'org', tipo:mzGT('org','barras'), alto:180, unidad:'mezclas',
-      cats: repro.map(function(o){ return String(mzOrgTxt(o.origen)).slice(0,10); }),
+      cats: repro.map(function(o){ return mzOrgTxt(o.origen); }),
       tips: repro.map(function(o){ return mzOrgTxt(o.origen); }),
       series:[{nom:'Mezclas', color:'#ffbf47', datos:repro.map(function(o){ return o.mezclas||0; })}],
       nota: repro.map(function(o){ return totR?(Math.round((o.mezclas||0)/totR*100)+'% del reproceso'):''; })});
@@ -16647,7 +16787,7 @@ function mzTabPaint(x){
     h+='<div class="mzbig"><div><span class="mzv" style="color:var(--warn)">'+mzN(tmTot)+'</span><span class="mzc">minutos perdidos en total</span></div>'+
        (tmCausas?('<div><span class="mzv">'+mzN(tmCausas)+'</span><span class="mzc">causas distintas</span></div>'):'')+'</div>';
     h+=mzChart({ id:'tm', tipo:mzGT('tm','barras'), alto:210, unidad:'minutos',
-      cats: tmt.map(function(c){ return String(c.causa||'¿?').slice(0,10); }),
+      cats: tmt.map(function(c){ return c.causa||'¿?'; }),
       tips: tmt.map(function(c){ return c.causa||'¿?'; }),
       series:[{nom:'Minutos', color:'#ffbf47', datos:tmt.map(function(c){ return Math.round(c.minutos||0); })}],
       fmt: function(v){ return mzN(v)+' min'; },

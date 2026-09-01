@@ -9483,6 +9483,30 @@ function vcBloqueo(){
   return true;
 }
 
+/* El padrón COMPLETO (las 515 claves), no solo las 6 que ya activaron su cuenta:
+   con el directorio de activados había que saberse la clave de memoria para abrir
+   a alguien de piso. hb_admin_lista ya existía para el módulo Personas y ya exige
+   hb_es_admin() del lado del servidor — no hace falta función nueva. */
+var _vcGente=null;
+function vcGente(cb){
+  if(_vcGente || window._vcGenteBusy){ if(cb) cb(); return; }
+  window._vcGenteBusy=true;
+  SB.rpc('hb_admin_lista').then(function(r){
+    window._vcGenteBusy=false;
+    if(r && r.data && r.data.ok) _vcGente=r.data.gente||[];
+    if(cb) cb();
+  }, function(){ window._vcGenteBusy=false; if(cb) cb(); });
+}
+/* iniciales sin depender del directorio: la gente sin activar no está ahí */
+function vcIni(nombre,n){
+  var nm=niceName(nombre||'');
+  var ini = nm ? nm.split(/\s+/).slice(0,2).map(function(w){ return (w[0]||'').toUpperCase(); }).join('')
+              : (''+n).slice(-2);
+  return '<span style="width:30px;height:30px;border-radius:10px;flex:none;display:flex;'+
+    'align-items:center;justify-content:center;font-weight:900;font-size:11px;color:#fff;'+
+    'background:linear-gradient(150deg,#0e9e8e,#053b36)">'+esc(ini)+'</span>';
+}
+
 function vcAbrir(){
   if(!vcPuede()) return;
   var v=$('vcModal');
@@ -9499,21 +9523,31 @@ function vcAbrir(){
     '<button class="btn ghost" style="margin:0" onclick="vcCierra()">Cancelar</button></div>';
   v.classList.remove('hide');
   vcFiltra();
-  dirLoad(function(){ if(!$('vcModal').classList.contains('hide')) vcFiltra(); });
+  vcGente(function(){ var m=$('vcModal'); if(m && !m.classList.contains('hide')) vcFiltra(); });
   try{ $('vcQ').focus(); }catch(e){}
 }
 function vcCierra(){ var v=$('vcModal'); if(v){ v.classList.add('hide'); v.innerHTML=''; } }
 
 function vcFiltra(){
   var q=((($('vcQ')||{}).value)||'').trim().toLowerCase();
-  var D=(DBC.dir||[]);
+  var D=(_vcGente || DBC.dir || []);
+  var cargando=(!_vcGente && window._vcGenteBusy);
   var out=D;
   if(q) out=D.filter(function(p){
     return (''+(p.clave||'')).toLowerCase().indexOf(q)>=0
         || (p.nombre||'').toLowerCase().indexOf(q)>=0
-        || (p.depto||'').toLowerCase().indexOf(q)>=0; });
-  out=out.slice(0,60);
+        || (p.depto||'').toLowerCase().indexOf(q)>=0
+        || (p.puesto||'').toLowerCase().indexOf(q)>=0; });
+  var hay=out.length;
+  out=out.slice(0,40);
   var h='';
+  if(!q && D.length>40){
+    h+='<div class="note" style="padding:6px 2px 8px;font-size:11px">'+D.length+
+       ' personas en el padr\u00f3n. Escribe un nombre, un \u00e1rea o una clave para encontrar a alguien.</div>';
+  } else if(q && hay>40){
+    h+='<div class="note" style="padding:6px 2px 8px;font-size:11px">'+hay+
+       ' coinciden; te muestro las primeras 40. Afina la b\u00fasqueda.</div>';
+  }
   if(/^[0-9]{1,4}$/.test(q)){
     var cl=('0000'+q).slice(-4);
     h+='<button class="tmit" style="width:100%" onclick="vcGo(\''+jsAttr(cl)+'\')">'+
@@ -9522,13 +9556,19 @@ function vcFiltra(){
        '<span class="note" style="display:block;font-size:10.5px">aunque todav\u00eda no haya activado su cuenta</span></span></button>';
   }
   out.forEach(function(p){
-    h+='<button class="tmit" style="width:100%" onclick="vcGo(\''+jsAttr(p.clave)+'\')">'+personAvatar(p.n,30)+
+    var rol = p.admin ? ' \u00b7 Administraci\u00f3n' : (p.mando ? ' \u00b7 Responsable' : '');
+    var sinAct = (p.registrado===false) ? ' \u00b7 sin activar' : '';
+    h+='<button class="tmit" style="width:100%" onclick="vcGo(\''+jsAttr(p.clave)+'\')">'+vcIni(p.nombre,p.n)+
        '<span style="text-align:left;min-width:0"><b style="font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+
        esc(niceName(p.nombre||('#'+p.n)))+'</b>'+
-       '<span class="note" style="display:block;font-size:10.5px">'+esc(p.clave)+' \u00b7 '+esc(p.depto||'')+
-       (p.admin?' \u00b7 Administraci\u00f3n':(p.mando?' \u00b7 Responsable':''))+'</span></span></button>';
+       '<span class="note" style="display:block;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+
+       esc(p.clave)+' \u00b7 '+esc(p.depto||'')+rol+sinAct+'</span></span></button>';
   });
-  if(!h) h='<div class="note" style="text-align:center;padding:14px">Nadie coincide. Escribe la clave de 4 d\u00edgitos y se abre igual.</div>';
+  if(!out.length){
+    h+= cargando
+      ? '<div class="note" style="text-align:center;padding:14px">Trayendo el padr\u00f3n\u2026</div>'
+      : '<div class="note" style="text-align:center;padding:14px">Nadie coincide. Escribe la clave de 4 d\u00edgitos y se abre igual.</div>';
+  }
   var L=$('vcList'); if(L) L.innerHTML=h;
 }
 

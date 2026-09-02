@@ -13548,6 +13548,9 @@ function renderMezHub(){
      del banbury 2, o del operador 1, o del turno 3» */
   if(veGraf||S.mezCap) h+=htile('renderMezPerfil()','personas','Por banbury, turno u operador','Escoge uno y ve todo lo suyo');
   if(veGraf) h+=htile('renderMezCierres()','pend','Cierres','Semana y mes listos para junta (PDF)');
+  /* 2-sep-2026 (Carlos): las existencias como submódulo de Producción, para que
+     quien planea sepa cuánta materia prima hay sin ir a buscarlo a Almacén. */
+  if(S.admin||S.mezCostos) h+=htile('renderMezExis()','box','Existencias de materia prima','Cuánto hay al último corte físico y el Restante');
   /* Precios, Almacén y Semáforo se mudaron a MATERIA PRIMA, y el Analista de
      compuestos a LABORATORIO (25-ago). Los datos NO se separaron: siguen en las
      mismas tablas, así que los gráficos de aquí se actualizan igual cuando

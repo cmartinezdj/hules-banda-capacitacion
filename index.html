@@ -15354,6 +15354,8 @@ function mzSemPaint(){
      '<div class="card"><div class="note">Ojo con estos</div><b style="font-size:22px;color:var(--warn)">'+mzN(ambar.length)+'</b></div>'+
      '</div>';
   var maxKg=1; mats.forEach(function(m){ if((+m.kg_periodo||0)>maxKg) maxKg=+m.kg_periodo; });
+  /* v3_185: la fecha del corte más reciente que traiga algún material, para decirla al pie */
+  var corteF=null; mats.forEach(function(m){ if(m.existencia_fecha && (!corteF || m.existencia_fecha>corteF)) corteF=m.existencia_fecha; });
   var ve=x.ve_precio;
   /* orden de Carlos (17-ago): MP · usado en periodo · restante · kg/día ·
      costo de lo usado · último precio con su fecha (chiquita) · cómo va.
@@ -15411,11 +15413,16 @@ function mzSemPaint(){
            mov='<span style="color:'+col+';font-weight:700;white-space:nowrap">'+(mv>=0?'+':'')+mzN(mv)+'</span>'+
                (mv<0?'<div class="note" style="font-size:9.5px;margin-top:1px">se usó más de lo que entró</div>':'');
          }
-         /* restante: SOLO si almacén ya capturó la existencia de corte */
+         /* restante: SOLO si almacén ya capturó la existencia de corte.
+            v3_185 (2-sep): si la existencia viene en litros o piezas no se resta
+            contra kilos — se muestra tal cual y se dice por qué. */
          var rest=(m.restante!=null)
            ? ('<b style="white-space:nowrap">'+mzN(m.restante)+' <span class="note">kg</span></b>'+
               (m.existencia_fecha?('<div class="note" style="font-size:9.5px;margin-top:1px">desde el corte '+esc(m.existencia_fecha)+'</div>'):''))
-           : '<span class="note">falta el inventario</span>';
+           : (m.existencia_corte!=null)
+             ? ('<span style="white-space:nowrap">'+mzN(m.existencia_corte)+' <span class="note">'+esc((m.existencia_unidad||'').toLowerCase())+'</span></span>'+
+                '<div class="note" style="font-size:9.5px;margin-top:1px">al corte '+esc(m.existencia_fecha||'')+' · viene en '+esc((m.existencia_unidad||'').toLowerCase())+', no se resta contra kilos</div>')
+             : '<span class="note">falta el inventario</span>';
          var celdas=[mp, usado, entro, mov, rest, mzN(m.kg_por_dia,1)];
          if(ve){ celdas.push(costo, precio); }
          celdas.push(semaf);
@@ -15423,7 +15430,11 @@ function mzSemPaint(){
        }))+
      '<div class="note" style="margin-top:8px">Rojo = lleva más del doble del periodo <b>sin que entre material al almacén</b> (o nunca ha entrado). Ámbar = más de '+mzN(dias)+' días. Verde = entró material hace poco.<br>El precio viejo se avisa aparte: no pinta el semáforo, porque que falte capturar una factura no significa que falte material.</div>'+
      (ve?'<div class="note" style="margin-top:4px">El «costo de lo usado» se valúa día por día: los kilos de cada fecha con el precio y la tasa DOF de esa fecha. Si a un material le faltó precio algún día, sale «no disponible» — no se suman pedazos.</div>':'')+
-     '<div class="note" style="margin-top:4px">Ya entran los <b>kilos de cada entrada</b> del registro de almacén: por eso se puede ver lo que entró y el movimiento del periodo. Para el <b>«Restante»</b> falta una sola cosa — la <b>existencia física a una fecha de corte</b>. En cuanto almacén la capture, esta columna se llena sola. Nada aquí se aproxima.</div>';
+     '<div class="note" style="margin-top:4px">Ya entran los <b>kilos de cada entrada</b> del registro de almacén: por eso se puede ver lo que entró y el movimiento del periodo. '+
+     (corteF
+       ? ('El <b>«Restante»</b> parte de la <b>existencia física del corte del '+esc(corteF)+'</b> que capturó almacén, más lo que entró después, menos lo que se consumió después. Si a un material le dice «falta el inventario», es que no venía en la balanza con un código del catálogo.')
+       : ('Para el <b>«Restante»</b> falta una sola cosa — la <b>existencia física a una fecha de corte</b>. En cuanto almacén la capture, esta columna se llena sola.'))+
+     ' Nada aquí se aproxima.</div>';
   $('s-mezsem').innerHTML=h;
 }
 
@@ -17047,9 +17058,14 @@ function mzAlmPinta(){
          '<button class="btn" style="margin:0;width:auto;padding:10px 14px;font-size:12.5px" onclick="mzAlmExisUno()">Guardar</button>'+
        '</div></div><datalist id="alm-mat-dl"></datalist>';
     var ef=(e&&e.filas)||[];
-    h+='<div class="card"><b style="font-size:13px">Capturado'+((e&&e.fecha)?(' al '+esc(e.fecha)):'')+' · '+mzN(e?e.total:0)+' materiales · '+mzN(e?e.kg:0)+' kg</b>';
+    /* v3_185 (2-sep): cada renglón trae su unidad (kg, lt o pz) y los totales van por unidad;
+       los EMPAQUES se guardan pero no entran al semáforo de mezclas (regla de Carlos). */
+    h+='<div class="card"><b style="font-size:13px">Capturado'+((e&&e.fecha)?(' al '+esc(e.fecha)):'')+' · '+mzN(e?e.total:0)+' materiales · '+mzN(e?e.kg:0)+' kg'+
+       ((e&&(+e.lt||0))?(' · '+mzN(e.lt)+' lt'):'')+((e&&(+e.pz||0))?(' · '+mzN(e.pz)+' pz'):'')+'</b>'+
+       ((e&&(+e.n_empaque||0))?('<div class="note" style="margin-top:3px">'+mzN(e.n_empaque)+' renglones son <b>empaques</b>: se guardan, pero no entran al semáforo de mezclas.</div>'):'');
     if(!ef.length) h+='<div class="note" style="margin-top:6px">Todavía no hay inventario capturado. En cuanto lo suba almacén, el «Restante» se enciende solo.</div>';
-    else h+=mzTabla(['Material','Kilos'], ef.map(function(f){ return mzTd(['<b>'+esc(f.codigo)+'</b><div class="note" style="font-size:10px">'+esc(f.nombre||'')+'</div>', mzN(f.kg)]); }));
+    else h+=mzTabla(['Material','Existencia'], ef.map(function(f){ return mzTd(['<b>'+esc(f.codigo)+'</b><div class="note" style="font-size:10px">'+esc(f.nombre||'')+(f.grupo?(' · '+esc(f.grupo)):'')+'</div>',
+      '<span style="white-space:nowrap">'+mzN(f.kg)+' <span class="note">'+esc((f.unidad||'kg').toLowerCase())+'</span></span>']); }));
     h+='</div>';
   }
   $('s-mezalm').innerHTML=h;

@@ -12637,7 +12637,8 @@ function renderMPrima(){
   if(puedeSubirDocs()) h+=htile("alimAbre('mprima')",'docs','Subir Excel o documento','Precios, entradas o existencias — los revisas antes de guardar',{wide:true});
   if(S.mezCostos) h+=htile('renderMezPrecios()','recibo','Precios de materia prima','El sistema recalcula los costos desde esa fecha');
   if(S.admin||S.mezCostos) h+=htile('renderMezAlm()','box','Almacén de materia prima','Entradas, claves por emparejar y existencia');
-  if(mzVeDineroMp()) h+=htile('renderMezSem()','deptos','Semáforo de consumo','Qué se está usando y qué no se ha comprado');
+  if(S.admin||S.mezCostos) h+=htile('renderMezExis()','box','Existencias al corte','Cuánto hay de cada materia prima al último inventario físico');
+  if(mzVeDineroMp()) h+=htile('renderMezSem()','deptos','Semáforo de consumo','Qué se está usando, qué entró y cuánto queda');
   if(S.admin||S.mezCostos) h+=htile("renderMezPend('almacen','mprima')",'focos','Lo que falta resolver','Claves sin empatar y materiales sin precio');
   if(S.admin||S.mando) h+=htile("permAbre('ALMACEN DE MATERIA PRIMA')",'personas','Permisos del área','Quién ve los gráficos y la información de esta área');
   h+='</div>';
@@ -15386,6 +15387,14 @@ function mzSemPaint(){
     deficit: mzCmpNum('movimiento',true),
     az:      mzCmpTxt('codigo')
   });
+  if(corteF){
+    var nCorte=0, kgCorte=0; mats.forEach(function(m){ if(m.existencia_corte!=null && m.existencia_unidad==='KG'){ nCorte++; kgCorte+=(+m.existencia_corte||0); } });
+    h+='<div class="card" style="margin-bottom:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between">'+
+       '<div><div class="note">Inventario físico del corte</div><b style="font-size:15px">'+esc(corteF)+'</b>'+
+       '<div class="note" style="margin-top:2px">'+mzN(nCorte)+' materiales en uso con existencia en kilos · '+mzN(kgCorte)+' kg</div></div>'+
+       ((S.admin||S.mezCostos)?'<button class="btn ghost" style="margin:0;width:auto;padding:9px 13px;font-size:12.5px" onclick="renderMezExis()">Ver todas las existencias</button>':'')+
+       '</div>';
+  }
   h+='<div class="card"><div class="mzordfila"><b style="font-size:13px">Materias primas</b>'+
      mzOrdBtn('sem',opsSem,'usado')+'</div>'+
      mzTabla(cab,
@@ -16938,6 +16947,10 @@ function renderMezAlm(){
   mzAlmCarga();
 }
 function mzAlmTab(t){ _almTab=t; mzAlmPinta(); window.scrollTo(0,0); }
+/* 2-sep-2026 (Carlos): las existencias al corte como submódulo propio — abre el
+   almacén directo en su pestaña, para que quien busca «cuánto hay» no tenga que
+   saber que vive dentro de Entradas. */
+function renderMezExis(){ _almTab='exis'; renderMezAlm(); }
 function mzAlmCarga(){
   var hoy=mxToday(), d1=hoy.slice(0,4)+'-01-01';
   var pend=0;
@@ -17063,6 +17076,8 @@ function mzAlmPinta(){
     h+='<div class="card"><b style="font-size:13px">Capturado'+((e&&e.fecha)?(' al '+esc(e.fecha)):'')+' · '+mzN(e?e.total:0)+' materiales · '+mzN(e?e.kg:0)+' kg'+
        ((e&&(+e.lt||0))?(' · '+mzN(e.lt)+' lt'):'')+((e&&(+e.pz||0))?(' · '+mzN(e.pz)+' pz'):'')+'</b>'+
        ((e&&(+e.n_empaque||0))?('<div class="note" style="margin-top:3px">'+mzN(e.n_empaque)+' renglones son <b>empaques</b>: se guardan, pero no entran al semáforo de mezclas.</div>'):'');
+    if(ef.length && mzVeDineroMp()) h+='<div class="note" style="margin-top:6px">Con este corte el semáforo ya resta el consumo y suma las entradas: '+
+       '<button class="btn ghost" style="margin:6px 0 0;width:auto;padding:8px 12px;font-size:12.5px" onclick="renderMezSem()">Ver el semáforo con el Restante</button></div>';
     if(!ef.length) h+='<div class="note" style="margin-top:6px">Todavía no hay inventario capturado. En cuanto lo suba almacén, el «Restante» se enciende solo.</div>';
     else h+=mzTabla(['Material','Existencia'], ef.map(function(f){ return mzTd(['<b>'+esc(f.codigo)+'</b><div class="note" style="font-size:10px">'+esc(f.nombre||'')+(f.grupo?(' · '+esc(f.grupo)):'')+'</div>',
       '<span style="white-space:nowrap">'+mzN(f.kg)+' <span class="note">'+esc((f.unidad||'kg').toLowerCase())+'</span></span>']); }));

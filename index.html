@@ -71,6 +71,13 @@ button{font-family:var(--font)}
 .hide{display:none!important}
 .fade{animation:fade .42s cubic-bezier(.2,.7,.3,1)}
 @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* 3-sep (Carlos): los cuadritos entran escalonados, como en Producción */
+.tgrid .htile{animation:fade .32s cubic-bezier(.2,.72,.3,1) both}
+.tgrid .htile:nth-child(2){animation-delay:.035s}.tgrid .htile:nth-child(3){animation-delay:.07s}
+.tgrid .htile:nth-child(4){animation-delay:.105s}.tgrid .htile:nth-child(5){animation-delay:.14s}
+.tgrid .htile:nth-child(6){animation-delay:.175s}.tgrid .htile:nth-child(7){animation-delay:.21s}
+.tgrid .htile:nth-child(n+8){animation-delay:.245s}
+@media (prefers-reduced-motion:reduce){.tgrid .htile{animation:none}}
 .pad{padding:16px 15px 130px}
 
 /* ====================== BANDI (mascota reutilizable) ====================== */
@@ -1818,6 +1825,7 @@ body.a11y .chatpista{font-size:14px;line-height:1.5}
     <section id="s-mezrec" class="screen pad hide"></section>
     <section id="s-mezpend" class="screen pad hide"></section>
     <section id="s-labvig" class="screen pad hide"></section>
+    <section id="s-mantgraf" class="screen pad hide"></section>
     <section id="s-mezraw" class="screen pad hide"></section>
     <section id="s-iallaves" class="screen pad hide"></section>
     <section id="s-mezalm" class="screen pad hide"></section>
@@ -3565,7 +3573,7 @@ function buildNav(){
     return '<button id="nav-'+it[0]+'"'+main+' title="'+it[1]+'" onclick="'+accion+'">'+it[2]+'<span>'+it[1]+'</span></button>';
   }).join('');
 }
-var SCREENS=['planta','manto','mezrec','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezperf','mezdesg','mezcomp','mezcierres','mezprecios','mezsem','mezraw','iallaves','mezalm','alim','mprima','lab','labrec','labprb','labver','labvig','mezpend','perms'];
+var SCREENS=['planta','manto','mezrec','home','courses','course','quiz','result','rewards','chat','hr','clases','news','buzon','pay','msgs','lineas','newchat','vac','quejas','encuestas','nom35','perm','perfil','thread','nom','dia','wconvs','cal','invit','docs','perfilpub','newspost','pend','pedir','pedidos','prod','mezcap','mezprog','mezana','meztab','mezperf','mezdesg','mezcomp','mezcierres','mezprecios','mezsem','mezraw','iallaves','mezalm','alim','mprima','lab','labrec','labprb','labver','labvig','mezpend','perms','mantgraf'];
 var _prevShown=null;
 function show(name){
   var cambio = (name!==_prevShown);
@@ -3833,6 +3841,7 @@ function go(name){
   if(name==='alim') return renderAlim();
   if(name==='mprima') return renderMPrima();
   if(name==='lab') return renderLab();
+  if(name==='mantgraf') return renderMantoGraf();
   if(name==='labrec') return renderLabRec();
   if(name==='rewards') return renderRewards();
   if(name==='chat') return renderChat();
@@ -3953,10 +3962,10 @@ function hbInicio(){
   go((S && (S.admin || S.mando)) ? 'hr' : 'home');
 }
 function renderTop(name){
-  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='mezraw'||name==='mezalm'||name==='iallaves'||name==='prod'||name==='manto'||name==='labrec'||name==='mezpend'||name==='labvig') && !(name==='docs' && window._docFrom==='tab');
+  var sub=(name==='courses'||name==='course'||name==='quiz'||name==='result'||name==='pay'||name==='thread'||name==='nom'||name==='lineas'||name==='newchat'||name==='vac'||name==='quejas'||name==='encuestas'||name==='nom35'||name==='perm'||name==='perfil'||name==='dia'||name==='wconvs'||name==='cal'||name==='invit'||name==='docs'||name==='perfilpub'||name==='newspost'||name==='pend'||name==='pedir'||name==='pedidos'||name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf'||name==='mezdesg'||name==='mezcomp'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec'||name==='mezraw'||name==='mezalm'||name==='iallaves'||name==='prod'||name==='manto'||name==='labrec'||name==='mezpend'||name==='labvig'||name==='lab'||name==='labprb'||name==='labver'||name==='mprima'||name==='alim'||name==='perms'||name==='mantgraf') && !(name==='docs' && window._docFrom==='tab');
   var left=$('topLeft');
   if(sub){
-    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? (window._pedFrom==='manto'?'go(\'manto\')':'go(\'hr\')') : name==='pedir' ? (window._pedFrom==='manto'?'go(\'manto\')':('go(\''+((S.admin||S.mando)?'hr':'home')+'\')')) : (name==='prod'||name==='manto') ? 'go(\'planta\')' : (name==='labrec'||name==='labprb'||name==='labver'||name==='labvig') ? 'go(\'lab\')' : name==='mezpend' ? ('go(\''+(_pendVolver||'prod')+'\')') : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='mezalm' ? 'go(\'prod\')' : name==='iallaves' ? 'go(\'hr\')' : name==='mezraw' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
+    var backTo = name==='quiz' ? 'backFromQuiz()' : name==='course' ? 'renderCourses()' : name==='newchat' ? 'renderMsgs()' : name==='encuestas' ? 'renderNews()' : (name==='nom35'||name==='perm') ? 'renderEncuestas()' : name==='perfil' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='thread' ? (_viewRO?'renderWConvs()':'renderMsgs()') : name==='perfilpub' ? 'pubBack()' : (name==='lineas'||name==='vac'||name==='quejas') ? 'renderMsgs()' : name==='nom' ? ('go(\''+(S.admin?'hr':'home')+'\')') : name==='wconvs' ? (_wcPick!=null?'wcBack()':(_wcDept!=null?'wcDeptBack()':'renderMsgs()')) : name==='cal' ? 'renderNews()' : name==='invit' ? ('go(\''+(_invitFrom||'home')+'\')') : name==='docs' ? ('go(\''+((_docFrom==='news')?'news':((S.admin||S.mando)?'hr':'home'))+'\')') : name==='newspost' ? 'renderNews()' : name==='pend' ? ('go(\'home\')') : name==='pedidos' ? (window._pedFrom==='manto'?'go(\'manto\')':'go(\'hr\')') : name==='pedir' ? (window._pedFrom==='manto'?'go(\'manto\')':('go(\''+((S.admin||S.mando)?'hr':'home')+'\')')) : (name==='prod'||name==='manto'||name==='lab'||name==='mprima') ? 'go(\'planta\')' : name==='mantgraf' ? 'go(\'manto\')' : name==='alim' ? 'alimVuelve()' : name==='perms' ? 'permVuelve()' : (name==='labrec'||name==='labprb'||name==='labver'||name==='labvig') ? 'go(\'lab\')' : name==='mezpend' ? ('go(\''+(_pendVolver||'prod')+'\')') : (name==='mezcap'||name==='mezprog'||name==='mezana'||name==='meztab'||name==='mezperf'||name==='mezcierres'||name==='mezprecios'||name==='mezsem'||name==='mezrec') ? 'go(\'prod\')' : name==='mezalm' ? 'go(\'prod\')' : name==='iallaves' ? 'go(\'hr\')' : name==='mezraw' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : name==='mezdesg' ? 'renderMezTab()' : name==='mezcomp' ? ('renderMezDesg(\''+(_mzDesgTema||'produccion')+'\')') : 'go(\'home\')';
     left.innerHTML='<button class="tlogo" onclick="hbInicio()" title="Ir al inicio" aria-label="Ir al inicio">'+HB_MARK+'</button><button class="back" onclick="'+backTo+'">‹ Atrás</button>'+hbQuienSoy(true);
     left.classList.remove('who');
   }else{
@@ -12687,17 +12696,26 @@ function renderLab(){
     '<b style="font-size:20px">Laboratorio</b>'+
     '<p class="note" style="margin:4px 0 0;max-width:340px">Las fórmulas de la carpeta GT y el comportamiento de cada compuesto.</p></div>'+
     '<span style="flex:none">'+speakBtn('Laboratorio. Aquí están las fórmulas y el análisis de compuestos.')+'</span></div></div>';
-  h+='<div class="tgrid">';
-  if(puedeSubirDocs()) h+=htile("alimAbre('lab')",'docs','Subida de documentos','Cédulas, métodos y Excels — los revisas antes de guardar',{wide:true});
-  if(S.mezTec||S.admin) h+=htile('renderMezRec()','docs','Fórmulas (carpeta GT)','Vigentes por familia: ver, confirmar y cambiar');
-  if(S.mezTec||S.admin) h+=htile("go('labrec')",'deptos','El recorrido de cada compuesto','Versión por versión: qué cambió y qué produjo',{wide:true});
-  if(S.mezTec||S.admin) h+=htile('renderMezAna()','focos','Analista de compuestos','Eficiencia, fallas e historial por compuesto');
-  if(S.mezTec||S.admin) h+=htile("go('labprb')",'clip','Pruebas por versión','Reometría, dureza, Mooney, densidad y físicas',{wide:true});
-  if(S.mezTec||S.admin) h+=htile("go('labver')",'recibo','Versiones vigentes','Sube aquí la hoja de versiones cada que la actualices',{wide:true});
-  if(S.mezTec||S.admin) h+=htile("renderLabVig()",'pend','Vigencias','Desde qué día corre cada versión');
-  if(S.mezTec||S.admin) h+=htile("renderMezPend('laboratorio','lab')",'focos','Lo que falta resolver','Lo que el sistema no pudo interpretar solo');
-  if(S.admin||S.mando) h+=htile("permAbre('LABORATORIO')",'personas','Permisos del área','Quién ve las fórmulas y la información de esta área');
-  h+='</div>';
+  /* 3-sep (Carlos): «que los módulos se vean como el de producción, en cuadritos».
+     Mismo patrón que renderMezHub: título de sección y cuadros parejos — un solo
+     cuadro ancho, el de subir documentos, igual que allá. */
+  if(S.mezTec||S.admin){
+    h+='<div class="sec-t">Las fórmulas<span class="ln"></span></div><div class="tgrid">';
+    if(puedeSubirDocs()) h+=htile("alimAbre('lab')",'docs','Subida de documentos','Cédulas, métodos y Excels — los revisas antes de guardar',{wide:true});
+    h+=htile('renderMezRec()','docs','Fórmulas (carpeta GT)','Vigentes por familia: ver, confirmar y cambiar');
+    h+=htile("go('labver')",'recibo','Versiones vigentes','Sube la hoja cada que la actualices');
+    h+=htile("renderLabVig()",'pend','Vigencias','Desde qué día corre cada versión');
+    h+=htile("go('labrec')",'deptos','El recorrido de cada compuesto','Versión por versión: qué cambió y qué produjo');
+    h+='</div>';
+    h+='<div class="sec-t">El comportamiento<span class="ln"></span></div><div class="tgrid">';
+    h+=htile('renderMezAna()','focos','Analista de compuestos','Eficiencia, fallas e historial por compuesto');
+    h+=htile("go('labprb')",'clip','Pruebas por versión','Reometría, dureza, Mooney, densidad y físicas');
+    h+=htile("renderMezPend('laboratorio','lab')",'focos','Lo que falta resolver','Lo que el sistema no pudo interpretar solo');
+    if(S.admin||S.mando) h+=htile("permAbre('LABORATORIO')",'personas','Permisos del área','Quién ve las fórmulas y la información de esta área');
+    h+='</div>';
+  } else if(puedeSubirDocs()){
+    h+='<div class="tgrid">'+htile("alimAbre('lab')",'docs','Subida de documentos','Cédulas, métodos y Excels — los revisas antes de guardar',{wide:true})+'</div>';
+  }
   if(!(S.mezTec||S.admin)) h+='<div class="card" style="margin-top:12px"><div class="note">Las <b>fórmulas</b> son información clasificada: se necesita permiso del responsable de Laboratorio o de dirección para verlas.</div></div>';
   $('s-lab').innerHTML=h; show('lab');
 }
@@ -13534,6 +13552,133 @@ function labDiffPinta(){
 /* ---------- MANTENIMIENTO: el hub del área (v3.37) ----------
    No es función nueva: junta en un solo lugar las pantallas de órdenes de
    trabajo que ya existían sueltas (v3_8 y v3_11). */
+/* ═══════════ GRÁFICOS DE MANTENIMIENTO — 3-sep-2026 ═══════════
+   Pedido de Carlos: que Mantenimiento tenga su propio gráfico, «linkeado por el momento con los
+   paros y las reparaciones de la info de producción». Y así es, literalmente: hoy el área no
+   captura nada propio, así que TODO lo que se ve aquí sale de la bitácora que llena Producción
+   (los paros con su causa y sus minutos). Por eso la pantalla lo dice en voz alta en vez de
+   presentarlo como si Mantenimiento lo hubiera registrado.
+   No hay función nueva en el servidor: se lee el mismo tema «eficiencia» del desglose. */
+var _mgX=null, _mgD1=null, _mgD2=null;
+
+/* ¿la causa del paro suena a máquina descompuesta? Se clasifica POR EL NOMBRE, y la pantalla lo
+   advierte: no existe un campo donde la planta diga «esto fue mantenimiento». */
+var MG_MAQ=['FALLA','REPARA','DESCOMPU','MOLINO','COMPUERTA','ELEVADOR','CONVEYER','MARTINETE',
+  'HIDRAULIC','COMPRESOR','BASCULA','ELECTRIC','MECANIC','INYECTOR','GUSANO','EXTRACTOR','ANILLO',
+  'CUÑA','CUNA','BANDA','TINA DE SOLUCION','LUBRICACION','BARROTE','ATORA','CUELGA','PEGADO'];
+function mgEsMaquina(causa){
+  var c=String(causa||'').toUpperCase();
+  for(var i=0;i<MG_MAQ.length;i++){ if(c.indexOf(MG_MAQ[i])>-1) return true; }
+  return false;
+}
+function mgRango(d1,d2){ _mgD1=d1; _mgD2=d2; renderMantoGraf(); }
+function renderMantoGraf(){
+  if(!_mgD1){ var hoy=mxToday(); _mgD1=hoy.slice(0,8)+'01'; _mgD2=hoy; }
+  $('s-mantgraf').innerHTML='<div class="card"><div class="note">Cargando los paros…</div></div>';
+  show('mantgraf');
+  if(!(window.V3_ON&&typeof sbReady==='function'&&sbReady()&&window.SB)){
+    $('s-mantgraf').innerHTML='<div class="card"><b>Sin conexión</b><div class="note" style="margin-top:4px">Los gráficos necesitan internet.</div></div>'; return; }
+  SB.rpc('hb_mez_desglose',{p_tema:'eficiencia',p_desde:_mgD1,p_hasta:_mgD2}).then(function(r){
+    var x=r&&r.data;
+    if(!(x&&x.ok)){ $('s-mantgraf').innerHTML='<div class="card"><b>'+esc(mzErr(x,r&&r.error))+'</b></div>'; return; }
+    _mgX=x; mgPinta();
+  },function(e){ $('s-mantgraf').innerHTML='<div class="card"><b>'+esc(mzErr(null,e))+'</b></div>'; });
+}
+function mgPinta(){
+  var x=_mgX; if(!x) return;
+  var paros=(x.paros||[]), h='';
+  var maq=paros.filter(function(p){ return mgEsMaquina(p.causa); });
+  var otras=paros.filter(function(p){ return !mgEsMaquina(p.causa); });
+  function suma(a,c){ var t=0; a.forEach(function(p){ t+=(+p[c]||0); }); return t; }
+  var minMaq=suma(maq,'minutos'), minTot=suma(paros,'minutos');
+  var vecesMaq=suma(maq,'veces'),  vecesTot=suma(paros,'veces');
+  var conFolio=suma(paros,'con_folio'), sinFolio=(+x.paros_sin_folio||0);
+
+  h+='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Mantenimiento</div>'+
+     '<b style="font-size:20px">Gráficos</b>'+
+     '<p class="note" style="margin:4px 0 0;max-width:420px">Del '+esc(fmtCorto(x.desde))+' al '+esc(fmtCorto(x.hasta))+
+     ' · '+mzN(x.dias)+' días.</p></div>'+
+     '<span style="flex:none">'+speakBtn('Gráficos de mantenimiento. Los paros de las máquinas que registra Producción.')+'</span></div></div>';
+
+  /* de dónde salen estos números: se dice antes de enseñarlos */
+  h+='<div class="card" style="margin-bottom:12px;border-color:rgba(var(--warn-rgb),.35);border-color:color-mix(in srgb,var(--warn) 35%,transparent)">'+
+     '<div class="note" style="line-height:1.55"><b>De dónde sale esto.</b> Mantenimiento todavía no captura nada propio: '+
+     'todo lo de abajo son los <b>paros que anota Producción</b> en su bitácora, con la causa y los minutos que ellos escriben. '+
+     'Lo que se marca como «de máquina» lo deduzco del <b>nombre de la causa</b>, no de un campo que alguien haya llenado. '+
+     'Cuando las órdenes de trabajo traigan su folio en la bitácora, esto se va a poder amarrar paro por paro con su reparación.</div></div>';
+
+  /* atajos de periodo */
+  var hoy=mxToday(), m0=hoy.slice(0,8)+'01';
+  var mp=new Date(hoy+'T12:00:00'); mp.setDate(0);
+  var mpIso=mp.toISOString().slice(0,10);
+  var d30=new Date(hoy+'T12:00:00'); d30.setDate(d30.getDate()-29);
+  h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">'+
+     '<span class="note" style="margin-right:2px">Periodo:</span>'+
+     [['Este mes',m0,hoy],['Mes pasado',mpIso.slice(0,8)+'01',mpIso],['Últimos 30 días',d30.toISOString().slice(0,10),hoy],
+      ['Agosto','2026-08-01','2026-08-31'],['Julio','2026-07-01','2026-07-31']]
+      .map(function(o){ var act=(_mgD1===o[1]&&_mgD2===o[2]);
+        return '<button class="btn'+(act?'':' ghost')+'" style="margin:0;width:auto;padding:7px 11px;font-size:11.5px" '+
+               'onclick="mgRango(\''+o[1]+'\',\''+o[2]+'\')">'+o[0]+'</button>'; }).join('')+
+     '</div></div>';
+
+  /* las tres cifras que importan */
+  function tar(v,t,sub,col){
+    return '<div class="card" style="flex:1;min-width:150px;margin:0"><div style="font-size:22px;font-weight:800'+(col?(';color:'+col):'')+'">'+v+'</div>'+
+           '<div class="note" style="margin-top:2px"><b>'+t+'</b></div>'+(sub?('<div class="note" style="font-size:10.5px;margin-top:2px">'+sub+'</div>'):'')+'</div>';
+  }
+  h+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">'+
+     tar(mzN(Math.round(minMaq/60*10)/10,1)+' h','Paro por máquina',mzN(vecesMaq)+' veces · '+(minTot?mzN(Math.round(minMaq/minTot*100)):0)+'% de todo el paro','var(--bad)')+
+     tar(mzN(Math.round((minTot-minMaq)/60*10)/10,1)+' h','Paro por otras causas',mzN(vecesTot-vecesMaq)+' veces')+
+     tar(mzN(conFolio),'Paros con folio de orden', (sinFolio?(mzN(sinFolio)+' sin folio'):'todos amarrados'), conFolio? '' : 'var(--warn)')+
+     '</div>';
+
+  /* 1 · las máquinas que más paran la producción */
+  if(maq.length){
+    var maxM=1; maq.forEach(function(p){ if(+p.minutos>maxM) maxM=+p.minutos; });
+    var top=maq.slice(0,12);
+    h+='<div class="card" style="margin-bottom:12px">'+
+       mzTitulo('Qué falla más (por minutos parados)','mg-maq',MZ_OPS_CAT,'barras')+
+       mzCatGraf('mg-maq', top.map(function(p){ return {l:p.causa, v:+p.minutos||0}; }), 'minutos',
+         top.map(function(p){ return '<div style="margin-top:8px"><div style="display:flex;justify-content:space-between;gap:9px;font-size:12px">'+
+           '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.causa)+'</span>'+
+           '<span class="note">'+mzN(p.minutos)+' min · '+mzN(p.veces)+' veces</span></div>'+
+           '<span style="display:block;height:7px;border-radius:4px;background:var(--bad);opacity:.85;margin-top:3px;width:'+
+             Math.max(3,Math.round((+p.minutos||0)/maxM*100))+'%"></span></div>'; }).join(''), 'barras', minMaq)+
+       '</div>';
+  }
+
+  /* 2 · en qué banbury se pierde más tiempo */
+  var ut=(x.utilizacion||[]).filter(function(b){ return (+b.paros_min||0)>0; });
+  if(ut.length){
+    var maxB=1; ut.forEach(function(b){ if(+b.paros_min>maxB) maxB=+b.paros_min; });
+    h+='<div class="card" style="margin-bottom:12px">'+
+       mzTitulo('En qué banbury se pierde el tiempo','mg-bb',MZ_OPS_CAT,'columnas')+
+       mzCatGraf('mg-bb', ut.map(function(b){ return {l:'Banbury '+b.banbury, v:+b.paros_min||0}; }), 'minutos',
+         ut.map(function(b){ return '<div style="margin-top:8px"><div style="display:flex;justify-content:space-between;gap:9px;font-size:12px">'+
+           '<span>Banbury '+esc(b.banbury)+'</span><span class="note">'+mzN(b.paros_min)+' min · '+mzN(b.turnos)+' turnos</span></div>'+
+           '<span style="display:block;height:7px;border-radius:4px;background:var(--warn);opacity:.85;margin-top:3px;width:'+
+             Math.max(3,Math.round((+b.paros_min||0)/maxB*100))+'%"></span></div>'; }).join(''), 'columnas')+
+       '</div>';
+  }
+
+  /* 3 · lo que NO es máquina, para no confundirlo con trabajo de mantenimiento */
+  if(otras.length){
+    h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Paros que no son de máquina</b>'+
+       '<div class="note" style="margin-top:3px">Van aparte a propósito: son de proceso, de personal o de material, y no le tocan a Mantenimiento.</div>'+
+       mzTabla(['Causa','Veces','Minutos'],
+         otras.slice(0,10).map(function(p){ return mzTd([esc(p.causa), mzN(p.veces), mzN(p.minutos)]); }))+
+       '</div>';
+  }
+
+  /* 4 · el amarre que falta */
+  h+='<div class="card"><b style="font-size:13px">Lo que falta para amarrarlo con las órdenes de trabajo</b>'+
+     '<div class="note" style="margin-top:4px;line-height:1.55">De los <b>'+mzN(vecesTot)+' paros</b> del periodo, '+
+     (conFolio?('<b>'+mzN(conFolio)+'</b> traen folio de orden de trabajo'):'<b>ninguno</b> trae folio de orden de trabajo')+
+     '. Sin ese folio, el sistema no puede decir cuánto tardó cada reparación ni cuánto costó el paro que causó. '+
+     'Es una columna en el Excel de Producción — ya está pedida.</div></div>';
+
+  $('s-mantgraf').innerHTML=h;
+}
 function renderMantoHub(){
   var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Planta · Maquinaria</div>'+
     '<b style="font-size:20px">Mantenimiento</b>'+
@@ -13552,6 +13697,9 @@ function renderMantoHub(){
     var pn=0; try{ pn=pedNuevosN()||0; }catch(e){}
     h+=htile("window._pedFrom='manto';renderPedidos()",'operacion','Órdenes de trabajo','Asignar, seguir y cerrar',{cnt:pn||''});
   }
+  /* 3-sep (Carlos): Mantenimiento con su propio gráfico. Por ahora se alimenta de los paros
+     que captura Producción — la pantalla lo dice, no lo disimula. */
+  if(S.admin||S.mando||esTec) h+=htile("go('mantgraf')",'deptos','Gráficos','Qué máquina para más y cuánto tiempo');
   h+='</div>';
   $('s-manto').innerHTML=h; show('manto');
 }

@@ -12235,6 +12235,39 @@ var _mzFx=null, _mzFxT=0, _mzDesg=null, _mzDesgTema='produccion', _mzCompId=null
 /* ---- números EXACTOS (regla de Carlos): miles con coma, decimales pedidos ---- */
 function mzN(v,dec){ if(v==null||isNaN(v)) return '—';
   return Number(v).toLocaleString('es-MX',{minimumFractionDigits:dec||0,maximumFractionDigits:(dec==null?0:dec)}); }
+/* ---- EXISTENCIAS EN TODA PANTALLA QUE JALA MATERIA PRIMA (Carlos, 2-sep-2026) ----
+   «que todo lo que jalaba MP sepa cuánto hay disponible». Una sola caché por sesión
+   (window._mzExis) con el último corte físico de almacén, y un chip que se pega a cada
+   renglón de material. Solo lo ve quien puede ver cantidades exactas de almacén
+   (acceso total y costos): la regla dura de inventario no cambia. Si no hay corte o
+   el código no está en la balanza, el chip no aparece — nunca un cero inventado. */
+var _mzExisCargando=false;
+function mzExisCarga(cb){
+  /* si la caché YA existe no se llama al cb: el chip se pintó en esta misma pasada. (Llamarlo
+     aquí de forma sincrónica metía a mzPrePaint y mzCompPaint en un bucle sin fin — lo cazó el
+     revisor del 2-sep antes de desplegar.) */
+  if(window._mzExis) return;
+  if(!(window.S&&(S.admin||S.mezCostos))) return;
+  if(!(window.V3_ON&&typeof sbReady==='function'&&sbReady()&&window.SB)) return;
+  if(cb) (window._mzExisCbs=window._mzExisCbs||[]).push(cb);
+  if(_mzExisCargando) return; _mzExisCargando=true;
+  SB.rpc('hb_mez_existencias_lista',{p_fecha:null}).then(function(r){ var x=r&&r.data; _mzExisCargando=false;
+    var pc={};
+    if(x&&x.ok) (x.filas||[]).forEach(function(f){ if(f&&f.codigo) pc[String(f.codigo).toUpperCase()]=f; });
+    window._mzExis={fecha:(x&&x.ok)?x.fecha:null, porCodigo:pc, total:(x&&x.ok)?(+x.total||0):0};
+    var cbs=window._mzExisCbs||[]; window._mzExisCbs=[];
+    cbs.forEach(function(f){ try{ f(); }catch(e){} });
+  },function(){ _mzExisCargando=false; window._mzExisCbs=[]; });   /* sin red: se queda sin chips, no se acumulan repintados */
+}
+function mzChipDisp(codigo){
+  if(!(window.S&&(S.admin||S.mezCostos))) return '';
+  if(!window._mzExis){ mzExisCarga(); return ''; }
+  if(!codigo) return '';
+  var f=window._mzExis.porCodigo[String(codigo).toUpperCase()]; if(!f) return '';
+  var u=String(f.unidad||'KG').toUpperCase();
+  return ' <span class="tg g" style="margin-left:4px;white-space:nowrap;font-weight:600">en almacén '+mzN(f.kg)+' '+esc(u.toLowerCase())+
+         (window._mzExis.fecha?(' <span style="opacity:.75;font-weight:400">al '+esc(window._mzExis.fecha)+'</span>'):'')+'</span>';
+}
 /* ===== QUIÉN VE DINERO (decisión de Carlos, 21-ago-2026) =====
    · mzVeDinero()   = acceso total. TODO el dinero: costeo de producción, costo
                       por mezcla, precio de venta, utilidad.
@@ -12494,6 +12527,7 @@ function mzSelloPrueba(d1,d2){
    Los que no tienen funciones todavía se ven APAGADOS y lo dicen; no se les
    inventa un tablero vacío que parezca roto. ========================================= */
 function renderPlanta(){
+  mzExisCarga();   /* 2-sep: precalienta las existencias para los chips «en almacén» de las pantallas de MP */
   var h='<div class="panel"><div class="hd" style="align-items:flex-start"><div><div class="eyebrow">Hules Banda</div>'+
     '<b style="font-size:20px">Planta</b>'+
     '<p class="note" style="margin:4px 0 0;max-width:360px">Los departamentos de la fábrica. Se van digitalizando poco a poco: entra al que ya tiene su tablero.</p></div>'+
@@ -13418,6 +13452,7 @@ function labRecSel(i){
 
 function labDiffPinta(){
   var d=_labDiff, el=$('labrec-diff'); if(!d||!el) return;
+  if(!window._mzExis) mzExisCarga(function(){ if(_labDiff===d) labDiffPinta(); });   /* chips «en almacén» */
   if(d.cargando){ el.innerHTML='<div class="card"><div class="note">Comparando '+esc(d.a)+' con '+esc(d.b)+'…</div></div>'; return; }
   if(!d.ok){ el.innerHTML='<div class="card"><div class="note">No se pudo comparar esas dos versiones.</div></div>'; return; }
 
@@ -13481,7 +13516,7 @@ function labDiffPinta(){
          var col=(c.tipo==='entra')?'var(--ok)':(c.tipo==='sale'?'var(--bad)':'var(--data)');
          var etq=(c.tipo==='entra')?'entra':(c.tipo==='sale'?'sale':'cambia');
          return mzTd([
-           '<b>'+esc(c.material)+'</b><br><span class="note" style="font-size:10.5px">'+esc(c.clave||'')+
+           '<b>'+esc(c.material)+'</b>'+(c.es_recorte?'':mzChipDisp(c.clave))+'<br><span class="note" style="font-size:10.5px">'+esc(c.clave||'')+
              ' · <span style="color:'+col+'">'+etq+'</span>'+(c.es_recorte?' · recorte':'')+'</span>',
            (+c.kg_antes>0)?mzN(c.kg_antes,3):'—',
            (+c.kg_despues>0)?mzN(c.kg_despues,3):'—',
@@ -15117,7 +15152,7 @@ function mzRecPaint(soloLista){
       '</div>'+
       '<div id="mzrec-form"></div>'+
       '<div id="mzrec-lista"></div>';
-    $('s-mezrec').innerHTML=h; show('mezrec');
+    window._mzRecCid=null; $('s-mezrec').innerHTML=h; show('mezrec');
   }
   $('mzrec-lista').innerHTML='<div class="card">'+
     (lista.length? mzTabla(['Compuesto','Vigente','Confirmada'],filas)
@@ -15125,6 +15160,8 @@ function mzRecPaint(soloLista){
 }
 function renderMezRecDet(cid){
   $('s-mezrec').innerHTML='<div class="card"><div class="note">Abriendo la fórmula…</div></div>';
+  window._mzRecCid=cid;
+  if(!window._mzExis) mzExisCarga(function(){ if(_screen==='mezrec'&&window._mzRecCid===cid) renderMezRecDet(cid); });   /* chips «en almacén» */
   SB.rpc('hb_mez_receta',{p_cid:cid}).then(function(r){ var x=r&&r.data;
     if(!(x&&x.ok)){ alert(mzErr(x,r&&r.error)); renderMezRec(); return; }
     var c=x.compuesto, vs=x.versiones||[], ing=x.ingredientes||[];
@@ -15159,6 +15196,7 @@ function renderMezRecDet(cid){
         if(i.seccion!==sec){ sec=i.seccion;
           filas.push('<tr><td colspan="2" style="padding-top:10px"><b style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)">'+esc(sec||'')+'</b></td></tr>'); }
         filas.push(mzTd([esc(i.material||i.compuesto_casa||i.nombre)+
+          ((i.material&&!i.compuesto_casa&&!i.es_recorte)?mzChipDisp(i.material):'')+
           (i.compuesto_casa?' <span class="note">compuesto de la casa</span>':'')+
           (i.es_recorte?' <span class="note">recorte</span>':'')+
           (i.nota?'<div class="note">'+esc(i.nota)+'</div>':''),
@@ -17800,6 +17838,7 @@ function renderMezPrecios(){
 function mzPreBuscar(v){ _mzPreQ=(v||'').trim(); renderMezPrecios(); }
 function mzPrePaint(){
   var x=_mzPre, ms=x.materiales||[], h='';
+  mzExisCarga(function(){ if(_screen==='mezprecios'&&_mzPre===x) mzPrePaint(); });   /* chips «en almacén» cuando llegue el corte */
   /* el % de cambio no viene del servidor: se calcula al pintar. Para poder
      ORDENAR por él hay que tenerlo antes, así que se anota en cada renglón. */
   /* SOLO se compara si las dos capturas están en la MISMA moneda: un material
@@ -17847,7 +17886,7 @@ function mzPrePaint(){
         } else if(m.precio!=null && m.precio_previo!=null && !m._mismaMon){
           d='<span class="note" title="El precio anterior estaba en otra moneda: comparar los dos daría un porcentaje falso">cambió de moneda</span>';
         }
-        return mzTd([esc(m.codigo)+(m.en_uso?' <span class="note">en fórmulas</span>':''),
+        return mzTd([esc(m.codigo)+(m.en_uso?' <span class="note">en fórmulas</span>':'')+mzChipDisp(m.codigo),
           m.precio!=null?mzN(m.precio,4):'<span class="note">sin precio</span>',
           esc(m.moneda||'—'), m.precio_mxn!=null?mzMx(m.precio_mxn,4):'—',
           esc(m.fecha||'—'), d, mzN(m.compras)],
@@ -18144,7 +18183,7 @@ function mzPreHist(cod){
     if(!(x&&x.ok)){ alert(mzErr(x)); return; }
     var m=x.material, h='';
     h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px">'+
-       '<div><b style="font-size:16px">'+esc(m.codigo)+'</b><div class="note">'+esc(m.nombre||'')+'</div></div>'+
+       '<div><b style="font-size:16px">'+esc(m.codigo)+'</b>'+mzChipDisp(m.codigo)+'<div class="note">'+esc(m.nombre||'')+'</div></div>'+
        '<button class="btn ghost" style="margin:0;width:auto;padding:8px 12px;font-size:12px" onclick="renderMezPrecios()">‹ Volver</button></div></div>';
     h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Cómo se ha movido el precio</b>'+
        '<div class="note" style="margin-top:2px">Cada renglón se convirtió con la tasa de SU día.</div>'+
@@ -18334,6 +18373,9 @@ function mzCierrePinta(tipo,d1,d2,res){
          mzN(_cdCob.mezclas_costeadas)+' de '+mzN(_cdCob.mezclas_total)+'). '):'')+
        (_cdCob.pct_formula_exacta!=null
          ? ('De ese costo, <b>'+mzN(_cdCob.pct_formula_exacta,1)+'% usó la fórmula de la letra que de verdad corrió</b>'+
+            ((+_cdCob.mezclas_formula_carpeta||0)>0
+              ? ('; '+mzN(_cdCob.mezclas_formula_carpeta)+' mezclas sin letra se costearon con la hoja de carpeta («Rev N»)')
+              : '')+
             ((+_cdCob.mezclas_formula_sustituta||0)>0
               ? ('; las otras '+mzN(_cdCob.mezclas_formula_sustituta)+' mezclas se costearon con la fórmula vigente como sustituta')
               : '')+'. ')
@@ -18532,6 +18574,7 @@ function mzCompRitmo(real, teor){
 function mzCompPaint(x){
   window._mzCompX=x;
   mzPracCarga(_mztD1,_mztD2,function(){ if(_screen==='mezcomp'&&window._mzCompX) mzCompPaint(window._mzCompX); });
+  mzExisCarga(function(){ if(_screen==='mezcomp'&&window._mzCompX===x) mzCompPaint(x); });   /* chips «en almacén» */
   var c=x.compuesto, p=x.produccion||{}, hi=x.historico||{}, co=x.costo, h='';
   h+=mzSelloPrueba(_mztD1,_mztD2);
   h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
@@ -18703,7 +18746,8 @@ function mzCompPaint(x){
        mzTabla(['Ingrediente','Sección','Kg','Tolerancia'].concat(x.admin?['Precio']:[]),
         recOrd.map(function(i){
           var pr=i.precio? (mzN(i.precio.precio,4)+' '+esc(i.precio.moneda)) : (i.es_recorte?'<span class="note">recorte</span>':(i.compuesto_ref?'<span class="note">de la casa</span>':'<span class="note">sin precio</span>'));
-          return mzTd([esc(i.nombre)+(i.compuesto_ref?' <span class="note">→ '+esc(i.compuesto_ref)+'</span>':''),
+          return mzTd([esc(i.nombre)+(i.compuesto_ref?' <span class="note">→ '+esc(i.compuesto_ref)+'</span>':'')+
+              ((!i.compuesto_ref&&!i.es_recorte)?mzChipDisp(i.material):''),
             esc((i.seccion||'').replace('_',' ')),i.kg!=null?mzN(i.kg,3):'—',
             (i.tol_min!=null?(mzN(i.tol_min,3)+' – '+mzN(i.tol_max,3)):'—')].concat(x.admin?[pr]:[])); }))+'</div>';
   }

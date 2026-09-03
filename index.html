@@ -17875,7 +17875,8 @@ function mzPrePaint(){
      '<input id="mzp-q" value="'+esc(_mzPreQ)+'" placeholder="Buscar material…" onkeydown="if(event.key===\'Enter\')mzPreBuscar(this.value)" style="flex:1;min-width:160px;padding:9px 11px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:13px">'+
      '<button class="btn ghost" style="margin:0;width:auto;padding:9px 13px;font-size:12.5px" onclick="mzPreBuscar($(\'mzp-q\').value)">Buscar</button>'+
      '<button class="btn" style="margin:0;width:auto;padding:9px 13px;font-size:12.5px" onclick="mzPreNuevo()">＋ Precio nuevo</button>'+
-     '<button class="icoa" title="Pegar precios desde Excel" aria-label="Pegar precios desde Excel" onclick="mzPrePegar()">'+IC_CLIP+'</button></div>'+
+     '<button class="icoa" title="Pegar precios desde Excel" aria-label="Pegar precios desde Excel" onclick="mzPrePegar()">'+IC_CLIP+'</button>'+
+     '<button class="btn ghost" style="margin:0;width:auto;padding:9px 13px;font-size:12.5px" onclick="mzFacPanel()">Subir facturas (XML)</button></div>'+
      ('<div class="note" style="margin-top:7px">La columna <b>En pesos</b> es el precio de <b>cada factura</b>: '+
       'el dólar se convirtió el día de esa compra y ahí quedó fijo — no se vuelve a convertir con el dólar de hoy.'+
       (x.fx?(' <span class="note">(el dólar de hoy, solo de referencia: $'+mzN(x.fx,4)+')</span>'):'')+'</div>')+
@@ -18187,6 +18188,249 @@ function mzPreImporta(){
       alimRespalda(null,'Excel de precios');
       $('mzp-form').innerHTML=''; renderMezPrecios();
     } else alert(mzErr(x)); },function(e){ window._mzPreImportando=false; alert(mzErr(null,e)); });
+}
+/* ═══════════ Importador de FACTURAS DE COMPRA (CFDI XML) — 3-sep-2026, para Josué (Costos) ═══════════
+   Josué sube el XML de sus facturas y el sistema saca los precios solo. Decisiones de Carlos:
+   · da de alta SOLO PRECIOS — las entradas de kilos siguen siendo de Almacén;
+   · el tipo de cambio que manda es el DOF del día, NO el que trae impreso la factura (si difiere, se
+     enseña al lado para que se vea, pero no se usa);
+   · se guarda el FOLIO en cada precio, que es lo que hoy falta para poder amarrar un precio con su
+     entrada de almacén.
+   El navegador no inventa nada: parsea el XML, le pregunta al servidor qué va a pasar con cada renglón
+   (hb_mez_precios_previo) y hasta que Josué revisa y confirma, guarda. */
+var _mzFac=null, _mzFacPrev=null;
+
+function mzFacPanel(){
+  var el=$('mzp-form'); if(!el) return;
+  if(el.innerHTML.indexOf('mzf-zona')>-1){ el.innerHTML=''; _mzFac=null; _mzFacPrev=null; return; }
+  el.innerHTML='<div class="card" id="mzf-zona" style="margin-bottom:12px;border-style:dashed">'+
+    '<b style="font-size:13px">Subir facturas de compra (XML)</b>'+
+    '<div class="note" style="margin-top:4px;line-height:1.5">Sube los <b>XML</b> de las facturas — los que te llegan del proveedor, no el PDF. '+
+    'Se leen aquí mismo: de cada factura salen el proveedor, el folio, la fecha y cada material con su precio. '+
+    '<b>Solo se guardan precios</b>; los kilos que entraron los sigue registrando Almacén.</div>'+
+    '<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">'+
+      '<label class="btn" style="margin:0;width:auto;padding:9px 13px;font-size:12.5px;cursor:pointer">Escoger los XML'+
+        '<input type="file" accept=".xml,text/xml,application/xml" multiple style="display:none" onchange="mzFacArchivos(this)"></label>'+
+      '<span class="note" id="mzf-est" style="flex:1;min-width:0">Puedes escoger varias de un jalón.</span>'+
+    '</div><div id="mzf-prev"></div></div>';
+}
+
+/* ── lectura del CFDI ─────────────────────────────────────────────────────────────────────────── */
+function _facEls(doc, local){
+  var a=doc.getElementsByTagNameNS('*', local);
+  return (a && a.length) ? a : doc.getElementsByTagName('cfdi:'+local);
+}
+function _facAttr(el, nom){
+  if(!el) return '';
+  var v=el.getAttribute(nom);
+  if(v==null){ for(var i=0;i<el.attributes.length;i++){ var a=el.attributes[i];
+    if(String(a.name).split(':').pop().toLowerCase()===nom.toLowerCase()) return a.value; } }
+  return v==null?'':String(v);
+}
+function mzFacParse(txt, archivo){
+  var out={filas:[], error:null};
+  var doc;
+  try { doc=new DOMParser().parseFromString(txt,'application/xml'); } catch(e){ out.error='No se pudo leer el archivo.'; return out; }
+  if(!doc || doc.getElementsByTagName('parsererror').length){ out.error='El archivo no es un XML válido.'; return out; }
+  var comp=_facEls(doc,'Comprobante')[0] || doc.documentElement;
+  if(!comp || String(comp.nodeName).split(':').pop()!=='Comprobante'){ out.error='No parece un CFDI (no trae Comprobante).'; return out; }
+  var fechaFull=_facAttr(comp,'Fecha'), fecha=(fechaFull||'').slice(0,10);
+  var monedaRaw=(_facAttr(comp,'Moneda')||'MXN').toUpperCase();
+  var moneda=(monedaRaw==='USD')?'USD':'MXN';
+  /* el sistema solo sabe de pesos y dólares: una factura en otra moneda NO se convierte
+     calladamente a pesos, se marca y no se deja guardar */
+  var monedaMala=(monedaRaw!=='MXN'&&monedaRaw!=='USD')?monedaRaw:null;
+  var tcFac=parseFloat(_facAttr(comp,'TipoCambio')||'')||null;
+  var folio=[_facAttr(comp,'Serie'),_facAttr(comp,'Folio')].filter(Boolean).join('-');
+  var emi=_facEls(doc,'Emisor')[0];
+  var prov=_facAttr(emi,'Nombre')||_facAttr(emi,'Rfc')||'';
+  var tfd=_facEls(doc,'TimbreFiscalDigital')[0];
+  var uuid=_facAttr(tfd,'UUID')||'';
+  if(!folio) folio=uuid.slice(0,8);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(fecha)){ out.error='La factura no trae fecha legible.'; return out; }
+  var cons=_facEls(doc,'Concepto');
+  if(!cons.length){ out.error='La factura no trae conceptos.'; return out; }
+  for(var i=0;i<cons.length;i++){
+    var c=cons[i];
+    var desc=(_facAttr(c,'Descripcion')||'').trim();
+    var noid=(_facAttr(c,'NoIdentificacion')||'').trim();
+    var pu=parseFloat(_facAttr(c,'ValorUnitario')||'');
+    var cant=parseFloat(_facAttr(c,'Cantidad')||'');
+    var uni=(_facAttr(c,'Unidad')||_facAttr(c,'ClaveUnidad')||'').trim().toUpperCase();
+    if(!(pu>0)) continue;                       /* un renglón sin precio no es un precio */
+    out.filas.push({ archivo:archivo, folio:folio, uuid:uuid, fecha:fecha, moneda:moneda,
+      moneda_raw:monedaRaw, bloqueo:(monedaMala?('moneda '+monedaMala):null),
+      tc_factura:tcFac, proveedor:prov, descripcion:desc, noid:noid,
+      codigo:(noid||desc), precio:pu, cantidad:(cant>0?cant:null), unidad:uni, usar:true });
+  }
+  if(!out.filas.length) out.error='Ningún concepto traía precio unitario.';
+  return out;
+}
+
+function mzFacArchivos(inp){
+  var fs=(inp&&inp.files)?Array.prototype.slice.call(inp.files):[]; if(inp) inp.value='';
+  if(!fs.length) return;
+  var est=$('mzf-est'); if(est) est.textContent='Leyendo '+fs.length+' archivo'+(fs.length===1?'':'s')+'…';
+  var filas=[], malos=[], leidos=0;
+  fs.forEach(function(f){
+    var rd=new FileReader();
+    rd.onerror=function(){ malos.push(f.name+': no se pudo abrir'); listo(); };
+    rd.onload=function(){
+      var r=mzFacParse(String(rd.result||''), f.name);
+      if(r.error) malos.push(f.name+': '+r.error); else filas=filas.concat(r.filas);
+      listo();
+    };
+    rd.readAsText(f);
+  });
+  function listo(){
+    if(++leidos < fs.length) return;
+    if(!filas.length){
+      if(est) est.innerHTML='<span style="color:var(--warn)">No salió ningún precio. '+esc(malos.join(' · '))+'</span>';
+      return;
+    }
+    _mzFac=filas;
+    if(est) est.innerHTML=esc(fs.length+' factura'+(fs.length===1?'':'s')+' · '+filas.length+' renglones')+
+      (malos.length?(' <span style="color:var(--warn)">· '+esc(malos.length+' con problema: '+malos.join(' · '))+'</span>'):'');
+    mzFacPrev();
+  }
+}
+
+/* ── el servidor dice qué va a pasar con cada renglón, antes de guardar nada ───────────────────── */
+function mzFacPrev(){
+  if(!_mzFac||!_mzFac.length) return;
+  var pv=$('mzf-prev'); if(pv) pv.innerHTML='<div class="note" style="margin:8px 0">Revisando contra el catálogo…</div>';
+  var envio=_mzFac.map(function(f){ return {codigo:f.codigo, precio:f.precio, moneda:f.moneda,
+                                           fecha:f.fecha, proveedor:f.proveedor, doc:f.folio}; });
+  SB.rpc('hb_mez_precios_previo',{p_filas:envio}).then(function(r){ var x=r&&r.data;
+    if(!(x&&x.ok)){ if(pv) pv.innerHTML='<div class="note" style="color:var(--warn);margin:8px 0">'+esc(mzErr(x))+'</div>'; return; }
+    _mzFacPrev=x; mzFacPinta();
+  },function(e){ if(pv) pv.innerHTML='<div class="note" style="color:var(--warn);margin:8px 0">'+esc(mzErr(null,e))+'</div>'; });
+}
+
+function mzFacAviso(a){
+  var m={ sin_material:['No lo reconozco','var(--warn)'], duplicado:['Ya estaba','var(--mut)'],
+          precio_raro:['Precio fuera de lo normal','var(--bad)'], sin_tipo_de_cambio:['Falta el dólar de ese día','var(--bad)'],
+          material_nuevo:['Material nuevo','var(--warn)'], precio_invalido:['El precio no se entiende','var(--bad)'],
+          fecha_invalida:['La fecha no sirve','var(--bad)'] };
+  /* un aviso que yo no conozca NO se deja pasar: se enseña tal cual y bloquea el renglón */
+  return m[a] || [String(a).replace(/_/g,' '),'var(--bad)'];
+}
+/* el mismo material dos veces DENTRO del archivo: el servidor no lo puede ver (solo compara contra
+   la tabla), así que lo detecta el navegador — es exactamente cómo nacieron los 283 duplicados */
+function mzFacLlave(f,p){
+  return [String((p&&p.codigo)||f.codigo||'').toUpperCase().replace(/\s+/g,' ').trim(),
+          f.fecha, String(f.precio), f.moneda,
+          String(f.proveedor||'').toUpperCase().replace(/\s+/g,' ').trim()].join('|');
+}
+
+function mzFacPinta(){
+  var pv=$('mzf-prev'); if(!pv||!_mzFacPrev) return;
+  var fl=_mzFacPrev.filas||[], res=_mzFacPrev.resumen||{}, h='';
+  /* lo que NO se puede guardar se apaga solo; lo demás va palomeado */
+  var vistas={}, repes=0;
+  fl.forEach(function(p,i){ var f=_mzFac[i]; if(!f) return;
+    /* repetido dentro del propio archivo */
+    var k=mzFacLlave(f,p);
+    f.rep_lote = !!vistas[k]; if(f.rep_lote) repes++; vistas[k]=true;
+    /* la alarma del servidor solo prende con 3 precios o más de historia: el 46% del catálogo se
+       queda fuera. Si el servidor mandó el factor, lo revisamos aquí también. */
+    f.raro_cli = (!f.rep_lote && p.factor!=null && (p.factor>3 || p.factor<0.34) && p.aviso!=='precio_raro');
+    f.primer_precio = (p.encontrado && p.mediana_mxn==null);
+    /* solo se queda prendido lo que no trae ni una sola objeción */
+    f.usar = !f.bloqueo && !p.aviso && !f.rep_lote && !f.raro_cli;
+  });
+  if(repes) h+='';
+  var listos=_mzFac.filter(function(f){ return f.usar; }).length;
+  h+='<div class="note" style="margin:10px 0 6px;line-height:1.5">'+
+     '<b>'+mzN(fl.length)+' renglones.</b> '+
+     (res.duplicados?('· '+mzN(res.duplicados)+' ya estaban (no se vuelven a meter) '):'')+
+     (res.sin_material?('· '+mzN(res.sin_material)+' sin reconocer '):'')+
+     (res.raros?('· <span style="color:var(--bad)">'+mzN(res.raros)+' con precio fuera de lo normal</span> '):'')+
+     (_mzFac.filter(function(f){ return f.rep_lote; }).length?('· '+mzN(_mzFac.filter(function(f){ return f.rep_lote; }).length)+' repetidos dentro del archivo '):'')+
+     (_mzFac.filter(function(f){ return f.raro_cli; }).length?('· <span style="color:var(--bad)">'+mzN(_mzFac.filter(function(f){ return f.raro_cli; }).length)+' con poca historia y precio raro</span> '):'')+
+     '</div>';
+  h+=mzTabla(['','Material','Factura','Precio','En pesos','Cantidad','Aviso'],
+    fl.map(function(p,i){
+      var f=_mzFac[i]||{}, av=mzFacAviso(p.aviso);
+      var nom = p.encontrado ? (esc(p.codigo)+' <span class="note">'+esc(p.material_nombre||'')+'</span>')
+        : ('<input value="'+jsAttr(f.codigo||'')+'" onchange="mzFacFija('+i+',this.value)" '+
+           'placeholder="escribe el código" style="width:150px;padding:5px 7px;border-radius:9px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font:inherit;font-size:11.5px">');
+      var pesos = (p.precio_mxn!=null) ? mzMx(p.precio_mxn,4) : '<span class="note">—</span>';
+      var _dia = f.fecha ? new Date(f.fecha+'T12:00:00').getDay() : -1;
+      var _finde = (_dia===0||_dia===6) ? '<div class="note" style="font-size:10.5px;color:var(--warn)">ese día no hubo DOF: se usa el del día hábil anterior</div>' : '';
+      var tc = (f.moneda==='USD' && p.fx) ? ('<div class="note" style="font-size:10.5px">DOF $'+mzN(p.fx,4)+
+                 (f.tc_factura && Math.abs(f.tc_factura-p.fx)>0.005 ? (' · la factura dice $'+mzN(f.tc_factura,4)) : '')+'</div>'+_finde) : '';
+      var cant = (f.cantidad!=null) ? (mzN(f.cantidad,2)+' '+esc(f.unidad||'')) : '<span class="note">—</span>';
+      var uniRara = (f.cantidad!=null && f.unidad && ['KGM','KGS','KG','KILO','KILOGRAMO'].indexOf(f.unidad)<0)
+        ? '<div class="note" style="font-size:10.5px;color:var(--warn)">no viene en kilos</div>' : '';
+      return mzTd([
+        '<input type="checkbox" '+(f.usar?'checked':'')+' onchange="mzFacUsar('+i+',this.checked)">',
+        nom+'<div class="note" style="font-size:10.5px">'+esc((f.descripcion||'').slice(0,44))+'</div>',
+        esc(f.folio||'—')+'<div class="note" style="font-size:10.5px">'+esc(f.fecha)+' · '+esc((f.proveedor||'').slice(0,22))+'</div>',
+        mzN(f.precio,4)+' '+esc(f.moneda),
+        pesos+tc,
+        cant+uniRara,
+        (f.bloqueo?('<span style="color:var(--bad)">Moneda que no manejo</span><div class="note" style="font-size:10.5px">la factura viene en '+esc(f.moneda_raw||'?')+'</div>'):
+         f.rep_lote?('<span style="color:var(--warn)">Repetido en el archivo</span><div class="note" style="font-size:10.5px">este mismo renglón ya viene arriba</div>'):
+         f.raro_cli?('<span style="color:var(--bad)">Precio fuera de lo normal</span><div class="note" style="font-size:10.5px">'+mzN(p.factor,2)+'× lo normal ('+mzMx(p.mediana_mxn,2)+') · poca historia, revísalo</div>'):
+         av?('<span style="color:'+av[1]+'">'+av[0]+'</span>'+
+            (p.aviso==='precio_raro'&&p.factor?('<div class="note" style="font-size:10.5px">'+mzN(p.factor,2)+'× lo normal ('+mzMx(p.mediana_mxn,2)+')</div>'):'')+
+            (p.aviso==='duplicado'?'<div class="note" style="font-size:10.5px">ya está en el sistema</div>':'')):
+         f.primer_precio?'<span class="note">Primer precio de este material</span>':'<span class="note">—</span>')]);
+    }));
+  h+='<div class="note" style="margin-top:8px;line-height:1.5">Los renglones que no reconozco vienen apagados: escribe el código correcto y se prenden solos. '+
+     'La próxima factura de ese proveedor ya lo va a reconocer sin que se lo digas.</div>'+
+     '<button class="btn" id="mzf-btn" style="margin:10px 0 0" onclick="mzFacGuarda()">Guardar los '+listos+' precios</button>';
+  pv.innerHTML=h;
+}
+
+function mzFacUsar(i,v){ if(_mzFac&&_mzFac[i]){ _mzFac[i].usar=!!v; var b=$('mzf-btn');
+  if(b) b.textContent='Guardar los '+_mzFac.filter(function(f){ return f.usar; }).length+' precios'; } }
+
+function mzFacFija(i,cod){
+  if(!_mzFac||!_mzFac[i]) return;
+  cod=String(cod||'').trim(); if(!cod) return;
+  _mzFac[i].codigo=cod; _mzFac[i].corregido=true; _mzFac[i].usar=true;
+  mzFacPrev();                                   /* se vuelve a preguntar: nunca se adivina en el navegador */
+}
+
+function mzFacGuarda(){
+  if(!_mzFac||!_mzFacPrev) return;
+  var idx=[], filas=[];
+  _mzFac.forEach(function(f,i){ if(!f.usar) return;
+    var p=(_mzFacPrev.filas||[])[i];
+    if(!p||!p.encontrado||p.precio_mxn==null) return;   /* nunca se manda lo que el servidor no pudo resolver */
+    if(f.bloqueo||f.rep_lote||p.aviso) return;          /* ni lo que trae cualquier objeción */
+    idx.push(i);
+    filas.push({codigo:p.codigo, precio:f.precio, moneda:f.moneda, fecha:f.fecha, proveedor:f.proveedor, doc:f.folio});
+  });
+  if(!filas.length){ alert('No hay ningún renglón listo para guardar.'); return; }
+  if(!mzConfirmaEnvio('mzFacGuarda', filas.length, 'precios de factura', mzFacGuarda)) return;
+  if(window._mzFacGuardando) return; window._mzFacGuardando=true;
+  var btn=$('mzf-btn'); if(btn){ btn.disabled=true; btn.textContent='Guardando…'; }
+  SB.rpc('hb_mez_precios_import',{p_filas:filas}).then(function(r){ var x=r&&r.data;
+    window._mzFacGuardando=false;
+    if(!(x&&x.ok)){ alert(mzErr(x)); if(btn){ btn.disabled=false; } return; }
+    /* lo que Josué corrigió a mano se le enseña al sistema, para que la próxima lo reconozca solo */
+    var aprende=[];
+    idx.forEach(function(i){ var f=_mzFac[i], p=(_mzFacPrev.filas||[])[i];
+      if(f&&f.corregido&&p&&p.material_id&&f.descripcion) aprende.push({txt:f.descripcion, mid:p.material_id}); });
+    var er=(x.errores||[]);
+    var msg='Listo: '+x.guardados+' precios guardados'+
+      (x.ya_existian?(' · '+x.ya_existian+' ya estaban'):'')+
+      (x.materiales_nuevos?(' · '+x.materiales_nuevos+' materiales nuevos'):'')+
+      (er.length?('\n\nNo entraron '+er.length+':\n'+er.slice(0,5).map(function(e){ return '· '+(e.codigo||('fila '+e.fila))+': '+e.error; }).join('\n')):'');
+    function cierra(){
+      alert(msg); alimRespalda(null,'Facturas de compra');
+      $('mzp-form').innerHTML=''; _mzFac=null; _mzFacPrev=null; renderMezPrecios();
+    }
+    if(!aprende.length){ cierra(); return; }
+    var n=0;
+    aprende.forEach(function(a){
+      SB.rpc('hb_mez_mat_alias_set',{p_txt:a.txt, p_mid:a.mid}).then(fin, fin);
+      function fin(){ if(++n===aprende.length){ msg+='\n\nAprendí '+aprende.length+' nombre'+(aprende.length===1?'':'s')+' de proveedor: la próxima factura los va a reconocer solos.'; cierra(); } }
+    });
+  },function(e){ window._mzFacGuardando=false; if(btn){ btn.disabled=false; } alert(mzErr(null,e)); });
 }
 function mzPreHist(cod){
   SB.rpc('hb_mez_precio_historia',{p_codigo:cod}).then(function(r){ var x=r&&r.data;

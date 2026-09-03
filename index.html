@@ -15593,14 +15593,15 @@ function mzFicha(cid){
     var c=x.compuesto, pr=x.produccion||{}, h='';
     h+='<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
        '<div><b style="font-size:16px">'+esc(c.nombre)+'</b><div class="note" style="margin-top:2px">Familia '+esc(c.familia)+' · '+esc(c.tipo)+'</div></div>'+speakBtn('Ficha de '+c.nombre)+'</div></div>';
-    if(x.costo&&x.costo.ok&&x.costo.fx){
+    if(x.costo&&x.costo.ok&&x.costo.costo_kg_mxn!=null){
       h+='<div class="card" style="margin-bottom:10px;border-color:rgba(var(--data-rgb),.35);border-color:color-mix(in srgb,var(--data) 35%,transparent)"><b style="font-size:13px">Costo de materia prima (solo dirección)</b>'+
         '<div style="display:flex;gap:16px;margin-top:6px;flex-wrap:wrap;font-size:13px">'+
         '<span><b style="font-size:18px;color:var(--data)">'+(x.costo.costo_kg_mxn!=null?('$'+x.costo.costo_kg_mxn):'—')+'</b> <span class="note">MXN/kg</span></span>'+
         '<span><b style="font-size:18px">$'+(x.costo.costo_batch_mxn||0).toLocaleString()+'</b> <span class="note">por mezcla ('+(x.costo.peso_total_kg||'?')+' kg)</span></span></div>'+
-        '<div class="note" style="margin-top:5px">Tasa DOF $'+x.costo.fx+' del '+esc(x.costo.fx_fecha||'')+'</div>'+
+        '<div class="note" style="margin-top:5px">Cada material entra con el precio de su última factura, '+
+        'ya en pesos al tipo de cambio de ese día.</div>'+
         ((x.costo.faltantes||[]).length?('<div class="note" style="margin-top:5px;color:var(--warn)">Sin precio de compra: '+esc(x.costo.faltantes.join(', '))+' — no van en el total.</div>'):'')+'</div>';
-    } else if(x.costo&&x.costo.ok&&!x.costo.fx){
+    } else if(x.costo&&x.costo.ok&&x.costo.costo_kg_mxn==null){
       h+='<div class="card" style="margin-bottom:10px;border-color:rgba(var(--warn-rgb),.40);border-color:color-mix(in srgb,var(--warn) 40%,transparent)"><b style="font-size:13px;color:var(--warn)">Costo pendiente: falta la tasa del día</b>'+
         '<div class="note" style="margin-top:4px">La mayoría de los materiales se compran en dólares. Captura la tasa DOF en <b>Gráficos → Corregir/capturar</b> (o dame el token de Banxico) y el costo aparece solo.</div></div>';
     } else if(x.costo&&!x.costo.ok){
@@ -17562,7 +17563,7 @@ function mzDesgPaint(){
   h+='<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'+
      '<div><b style="font-size:15px">'+esc(MZ_TEMAS[x.tema]||x.tema)+'</b>'+
      '<div class="note" style="margin-top:2px">Del '+esc(x.desde)+' al '+esc(x.hasta)+' · '+x.dias+' días'+
-     ((x.fx&&mzVeDineroMp())?(' · tasa DOF $'+mzN(x.fx,4)):'')+'</div></div>'+
+     '</div></div>'+
      '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
      Object.keys(MZ_TEMAS).map(function(k){
        if(k==='costos'&&!(x.admin&&mzVeDinero())) return '';
@@ -17714,7 +17715,9 @@ function mzDesgPaint(){
           es el número A (revienta el master) y convive en pantalla con las tarjetas
           del gasto real (B). Sin la nota, sumar la columna parece legítimo y no lo es:
           en agosto da $71.8M contra los $31.0M que salieron del almacén. */
-       '<div class="note" style="margin-top:2px;line-height:1.5">Tasa DOF $'+mzN(x.fx,4)+' del '+esc(x.fx_fecha)+'. '+
+       '<div class="note" style="margin-top:2px;line-height:1.5">Cada material entra con el precio de su '+
+       '<b>última factura</b>, ya en pesos al tipo de cambio del día en que se compró: un mes cerrado no cambia '+
+       'de costo aunque cambie el dólar. '+
        'Cada renglón <b>revienta el master hasta materia prima</b>: sirve para comparar compuestos y ponerles precio, '+
        'pero <b>no se suma entre renglones</b> — el hule del master ya se pagó en su propia corrida. '+
        'El dinero que salió del almacén es el de las tarjetas de arriba. Toca un renglón para el detalle completo.</div>'+
@@ -17722,7 +17725,8 @@ function mzDesgPaint(){
         cc.map(function(c){
           var ven=c.venta, util='<span class="note">falta precio</span>', vtx='<span class="note">—</span>';
           if(ven&&ven.precio){
-            var pv=+ven.precio*(ven.moneda==='USD'?(+x.fx||0):1);
+            /* el peso lo congela el servidor el día del precio; si aún no lo manda, no se inventa */
+            var pv=(ven.precio_mxn!=null)?(+ven.precio_mxn):(ven.moneda==='USD'?null:+ven.precio);
             vtx=mzMx(pv,2)+' <span class="note">/'+esc(ven.unidad||'kg')+'</span>';
             var costoU=(ven.unidad==='mezcla')?(+c.costo_batch_mxn||0):(+c.costo_kg_mxn||0);
             if(costoU>0){ var u=pv-costoU; util='<span style="color:'+(u>=0?'var(--ok)':'var(--bad)')+'">'+mzMx(u,2)+'</span> <span class="note">'+mzN(pv?u/pv*100:0,1)+'%</span>'; }
@@ -17737,8 +17741,12 @@ function mzDesgPaint(){
     h+='<div class="card"><b style="font-size:13px">Materiales · últimas compras</b>'+
        mzTabla(['Material','Precio','Moneda','En pesos','Última compra','Compras'],
         (x.materiales||[]).map(function(m){
-          var mxp=(+m.precio||0)*(m.moneda==='USD'?(+x.fx||0):1);
-          return mzTd([esc(m.codigo),mzN(m.precio,4),esc(m.moneda||''),mzMx(mxp,4),esc(m.ultima_compra||'—'),mzN(m.compras)]); }))+'</div>';
+          /* el peso congelado de ESA factura lo manda el servidor: aquí no se convierte nada */
+          var mxp=(m.precio_mxn!=null)?(+m.precio_mxn):null;
+          return mzTd([esc(m.codigo),mzN(m.precio,4),esc(m.moneda||''),
+            (mxp!=null?mzMx(mxp,4):'<span class="note">—</span>')+
+            (m.fecha_precio&&m.fecha_precio!==m.ultima_compra?('<div class="note" style="font-size:10.5px">precio del '+esc(m.fecha_precio)+'</div>'):''),
+            esc(m.ultima_compra||'—'),mzN(m.compras)]); }))+'</div>';
 
   } else if(x.tema==='merma'){
     h+='<div class="card" style="margin-bottom:12px"><b style="font-size:13px">Quemadas por compuesto</b>'+
@@ -17868,7 +17876,9 @@ function mzPrePaint(){
      '<button class="btn ghost" style="margin:0;width:auto;padding:9px 13px;font-size:12.5px" onclick="mzPreBuscar($(\'mzp-q\').value)">Buscar</button>'+
      '<button class="btn" style="margin:0;width:auto;padding:9px 13px;font-size:12.5px" onclick="mzPreNuevo()">＋ Precio nuevo</button>'+
      '<button class="icoa" title="Pegar precios desde Excel" aria-label="Pegar precios desde Excel" onclick="mzPrePegar()">'+IC_CLIP+'</button></div>'+
-     (x.fx?('<div class="note" style="margin-top:7px">Tasa de hoy para convertir dólares: $'+mzN(x.fx,4)+'</div>'):'')+
+     ('<div class="note" style="margin-top:7px">La columna <b>En pesos</b> es el precio de <b>cada factura</b>: '+
+      'el dólar se convirtió el día de esa compra y ahí quedó fijo — no se vuelve a convertir con el dólar de hoy.'+
+      (x.fx?(' <span class="note">(el dólar de hoy, solo de referencia: $'+mzN(x.fx,4)+')</span>'):'')+'</div>')+
      '</div>';
   h+='<div id="mzp-form"></div>';
   h+='<div class="card" style="margin-bottom:12px"><div class="mzordfila"><b style="font-size:13px">Materiales'+(_mzPreQ?(' · "'+esc(_mzPreQ)+'"'):'')+'</b>'+
@@ -18623,7 +18633,7 @@ function mzCompPaint(x){
   }
 
   if(x.admin){
-    if(co&&co.ok&&co.fx){
+    if(co&&co.ok&&co.costo_kg_mxn!=null){
       var ct=x.costo_total;
       var vt=x.venta, filas=[
         ['Costo de materia prima por kilo (hoy)', mzMx(co.costo_kg_mxn,4), mzUs(co.costo_kg_usd,4)],
@@ -18646,9 +18656,11 @@ function mzCompPaint(x){
       /* el candado lo decide el servidor (v3_142b): ve_dinero, no la presencia del dato */
       var cdz = (x.ve_dinero===true) ? x.costo_directo : null;
       if(cdz && cdz.mxn!=null){
+        /* los dólares son los que DE VERDAD se pagaron en dólares (los manda el servidor):
+           dividir los pesos entre una tasa contaba como dólares hasta lo comprado en pesos */
         filas.push(['<b>Materia prima que compró este compuesto</b>',
                     '<b>'+mzMx(+cdz.mxn||0,2)+'</b>',
-                    mzUs(co.fx?(+cdz.mxn||0)/co.fx:null,2)]);
+                    (cdz.usd!=null?mzUs(+cdz.usd,2):'<span class="note">—</span>')]);
       }
       /* cuando todo el periodo fue retrabajo el cero es correcto, y hay que decir por qué */
       if(ct && ct.mxn!=null && !(+ct.mxn) && (+p.mezclas||0)>0){
@@ -18656,14 +18668,16 @@ function mzCompPaint(x){
                     'material que ya estaba en la planta y no compró materia prima nueva.</span>','','']);
       }
       if(vt&&vt.precio){
-        var pv=+vt.precio*(vt.moneda==='USD'?(+co.fx||0):1);
+        var pv=(vt.precio_mxn!=null)?(+vt.precio_mxn):(vt.moneda==='USD'?null:+vt.precio);
         var cu=(vt.unidad==='mezcla')?(+co.costo_batch_mxn||0):(+co.costo_kg_mxn||0);
-        filas.push(['Precio de venta ('+esc(vt.unidad||'kg')+')', mzMx(pv,2), mzUs(co.fx?pv/co.fx:null,4)]);
+        filas.push(['Precio de venta ('+esc(vt.unidad||'kg')+')', pv!=null?mzMx(pv,2):'<span class="note">—</span>',
+                    (vt.moneda==='USD'?mzUs(+vt.precio,4):'<span class="note">—</span>')]);
         filas.push(['<b>Utilidad por '+esc(vt.unidad||'kg')+'</b>', '<b style="color:'+((pv-cu)>=0?'var(--ok)':'var(--bad)')+'">'+mzMx(pv-cu,2)+'</b>', mzN(pv?(pv-cu)/pv*100:0,2)+'%']);
       }
       h+='<div class="card" style="margin-bottom:12px;border-color:rgba(var(--data-rgb),.35);border-color:color-mix(in srgb,var(--data) 35%,transparent)">'+
          '<b style="font-size:13px">Dinero (solo dirección)</b>'+
-         '<div class="note" style="margin-top:2px">Tasa DOF $'+mzN(co.fx,4)+' del '+esc(co.fx_fecha||'')+' — cada día usa la suya.</div>'+
+         '<div class="note" style="margin-top:2px">Cada material entra con el precio de su última factura, '+
+         'ya en pesos al tipo de cambio del día en que se compró: queda fijo.</div>'+
          mzTabla(['Concepto','MXN','USD'], filas.map(function(f){ return mzTd(f); }))+
          /* la advertencia que evita que alguien sume entre compuestos (27-ago) */
          ((cdz && cdz.mxn!=null && ct && (+ct.mxn||0) > (+cdz.mxn||0)*1.15)
@@ -18707,13 +18721,14 @@ function mzCompPaint(x){
          '</div>';
     }
     /* ---- a dónde se va el dinero: qué ingredientes se llevan el costo ---- */
-    if(x.admin && co && co.ok && co.fx){
+    if(x.admin && co && co.ok){
       var gasto=[], sinPrecio=0;
       x.receta.forEach(function(i){
         var kg=+i.kg||0; if(kg<=0) return;
         var pr=i.precio;
         if(!pr || pr.precio==null){ if(!i.compuesto_ref && !i.es_recorte) sinPrecio++; return; }
-        var mxn=(+pr.precio)*(pr.moneda==='USD'?(+co.fx||0):1)*kg;
+        if(pr.precio_mxn==null) { if(!i.compuesto_ref && !i.es_recorte) sinPrecio++; return; }
+        var mxn=(+pr.precio_mxn)*kg;   /* peso congelado el día de su factura: aquí no se convierte */
         if(mxn>0) gasto.push({t:(i.material||i.nombre||'').slice(0,18), v:mxn, dec:0});
       });
       gasto.sort(function(a,b){ return b.v-a.v; });

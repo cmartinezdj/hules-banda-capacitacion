@@ -16954,7 +16954,12 @@ function mzTabPaint(x){
       meta: meta, metaTxt:'meta '+mzN(meta),
       nota: dias.map(function(d){
         var p=[];
-        if(d.kg) p.push(mzN(d.kg)+' kg');
+        /* ⭐ 4-sep · Alejandro Escamilla confirma por escrito que el reproceso cuenta
+           MEZCLAS pero no KILOS (también para HNA-4 R, BP-ITM R y BP-HP R). Aquí se
+           enseña lo producido; si ese día hubo reproceso, se dice al lado. */
+        var _kp=(d.kg_producido!=null)?(+d.kg_producido||0):(+d.kg||0);
+        if(_kp) p.push(mzN(_kp)+' kg');
+        if(+d.kg_reproceso) p.push(mzN(d.kg_reproceso)+' kg de reproceso');
         if(d.quemadas) p.push(mzN(d.quemadas)+' quemadas');
         return p.join(' · ');
       })
@@ -16974,12 +16979,15 @@ function mzTabPaint(x){
   var tc=x.top_compuestos||[];
   if(tc.length){
     tc=mzOrdAplica(tc,'topo','mezclas',{
-      mezclas: mzCmpNum('mezclas'), kg: mzCmpNum('kg'), corridas: mzCmpNum('corridas'),
+      mezclas: mzCmpNum('mezclas'),
+      /* los kilos se ordenan por lo PRODUCIDO, que es lo mismo que enseña la nota */
+      kg: function(a,b){ var f=function(o){ return +((o.kg_producido!=null)?o.kg_producido:o.kg)||0; }; return f(b)-f(a); },
+      corridas: mzCmpNum('corridas'),
       repro:   mzCmpNum('reproceso'), quemadas: mzCmpNum('quemadas'), az: mzCmpTxt('compuesto')
     });
     h+='<div class="mzgc">'+
        mzChTipo('Los compuestos más corridos','top',MZ_OPS_T,'barras',
-         mzOrdBtn('topo',[['mezclas','Más mezclas'],['kg','Más kilos'],['corridas','Más corridas'],
+         mzOrdBtn('topo',[['mezclas','Más mezclas'],['kg','Más kilos producidos'],['corridas','Más corridas'],
                           ['repro','Más reproceso'],['quemadas','Más quemadas'],
                           ['az','Compuesto (A-Z)']],'mezclas'))+
        mzChart({ id:'top', tipo:mzGT('top','barras'), alto:210, unidad:'mezclas',
@@ -16988,8 +16996,10 @@ function mzTabPaint(x){
          series:[{nom:'Mezclas', color:MZ_S1, datos:tc.map(function(c){ return c.mezclas||0; })}],
          nota: tc.map(function(c){
            var p=[];
-           if(c.kg) p.push(mzN(c.kg)+' kg');
-           if(c.reproceso) p.push(mzN(c.reproceso)+' de reproceso');
+           var _ck=(c.kg_producido!=null)?(+c.kg_producido||0):(+c.kg||0);
+           if(_ck) p.push(mzN(_ck)+' kg');
+           if(c.reproceso) p.push(mzN(c.reproceso)+' mezclas de reproceso'+
+             (+c.kg_reproceso?(' ('+mzN(c.kg_reproceso)+' kg que no se cuentan)'):''));
            if(c.quemadas) p.push(mzN(c.quemadas)+' quemadas');
            return p.join(' · ');
          })})+
@@ -16999,7 +17009,9 @@ function mzTabPaint(x){
   /* por banbury */
   var bbs=[1,2,3,4,5].map(function(nb){
     var b=(x.por_banbury||[]).filter(function(y){ return y.banbury===nb; })[0];
-    return {nb:nb, mez:(b?b.mezclas:0)||0, kg:(b?(b.kg_estimados||0):0),
+    return {nb:nb, mez:(b?b.mezclas:0)||0,
+            kg:(b?(((b.kg_producido!=null)?b.kg_producido:b.kg_estimados)||0):0),
+            kgr:(b?(+b.kg_reproceso||0):0),
             parado:!!(x.banburys&&x.banburys[String(nb)]==='parado')};
   });
   h+='<div class="mzgc">'+mzChTipo('Por banbury','bb',MZ_OPS_T,'barras')+
@@ -17007,7 +17019,8 @@ function mzTabPaint(x){
        cats: bbs.map(function(b){ return 'BB'+b.nb; }),
        tips: bbs.map(function(b){ return 'Banbury '+b.nb+(b.parado?' (parado)':''); }),
        series:[{nom:'Mezclas', color:MZ_S1, datos:bbs.map(function(b){ return b.mez; })}],
-       nota: bbs.map(function(b){ return b.parado?'Marcado como parado':(b.kg?(mzN(b.kg)+' kg'):''); })})+
+       nota: bbs.map(function(b){ return b.parado?'Marcado como parado':
+         (b.kg?(mzN(b.kg)+' kg'+(b.kgr?(' · '+mzN(b.kgr)+' kg de reproceso'):'')):''); })})+
      '</div>';
 
   /* reproceso por origen */

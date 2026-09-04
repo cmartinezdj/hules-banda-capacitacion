@@ -13648,7 +13648,20 @@ function mgPinta(){
   }
 
   /* 2 · en qué banbury se pierde más tiempo */
-  var ut=(x.utilizacion||[]).filter(function(b){ return (+b.paros_min||0)>0; });
+  var utAll=(x.utilizacion||[]);
+  /* una máquina con CERO turnos en todo el periodo no tuvo un mal mes: no operó. El sistema lo deduce
+     de los turnos, no de una nota escrita a mano que envejecería sola (Alejandro, 3-sep: «el banbury 3
+     está en mantenimiento, lleva mes y medio sin operación»). */
+  var paradas=utAll.filter(function(b){ return (+b.turnos||0)===0; });
+  if(paradas.length){
+    h+='<div class="card" style="margin-bottom:12px;border-color:rgba(var(--bad-rgb),.40);border-color:color-mix(in srgb,var(--bad) 40%,transparent)">'+
+       '<b style="font-size:13px">Máquina sin operar en todo el periodo</b>'+
+       '<div class="note" style="margin-top:4px;line-height:1.55">'+
+       paradas.map(function(b){ return '<b>Banbury '+esc(b.banbury)+'</b>'; }).join(', ')+
+       (paradas.length===1?' no trabajó ni un turno':' no trabajaron ni un turno')+' del '+esc(fmtCorto(x.desde))+' al '+esc(fmtCorto(x.hasta))+
+       '. No es que le haya ido mal: no operó. Si está en mantenimiento, aquí es donde se va a ver cuánto lleva parada.</div></div>';
+  }
+  var ut=utAll.filter(function(b){ return (+b.paros_min||0)>0; });
   if(ut.length){
     var maxB=1; ut.forEach(function(b){ if(+b.paros_min>maxB) maxB=+b.paros_min; });
     h+='<div class="card" style="margin-bottom:12px">'+
@@ -16863,6 +16876,12 @@ function mzTabPaint(x){
       '<span class="mzks">'+(sub||'ver desglose ›')+'</span></button>';
   }
   /* el aviso de los kilos estimados va al PIE de su propia tarjeta (Carlos) */
+  /* ⭐ 3-sep-2026 · Alejandro Escamilla, por escrito, sobre el reproceso de compuestos finales:
+     «Como número de mezcla SÍ debemos de contabilizarla, pero NO como kg, ya que estaríamos duplicando».
+     Ese hule ya se contó cuando se produjo la primera vez. Así que la tarjeta de kilos producidos
+     enseña los kilos SIN reproceso, y deja el total a la vista para que nadie pierda el número viejo. */
+  var kgProd=(t.kg_producido!=null)?(+t.kg_producido||0):totKg;
+  var kgRep=(t.kg_reproceso!=null)?(+t.kg_reproceso||0):0;
   var kgSub='mezclas × peso de fórmula';
   if((t.kg||0)>0 && ((t.kg_estimados||0)>0 || (t.mezclas_sin_kg||0)>0)){
     var av=[];
@@ -16876,8 +16895,10 @@ function mzTabPaint(x){
         mzVarChip(t.mezclas, P?P.mezclas:null))+
     /* ⭐ 27-ago · Alejandro Escamilla, por escrito: «No se pesan, están calculadas
        basadas en el tipo de fórmula». No hay báscula en el banbury. */
-    kpi('produccion','Kilos producidos', kgTxt(totKg), null, kgSub,
-        mzVarChip(totKg, P?P.kg:null))+
+    kpi('produccion','Kilos producidos', kgTxt(kgProd), null,
+        (kgRep>0 ? ('de '+mzN(totKg)+' por el banbury · '+mzN(kgRep)+' kg de reproceso no se cuentan')
+                 : kgSub),
+        mzVarChip(kgProd, P?(P.kg_producido!=null?P.kg_producido:P.kg):null))+
     /* ⭐ 31-ago · los DOS kilos. El titular suma todas las pasadas por el banbury
        (el master se cuenta otra vez); «finales» es lo que sale hacia el siguiente
        proceso: paso FINAL o DIRECTA, dato de la propia hoja. */

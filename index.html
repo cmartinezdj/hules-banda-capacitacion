@@ -17260,23 +17260,29 @@ function mzAlmPinta(){
          '<input id="alm-ekg" class="fin" style="width:130px" inputmode="decimal" placeholder="Kilos">'+
          '<button class="btn" style="margin:0;width:auto;padding:10px 14px;font-size:12.5px" onclick="mzAlmExisUno()">Guardar</button>'+
        '</div></div><datalist id="alm-mat-dl"></datalist>';
-    /* ⭐ 3-sep-2026: cuánto vale lo que hay, y cuánto de eso lleva años sin moverse.
-       El valor sale de la columna de costo promedio de la BALANZA de almacén, no de nuestro
-       costeo por facturas: son dos números distintos y la tarjeta lo dice. */
+    /* ⭐ 3-sep-2026: cuánto vale lo que hay y cuánto de eso no se movió.
+       Un verificador cazó dos errores míos en la primera versión de esta tarjeta y los dos están
+       corregidos aquí: (1) el total decía «el almacén» pero dejaba fuera los empaques, que la misma
+       balanza sí valúa; (2) llamaba «parado» a los materiales que el sistema no conocía, que es otra
+       cosa — lo QUIETO ahora se mide con las entradas y salidas de la propia hoja, no se deduce.
+       El valor sale del costo promedio de la BALANZA de almacén, no de nuestro costeo por facturas. */
     if(e && (+e.valor_corte||0)>0 && mzVeDineroMp()){
-      var vTot=+e.valor_corte||0, vPar=+e.valor_parado||0, nPar=+e.n_parado||0;
-      var pct=vTot? Math.round(vPar/vTot*1000)/10 : 0;
+      var vTot=+e.valor_corte||0, vQui=+e.valor_quieto||0, nQui=+e.n_quieto||0;
+      var vSC=+e.valor_sin_catalogo||0, nSC=+e.n_sin_catalogo||0;
+      var pct=vTot? Math.round(vQui/vTot*1000)/10 : 0;
       h+='<div class="card" style="margin-bottom:12px;border-color:rgba(var(--data-rgb),.35);border-color:color-mix(in srgb,var(--data) 35%,transparent)">'+
         '<b style="font-size:13px">Cuánto vale lo que hay</b>'+
         '<div style="display:flex;gap:16px;margin-top:7px;flex-wrap:wrap;align-items:flex-end">'+
           '<span><b style="font-size:22px;color:var(--data)">'+mzMx(vTot)+'</b> <span class="note">en el almacén</span></span>'+
-          (nPar?('<span><b style="font-size:18px;color:var(--warn)">'+mzMx(vPar)+'</b> <span class="note">parado ('+mzN(pct,1)+' %)</span></span>'):'')+
+          (nQui?('<span><b style="font-size:18px;color:var(--warn)">'+mzMx(vQui)+'</b> <span class="note">no se movió ('+mzN(pct,1)+' %)</span></span>'):'')+
         '</div>'+
-        (nPar?('<div class="note" style="margin-top:7px;line-height:1.55"><b>'+mzN(nPar)+' materiales</b> con '+mzN(e.kg_parado)+' kg '+
-          'llevan años ahí sin usarse. Victoria (3-sep): «material que tiene años aquí y que no sirvió para el proceso '+
-          'o cuesta más meterlo». No se compran ni entran a ninguna fórmula, así que <b>no tocan el costo de ningún mes</b> — '+
-          'pero ese dinero está detenido y hasta hoy no se veía en ningún lado.</div>'):'')+
-        ((+e.n_sin_valor||0)?('<div class="note" style="margin-top:5px;color:var(--warn)">'+mzN(e.n_sin_valor)+' renglones no traen costo en la balanza: no están en esa suma.</div>'):'')+
+        ((+e.valor_empaque||0)?('<div class="note" style="margin-top:5px;font-size:10.5px">Incluye '+mzMx(e.valor_empaque)+' de empaques.</div>'):'')+
+        (nQui?('<div class="note" style="margin-top:7px;line-height:1.55"><b>'+mzN(nQui)+' materiales</b> con '+mzN(e.kg_quieto)+' kg '+
+          'no tuvieron ni una entrada ni una salida en el mes. No es una suposición: son las columnas de movimiento de la propia balanza.</div>'):'')+
+        (nSC?('<div class="note" style="margin-top:6px;line-height:1.55">De esos, <b>'+mzN(nSC)+' materiales</b> ('+mzMx(vSC)+') el sistema ni los conocía: '+
+          'no se compran, no están en ninguna fórmula y por eso <b>no tocan el costo de ningún mes</b>. '+
+          'Victoria (3-sep): «material que tiene años aquí y que no sirvió para el proceso o cuesta más meterlo».</div>'):'')+
+        ((+e.n_sin_valor||0)?('<div class="note" style="margin-top:5px;color:var(--warn)">'+mzN(e.n_sin_valor)+' renglones no traen costo en la balanza: no entran en esta suma.</div>'):'')+
         '<div class="note" style="margin-top:6px;font-size:10.5px">Valuado con el <b>costo promedio de la balanza</b> de almacén, no con nuestros precios de factura.</div>'+
         '</div>';
     }
@@ -17290,7 +17296,8 @@ function mzAlmPinta(){
        '<button class="btn ghost" style="margin:6px 0 0;width:auto;padding:8px 12px;font-size:12.5px" onclick="renderMezSem()">Ver el semáforo con el Restante</button></div>';
     if(!ef.length) h+='<div class="note" style="margin-top:6px">Todavía no hay inventario capturado. En cuanto lo suba almacén, el «Restante» se enciende solo.</div>';
     else h+=mzTabla(['Material','Existencia'], ef.map(function(f){ return mzTd([
-      '<b>'+esc(f.codigo)+'</b>'+(f.sin_movimiento?' <span class="tg g" style="font-size:9.5px">sin movimiento</span>':'')+
+      '<b>'+esc(f.codigo)+'</b>'+(f.quieto?' <span class="tg g" style="font-size:9.5px">no se movió</span>':'')+
+      (f.sin_catalogo?' <span class="tg g" style="font-size:9.5px">no está en fórmulas</span>':'')+
       '<div class="note" style="font-size:10px">'+esc(f.nombre||'')+(f.grupo?(' · '+esc(f.grupo)):'')+'</div>',
       '<span style="white-space:nowrap">'+mzN(f.kg)+' <span class="note">'+esc((f.unidad||'kg').toLowerCase())+'</span>'+
       ((f.valor!=null&&mzVeDineroMp())?('<div class="note" style="font-size:10px">'+mzMx(f.valor)+'</div>'):'')+'</span>']); }));

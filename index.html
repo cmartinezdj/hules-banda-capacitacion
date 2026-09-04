@@ -16940,7 +16940,10 @@ function mzTabPaint(x){
        (puedeMeta?'<button class="mzgt" onclick="mzMetaEdit()" title="La meta diaria de dirección">'+(meta?'Meta '+mzN(meta):'Fijar meta')+'</button>':''))+
      '<div class="mzbig">'+
        '<div><span class="mzv">'+mzN(t.mezclas||0)+'</span><span class="mzc">mezclas en el periodo</span></div>'+
-       '<div><span class="mzv">'+kgTxt(totKg)+'</span><span class="mzc">kilos</span></div>'+
+       /* ⭐ 4-sep · decía kilos a secas con el total (3.47 M) mientras la tarjeta de
+          arriba, en la misma pantalla, decía 3.14 M. Aquí va lo producido y el total
+          se sigue viendo completo en la tarjeta de «Kilos producidos». */
+       '<div><span class="mzv">'+kgTxt(kgProd)+'</span><span class="mzc">kilos producidos</span></div>'+
        (meta?('<div><span class="mzv" style="color:'+(cum>=dias.length*0.8?'var(--ok)':'var(--warn)')+'">'+mzN(cum)+'/'+mzN(dias.length)+'</span><span class="mzc">días en la meta</span></div>'):'')+
      '</div>';
   if(dias.length){

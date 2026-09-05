@@ -3234,6 +3234,9 @@ function idleArm(){
    servidor sabe QUIÉN eres y los candados (RLS) entregan SOLO tus datos.
    ============================================================================ */
 var V3_ON=false;               // el servidor ya tiene el roster V3
+/* Mostrar u ocultar el cuadro «Gestión de personal» del panel de Personas.
+   4-sep-2026: oculto por decisión del dueño. La función openPersonal() sigue viva. */
+var GESTION_PERSONAL_VISIBLE=false;
 var V3_EMAIL_DOM='@ids.hulesbanda.com.mx';
 /* mapeo de los 23 departamentos reales -> set de cursos y color del área existente */
 var DEPTO_AREA={
@@ -7211,7 +7214,12 @@ function mgrPage(role){
          else { var rN=recibosGet().length; if(rN) reciSub=rN+' firmados'; } }catch(e){}
     h+=cab('Personas', DS?(DS.reg+' de '+DS.total+' registrados en la app.'):'Equipo, permisos y recibos.');
     h+='<div class="tgrid">';
-    if(V3_ON && S.admin) h+=htile('openPersonal()','personas','Gestión de personal', 'Altas, bajas y accesos', {wide:true});
+    /* ⭐ 4-sep-2026 · Gestión de personal se ocultó de la vista por decisión del dueño.
+       La FUNCIÓN NO se borró: openPersonal() y renderPersonal() siguen vivas y
+       funcionando. Para volver a mostrar el cuadro, cambia GESTION_PERSONAL_VISIBLE
+       a true (está definida arriba, junto a la configuración). También se abre
+       escribiendo openPersonal() en la consola. */
+    if(GESTION_PERSONAL_VISIBLE && V3_ON && S.admin) h+=htile('openPersonal()','personas','Gestión de personal', 'Altas, bajas y accesos', {wide:true});
     h+=htile("mgrGo('personas-permisos')",'cal','Permisos', leaveN?(leaveN+' por revisar'):'Vacaciones y permisos', {cnt:leaveN||''});
     h+=htile("mgrGo('personas-recibos')",'recibo','Recibos de nómina', reciSub);
     if(!V3_ON) h+=htile("mgrGo('personas-rank')",'premios','Tabla de puntos', 'Solo lo ve '+role);
